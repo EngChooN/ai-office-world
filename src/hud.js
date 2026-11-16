@@ -25,6 +25,9 @@ export function installEnvironmentHud(){
  if(installed||typeof document==='undefined')return;installed=true;
  const sit=$('sit'),tea=$('tea'),run=$('run'),bar=$('stamina-fill'),box=$('stamina'),value=$('stamina-value'),chip=$('env-chip'),credit=$('weather-credit');
  if(credit){credit.href=ATTRIBUTION.href;credit.textContent=ATTRIBUTION.text;}
+ // 출처 한 줄은 화면 구석 대신 설정 시트 맨 아래 '출처' 칸에 둔다(11-16, 대표 요청: 구석은 함께 걷기 버튼 자리). 링크·글자는 그대로라 라이선스 표기는 유지.
+ const srcLine=document.getElementById('source-line'),setSheet=document.getElementById('nb-sheet-settings');
+ if(srcLine&&setSheet){const h=document.createElement('div');h.className='nb-lbl';h.textContent='출처';srcLine.classList.add('in-sheet');setSheet.append(h,srcLine);}
  window.addEventListener('hiking:state',e=>{
   const s=e.detail||{},b=buttonView(s),st=staminaView(s);
   if(sit){sit.querySelector('span').textContent=b.sitLabel;sit.setAttribute('aria-pressed',String(b.sitPressed));sit.classList.toggle('active',b.sitPressed);}

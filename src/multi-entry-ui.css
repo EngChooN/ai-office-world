@@ -17,5 +17,8 @@
  .me-chip small{display:none}
 }
 @media (orientation:portrait){
- .me-chip{left:calc(env(safe-area-inset-left,0px) + 14px);top:calc(env(safe-area-inset-top,0px) + 254px);transform:none;max-width:calc(100vw - 150px);min-width:44px;padding:0 14px 0 12px} /* 오른쪽에 💬·👥 단추(56px씩) 자리를 남긴다 */
+ /* 세로 휴대폰(11-16): 가운데를 가리던 긴 알약을 작은 동그라미(아이콘+인원)로 줄여 왼쪽 맨 아래(출처 글자가 있던 자리)로 내린다. 💬·👥는 JS가 이 칩 오른쪽에 붙으므로 함께 내려간다. 글자 설명은 aria-label에 그대로. */
+ .me-chip{left:calc(env(safe-area-inset-left,0px) + 10px);top:auto;bottom:calc(var(--ui-bottom,0px) + 4px);transform:none;width:auto;min-width:44px;max-width:none;padding:0 11px 0 9px;gap:4px;border-radius:22px;font-size:13px}
+ .me-chip .me-chip-t,.me-chip small{display:none}
+ .me-chip[data-n]:not([data-n=""])::after{content:attr(data-n)}
 }

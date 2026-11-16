@@ -62,7 +62,7 @@ export function installMultiEntry({serverUrl=null,serverPick=null,doc=document,w
  function render(){
   const v=last&&joined?statusView(last):null;
   chip.hidden=!v;
-  if(v){chip.dataset.tone=v.tone;chip.dataset.state=last.state;chip.dataset.action=v.action??'';
+  if(v){chip.dataset.tone=v.tone;chip.dataset.state=last.state;chip.dataset.action=v.action??'';chip.dataset.n=(v.text.match(/(\d+)명/)||[])[1]||'';
    chip.querySelector('i').textContent=v.ic;chip.querySelector('.me-chip-t').textContent=v.text;chip.querySelector('.me-chip-s').textContent=v.sub;
    chip.setAttribute('aria-label',`함께 걷기 ${v.text}${v.sub?' · '+v.sub:''}`);}
   entry.querySelector('span').textContent=joined?'함께 걷는 중':'함께 걷기';

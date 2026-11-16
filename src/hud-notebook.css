@@ -364,3 +364,7 @@ body.nb-multi:not(.nb-multi-open) .multi-panel{display:none}
 @media (hover:none),(pointer:coarse){#app .nb-fold{width:40px;height:30px;min-height:0;min-width:0}}
 #app .nb-card.folded{width:auto;min-width:200px}
 .nb-card.folded .nb-title,.nb-card.folded .nb-trail,.nb-card.folded .nb-meta,.nb-card.folded .nb-foot,.nb-card.folded .nb-snack{display:none!important}
+
+/* 출처 줄을 설정 시트 안으로 옮겼을 때(11-16): 구석 고정을 풀고 시트 글자로 보여 준다 */
+.source-line.in-sheet{position:static;display:block;margin:2px 0 0;padding:0;background:none;color:var(--ink2);font-size:11px;line-height:1.6;white-space:normal;max-width:none}
+.source-line.in-sheet a{text-decoration:underline}

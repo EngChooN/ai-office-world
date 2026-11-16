@@ -9,8 +9,10 @@ import {SEASONS,SEASON_LABEL,SEASON_ICON,seasonForDate} from './season.js';
 import {summitOf} from './summit-records.js';
 
 // 개발 버전: 완등하지 않아도 자유 설정이 열린다. 구간 이동 버튼(section-jump.js)과 같은 조건이다.
-// 지금 GitHub Pages 배포본도 개발 버전이다. ?dev=off(또는 ?jump=off)를 붙이면 잠긴 모습을 볼 수 있다.
-export const DEV_BUILD=true;
+// 개발 서버(npm run dev)와 노드 시험에서만 켜진다. 배포용 빌드(vite build)는 잠겨서 계절 고르기·구간 이동이 없다.
+// 배포 빌드에서 켜 보려면 VITE_DEV_BUILD=on 으로 빌드한다. ?dev=off(또는 ?jump=off)는 개발 서버에서 잠긴 모습을 본다.
+const ENV=import.meta.env;
+export const DEV_BUILD=ENV?(ENV.DEV||ENV.VITE_DEV_BUILD==='on'):true;
 export function devBuild(search=globalThis.location?.search??''){
  const q=new URLSearchParams(search);return DEV_BUILD&&q.get('dev')!=='off'&&q.get('jump')!=='off';
 }

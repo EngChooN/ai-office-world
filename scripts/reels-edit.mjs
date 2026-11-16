@@ -1,5 +1,5 @@
 // 릴스 편집: reels-record.mjs가 찍은 장면(artifacts/reels/raw)을 콘티(docs/릴스-콘티.md §1) 순서·길이로 잘라 잇고,
-// 0.2초 교차 페이드(훅→산 고르기는 컷), 콘티 자막(§5 규칙: Apple SD Gothic Neo ExtraBold·외곽선 8px·안전 영역 x 64~912 / y 250~1500),
+// 0.2초 교차 페이드(훅→산 고르기는 컷), 콘티 자막(§5 규칙: Apple SD Gothic Neo ExtraBold·외곽선 8px·안전 영역 x 120~960(11-14 대표: 정가운데) / y 250~1500),
 // AI Office 장면, 엔딩 카드(artifacts/reels/ending.png, 0.3초 페이드인 3초)를 붙이고 게임 소리를 그대로 깐다(배경음악 없음).
 //   node scripts/reels-edit.mjs [--raw artifacts/reels/raw] [--out artifacts/reels]
 // 결과: <out>/gwanak-reels.mp4(1080×1920 30fps H.264 + AAC 48kHz), <out>/cover.png(표지), <out>/edit/(자막 PNG·중간 파일), <out>/reels-timeline.json
@@ -46,7 +46,7 @@ const textHTML=s=>esc(s).replace(/((?![\u25B6\u25C0])\p{Extended_Pictographic}\u
 const RING=[8,5.5,3].flatMap(r=>Array.from({length:r>5?32:16},(_,i)=>{const a=i/(r>5?32:16)*2*Math.PI;return `${(r*Math.cos(a)).toFixed(2)}px ${(r*Math.sin(a)).toFixed(2)}px 0 #2b1d0a`;})).join(',');
 const CSS=`:root{--ring:${RING}}*{margin:0;padding:0;box-sizing:border-box}html,body{width:${W}px;height:${H}px;background:transparent;overflow:hidden}
 body{font-family:'Apple SD Gothic Neo','Pretendard',sans-serif;color:#fff8e6;-webkit-font-smoothing:antialiased}
-.cap{position:absolute;left:64px;width:848px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
+.cap{position:absolute;left:120px;width:840px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px}
 .cap .b,.cap .s{text-shadow:var(--ring);filter:drop-shadow(0 4px 8px rgba(0,0,0,.4));white-space:nowrap}
 .cap .b{font-weight:800;font-size:76px;line-height:1.2;letter-spacing:-1px}.cap .s{font-weight:500;font-size:44px;line-height:1.25}
 .cap.hook .b{font-size:96px}
@@ -54,7 +54,7 @@ body{font-family:'Apple SD Gothic Neo','Pretendard',sans-serif;color:#fff8e6;-we
 .hl{color:#ffd86b}
 .office{position:absolute;left:50%;transform:translateX(-50%);top:280px;border-radius:28px;overflow:hidden;background:#fbf3df;box-shadow:0 18px 50px rgba(0,0,0,.55);border:6px solid #fbf3df}
 .office img{display:block;height:880px;width:auto;max-width:808px;object-fit:cover;object-position:top}
-.staff{position:absolute;left:104px;top:360px;width:768px;padding:44px 40px 40px;border-radius:30px;background:#fbf3df;color:#4a3618;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.staff{position:absolute;left:156px;top:360px;width:768px;padding:44px 40px 40px;border-radius:30px;background:#fbf3df;color:#4a3618;box-shadow:0 18px 50px rgba(0,0,0,.5)}
 .staff h3{font-size:54px;font-weight:800;color:#2f6b4a;margin-bottom:6px}.staff p{font-size:32px;font-weight:600;color:#7a6440;margin-bottom:26px}
 .staff ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:16px 18px}.staff li{background:#fff;border:3px solid #e6d6ae;border-radius:18px;padding:16px 18px;font-size:34px;font-weight:800}
 .staff li small{display:block;font-size:26px;font-weight:600;color:#8a7350;margin-top:2px}
@@ -63,8 +63,8 @@ async function renderPNGs(page,items){
  for(const it of items){
   await page.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>${CSS}</style></head><body>${it.html}</body></html>`);
   await page.evaluate(()=>Promise.all([document.fonts.ready,...[...document.images].map(i=>i.decode().catch(()=>{}))]));
-  // 긴 줄은 안전 가로 폭(848px) 안으로 글자 크기를 줄인다.
-  await page.evaluate(()=>{for(const el of document.querySelectorAll('.cap .b,.cap .s')){let fs=parseFloat(getComputedStyle(el).fontSize);while(el.scrollWidth>848&&fs>30){fs-=2;el.style.fontSize=fs+'px';}}});
+  // 긴 줄은 안전 가로 폭(840px) 안으로 글자 크기를 줄인다.
+  await page.evaluate(()=>{for(const el of document.querySelectorAll('.cap .b,.cap .s')){let fs=parseFloat(getComputedStyle(el).fontSize);while(el.scrollWidth>840&&fs>30){fs-=2;el.style.fontSize=fs+'px';}}});
   if(it.anchorBottom)await page.evaluate(y=>{const c=document.querySelector('.cap');c.style.top=(y-c.offsetHeight)+'px';},it.anchorBottom);
   it.box=await page.evaluate(()=>{const c=document.querySelector('.cap');if(!c)return null;const r=c.getBoundingClientRect(),inner=[...c.children].map(e=>e.getBoundingClientRect());return {x:Math.min(...inner.map(r=>r.x)),y:r.y,w:Math.max(...inner.map(r=>r.right))-Math.min(...inner.map(r=>r.x)),h:r.height};});
   await page.screenshot({path:it.file,omitBackground:true});
@@ -91,7 +91,7 @@ function cutScene(sc,i,next){
   // 즐길거리 버튼이 인스타 아래 캡션 영역에 들어가면 버튼을 오려 1.4배로 y≈1300에 띄운다(콘티 §5).
   const c=meta.callout,pad=6,cx=Math.round((c.x-pad)*3),cy=Math.round((c.y-pad)*3),cw=Math.round((c.w+pad*2)*3),ch=Math.round((c.h+pad*2)*3),sw=Math.round(cw*1.4/2)*2,sh=Math.round(ch*1.4/2)*2;
   const on=Math.max(0,meta.events.offer-start);
-  ff(['-i',`${raw}/${sc.raw}.mp4`,'-filter_complex',`[0:v]${vf},split[a][b];[b]crop=${cw}:${ch}:${cx}:${cy},scale=${sw}:${sh}[c];[a][c]overlay=x=${Math.round(488-sw/2)}:y=${1300-sh}:enable='gte(t,${on.toFixed(2)})'`,'-c:v','libx264','-crf','12','-preset','fast',v],sc.id);
+  ff(['-i',`${raw}/${sc.raw}.mp4`,'-filter_complex',`[0:v]${vf},split[a][b];[b]crop=${cw}:${ch}:${cx}:${cy},scale=${sw}:${sh}[c];[a][c]overlay=x=${Math.round(540-sw/2)}:y=${1300-sh}:enable='gte(t,${on.toFixed(2)})'`,'-c:v','libx264','-crf','12','-preset','fast',v],sc.id);
  }else ff(['-i',`${raw}/${sc.raw}.mp4`,'-vf',vf,'-c:v','libx264','-crf','12','-preset','fast',v],sc.id);
  // 산 고르기 화면은 아직 소리가 켜지기 전이라 비어 있다 → 다른 장면의 환경음(서 있는 계곡 숲)을 깐다.
  const aSrc=sc.audio?`${raw}/${sc.audio.raw}.wav`:`${raw}/${sc.raw}.wav`,aStart=sc.audio?sc.audio.at:start;
@@ -107,7 +107,7 @@ if(import.meta.url===`file://${process.argv[1]}`){
  const pngs=[];
  TIMELINE.forEach((sc,i)=>{if(sc.big)pngs.push({sc,file:`${work}/cap-${String(i).padStart(2,'0')}-${sc.id}.png`,html:capHTML(sc),anchorBottom:sc.hook?null:1480});if(sc.office)pngs.push({sc,file:`${work}/office-card.png`,html:officeHTML(),card:true});});
  await renderPNGs(page,pngs);await browser.close();
- for(const p of pngs.filter(p=>p.box)){const b=p.box;if(b.x<63.5||b.x+b.w>912.5||b.y<249.5||b.y+b.h>1500.5)throw new Error(`자막이 안전 영역 밖: ${p.sc.id} ${JSON.stringify(b)}`);}
+ for(const p of pngs.filter(p=>p.box)){const b=p.box;if(b.x<119.5||b.x+b.w>960.5||b.y<249.5||b.y+b.h>1500.5)throw new Error(`자막이 안전 영역 밖: ${p.sc.id} ${JSON.stringify(b)}`);}
 
  // 2) 장면 자르기
  const clips=TIMELINE.map((sc,i)=>cutScene(sc,i,TIMELINE[i+1]));
