@@ -2,6 +2,7 @@
 import {legacyHikingTarget} from './legacy-redirect.js';
 import {mountHub} from './hub.js';
 import './hub.css';
+import '../icons/icons.css';   // 아이콘 공통 모양(아이콘-규칙-v1)
 const target=legacyHikingTarget(location.search,location.hash,import.meta.env.BASE_URL);
 if(target)location.replace(target);
 else{

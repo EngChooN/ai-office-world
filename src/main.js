@@ -45,6 +45,8 @@ import {createFrameMetrics} from './performance-metrics.js';
 import {AdaptiveQuality} from './adaptive-quality.js';
 import './hud-v2.css';
 import './hud-notebook.css';
+import './icons/icons.css';   // 아이콘 공통 모양(아이콘-규칙-v1)
+document.documentElement.dataset.icExp='hiking';
 import {installNotebookHud,formatRemainKm} from './hud-notebook.js';
 import {markLoad,installGlbTiming,loadTiming} from './load-timing.js';
 import {LIMITS} from './device-profile.js';

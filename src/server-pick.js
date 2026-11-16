@@ -12,15 +12,16 @@
 import {SERVERS,SERVER_MAX,EXPERIENCES,NET,serverMax} from './multi-protocol.js';
 import {ART,hubTime} from './hub/hub.js';
 import {sunPosition} from './daytime.js';
+import {icon,iconText} from './icons/icon.js';
 
 export const NAME_KEY='gwanak-multi-name';   // 등산 함께 걷기 카드와 같은 저장값(닉네임 재사용)
 export const REFRESH_MS=5000;
 export const FETCH_TIMEOUT_MS=4000;
 export const PICK_LABELS=Object.freeze({
- hiking:Object.freeze({art:'mountain',title:'함께 걷기 서버',icon:'👋',solo:'혼자 걷기',soloIcon:'🥾',leave:'나가서 혼자 걷기',anon:'등산객XXXX'}),
- smoking:Object.freeze({art:'rooftop',title:'같이 피우기 서버',icon:'👥',solo:'혼자 피우기',soloIcon:'🚬',leave:'나가서 혼자 피우기',anon:'손님XXXX'}),
+ hiking:Object.freeze({art:'mountain',title:'함께 걷기 서버',icon:'👋',ic:'c-exp-hiking',solo:'혼자 걷기',soloIcon:'🥾',leave:'나가서 혼자 걷기',anon:'등산객XXXX'}),
+ smoking:Object.freeze({art:'rooftop',title:'같이 피우기 서버',icon:'👥',ic:'c-exp-smoking',solo:'혼자 피우기',soloIcon:'🚬',leave:'나가서 혼자 피우기',anon:'손님XXXX'}),
  // 크리스마스(11-16, 체험설계 §3-1): 혼자일 때 트리 장식은 내 화면에만 남는다는 안내를 혼자 둘러보기 단추 아래 한 줄로(soloNote)
- christmas:Object.freeze({art:'village',title:'눈마을 광장 서버',icon:'🎄',solo:'혼자 둘러보기',soloIcon:'⛄',leave:'나가서 혼자 둘러보기',anon:'눈송이XXXX',soloNote:'혼자 둘러보면 트리 장식은 내 화면에만 남고, 새로고침하면 사라져요'})
+ christmas:Object.freeze({art:'village',title:'눈마을 광장 서버',icon:'🎄',ic:'c-exp-christmas',solo:'혼자 둘러보기',soloIcon:'⛄',leave:'나가서 혼자 둘러보기',anon:'눈송이XXXX',soloNote:'혼자 둘러보면 트리 장식은 내 화면에만 남고, 새로고침하면 사라져요'})
 });
 const clean=s=>String(s??'').normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f]/g,'').replace(/\s+/g,' ').trim();
 export const cleanPickName=raw=>[...clean(raw)].slice(0,NET.nameMax).join('').trim();
@@ -82,12 +83,12 @@ export function createServerPick({experience='hiking',serverUrl=null,serverOff=f
   try{root.dataset.time=hubTime(sunPosition(Date.now()).elevation);}catch{root.dataset.time='day';}
   root.innerHTML=`<div class="sp-scrim" data-sp="scrim"></div>
 <section class="sp-card" role="dialog" aria-modal="true" aria-labelledby="sp-title-${experience}">
- <header class="sp-head"><h2 id="sp-title-${experience}"><em aria-hidden="true">${L.icon}</em>${esc(L.title)}</h2><p class="sp-lead">들어갈 서버를 고르세요</p><button type="button" class="sp-x" data-sp="close" aria-label="서버 고르기 닫기">✕</button></header>
+ <header class="sp-head"><h2 id="sp-title-${experience}"><em aria-hidden="true">${icon(L.ic,{size:'s',fallback:L.icon})}</em>${esc(L.title)}</h2><p class="sp-lead">들어갈 서버를 고르세요</p><button type="button" class="sp-x" data-sp="close" aria-label="서버 고르기 닫기">✕</button></header>
  <p class="sp-sum" aria-live="polite"><span>지금 접속 <b data-sp-here>…</b>명</span><span>전체 <b data-sp-total>…</b>명</span></p>
  <p class="sp-note" role="status" hidden></p>
  <ul class="sp-list" role="list"></ul>
  <label class="sp-name">닉네임 <small>(${NET.nameMax}자까지 · 비우면 ${esc(L.anon)})</small><input name="sp-name" type="text" maxlength="${NET.nameMax}" placeholder="${esc(L.anon)}" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"></label>
- <button type="button" class="sp-solo" data-sp="solo"><em aria-hidden="true">${L.soloIcon}</em><span>${esc(L.solo)}</span>${L.soloNote?`<small class="sp-solo-note">${esc(L.soloNote)}</small>`:''}</button>
+ <button type="button" class="sp-solo" data-sp="solo"><em aria-hidden="true">${icon('c-person',{size:'m',fallback:L.soloIcon})}</em><span>${esc(L.solo)}</span>${L.soloNote?`<small class="sp-solo-note">${esc(L.soloNote)}</small>`:''}</button>
 </section>`;
   doc.body.append(root);
   const input=root.querySelector('input');input.value=name;
@@ -113,8 +114,8 @@ export function createServerPick({experience='hiking',serverUrl=null,serverOff=f
   root.querySelector('[data-sp-here]').textContent=tot.here??'…';root.querySelector('[data-sp-total]').textContent=tot.total??'…';
   const note=root.querySelector('.sp-note'),msg=st.note==='full'?{tone:'warn',text:'방금 꽉 찼어요. 다른 서버를 고르거나 잠시 뒤 다시 골라 주세요.'}
    :off?{tone:'bad',text:`서버에 연결할 수 없어요. 지금은 ${L.solo}만 할 수 있어요.`}
-   :local?{tone:'local',text:serverOff?`🌙 지금은 서버가 꺼져 있어요. ${L.solo}만 할 수 있어요.`:`💻 서버 주소가 없어요. 지금은 ${L.solo}만 할 수 있어요.`}:null;
-  note.hidden=!msg;if(msg){note.dataset.tone=msg.tone;note.textContent=msg.text;}
+   :local?{tone:'local',ic:serverOff?'c-server-off':'c-net-local',text:serverOff?`지금은 서버가 꺼져 있어요. ${L.solo}만 할 수 있어요.`:`서버 주소가 없어요. 지금은 ${L.solo}만 할 수 있어요.`}:null;
+  note.hidden=!msg;if(msg){note.dataset.tone=msg.tone;if(msg.ic)note.innerHTML=iconText(msg.ic,msg.text,{size:'xs'});else note.textContent=msg.text;}
   const focused=doc.activeElement?.closest?.('[data-sp-server]')?.dataset.spServer??null,list=root.querySelector('.sp-list');
   // /health 실패·서버 주소 없음: 서버 카드 대신 '서버에 연결할 수 없어요' 카드 하나와 혼자 하기만(11-08 입장 흐름 개편)
   if(off||local){
@@ -122,11 +123,11 @@ export function createServerPick({experience='hiking',serverUrl=null,serverOff=f
   }else list.innerHTML=rows.map(r=>{
    const v=rowLabel(r,{local,current:st.current}),dis=v.state==='here'||v.state==='full'||v.state==='wait'||off;
    const pct=r.count===null?0:Math.min(100,Math.round(r.count/r.max*100));
-   const go=v.state==='here'?'지금 여기':v.state==='full'?'꽉 참':v.state==='wait'?'확인 중…':'들어가기 ▶';
+   const go=v.state==='here'?'지금 여기':v.state==='full'?'꽉 참':v.state==='wait'?'확인 중…':null;
    return `<li><button type="button" class="sp-row" data-sp-server="${esc(r.id)}" data-state="${off?'off':v.state}"${dis?' disabled':''} aria-label="${esc(r.name)} ${esc(v.n)}${v.tag?' '+esc(v.tag):''}">
 <span class="sp-art" aria-hidden="true">${ART[L.art]??''}${v.tag?`<span class="sp-tag">${esc(v.tag)}</span>`:''}</span>
 <span class="sp-row-body"><b class="sp-row-name">${esc(r.name)}</b><span class="sp-row-n">${esc(off&&!local?'— / '+r.max+'명':v.n)}</span>${local?'':`<i class="sp-bar" aria-hidden="true"><i style="width:${pct}%"></i></i>`}
-<span class="sp-go">${esc(go)}</span></span></button></li>`;}).join('');
+<span class="sp-go">${go?esc(go):iconText('c-enter','들어가기',{size:'xs',after:true})}</span></span></button></li>`;}).join('');
   root.querySelector('.sp-solo span').textContent=st.current?L.leave:L.solo;
   if(focused)list.querySelector(`[data-sp-server="${focused}"]`)?.focus({preventScroll:true}); // 5초마다 다시 그려도 키보드 위치 유지
  }

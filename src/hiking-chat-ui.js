@@ -4,6 +4,7 @@
 //  - 받음: 'hiking:chat' {id,name,text,me,remote} · 'hiking:chat-limit' {reason:'rate'|'offline'|'repeat'|'mute',wait} · 'hiking:multi-status' · 'hiking:multi-leave'
 //  - 머리 위 위치: window.hiking.multiApi.screenPos(id) → {x,y,visible}
 // 색·글꼴은 등산 수첩 토큰(낮·노을·밤)을 따른다. 사양: docs/변경기록-2026-11-08-등산채팅-HUD.md
+import {icon,iconText} from './icons/icon.js';
 export const LOG_MAX=30,TEXT_MAX=80,BUBBLE_MS=4000;
 export const QUICK=['안녕하세요','같이 가요','정상에서 봐요','쉬었다 가요','👍'];
 // 채팅 제한 문구(11-16: 같은 말 반복·30초 쉬기 추가, 등산·흡연장·크리스마스 공통). wait = 남은 초(서버가 알려 줌)
@@ -31,9 +32,9 @@ export function installHikingChat({doc=document,win=window,lookup=id=>win.hiking
  const mk=(tag,cls,html='')=>{const e=doc.createElement(tag);e.className=cls;e.innerHTML=html;return e;};
  let joined=false,left=false,open=false,unread=0,log=[],hintT=0;
 
- const btn=mk('button','hc-btn'+(cls?' '+cls:''),'<span aria-hidden="true">💬</span><i class="hc-dot" hidden></i>');
+ const btn=mk('button','hc-btn'+(cls?' '+cls:''),`<span aria-hidden="true">${icon('c-chat',{size:'m'})}</span><i class="hc-dot" hidden></i>`);
  btn.type='button';btn.hidden=true;btn.setAttribute('aria-label','채팅 열기');btn.setAttribute('aria-expanded','false');
- const panel=mk('section','hc-panel'+(cls?' '+cls:''),`<h4><span>${esc(title)}</span><button type="button" class="hc-x" aria-label="채팅 접기">✕</button></h4>
+ const panel=mk('section','hc-panel'+(cls?' '+cls:''),`<h4><span>${/^💬\s*/.test(title)?iconText('c-chat',title.replace(/^💬\s*/,''),{size:'s'}):esc(title)}</span><button type="button" class="hc-x" aria-label="채팅 접기">✕</button></h4>
   ${notice?`<p class="hc-notice">${esc(notice)}</p>`:''}<div class="hc-log" role="log" aria-live="polite"></div>
   <div class="hc-hint" role="status" aria-live="polite" hidden></div>
   <div class="hc-chips" aria-label="빠른 말">${quick.map(t=>`<button type="button" class="hc-chip" data-say="${esc(t)}">${esc(t)}</button>`).join('')}</div>

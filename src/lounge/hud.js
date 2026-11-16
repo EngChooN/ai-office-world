@@ -2,6 +2,8 @@
 // 함께 단추(불 빌리기·한 대 권하기·받기·수다 대답 칩)는 npcs.social()을 읽어 띄우고 npcs.borrowLight·offerCig·acceptCig·choose를 부른다.
 // 다른 모듈과는 ctx·window 이벤트로만: 'lounge:chat' {id,name,text}(받기·보내기), 'lounge:emote' {emote}(내가 이모트), 'lounge:smoke'(흡연 쪽이 보냄).
 import './hud.css';
+import '../icons/icons.css';   // 아이콘 공통 모양(아이콘-규칙-v1)
+document.documentElement.dataset.icExp='smoking';
 import {OUTFITS} from './outfit.js';
 import {quitStats,attachRecord,todayCigs} from './profile.js';
 import {CIG_KINDS,DRAW,cigKind,drawQuality} from './smoke-feel.js';

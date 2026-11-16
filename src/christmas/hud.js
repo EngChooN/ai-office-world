@@ -9,15 +9,25 @@
 //  - 다른 사람 이름표(누르면 사람 카드: 🔇 음소거·🚩 신고), 알림
 // main.js와는 콜백(act)과 update(dt,view)로만 만난다. 채팅 창은 공용 src/hiking-chat-ui.js(ns 'xmas')를 main.js가 설치한다.
 import './hud.css';
+import '../icons/icons.css';   // 아이콘 공통 모양(아이콘-규칙-v1)
+document.documentElement.dataset.icExp='christmas';
 import {xmasStatusView} from './multi.js';
 import {ORNAMENTS,TREE_RULES} from './tree-state.js';
 import {XMAS_OUTFITS,XMAS_HATS} from './outfits.js';
 import {CAROLS} from './carols.js';
+import {icon,iconText} from '../icons/icon.js';
 
+// 장식·옷·모자 고르기 칸 아이콘 이름(아이콘-규칙-v1 §7-4). ORN_ICON 글자는 다른 곳(알림 글)에서 쓰므로 그대로 둠
+const ORN_IC={ballRed:'x-orn-red',ballGold:'x-orn-yellow',ballBlue:'x-orn-blue',ballSilver:'x-orn-white',candy:'x-orn-candy',bell:'x-orn-bell',snowflake:'x-orn-snow',gift:'x-orn-gift'};
+const OUTFIT_IC={santa:'x-outfit-santa',sweater:'x-outfit-knit',elf:'x-outfit-elf'};
+const HAT_IC={'':'x-hat-auto',santa:'x-hat-santa',antlers:'x-hat-reindeer',beanie:'x-hat-cap',elf:'x-hat-elf',none:'x-hat-none'};
+// 행동 단추(main.js currentActions의 id) → 아이콘. 표에 없으면 넘어온 글자 그대로
+const ACT_IC={'fire:warm':'x-warm-hands','fire:cocoa':'x-cocoa','fire:stand':'c-stand-up','fire:sit':'c-sit','tree:deco':'x-tree','gift:board':'x-cards-all','gift:send':'x-gift','gift:inbox':'x-mailbox',
+ 'sled:go':'x-sled','sled:off':'c-leave','sled:cheer':'x-cheer','sled:cancel':'c-leave','sled:board':'x-sled','sled:ask':'x-sled-pair','sled:up':'x-uphill','sb:throw':'x-snowball','sb:pack':'x-scoop','snow:stack':'x-stack','snow:deco':'x-decorate','snow:make':'x-roll'};
+// 연결 칩(multi.js xmasStatusView의 tone) → 아이콘(§7-1 마)
+const TONE_IC={wait:'c-net-connecting',local:'c-net-local',ok:'c-net-ok',warn:null,bad:'c-net-lost',solo:'c-person'};
 export const ORN_ICON=Object.freeze({ballRed:'🔴',ballGold:'🟡',ballBlue:'🔵',ballSilver:'⚪',candy:'🍭',bell:'🔔',snowflake:'❄️',gift:'🎁'});
 export const ORN_LABEL=Object.freeze({ballRed:'빨간 공',ballGold:'금빛 공',ballBlue:'파란 공',ballSilver:'은빛 공',candy:'지팡이 사탕',bell:'종',snowflake:'눈송이',gift:'작은 선물상자'});
-const OUTFIT_ICON={santa:'🎅',sweater:'🧶',elf:'🧝'};
-const HAT_ICON={'':'✨',santa:'🎅',antlers:'🦌',beanie:'🧢',elf:'🧝',none:'🙂'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 남은 개수 글(체험설계 §5-1 "이번 1분 3개 남음")
 export function quotaText(q){
@@ -31,39 +41,39 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  root.innerHTML=`
 <div class="xh-tags"></div>
 <div class="xh-top">
- <button type="button" class="xh-place" data-x="place" aria-haspopup="dialog"><em aria-hidden="true">⛄</em><span>혼자 둘러보기</span></button>
- <div class="xh-tree" role="status" aria-label="트리 장식 수"><b>🎄 <span data-tree-n>0</span>/${TREE_RULES.slots}</b><i class="xh-bar" aria-hidden="true"><i></i></i><span class="xh-star" hidden>⭐</span></div>
+ <button type="button" class="xh-place" data-x="place" aria-haspopup="dialog"><em aria-hidden="true">${icon('c-person',{size:'s'})}</em><span>혼자 둘러보기</span></button>
+ <div class="xh-tree" role="status" aria-label="트리 장식 수"><b class="ic-row">${icon('x-tree',{size:'xs'})}<span class="ic-num"><span data-tree-n>0</span>/${TREE_RULES.slots}</span></b><i class="xh-bar" aria-hidden="true"><i></i></i><span class="xh-star" hidden>${icon('x-star',{size:'s'})}</span></div>
 </div>
-<div class="xh-tr"><button type="button" class="xh-round" data-x="inbox" aria-label="받은 선물">📬<b class="xh-badge" hidden>0</b></button><button type="button" class="xh-round" data-x="sound" aria-label="소리 끄기" aria-pressed="false">🔊</button><button type="button" class="xh-round" data-x="music" aria-label="캐럴과 소리 출처" aria-haspopup="dialog">🎵</button><button type="button" class="xh-round" data-x="outfit" aria-label="옷 고르기">👕</button></div>
+<div class="xh-tr"><button type="button" class="xh-round" data-x="inbox" aria-label="받은 선물">${icon('x-mailbox',{size:'m'})}<b class="xh-badge" hidden>0</b></button><button type="button" class="xh-round" data-x="sound" aria-label="소리 끄기" aria-pressed="false">${icon('c-sound',{size:'m'})}</button><button type="button" class="xh-round" data-x="music" aria-label="캐럴과 소리 출처" aria-haspopup="dialog">${icon('c-music',{size:'m'})}</button><button type="button" class="xh-round" data-x="outfit" aria-label="옷 고르기">${icon('x-outfit',{size:'m'})}</button></div>
 <div class="xh-zone" hidden role="status"><b></b><span></span></div>
 <div class="xh-acts"></div>
 <section class="xh-deco" hidden aria-label="장식 달기">
- <header><b>🎄 장식 달기</b><span class="xh-quota"></span><button type="button" class="xh-x" data-x="deco-close" aria-label="장식 달기 그만하기">✕</button></header>
+ <header><b>${iconText('x-tree','장식 달기')}</b><span class="xh-quota"></span><button type="button" class="xh-x" data-x="deco-close" aria-label="장식 달기 그만하기">✕</button></header>
  <p class="xh-hint">${mobile?'장식을 고르고 트리의 빈 자리(점)를 누르세요':'장식을 고르고 트리의 빈 자리(점)를 누르세요 · A/D 돌기 · W/S 위아래'}</p>
- <div class="xh-kinds">${ORNAMENTS.map((k,i)=>`<button type="button" class="xh-kind" data-kind="${k}" aria-pressed="${i===0}"><em aria-hidden="true">${ORN_ICON[k]}</em><span>${esc(ORN_LABEL[k])}</span></button>`).join('')}</div>
+ <div class="xh-kinds">${ORNAMENTS.map((k,i)=>`<button type="button" class="xh-kind" data-kind="${k}" aria-pressed="${i===0}"><em aria-hidden="true">${icon(ORN_IC[k],{size:'xl'})}</em><span>${esc(ORN_LABEL[k])}</span></button>`).join('')}</div>
  <div class="xh-confirm" hidden><span>이 자리에 달까요?</span><button type="button" class="xh-ok" data-x="confirm">달기</button><button type="button" class="xh-no" data-x="cancel">취소</button></div>
- <div class="xh-row"><button type="button" class="xh-mini" data-x="undo" hidden>↩ 되돌리기</button><button type="button" class="xh-mini xh-gold" data-x="star" hidden>⭐ 꼭대기 별 달기</button></div>
+ <div class="xh-row"><button type="button" class="xh-mini" data-x="undo" hidden>${iconText('c-undo','되돌리기')}</button><button type="button" class="xh-mini xh-gold" data-x="star" hidden>${iconText('x-star','꼭대기 별 달기')}</button></div>
 </section>
 <div class="xh-toast" role="status" hidden></div>
 <section class="xh-sheet" data-sheet="people" hidden role="dialog" aria-label="광장 사람">
- <header><b data-people-title>👥 광장 사람</b><button type="button" class="xh-x" data-x="sheet-close" aria-label="닫기">✕</button></header>
+ <header><b data-people-title>${iconText('c-people','광장 사람')}</b><button type="button" class="xh-x" data-x="sheet-close" aria-label="닫기">✕</button></header>
  <p class="xh-sub" data-people-sub></p>
- <div class="xh-srv"><button type="button" class="xh-mini" data-x="servers">🎄 서버 고르기</button><button type="button" class="xh-mini" data-x="retry" hidden>🔄 다시 연결</button></div>
+ <div class="xh-srv"><button type="button" class="xh-mini" data-x="servers">${iconText('c-server-list','서버 고르기')}</button><button type="button" class="xh-mini" data-x="retry" hidden>${iconText('c-net-retry','다시 연결')}</button></div>
  <ul class="xh-list" data-people-list></ul>
- <details class="xh-muted"><summary>🔇 음소거한 사람 <span data-muted-n>0</span></summary><ul data-muted-list></ul></details>
+ <details class="xh-muted"><summary>${icon('c-mute-person',{size:'s'})} 음소거한 사람 <span data-muted-n>0</span></summary><ul data-muted-list></ul></details>
 </section>
 <section class="xh-sheet" data-sheet="outfit" hidden role="dialog" aria-label="옷 고르기">
- <header><b>👕 크리스마스 옷</b><button type="button" class="xh-x" data-x="sheet-close" aria-label="닫기">✕</button></header>
+ <header><b>${iconText('x-outfit','크리스마스 옷')}</b><button type="button" class="xh-x" data-x="sheet-close" aria-label="닫기">✕</button></header>
  <div class="xh-grid" data-outfits></div>
  <p class="xh-sub">머리</p>
  <div class="xh-grid" data-hats></div>
  <p class="xh-sub" data-wardrobe-note>선물로 받은 모자·목도리는 이 기기에 남아요</p>
 </section>
 <section class="xh-sheet" data-sheet="music" hidden role="dialog" aria-label="캐럴과 소리 출처">
- <header><b>🎵 캐럴</b><button type="button" class="xh-x" data-x="sheet-close" aria-label="닫기">✕</button></header>
+ <header><b>${iconText('c-music','캐럴')}</b><button type="button" class="xh-x" data-x="sheet-close" aria-label="닫기">✕</button></header>
  <p class="xh-now" data-carol-now>♪ 소리를 켜면 캐럴이 나와요</p>
- <div class="xh-row"><button type="button" class="xh-mini" data-x="carol" aria-pressed="true">🎵 캐럴 켜짐</button></div>
- <p class="xh-sub">🔊 소리를 끄면 캐럴도 같이 꺼져요. 광장 사람 모두 같은 곡을 들어요.</p>
+ <div class="xh-row"><button type="button" class="xh-mini" data-x="carol" aria-pressed="true">${iconText('c-music','캐럴 켜짐')}</button></div>
+ <p class="xh-sub">${icon('c-sound',{size:'xs'})} 소리를 끄면 캐럴도 같이 꺼져요. 광장 사람 모두 같은 곡을 들어요.</p>
  <p class="xh-sub"><b>소리 출처</b></p>
  <ul class="xh-credits" data-credits>${CAROLS.map(c=>`<li><b>${esc(c.title)}</b><span>연주: ${esc(c.performer)}</span><span>편곡: ${esc(c.arranger)} · 작곡: ${esc(c.composer)}</span><span>퍼블릭 도메인(미국 연방 정부 저작물) · <a href="${esc(c.page)}" target="_blank" rel="noopener noreferrer">원래 페이지</a></span></li>`).join('')}
   <li><b>바람 소리</b><span>wind-forest-loop · Thimras(OpenGameArt) · CC0</span></li>
@@ -72,7 +82,7 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
 </section>
 <section class="xh-card" hidden role="dialog" aria-label="사람 카드">
  <header><b data-card-name></b><button type="button" class="xh-x" data-x="card-close" aria-label="닫기">✕</button></header>
- <div class="xh-row"><button type="button" class="xh-mini" data-x="gift">🎁 선물 보내기</button><button type="button" class="xh-mini" data-x="mute">🔇 음소거</button><button type="button" class="xh-mini" data-x="report">🚩 신고</button></div>
+ <div class="xh-row"><button type="button" class="xh-mini" data-x="gift">${iconText('x-gift','선물 보내기')}</button><button type="button" class="xh-mini" data-x="mute">${iconText('c-mute-person','음소거')}</button><button type="button" class="xh-mini" data-x="report">${iconText('c-report','신고')}</button></div>
  <p class="xh-sub">음소거하면 이 사람의 모습·말이 내 화면에서 사라져요. 상대에게는 알리지 않아요.</p>
 </section>`;
  doc.body.appendChild(root);
@@ -82,7 +92,7 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  // ── 행동 단추 줄(첫 줄 = 큰 단추)
  function setActions(list=[]){
   const sig=JSON.stringify(list.map(a=>[a.id,a.ic,a.label,a.key,a.badge??0,a.dim?1:0]));if(sig===actSig)return;actSig=sig;actList=list;
-  acts.innerHTML=list.slice(0,3).map((a,i)=>`<button type="button" class="${i?'xh-sub-act':'xh-act'}" data-act="${esc(a.id)}"${a.aim?' data-aim="1"':''}${a.dim?' data-dim="1"':''}><em aria-hidden="true">${esc(a.ic)}</em><span>${esc(a.label)}</span>${a.key?`<kbd>${esc(a.key)}</kbd>`:''}${a.badge?`<b class="xh-badge">${a.badge}</b>`:''}</button>`).join('');
+  acts.innerHTML=list.slice(0,3).map((a,i)=>`<button type="button" class="${i?'xh-sub-act':'xh-act'}" data-act="${esc(a.id)}"${a.aim?' data-aim="1"':''}${a.dim?' data-dim="1"':''}><em aria-hidden="true">${ACT_IC[a.id]?icon(ACT_IC[a.id],{size:i?'m':'l'}):esc(a.ic)}</em><span>${esc(a.label)}</span>${a.key?`<kbd>${esc(a.key)}</kbd>`:''}${a.badge?`<b class="xh-badge">${a.badge}</b>`:''}</button>`).join('');
  }
  // 휴대폰 조준 단추(❄️): 짧게 누르면 act.do, 길게 누르고 끌면 act.aim(dx,dy,끝?)
  {let hold=null;
@@ -97,14 +107,14 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  // ── 구역 이름 띠
  function banner(title,sub='',sec=1.5){zone.querySelector('b').textContent=title;zone.querySelector('span').textContent=sub;zone.hidden=false;zone.classList.remove('out');zoneT=sec;}
  function setBadge(name,n){if(name!=='inbox')return;const b=$('[data-x=inbox] .xh-badge');b.hidden=!n;b.textContent=n>9?'9+':String(n);}
- function setCarol(on,now){const b=$('[data-x=carol]');b.textContent=on?'🎵 캐럴 켜짐':'🎵 캐럴 꺼짐';b.setAttribute('aria-pressed',String(!!on));if(now!=null){const el=$('[data-carol-now]');if(el.textContent!==now)el.textContent=now;}}
- function setSound(muted){const b=$('[data-x=sound]');b.textContent=muted?'🔇':'🔊';b.setAttribute('aria-pressed',String(!!muted));b.setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');}
+ function setCarol(on,now){const b=$('[data-x=carol]');b.innerHTML=iconText('c-music',on?'캐럴 켜짐':'캐럴 꺼짐',{off:!on});b.setAttribute('aria-pressed',String(!!on));if(now!=null){const el=$('[data-carol-now]');if(el.textContent!==now)el.textContent=now;}}
+ function setSound(muted){const b=$('[data-x=sound]');b.innerHTML=icon('c-sound',{size:'m',off:!!muted});b.setAttribute('aria-pressed',String(!!muted));b.setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');}
 
  // ── 알림
  function say(text,sec=2.6){toast.textContent=text;toast.hidden=false;toast.classList.remove('out');toastT=sec;}
  // ── 연결 칩
  function renderPlace(){
-  const v=xmasStatusView(status);place.dataset.tone=v.tone;place.querySelector('em').textContent=v.ic;place.querySelector('span').textContent=v.text;
+  const v=xmasStatusView(status);place.dataset.tone=v.tone;{const em=place.querySelector('em'),ic=TONE_IC[v.tone]??(v.ic==='🚪'?'c-net-full':v.ic==='🔄'?'c-net-retry':null),key=ic??v.ic;if(em.dataset.ic!==key){em.dataset.ic=key;em.innerHTML=ic?icon(ic,{size:'s'}):esc(v.ic);}}place.querySelector('span').textContent=v.text;
   place.setAttribute('aria-label',`${v.text}${v.sub?' · '+v.sub:''}`);
  }
  win.addEventListener('xmas:multi-status',e=>{const d=e.detail;if(!d)return;const was=status.state;status=d;
@@ -138,18 +148,18 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  // ── 옷
  function renderOutfit(){
   const l=look.get(),own=new Set(wardrobe());
-  $('[data-outfits]').innerHTML=Object.entries(XMAS_OUTFITS).map(([k,o])=>`<button type="button" class="xh-pick" data-outfit="${k}" aria-pressed="${l.outfit===k}"><em aria-hidden="true">${OUTFIT_ICON[k]}</em><span>${esc(o.label)}</span></button>`).join('');
+  $('[data-outfits]').innerHTML=Object.entries(XMAS_OUTFITS).map(([k,o])=>`<button type="button" class="xh-pick" data-outfit="${k}" aria-pressed="${l.outfit===k}"><em aria-hidden="true">${icon(OUTFIT_IC[k],{size:'xl'})}</em><span>${esc(o.label)}</span></button>`).join('');
   const hats=['',...Object.keys(XMAS_HATS).filter(k=>!XMAS_HATS[k].gift||own.has(k))];
-  $('[data-hats]').innerHTML=hats.map(k=>`<button type="button" class="xh-pick" data-hat="${k}" aria-pressed="${(l.hat??'')===k}"><em aria-hidden="true">${HAT_ICON[k]}</em><span>${esc(k?XMAS_HATS[k].label:'옷에 맞는 모자')}</span></button>`).join('')
-   +(own.has('stripe')?`<button type="button" class="xh-pick" data-scarf="1" aria-pressed="${l.scarf==='stripe'}"><em aria-hidden="true">🧣</em><span>줄무늬 목도리</span></button>`:'');
+  $('[data-hats]').innerHTML=hats.map(k=>`<button type="button" class="xh-pick" data-hat="${k}" aria-pressed="${(l.hat??'')===k}"><em aria-hidden="true">${icon(HAT_IC[k],{size:'xl'})}</em><span>${esc(k?XMAS_HATS[k].label:'옷에 맞는 모자')}</span></button>`).join('')
+   +(own.has('stripe')?`<button type="button" class="xh-pick" data-scarf="1" aria-pressed="${l.scarf==='stripe'}"><em aria-hidden="true">${icon('x-scarf',{size:'xl'})}</em><span>줄무늬 목도리</span></button>`:'');
  }
  // ── 사람 목록
  function renderPeople(){
   const v=xmasStatusView(status),people=multi.people().filter(p=>!p.muted);
-  $('[data-people-title]').textContent=status.joined?`👥 광장 사람 ${people.length+1}명`:'⛄ 혼자 둘러보기';
+  $('[data-people-title]').innerHTML=status.joined?iconText('c-people',`광장 사람 ${people.length+1}명`):iconText('c-person','혼자 둘러보기');
   $('[data-people-sub]').textContent=status.joined?`${v.text}${v.sub?' · '+v.sub:''}`:'혼자 둘러보면 트리 장식은 내 화면에만 남아요. 서버를 고르면 함께 꾸밀 수 있어요';
   $('[data-x=retry]').hidden=!(status.joined&&status.state==='offline');
-  $('[data-people-list]').innerHTML=status.joined?`<li class="me"><b>${esc(multi.name)}</b><small>나</small></li>`+people.map(p=>`<li><b>${p.decorating?'🎄 ':''}${esc(p.name)}</b><button type="button" class="xh-mini" data-gift="${esc(p.id)}" aria-label="${esc(p.name)}에게 선물">🎁</button><button type="button" class="xh-mini" data-mute="${esc(p.id)}">🔇 음소거</button><button type="button" class="xh-mini" data-report="${esc(p.id)}">🚩 신고</button></li>`).join(''):'';
+  $('[data-people-list]').innerHTML=status.joined?`<li class="me"><b>${esc(multi.name)}</b><small>나</small></li>`+people.map(p=>`<li><b>${p.decorating?icon('x-tree',{size:'xs'})+' ':''}${esc(p.name)}</b><button type="button" class="xh-mini" data-gift="${esc(p.id)}" aria-label="${esc(p.name)}에게 선물">${icon('x-gift',{size:'s'})}</button><button type="button" class="xh-mini" data-mute="${esc(p.id)}">🔇 음소거</button><button type="button" class="xh-mini" data-report="${esc(p.id)}">🚩 신고</button></li>`).join(''):'';
   const muted=multi.mutedList();$('[data-muted-n]').textContent=muted.length;
   $('[data-muted-list]').innerHTML=muted.map(m=>`<li><b>${esc(m.name)}</b><button type="button" class="xh-mini" data-unmute="${esc(m.id)}">음소거 풀기</button></li>`).join('')||'<li class="xh-empty">없어요</li>';
  }
