@@ -1,0 +1,41 @@
+{
+ "tree-winter": {
+  "file": "artifacts/seasons/tree-winter-phone2.png",
+  "season": {
+   "manual": "winter",
+   "auto": "autumn",
+   "season": "winter",
+   "source": "manual",
+   "label": "겨울",
+   "weights": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 128.2,
+   "instancedMB": 55.1,
+   "textureMB": 51.5,
+   "renderTargetsMB": 16.6,
+   "totalMB": 251.5,
+   "meshes": 15394,
+   "drawingBuffer": [
+    390,
+    844
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 237,
+    "textures": 22
+   },
+   "jsHeapMB": 1117.2
+  }
+ },
+ "tree": {
+  "errors": [],
+  "pageLoads": 1
+ }
+}

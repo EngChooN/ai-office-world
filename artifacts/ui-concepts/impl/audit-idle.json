@@ -1,0 +1,74 @@
+[
+ {
+  "dev": "land",
+  "time": "day",
+  "scene": "idle",
+  "file": "artifacts/ui-concepts/impl/land-day.png",
+  "errors": [],
+  "over": [],
+  "out": [],
+  "small": [],
+  "clipped": [],
+  "count": 14
+ },
+ {
+  "dev": "land",
+  "time": "night",
+  "scene": "idle",
+  "file": "artifacts/ui-concepts/impl/land-night.png",
+  "errors": [],
+  "over": [],
+  "out": [],
+  "small": [],
+  "clipped": [],
+  "count": 14
+ },
+ {
+  "dev": "port",
+  "time": "day",
+  "scene": "idle",
+  "file": "artifacts/ui-concepts/impl/port-day.png",
+  "errors": [],
+  "over": [],
+  "out": [],
+  "small": [],
+  "clipped": [],
+  "count": 13
+ },
+ {
+  "dev": "port",
+  "time": "night",
+  "scene": "idle",
+  "file": "artifacts/ui-concepts/impl/port-night.png",
+  "errors": [],
+  "over": [],
+  "out": [],
+  "small": [],
+  "clipped": [],
+  "count": 13
+ },
+ {
+  "dev": "pc",
+  "time": "day",
+  "scene": "idle",
+  "file": "artifacts/ui-concepts/impl/pc-day.png",
+  "errors": [],
+  "over": [],
+  "out": [],
+  "small": [],
+  "clipped": [],
+  "count": 14
+ },
+ {
+  "dev": "pc",
+  "time": "night",
+  "scene": "idle",
+  "file": "artifacts/ui-concepts/impl/pc-night.png",
+  "errors": [],
+  "over": [],
+  "out": [],
+  "small": [],
+  "clipped": [],
+  "count": 14
+ }
+]

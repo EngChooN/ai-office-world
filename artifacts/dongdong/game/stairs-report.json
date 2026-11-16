@@ -1,0 +1,149 @@
+{
+ "report": {
+  "08-계단": {
+   "steps": 18,
+   "landings": 18,
+   "material": "stairs",
+   "landingGapMedian": 0.326,
+   "landingGapMin": 0.322,
+   "landingGapMax": 0.334,
+   "soundsPerSec": 1.65,
+   "eventsPerSec": 1.65,
+   "treads": {
+    "edges": 10,
+    "gaps": [
+     0.29,
+     0.3,
+     0.29,
+     0.3,
+     0.29,
+     0.3,
+     0.29,
+     0.3,
+     0.29
+    ]
+   },
+   "frames": [
+    {
+     "clip": "Climb",
+     "stairs": true,
+     "speed": 0
+    },
+    {
+     "clip": "Climb",
+     "stairs": true,
+     "speed": 0
+    },
+    {
+     "clip": "Climb",
+     "stairs": true,
+     "speed": 0
+    }
+   ]
+  },
+  "09-나무계단": {
+   "steps": 20,
+   "landings": 20,
+   "material": "deck_stairs",
+   "landingGapMedian": 0.325,
+   "landingGapMin": 0.314,
+   "landingGapMax": 0.337,
+   "soundsPerSec": 1.78,
+   "eventsPerSec": 1.78,
+   "treads": {
+    "edges": 10,
+    "gaps": [
+     0.29,
+     0.3,
+     0.29,
+     0.3,
+     0.29,
+     0.29,
+     0.3,
+     0.29,
+     0.29
+    ]
+   },
+   "frames": [
+    {
+     "clip": "Climb",
+     "stairs": true,
+     "speed": 0
+    },
+    {
+     "clip": "Climb",
+     "stairs": true,
+     "speed": 0
+    },
+    {
+     "clip": "Climb",
+     "stairs": true,
+     "speed": 0
+    }
+   ]
+  },
+  "10-바위": {
+   "steps": 72,
+   "landings": 0,
+   "material": "rock",
+   "landingGapMedian": null,
+   "landingGapMin": null,
+   "landingGapMax": null,
+   "soundsPerSec": 2.9,
+   "eventsPerSec": 5.8,
+   "treads": {
+    "edges": 0,
+    "gaps": []
+   },
+   "frames": [
+    {
+     "clip": "Walk",
+     "stairs": false,
+     "speed": 0
+    },
+    {
+     "clip": "Walk",
+     "stairs": false,
+     "speed": 0
+    },
+    {
+     "clip": "Walk",
+     "stairs": false,
+     "speed": 0
+    }
+   ]
+  },
+  "11-흙길": {
+   "steps": 56,
+   "landings": 0,
+   "material": "soil",
+   "landingGapMedian": null,
+   "landingGapMin": null,
+   "landingGapMax": null,
+   "soundsPerSec": 2.48,
+   "eventsPerSec": 4.96,
+   "treads": {
+    "edges": 0,
+    "gaps": []
+   },
+   "frames": [
+    {
+     "clip": "Walk",
+     "stairs": false,
+     "speed": 0
+    },
+    {
+     "clip": "Walk",
+     "stairs": false,
+     "speed": 0
+    },
+    {
+     "clip": "Walk",
+     "stairs": false,
+     "speed": 0
+    }
+   ]
+  }
+ },
+ "errors": []
+}

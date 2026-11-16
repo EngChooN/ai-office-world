@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>눈마을 광장 미리보기 — 온라인 크리스마스 (월드아트)</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#172432}canvas{display:block;touch-action:none}
+#panel{position:fixed;left:10px;top:10px;max-width:calc(100vw - 20px);padding:7px 9px;border-radius:10px;background:rgba(20,26,48,.72);color:#f4efe6;font:12px system-ui,'Apple SD Gothic Neo',sans-serif}
+#panel button{margin:2px;border:0;border-radius:6px;padding:4px 7px;background:#f4efe6;color:#1d2a44;cursor:pointer;font:inherit}
+#panel b{display:inline-block;min-width:36px;color:#ffd98a}</style>
+</head>
+<body>
+<div id="panel">
+ <div><b>장면</b><button data-view="entry">입구</button><button data-view="tree">트리</button><button data-view="campfire">모닥불</button><button data-view="mailbox">우체통</button><button data-view="snowman">눈사람</button><button data-view="snowball">눈싸움</button><button data-view="sled">썰매</button><button data-view="aerial">위에서</button></div>
+ <div><b>옷</b><button data-view="outfits">옷 3종</button><button data-view="gifts">선물 옷</button><button data-view="outfits-side">옆모습</button><button data-view="outfits-back">뒷모습</button></div>
+ <div><b>트리</b><button data-stage="0">불 끔</button><button data-stage="1">1단계</button><button data-stage="2">2단계</button><button data-stage="3">3단계</button><button data-stage="4">가득</button><button data-slots>빈 자리</button></div>
+</div>
+<script type="module" src="./preview.js"></script>
+</body>
+</html>

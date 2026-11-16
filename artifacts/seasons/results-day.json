@@ -1,0 +1,434 @@
+{
+ "tree-spring": {
+  "file": "artifacts/seasons/tree-spring-day.png",
+  "season": {
+   "manual": "spring",
+   "auto": "autumn",
+   "season": "spring",
+   "source": "manual",
+   "label": "봄",
+   "weights": [
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 135.8,
+   "instancedMB": 168.4,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 416.5,
+   "meshes": 15395,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 313,
+    "textures": 22
+   },
+   "jsHeapMB": 945.2
+  }
+ },
+ "tree-summer": {
+  "file": "artifacts/seasons/tree-summer-day.png",
+  "season": {
+   "manual": "summer",
+   "auto": "autumn",
+   "season": "summer",
+   "source": "manual",
+   "label": "여름",
+   "weights": [
+    0,
+    1,
+    0,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 135.8,
+   "instancedMB": 168.4,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 416.5,
+   "meshes": 15395,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 313,
+    "textures": 22
+   },
+   "jsHeapMB": 926.2
+  }
+ },
+ "tree-autumn": {
+  "file": "artifacts/seasons/tree-autumn-day.png",
+  "season": {
+   "manual": "autumn",
+   "auto": "autumn",
+   "season": "autumn",
+   "source": "manual",
+   "label": "가을",
+   "weights": [
+    0,
+    0,
+    1,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 135.8,
+   "instancedMB": 168.4,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 416.5,
+   "meshes": 15395,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 313,
+    "textures": 22
+   },
+   "jsHeapMB": 932.6
+  }
+ },
+ "tree-winter": {
+  "file": "artifacts/seasons/tree-winter-day.png",
+  "season": {
+   "manual": "winter",
+   "auto": "autumn",
+   "season": "winter",
+   "source": "manual",
+   "label": "겨울",
+   "weights": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 135.8,
+   "instancedMB": 168.4,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 416.5,
+   "meshes": 15395,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 313,
+    "textures": 22
+   },
+   "jsHeapMB": 940
+  }
+ },
+ "tree": {
+  "errors": [],
+  "pageLoads": 1
+ },
+ "forest-spring": {
+  "file": "artifacts/seasons/forest-spring-day.png",
+  "season": {
+   "manual": "spring",
+   "auto": "autumn",
+   "season": "spring",
+   "source": "manual",
+   "label": "봄",
+   "weights": [
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 132.8,
+   "instancedMB": 167.6,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 412.6,
+   "meshes": 14663,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 258,
+    "textures": 22
+   },
+   "jsHeapMB": 1147
+  }
+ },
+ "forest-summer": {
+  "file": "artifacts/seasons/forest-summer-day.png",
+  "season": {
+   "manual": "summer",
+   "auto": "autumn",
+   "season": "summer",
+   "source": "manual",
+   "label": "여름",
+   "weights": [
+    0,
+    1,
+    0,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 132.8,
+   "instancedMB": 167.6,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 412.6,
+   "meshes": 14663,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 258,
+    "textures": 22
+   },
+   "jsHeapMB": 1129.3
+  }
+ },
+ "forest-autumn": {
+  "file": "artifacts/seasons/forest-autumn-day.png",
+  "season": {
+   "manual": "autumn",
+   "auto": "autumn",
+   "season": "autumn",
+   "source": "manual",
+   "label": "가을",
+   "weights": [
+    0,
+    0,
+    1,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 132.8,
+   "instancedMB": 167.6,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 412.6,
+   "meshes": 14663,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 258,
+    "textures": 22
+   },
+   "jsHeapMB": 1136.8
+  }
+ },
+ "forest-winter": {
+  "file": "artifacts/seasons/forest-winter-day.png",
+  "season": {
+   "manual": "winter",
+   "auto": "autumn",
+   "season": "winter",
+   "source": "manual",
+   "label": "겨울",
+   "weights": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 132.8,
+   "instancedMB": 167.6,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 412.6,
+   "meshes": 14663,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 258,
+    "textures": 22
+   },
+   "jsHeapMB": 1143.9
+  }
+ },
+ "forest": {
+  "errors": [],
+  "pageLoads": 1
+ },
+ "summit-view-spring": {
+  "file": "artifacts/seasons/summit-view-spring-day.png",
+  "season": {
+   "manual": "spring",
+   "auto": "autumn",
+   "season": "spring",
+   "source": "manual",
+   "label": "봄",
+   "weights": [
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 134.8,
+   "instancedMB": 167,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 414,
+   "meshes": 15565,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 164,
+    "textures": 20
+   },
+   "jsHeapMB": 1191.8
+  }
+ },
+ "summit-view-summer": {
+  "file": "artifacts/seasons/summit-view-summer-day.png",
+  "season": {
+   "manual": "summer",
+   "auto": "autumn",
+   "season": "summer",
+   "source": "manual",
+   "label": "여름",
+   "weights": [
+    0,
+    1,
+    0,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 134.8,
+   "instancedMB": 167,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 414,
+   "meshes": 15565,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 164,
+    "textures": 20
+   },
+   "jsHeapMB": 1178.4
+  }
+ },
+ "summit-view-autumn": {
+  "file": "artifacts/seasons/summit-view-autumn-day.png",
+  "season": {
+   "manual": "autumn",
+   "auto": "autumn",
+   "season": "autumn",
+   "source": "manual",
+   "label": "가을",
+   "weights": [
+    0,
+    0,
+    1,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 134.8,
+   "instancedMB": 167,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 414,
+   "meshes": 15565,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 164,
+    "textures": 20
+   },
+   "jsHeapMB": 1191.1
+  }
+ },
+ "summit-view-winter": {
+  "file": "artifacts/seasons/summit-view-winter-day.png",
+  "season": {
+   "manual": "winter",
+   "auto": "autumn",
+   "season": "winter",
+   "source": "manual",
+   "label": "겨울",
+   "weights": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 134.8,
+   "instancedMB": 167,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 414,
+   "meshes": 15565,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 164,
+    "textures": 20
+   },
+   "jsHeapMB": 1173.3
+  }
+ },
+ "summit-view": {
+  "errors": [],
+  "pageLoads": 1
+ }
+}

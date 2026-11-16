@@ -42,7 +42,7 @@ export function sanitizeName(raw,fallback='등산객',banned=[]){
  return s||fallback;
 }
 // 익명 이름: 체험별 접두어 + ID 끝 4자리(등산 `등산객XXXX`, 흡연장 `손님XXXX`). 체험을 안 주면 등산.
-export const ANON_PREFIX=Object.freeze({hiking:'등산객',smoking:'손님'});
+export const ANON_PREFIX=Object.freeze({hiking:'등산객',smoking:'손님',christmas:'눈송이'});
 export const anonymousName=(id,experience='hiking')=>`${ANON_PREFIX[experience]??ANON_PREFIX.hiking}${String(id).replace(/[^0-9a-z]/gi,'').slice(-4).toUpperCase()}`;
 // 채팅(두 체험 공통 `c`, 2026-11-08). 보내기 {t:'c',text} → 서버가 정리해 같은 방 모두(보낸 사람 포함)에게 {t:'c',id,text}.
 // 80자, 제어·방향 문자 제거, 금칙어는 ***로 가림, 2초에 1번·10초에 4번(넘으면 {t:'c-limit'}). 내용은 디스크에 쓰지 않는다(신고 기록에만 대상의 최근 3줄).
@@ -53,11 +53,34 @@ export function sanitizeChat(raw,banned=[]){
  for(const w of banned){const word=clean(w);if(word)s=s.replace(new RegExp(escapeRe(word),'gi'),'***');}
  return s;
 }
-// 채팅 속도 제한기. allow(t ms)가 true면 보내도 됨(그때만 센다). 서버와 내 컴퓨터 모드(BroadcastChannel)가 같이 쓴다.
+// 채팅 속도 제한기. allow(t ms)가 true면 보내도 됨(그때만 센다). 채팅 지킴이(createChatGuard)가 안에서 쓴다.
 export function createChatLimiter({gapMs=CHAT.gapMs,windowMs=CHAT.windowMs,windowMax=CHAT.windowMax}={}){
  const times=[];
  return {allow(t){while(times.length&&t-times[0]>=windowMs)times.shift();
   if(times.length&&t-times.at(-1)<gapMs)return false;if(times.length>=windowMax)return false;times.push(t);return true;}};
+}
+// 채팅 지킴이(2026-11-16, 세 체험 공통 — 대표 결정): 속도 제한 + 같은 말 반복 막기 + 계속 막히면 30초 쉬기.
+//  check(t ms, 정리된 글) → {ok:true} | {ok:false, reason:'rate'|'repeat'|'mute', wait(초, 쉬기·속도 제한 때)}.
+//  같은 말: 직전 2번 보낸 글과 같으면 막는다(공백을 빼고 같은 글자 연속·대소문자를 정리한 뒤 비교).
+//  1분 안에 막힘(rate·repeat)이 3번이면 30초 동안 모든 글을 막는다(reason 'mute', 막힌 동안은 더 세지 않음).
+//  서버(rooms.mjs)와 내 컴퓨터 모드(BroadcastChannel)가 같이 쓴다. 서버는 {t:'c-limit',reason,wait}로 알린다(옛 클라이언트는 reason을 무시).
+export const CHAT_GUARD=Object.freeze({repeat:2,strikeWindowMs:60000,strikes:3,muteMs:30000});
+export const chatKey=text=>String(text??'').normalize('NFC').toLowerCase().replace(/\s+/g,'').replace(/(.)\1+/gu,'$1');
+export function createChatGuard({repeat=CHAT_GUARD.repeat,strikeWindowMs=CHAT_GUARD.strikeWindowMs,strikes=CHAT_GUARD.strikes,muteMs=CHAT_GUARD.muteMs,...rate}={}){
+ const limiter=createChatLimiter(rate),recent=[],hits=[];let muteUntil=-Infinity;
+ const strike=(t,reason)=>{while(hits.length&&t-hits[0]>=strikeWindowMs)hits.shift();hits.push(t);
+  if(hits.length>=strikes){hits.length=0;muteUntil=t+muteMs;return {ok:false,reason:'mute',wait:Math.ceil(muteMs/1000)};}
+  return {ok:false,reason,...(reason==='rate'?{wait:Math.ceil((rate.gapMs??CHAT.gapMs)/1000)}:{})};};
+ return {
+  check(t,text){
+   if(t<muteUntil)return {ok:false,reason:'mute',wait:Math.ceil((muteUntil-t)/1000)};
+   const k=chatKey(text);
+   if(k&&recent.length>=repeat&&recent.slice(-repeat).every(x=>x===k))return strike(t,'repeat');
+   if(!limiter.allow(t))return strike(t,'rate');
+   recent.push(k);if(recent.length>repeat)recent.shift();return {ok:true};
+  },
+  get mutedUntil(){return muteUntil;}
+ };
 }
 // 흡연장 담배 상태(다른 사람 화면용) {t:'lounge:smoke',state,lit}. state는 src/lounge/smoke.js가 내는 상태 이름(go()·trick)만.
 export const SMOKE_STATES=Object.freeze(['idle','out','ready','lighting','smoking','inhale','exhale','flick','finished','dispose','done','trick']);
@@ -69,7 +92,12 @@ export function sanitizeSmoke(m){return m&&SMOKE_STATES.includes(m.state)&&typeo
 //  등산: p 자세(stand·sit·tea) · g 기구(none·binoculars·phone) · sf 셀카(0·1) · x 지금 동작 id(스트레칭·즐길거리·이모트 등, 없으면 '') · n 동작 횟수(같은 동작을 다시 시작하면 늘어남) · v 동작 보조 값(int)
 export const ACT_SCHEMA=Object.freeze({
  smoking:Object.freeze({p:Object.freeze(['stand','lean','sit']),b:'int',can:Object.freeze([0,1,2]),sip:'int'}),
- hiking:Object.freeze({p:Object.freeze(['stand','sit','tea']),g:Object.freeze(['none','binoculars','phone']),sf:Object.freeze([0,1]),x:'id',n:'int',v:'int'})
+ hiking:Object.freeze({p:Object.freeze(['stand','sit','tea']),g:Object.freeze(['none','binoculars','phone']),sf:Object.freeze([0,1]),x:'id',n:'int',v:'int'}),
+ //  크리스마스(11-16): o 옷(산타·니트·엘프) · hat 머리(''=옷 기본 모자) · sc 줄무늬 목도리(0·1) · d 트리 꾸미는 중(0·1, 머리 위 🎄 표시)
+ //   + 놀이(11-16 2차): st 모닥불 자리(0 없음·1~8) · wm 손 녹이기(0·1) · cc 코코아 들기(0·1) · sl 썰매(0 없음·1~3 출발대 줄에서 기다림·4 타는 중·5 뒷자리) · sp 같이 타는 앞사람 id
+ //     · pu 눈덩이 미는 중(0·1) · pk 눈 뭉치는 중(0·1)
+ christmas:Object.freeze({o:Object.freeze(['santa','sweater','elf']),hat:Object.freeze(['','santa','antlers','beanie','elf','none']),sc:Object.freeze([0,1]),d:Object.freeze([0,1]),
+  st:Object.freeze([0,1,2,3,4,5,6,7,8]),wm:Object.freeze([0,1]),cc:Object.freeze([0,1]),sl:Object.freeze([0,1,2,3,4,5]),sp:'id',pu:Object.freeze([0,1]),pk:Object.freeze([0,1])})
 });
 export function sanitizeAct(exp,a){
  const sc=ACT_SCHEMA[exp];if(!sc||!a||typeof a!=='object'||Array.isArray(a))return null;
@@ -211,7 +239,7 @@ export function createSocial({id:idArg,send,position,mine,blocked=()=>false}){
 }
 // 체험 구분(2026-11-08 메타버스 통합). 서버 하나를 체험 여러 개가 같이 쓰고, 방은 `체험:방이름`으로 나뉜다.
 // hello의 exp가 없으면(옛 클라이언트) 등산으로 본다. 목록 밖 값은 서버가 거절한다.
-export const EXPERIENCES=Object.freeze(['hiking','smoking']);
+export const EXPERIENCES=Object.freeze(['hiking','smoking','christmas']);
 export const DEFAULT_EXPERIENCE='hiking';
 // exp 값 → 체험 id. 비었으면 기본(등산), 목록 밖이면 null.
 export function parseExperience(raw){
@@ -223,16 +251,23 @@ export function parseExperience(raw){
 const COMMON_MESSAGES=['j','report','b','c','act'];
 export const EXPERIENCE_MESSAGES=Object.freeze({
  hiking:Object.freeze([...COMMON_MESSAGES,'s','g','a','sr','sa','sd','se','pair:offer','pair:accept','pair:decline','pair:cancel','pair:end']),
- smoking:Object.freeze([...COMMON_MESSAGES,'s','lounge:smoke'])
+ smoking:Object.freeze([...COMMON_MESSAGES,'s','lounge:smoke']),
+ // 크리스마스(11-16): 위치 s + 트리 장식(달기·되돌리기·꼭대기 별). 트리 규칙은 src/christmas/tree-state.js(서버·화면 공용)
+ //  + 놀이(11-16 2차): 선물·눈사람·눈싸움·썰매 같이 타기 요청. 판정은 src/christmas/room-play.js(XMAS_PLAY_MESSAGES와 같은 목록, 테스트가 맞춰 봄)
+ christmas:Object.freeze([...COMMON_MESSAGES,'s','tree:put','tree:undo','tree:star','gift:send','snow:make','snow:push','snow:stack','snow:deco','snow:finish','sb:throw','sled:ask','sled:ok','sled:no'])
 });
 export const messageAllowed=(exp,type)=>EXPERIENCE_MESSAGES[exp]?.includes(type)??false;
 // 서버 목록(2026-11-08 서버 고르기, 11-13 대표 지시로 체험마다 3서버·정원 30). 줄 하나 = 서버 하나 = 서버 쪽 방 하나. 줄을 더하면 서버 고르기 창에 서버가 늘어난다.
 // room은 주소 ?multi=와 같은 모양. 서버 쪽 방 이름은 기존 방 키 규칙대로 끝 '-1'을 뗀다(관악산-1 → hiking:관악산). 2서버부터는 그대로(관악산-2).
 // 서버 방은 꽉 차도 -2로 넘기지 않고 full로 거절한다(server/rooms.mjs). 정원은 SERVER_MAX(서버는 MAX_PER_ROOM으로 바꿀 수 있음).
 export const SERVER_MAX=30;
+// 체험별 정원(11-16): 크리스마스 광장은 기획서대로 20명. 표에 없는 체험은 SERVER_MAX(서버는 MAX_PER_ROOM).
+export const EXPERIENCE_MAX=Object.freeze({christmas:20});
+export const serverMax=(experience,base=SERVER_MAX)=>EXPERIENCE_MAX[experience]??base;
 export const SERVERS=Object.freeze({
  hiking:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`관악산 ${id}서버`,room:`관악산-${id}`}))),
- smoking:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`옥상 ${id}서버`,room:`옥상-${id}`})))
+ smoking:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`옥상 ${id}서버`,room:`옥상-${id}`}))),
+ christmas:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`눈마을 광장 ${id}서버`,room:`눈마을-${id}`})))
 });
 export const serverRoomName=room=>String(room).replace(/-1$/,'');
 // 방 이름(이미 정리된 것) → 그 방을 맡는 서버 줄. 정확히 같은 줄이 먼저, 없으면 끝 번호를 뗀 이름으로 찾는다(목록에 없는 번호 ?multi=관악산-7 → 1서버). 없으면 null.

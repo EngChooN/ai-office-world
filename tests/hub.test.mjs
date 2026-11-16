@@ -5,8 +5,8 @@ import {readFileSync} from 'node:fs';
 import {EXPERIENCES,experienceHref} from '../src/hub/experiences.js';
 import {cardHTML,hubTime,ART} from '../src/hub/hub.js';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
-test('카드는 등산·흡연장 2개, id가 겹치지 않는다',()=>{
- assert.deepEqual(EXPERIENCES.map(e=>e.id),['hiking','smoking']);
+test('카드는 등산·흡연장·크리스마스 3개, id가 겹치지 않는다',()=>{
+ assert.deepEqual(EXPERIENCES.map(e=>e.id),['hiking','smoking','christmas']);
  assert.equal(new Set(EXPERIENCES.map(e=>e.id)).size,EXPERIENCES.length);
  for(const e of EXPERIENCES){assert.ok(e.title&&e.place&&e.desc);assert.ok(ART[e.art],e.id);}
 });

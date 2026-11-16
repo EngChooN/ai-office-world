@@ -1,0 +1,5 @@
+import {chromium} from '@playwright/test';import {writeFileSync} from 'node:fs';import {resolve} from 'node:path';
+const dir=resolve('artifacts/dongdong/game');const css='body{margin:0;background:#20242c;color:#eee;font:13px system-ui;padding:6px}figure{margin:3px;display:inline-block;text-align:center}img{display:block;border-radius:6px}h3{margin:8px 4px}';
+const row=(n,label)=>`<h3>${label}</h3>${[0,1,2,3,4,5].map(k=>`<figure><img src="${n}-burst${k}.png" width="250"><figcaption>${(k*0.1+0.1).toFixed(1)}초</figcaption></figure>`).join('')}`;
+writeFileSync(`${dir}/stairs-burst.html`,`<!doctype html><meta charset="utf-8"><style>${css}</style>${row('08-계단','돌계단 — 한 칸에 한 발씩 통통(0.1초 간격)')}${row('09-나무계단','나무계단')}${row('10-바위','바위길')}`);
+const b=await chromium.launch({channel:'chrome',headless:true});const p=await b.newPage({viewport:{width:1560,height:400}});await p.goto(`file://${dir}/stairs-burst.html`);await p.waitForLoadState('load');await p.screenshot({path:`${dir}/stairs-burst.png`,fullPage:true});await b.close();

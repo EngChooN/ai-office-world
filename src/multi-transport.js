@@ -1,22 +1,22 @@
 // 전송 계층. 모두 같은 모양 {send(msg), onmessage(fn), close()}이라 나중에 WebSocket·관리형 서비스로 바꿔 끼운다.
 // 1) 브라우저 창·탭 사이: BroadcastChannel(같은 브라우저, 같은 주소). 내 컴퓨터 시제품용.
 // 2) 가짜 방(createLoopbackHub): 한 프로세스 안에서 N명을 흉내. 지연·유실을 넣을 수 있어 측정에 쓴다.
-import {createChatLimiter,sanitizeChat} from './multi-protocol.js';
+import {createChatGuard,sanitizeChat} from './multi-protocol.js';
 import {currentServer} from './server-link.js';
 //  채널 이름 `gwanak-multi:체험:방`. 등산은 예전 채널 `gwanak-multi:방`을 그대로 쓴다(옛 탭과 이어지게). 방 이름의 ':'는 빼서 겹치지 않게 한다.
 //  채팅 c는 서버가 없으니 여기서 서버와 같은 규칙을 흉내 낸다: 보낼 때 속도 제한(넘으면 내게 {t:'c-limit'})·정리 뒤 내게도 되돌려 주고, 받은 글도 다시 정리한다.
 //  채팅을 보낼 때는 {t:'c',id:내ID,text}처럼 id를 붙여야 한다(서버는 id를 무시하고 자기가 정한 ID를 쓴다).
 export const broadcastChannelName=(experience,room)=>{const r=String(room).replace(/:/g,'');return experience==='hiking'?`gwanak-multi:${r}`:`gwanak-multi:${experience}:${r}`;};
 export function createBroadcastTransport(room='gwanak-room-1',factory=globalThis.BroadcastChannel,{experience='hiking',now=()=>Date.now()}={}){
- const ch=new factory(broadcastChannelName(experience,room));const handlers=new Set(),limiter=createChatLimiter();
+ const ch=new factory(broadcastChannelName(experience,room));const handlers=new Set(),guard=createChatGuard();
  const emit=m=>handlers.forEach(h=>h(m));
  ch.onmessage=e=>{const m=e.data;
   if(m?.t==='c'){const text=sanitizeChat(m.text);if(!text||typeof m.id!=='string')return;emit({t:'c',id:m.id,text});return;}
   emit(m);};
  function send(m){
   if(m?.t!=='c'){ch.postMessage(m);return;}
-  if(!limiter.allow(now())){emit({t:'c-limit'});return;}
   const text=sanitizeChat(m.text);if(!text)return;
+  const ok=guard.check(now(),text);if(!ok.ok){emit({t:'c-limit',reason:ok.reason,...(ok.wait?{wait:ok.wait}:{})});return;}
   const out={t:'c',id:m.id,text};ch.postMessage(out);emit(out);
  }
  return {kind:'broadcast',experience,send,onmessage:fn=>{handlers.add(fn);return()=>handlers.delete(fn);},close:()=>ch.close()};

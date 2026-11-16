@@ -1,0 +1,132 @@
+{
+ "portrait/bino-first": {
+  "on": "binoculars",
+  "rect": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "visible": false,
+  "inside": false,
+  "size": 0,
+  "hit": "world",
+  "text": "✕",
+  "closed": false,
+  "ok": false
+ },
+ "portrait/bino-third": {
+  "on": "binoculars",
+  "rect": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "visible": false,
+  "inside": false,
+  "size": 0,
+  "hit": "world",
+  "text": "✕",
+  "closed": false,
+  "ok": false
+ },
+ "portrait/phone-first": {
+  "on": "phone",
+  "rect": [
+   241,
+   148,
+   38,
+   44
+  ],
+  "visible": true,
+  "inside": true,
+  "size": 38,
+  "hit": "self",
+  "text": "✕",
+  "closed": true,
+  "ok": false
+ },
+ "portrait/phone-third": {
+  "on": "phone",
+  "rect": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "visible": false,
+  "inside": false,
+  "size": 0,
+  "hit": "world",
+  "text": "✕",
+  "closed": false,
+  "ok": false
+ },
+ "portrait/errors": [],
+ "landscape/bino-first": {
+  "on": "binoculars",
+  "rect": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "visible": false,
+  "inside": false,
+  "size": 0,
+  "hit": "world",
+  "text": "✕",
+  "closed": false,
+  "ok": false
+ },
+ "landscape/bino-third": {
+  "on": "binoculars",
+  "rect": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "visible": false,
+  "inside": false,
+  "size": 0,
+  "hit": "world",
+  "text": "✕",
+  "closed": false,
+  "ok": false
+ },
+ "landscape/phone-first": {
+  "on": "phone",
+  "rect": [
+   484,
+   64,
+   38,
+   57
+  ],
+  "visible": true,
+  "inside": true,
+  "size": 38,
+  "hit": "BUTTON",
+  "text": "✕",
+  "closed": false,
+  "ok": false
+ },
+ "landscape/phone-third": {
+  "on": "phone",
+  "rect": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "visible": false,
+  "inside": false,
+  "size": 0,
+  "hit": "world",
+  "text": "✕",
+  "closed": false,
+  "ok": false
+ },
+ "landscape/errors": []
+}

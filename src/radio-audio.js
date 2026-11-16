@@ -18,16 +18,16 @@ export function pinkNoise(ctx,seconds=2){
 }
 
 // 파일 여러 개를 차례로, 끝나기 xfade초 전에 다음 파일과 겹쳐 이어 트는 재생기(<audio> 둘을 번갈아 씀).
-// files = [{url,duration}], start = {index,offset}. 상태는 onState('loading'|'playing'|'error', 지금 곡 index)로 알린다.
-function createDeck(ctx,out,files,{start={index:0,offset:0},xfade=1.5,level=1,onState=()=>{},doc=document}={}){
+// files = [{url,duration,start?}](duration = 다음 곡으로 넘어갈 곳, start = 처음부터 틀 때 건너뛸 앞 무음, gain = 곡마다 크기 배율 — 크리스마스 캐럴이 씀), start = {index,offset}. 상태는 onState('loading'|'playing'|'error', 지금 곡 index)로 알린다.
+export function createDeck(ctx,out,files,{start={index:0,offset:0},xfade=1.5,level=1,onState=()=>{},doc=document}={}){
  const els=[0,1].map(()=>{const el=doc.createElement('audio');el.preload='auto';el.playsInline=true;el.setAttribute('playsinline','');const src=ctx.createMediaElementSource(el),g=ctx.createGain();g.gain.value=0;src.connect(g).connect(out);return {el,src,g,index:-1};});
  let cur=0,idx=start.index%files.length,stopped=false,timer=0,state='loading',errors=0;
  const set=s=>{if(s!==state){state=s;onState(s,idx);}};
  function play(slot,i,offset=0,fadeIn=.3){
   const s=els[slot];s.index=i;s.el.src=files[i].url;
   const t=ctx.currentTime;s.g.gain.cancelScheduledValues(t);s.g.gain.setValueAtTime(0,t);
-  const go=()=>{if(stopped)return;try{if(offset>0&&offset<(s.el.duration||files[i].duration)-1)s.el.currentTime=offset;}catch{}
-   s.el.play().then(()=>{if(stopped)return;const t2=ctx.currentTime;s.g.gain.setTargetAtTime(level,t2,fadeIn/3);},()=>fail());};
+  const go=()=>{if(stopped)return;if(!(offset>0))offset=files[i].start||0;try{if(offset>0&&offset<(s.el.duration||files[i].duration)-1)s.el.currentTime=offset;}catch{}
+   s.el.play().then(()=>{if(stopped)return;const t2=ctx.currentTime;s.g.gain.setTargetAtTime(level*(files[i].gain??1),t2,fadeIn/3);},()=>fail());};
   if(s.el.readyState>=1)go();else s.el.addEventListener('loadedmetadata',go,{once:true});
   s.el.onplaying=()=>{if(slot===cur){errors=0;set('playing');}};
   s.el.onerror=()=>fail();
@@ -53,6 +53,8 @@ function createDeck(ctx,out,files,{start={index:0,offset:0},xfade=1.5,level=1,on
   get state(){return state;},get index(){return els[cur].index;},
   // 시험용: 지금 곡을 끝 몇 초 앞으로 옮겨 이어지는 곳을 듣는다
   seekNearEnd(sec=4){const s=els[cur],d=files[s.index].duration||s.el.duration;try{s.el.currentTime=Math.max(0,d-sec);}catch{}},
+  // 아이폰 사파리: <audio>는 사용자 입력 안에서 한 번 play()된 것만 나중에 타이머로 틀 수 있다. 입력 때 불러 두 <audio>를 소리 없이(gain 0) 한 번씩 틀어 둔다(크리스마스 캐럴)
+  prime(){if(stopped)return;for(const s of els){if(s.primed)continue;s.primed=true;if(s.index<0){s.el.src=files[(idx+1)%files.length].url;const p=s.el.play();p?.then?.(()=>{if(s.index<0)s.el.pause();},()=>{s.primed=false;});}else if(s.el.paused&&s.index===els[cur].index){s.el.play()?.catch?.(()=>{s.primed=false;});}}},
   current:()=>({index:els[cur].index,time:els[cur].el.currentTime,duration:els[cur].el.duration,paused:els[cur].el.paused}),
   stop(){stopped=true;clearInterval(timer);for(const s of els){try{s.el.pause();}catch{}s.el.removeAttribute('src');try{s.el.load();}catch{}try{s.g.disconnect();s.src.disconnect();}catch{}}}
  };

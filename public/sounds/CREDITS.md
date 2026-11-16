@@ -32,3 +32,7 @@
 - can-open: BigSoundBank "Can of soda opening" s0116 (CC0). https://bigsoundbank.com/can-of-soda-opening-s0116.html
 - 가공: 필요한 구간만 자르고 모노·44.1kHz로 바꿈, 앞쪽 무음 제거, 끝 페이드, 피크 -3dB. lighter-strike는 작은 불꽃 소리를 가볍게 눌러 키우고 '치-화' 사이 빈 틈을 줄임, can-drop은 낮춘 사본을 깔아 '쿵'을 더함, cig-burn은 낮은 쪽을 깎고 이음매를 크로스페이드함.
 - 담배를 멋있게 들리게 꾸미는 처리(울림·저음 키우기 등)는 하지 않았습니다.
+
+## christmas/carol/ — 온라인 크리스마스 캐럴(2026-11-16, 월드개발)
+
+- 미 공군 군악대 녹음 8곡, 위키미디어 공용에서 받은 원본 그대로(가공 없음). Public domain(PD-USGov-Military). 곡마다 원래 페이지·편곡·연주는 `src/christmas/carols.js`와 `data/자료-출처-이용조건-기록표.md` §16, 게임 안 🎵 창 「소리 출처」.

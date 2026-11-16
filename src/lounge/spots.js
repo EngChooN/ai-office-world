@@ -89,6 +89,8 @@ export function poseRig(model){
  const side=s=>({arm:[B(s+'Arm'),B(s+'ForeArm'),B(s+'Hand')],leg:[B(s+'UpLeg'),B(s+'Leg'),B(s+'Foot')],toe:B(s+'ToeBase')});
  return {hips:B('Hips'),spine:['Spine','Spine1','Spine2'].map(B).filter(Boolean),head:B('Head'),Left:side('Left'),Right:side('Right')};
 }
+// 크리스마스 자세(src/christmas/poses.js)가 같은 뼈 덧씌우기 도구를 쓴다(11-16). 흡연장 동작은 그대로.
+export const POSE_TOOLS=Object.freeze({blend,turnWorld,aim,limb,wpos});
 
 function makeCan(toonify){
  const g=new THREE.Group();g.name='캔커피';

@@ -142,7 +142,7 @@ test('체험 구분 하위 호환: 체험 id가 없는 옛 클라이언트는 �
  for(const x of [null,''])assert.equal(join('빈값','산',{experience:x}).room.key,'hiking:산');
  for(const x of ['golf','HIKING',' hiking',3,{}])assert.deepEqual(join('이상','산',{experience:x}),{ok:false,reason:'experience'},String(x));
  assert.equal(rooms.stats.badExperience,5);
- assert.deepEqual(EXPERIENCES,['hiking','smoking']);assert.equal(parseExperience(undefined),'hiking');assert.equal(parseExperience('smoking'),'smoking');assert.equal(parseExperience('x'),null);
+ assert.deepEqual(EXPERIENCES,['hiking','smoking','christmas']);assert.equal(parseExperience(undefined),'hiking');assert.equal(parseExperience('smoking'),'smoking');assert.equal(parseExperience('x'),null);
 });
 test('체험 구분: 체험마다 받는 메시지 종류가 다르다(흡연장은 위치·채팅·담배 상태, 인사·동물·셀카는 등산 전용)',()=>{
  const {rooms,join}=setup();
@@ -284,7 +284,8 @@ test('흡연장 서버(옥상-1 → smoking:옥상)도 같은 규칙, 체험마�
  assert.equal(join('c','옥상-1',{experience:'smoking'}).reason,'full');
  assert.equal(join('등산','옥상-1').room.key,'hiking:옥상','등산의 옥상 방은 서버 목록 밖 → 따로');
  const row=(n,id,count)=>({id,name:`${n} ${id}서버`,count,max:2});
- assert.deepEqual(rooms.serverCounts(),{hiking:[row('관악산','1',0),row('관악산','2',0),row('관악산','3',0)],smoking:[row('옥상','1',2),row('옥상','2',0),row('옥상','3',0)]});
+ assert.deepEqual(rooms.serverCounts(),{hiking:[row('관악산','1',0),row('관악산','2',0),row('관악산','3',0)],smoking:[row('옥상','1',2),row('옥상','2',0),row('옥상','3',0)],
+  christmas:[1,2,3].map(i=>({id:String(i),name:`눈마을 광장 ${i}서버`,count:0,max:20}))},'크리스마스는 체험별 정원 20(maxPerRoom과 따로)');
 });
 test('서버 방에서 신고로 숨겨지면 다른 방으로 옮기지 않고 이름만 숨긴다(넘길 서버가 없음)',()=>{
  const {rooms,join}=setup();

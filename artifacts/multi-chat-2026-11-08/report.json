@@ -1,0 +1,450 @@
+{
+  "at": "2026-11-16T08:09:48.914Z",
+  "pageUrl": "http://127.0.0.1:5197",
+  "wsUrl": "ws://127.0.0.1:8787",
+  "room": "시험",
+  "steps": [
+    {
+      "k": "통과 등산 서로 보임",
+      "A본사람": [
+        "바다"
+      ],
+      "B본사람": [
+        {
+          "name": "하늘",
+          "model": true
+        }
+      ],
+      "transport": "server"
+    },
+    {
+      "k": "통과 등산 채팅 왕복",
+      "A받음": [
+        {
+          "type": "hiking:chat",
+          "id": "jujjxdwx",
+          "name": "하늘",
+          "text": "안녕하세요, 같이 올라가요!",
+          "me": true,
+          "remote": true
+        },
+        {
+          "type": "hiking:chat",
+          "id": "27x8l27g",
+          "name": "바다",
+          "text": "좋아요 😀",
+          "me": false,
+          "remote": true
+        }
+      ],
+      "B받음": [
+        {
+          "type": "hiking:chat",
+          "id": "jujjxdwx",
+          "name": "하늘",
+          "text": "안녕하세요, 같이 올라가요!",
+          "me": false,
+          "remote": true
+        },
+        {
+          "type": "hiking:chat",
+          "id": "27x8l27g",
+          "name": "바다",
+          "text": "좋아요 😀",
+          "me": true,
+          "remote": true
+        }
+      ]
+    },
+    {
+      "k": "통과 등산 채팅 속도 제한",
+      "제한이벤트": [
+        {
+          "type": "hiking:chat-limit",
+          "reason": "rate",
+          "wait": 2
+        }
+      ],
+      "B받은글": [
+        "안녕하세요, 같이 올라가요!",
+        "좋아요 😀",
+        "하나"
+      ]
+    },
+    {
+      "k": "통과 흡연장 서로 보임",
+      "미나ID": "liw5coer"
+    },
+    {
+      "k": "통과 흡연장 채팅",
+      "지훈받음": [
+        {
+          "type": "lounge:chat",
+          "id": "liw5coer",
+          "name": "미나",
+          "text": "불 좀 빌려 주세요",
+          "remote": true
+        }
+      ]
+    },
+    {
+      "k": "통과 흡연장 담배 상태",
+      "지훈이받은상태": [
+        "idle:false",
+        "idle:false",
+        "idle:false",
+        "out:false",
+        "out:false",
+        "ready:false",
+        "lighting:false",
+        "lighting:false",
+        "smoking:true"
+      ]
+    },
+    {
+      "k": "통과 등산↔흡연장 격리",
+      "방법": "흡연장 화면",
+      "등산이받은흡연장것": 0,
+      "흡연장이받은등산것": 0,
+      "흡연장끼리는받음": true,
+      "health": {
+        "ok": true,
+        "rooms": 2,
+        "clients": 4,
+        "total": 4,
+        "uptime": 48,
+        "experiences": {
+          "hiking": {
+            "rooms": 1,
+            "clients": 2
+          },
+          "smoking": {
+            "rooms": 1,
+            "clients": 2
+          },
+          "christmas": {
+            "rooms": 0,
+            "clients": 0
+          }
+        },
+        "servers": {
+          "hiking": [
+            {
+              "id": "1",
+              "name": "관악산 1서버",
+              "count": 0,
+              "max": 30
+            },
+            {
+              "id": "2",
+              "name": "관악산 2서버",
+              "count": 0,
+              "max": 30
+            },
+            {
+              "id": "3",
+              "name": "관악산 3서버",
+              "count": 0,
+              "max": 30
+            }
+          ],
+          "smoking": [
+            {
+              "id": "1",
+              "name": "옥상 1서버",
+              "count": 0,
+              "max": 30
+            },
+            {
+              "id": "2",
+              "name": "옥상 2서버",
+              "count": 0,
+              "max": 30
+            },
+            {
+              "id": "3",
+              "name": "옥상 3서버",
+              "count": 0,
+              "max": 30
+            }
+          ],
+          "christmas": [
+            {
+              "id": "1",
+              "name": "눈마을 광장 1서버",
+              "count": 0,
+              "max": 20
+            },
+            {
+              "id": "2",
+              "name": "눈마을 광장 2서버",
+              "count": 0,
+              "max": 20
+            },
+            {
+              "id": "3",
+              "name": "눈마을 광장 3서버",
+              "count": 0,
+              "max": 20
+            }
+          ]
+        }
+      },
+      "방": [
+        {
+          "key": "hiking:시험",
+          "experience": "hiking",
+          "name": "시험",
+          "count": 2
+        },
+        {
+          "key": "smoking:시험",
+          "experience": "smoking",
+          "name": "시험",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "k": "서버 통계",
+      "replaced": 0,
+      "pairOffers": 0,
+      "pairDenied": 0,
+      "pairs": 0,
+      "pairEnds": 0,
+      "joined": 4,
+      "chats": 6,
+      "chatLimited": 1,
+      "smokes": 6,
+      "acts": 6,
+      "badExperience": 0,
+      "wrongExperience": 0,
+      "full": 0,
+      "stateAccepted": 610,
+      "rateDropped": 0,
+      "teleportRejected": 0,
+      "resynced": 0,
+      "jumps": 1,
+      "relayed": 0,
+      "animals": 0,
+      "animalDup": 0,
+      "reports": 0,
+      "hidden": 0,
+      "invalid": 0,
+      "snapshots": 369,
+      "tree": 0,
+      "treeDenied": 0,
+      "treeResets": 0,
+      "play": 0
+    },
+    {
+      "k": "오류",
+      "errors": []
+    }
+  ],
+  "errors": [],
+  "result": {
+    "등산 서로 보임": {
+      "ok": true,
+      "A본사람": [
+        "바다"
+      ],
+      "B본사람": [
+        {
+          "name": "하늘",
+          "model": true
+        }
+      ],
+      "transport": "server"
+    },
+    "등산 채팅 왕복": {
+      "ok": true,
+      "A받음": [
+        {
+          "type": "hiking:chat",
+          "id": "jujjxdwx",
+          "name": "하늘",
+          "text": "안녕하세요, 같이 올라가요!",
+          "me": true,
+          "remote": true
+        },
+        {
+          "type": "hiking:chat",
+          "id": "27x8l27g",
+          "name": "바다",
+          "text": "좋아요 😀",
+          "me": false,
+          "remote": true
+        }
+      ],
+      "B받음": [
+        {
+          "type": "hiking:chat",
+          "id": "jujjxdwx",
+          "name": "하늘",
+          "text": "안녕하세요, 같이 올라가요!",
+          "me": false,
+          "remote": true
+        },
+        {
+          "type": "hiking:chat",
+          "id": "27x8l27g",
+          "name": "바다",
+          "text": "좋아요 😀",
+          "me": true,
+          "remote": true
+        }
+      ]
+    },
+    "등산 채팅 속도 제한": {
+      "ok": true,
+      "제한이벤트": [
+        {
+          "type": "hiking:chat-limit",
+          "reason": "rate",
+          "wait": 2
+        }
+      ],
+      "B받은글": [
+        "안녕하세요, 같이 올라가요!",
+        "좋아요 😀",
+        "하나"
+      ]
+    },
+    "흡연장 서로 보임": {
+      "ok": true,
+      "미나ID": "liw5coer"
+    },
+    "흡연장 채팅": {
+      "ok": true,
+      "지훈받음": [
+        {
+          "type": "lounge:chat",
+          "id": "liw5coer",
+          "name": "미나",
+          "text": "불 좀 빌려 주세요",
+          "remote": true
+        }
+      ]
+    },
+    "흡연장 담배 상태": {
+      "ok": true,
+      "지훈이받은상태": [
+        "idle:false",
+        "idle:false",
+        "idle:false",
+        "out:false",
+        "out:false",
+        "ready:false",
+        "lighting:false",
+        "lighting:false",
+        "smoking:true"
+      ]
+    },
+    "등산↔흡연장 격리": {
+      "ok": true,
+      "방법": "흡연장 화면",
+      "등산이받은흡연장것": 0,
+      "흡연장이받은등산것": 0,
+      "흡연장끼리는받음": true,
+      "health": {
+        "ok": true,
+        "rooms": 2,
+        "clients": 4,
+        "total": 4,
+        "uptime": 48,
+        "experiences": {
+          "hiking": {
+            "rooms": 1,
+            "clients": 2
+          },
+          "smoking": {
+            "rooms": 1,
+            "clients": 2
+          },
+          "christmas": {
+            "rooms": 0,
+            "clients": 0
+          }
+        },
+        "servers": {
+          "hiking": [
+            {
+              "id": "1",
+              "name": "관악산 1서버",
+              "count": 0,
+              "max": 30
+            },
+            {
+              "id": "2",
+              "name": "관악산 2서버",
+              "count": 0,
+              "max": 30
+            },
+            {
+              "id": "3",
+              "name": "관악산 3서버",
+              "count": 0,
+              "max": 30
+            }
+          ],
+          "smoking": [
+            {
+              "id": "1",
+              "name": "옥상 1서버",
+              "count": 0,
+              "max": 30
+            },
+            {
+              "id": "2",
+              "name": "옥상 2서버",
+              "count": 0,
+              "max": 30
+            },
+            {
+              "id": "3",
+              "name": "옥상 3서버",
+              "count": 0,
+              "max": 30
+            }
+          ],
+          "christmas": [
+            {
+              "id": "1",
+              "name": "눈마을 광장 1서버",
+              "count": 0,
+              "max": 20
+            },
+            {
+              "id": "2",
+              "name": "눈마을 광장 2서버",
+              "count": 0,
+              "max": 20
+            },
+            {
+              "id": "3",
+              "name": "눈마을 광장 3서버",
+              "count": 0,
+              "max": 20
+            }
+          ]
+        }
+      },
+      "방": [
+        {
+          "key": "hiking:시험",
+          "experience": "hiking",
+          "name": "시험",
+          "count": 2
+        },
+        {
+          "key": "smoking:시험",
+          "experience": "smoking",
+          "name": "시험",
+          "count": 2
+        }
+      ]
+    }
+  },
+  "passed": true
+}

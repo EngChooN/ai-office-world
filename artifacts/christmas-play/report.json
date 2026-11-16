@@ -1,0 +1,141 @@
+{
+ "at": "2026-11-16T08:41:12.622Z",
+ "checks": {
+  "⑥ 휴대폰 단추가 모두 44px 이상·화면 안": {
+   "ok": true,
+   "r": [
+    {
+     "c": "xh-round",
+     "w": 48,
+     "h": 48,
+     "in": true
+    },
+    {
+     "c": "xh-round",
+     "w": 48,
+     "h": 48,
+     "in": true
+    },
+    {
+     "c": "xh-round",
+     "w": 48,
+     "h": 48,
+     "in": true
+    },
+    {
+     "c": "xh-round",
+     "w": 48,
+     "h": 48,
+     "in": true
+    },
+    {
+     "c": "xh-act",
+     "w": 141,
+     "h": 64,
+     "in": true
+    },
+    {
+     "c": "xh-sub-act",
+     "w": 104,
+     "h": 48,
+     "in": true
+    }
+   ]
+  },
+  "⑥ 휴대폰 가로에서도 단추가 화면 안": {
+   "ok": true
+  },
+  "⑧ PC: 캐럴이 나옴(재생 중·시간 흐름·소리 크기)": {
+   "ok": true,
+   "title": "The First Noel",
+   "time": 197,
+   "carolDb": -31.1,
+   "masterDb": -32
+  },
+  "⑧ 휴대폰: 캐럴이 나옴(재생 중·시간 흐름·소리 크기)": {
+   "ok": true,
+   "title": "The First Noel",
+   "time": 198.6,
+   "carolDb": -32.8,
+   "masterDb": -33.6
+  },
+  "⑧ 두 화면이 같은 곡(같은 시계)": {
+   "ok": true,
+   "ia": 1,
+   "ib": 1
+  },
+  "⑧ 캐럴은 <audio>로 흘려 받음(fetch 아님)": {
+   "ok": true,
+   "kinds": [
+    "audio"
+   ]
+  },
+  "⑧ PC: 🎵 창에 지금 곡과 소리 출처(캐럴 8곡+바람·직접 만든 소리)": {
+   "ok": true,
+   "now": "♪ 지금: The First Noel",
+   "n": 10
+  },
+  "⑧ PC: 캐럴 끄기 → 멈추고 받기를 뗌": {
+   "ok": true,
+   "state": "off",
+   "pressed": "false"
+  },
+  "⑧ PC: 캐럴 다시 켜기 → 다시 나옴": {
+   "ok": true,
+   "state": "playing"
+  },
+  "⑧ PC: 🔊 끄기 → 캐럴도 꺼짐(받기 멈춤·소리 0)": {
+   "ok": true,
+   "state": "off",
+   "masterDb": null
+  },
+  "⑧ PC: 🔊 켜기 → 캐럴이 다시 나옴": {
+   "ok": true
+  },
+  "⑧ 휴대폰: 🎵 창에 지금 곡과 소리 출처(캐럴 8곡+바람·직접 만든 소리)": {
+   "ok": true,
+   "now": "♪ 지금: The First Noel",
+   "n": 10
+  },
+  "⑧ 휴대폰: 캐럴 끄기 → 멈추고 받기를 뗌": {
+   "ok": true,
+   "state": "off",
+   "pressed": "false"
+  },
+  "⑧ 휴대폰: 캐럴 다시 켜기 → 다시 나옴": {
+   "ok": true,
+   "state": "playing"
+  },
+  "⑧ 휴대폰: 🔊 끄기 → 캐럴도 꺼짐(받기 멈춤·소리 0)": {
+   "ok": true,
+   "state": "off",
+   "masterDb": null
+  },
+  "⑧ 휴대폰: 🔊 켜기 → 캐럴이 다시 나옴": {
+   "ok": true
+  },
+  "⑧ 캐럴 켜기/끄기는 이 기기에 저장": {
+   "ok": true,
+   "saved": true
+  },
+  "⑧ 모닥불에 앉으면 캐럴이 작아지고 장작 소리가 커짐": {
+   "ok": true,
+   "far": 0.24,
+   "sit": 0.12,
+   "fireGain": 0.958,
+   "carolDbFar": -52.3,
+   "carolDbSit": -51.8
+  },
+  "⑧ 곡이 끝나면 다음 곡으로 이어짐(뒤 무음 건너뜀)": {
+   "ok": true,
+   "before": 2,
+   "after": 3,
+   "title": "O Christmas Tree"
+  },
+  "페이지 오류 없음": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": []
+}

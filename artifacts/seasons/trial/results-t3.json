@@ -1,0 +1,41 @@
+{
+ "forest-winter": {
+  "file": "artifacts/seasons/forest-winter-t3.png",
+  "season": {
+   "manual": "winter",
+   "auto": "autumn",
+   "season": "winter",
+   "source": "manual",
+   "label": "겨울",
+   "weights": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 132.7,
+   "instancedMB": 167.6,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 412.5,
+   "meshes": 14663,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 258,
+    "textures": 22
+   },
+   "jsHeapMB": 1268.8
+  }
+ },
+ "forest": {
+  "errors": [],
+  "pageLoads": 1
+ }
+}

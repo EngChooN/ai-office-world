@@ -1,0 +1,792 @@
+{
+ "at": "2026-11-16T08:56:51.207Z",
+ "pageUrl": "http://127.0.0.1:5203",
+ "steps": [
+  {
+   "k": "페이지 열기"
+  },
+  {
+   "k": "페이지 준비"
+  },
+  {
+   "k": "실패 소리 파일 14개 모두 재생(중간 2.6초 소리·끝까지 재생)",
+   "통과": 11,
+   "길이다름": [
+    {
+     "file": "919-calm/healing.mp3",
+     "browser": 520,
+     "manifest": 378.139
+    }
+   ],
+   "파일": [
+    "919-calm/morning.mp3 153.3s 재생2.7s -21.2dB 끝3.0s",
+    "919-calm/evening.mp3 186.2s 재생2.6s -13.7dB 끝3.0s",
+    "919-calm/windswept.mp3 208.3s 재생2.6s -20.4dB 끝3.0s",
+    "919-calm/fresh-air.mp3 294.0s 재생2.6s -20.5dB 끝3.0s",
+    "919-calm/reawakening.mp3 214.0s 재생2.6s -41.7dB 끝2.9s",
+    "919-calm/dream-culture.mp3 214.3s 재생2.6s -20.5dB 끝3.0s",
+    "919-calm/wholesome.mp3 363.8s 재생2.6s -19.0dB 끝3.0s",
+    "919-calm/healing.mp3 520.0s 재생2.6s -26.7dB 끝끝나지 않음",
+    "991-forest-wind/819351-wind-macclesfield.mp3 274.5s 재생2.6s -37.0dB 끝끝 play 시간 초과",
+    "991-forest-wind/524203-wind-forest-04.mp3 55.5s 재생2.6s -17.0dB 끝3.1s",
+    "991-forest-wind/679109-birds-morning-forest.mp3 91.0s 재생2.6s -46.7dB 끝3.4s",
+    "991-forest-wind/474835-forest-morning.mp3 61.7s 재생2.6s -30.2dB 끝3.0s",
+    "991-forest-wind/869104-stream-dolomites.mp3 418.7s 재생2.6s -27.0dB 끝끝 play 시간 초과",
+    "991-forest-wind/588180-mountain-river.mp3 50.0s 재생2.6s -47.5dB 끝3.1s"
+   ]
+  },
+  {
+   "k": "캡처",
+   "name": "01-꺼짐-세로-390x844"
+  },
+  {
+   "k": "캡처",
+   "name": "01-꺼짐-가로-844x390"
+  },
+  {
+   "k": "캡처",
+   "name": "01-꺼짐-PC-1920x1080"
+  },
+  {
+   "k": "통과 전원 → 91.9 수신(잡음 0)",
+   "stxt": "수신 좋음",
+   "name": "관악산 FM · 잔잔한 음악",
+   "info": "Windswept · Kevin MacLeod",
+   "mix": {
+    "channel": {
+     "id": "calm",
+     "freq": 91.9,
+     "name": "잔잔한 음악"
+    },
+    "nearest": {
+     "id": "calm",
+     "freq": 91.9,
+     "name": "잔잔한 음악"
+    },
+    "dist": 0,
+    "clarity": 1,
+    "broadcast": 0.6,
+    "noise": 0,
+    "cutoff": 6000,
+    "bars": 5,
+    "label": "수신 좋음",
+    "locked": true
+   },
+   "dB": "-31.3"
+  },
+  {
+   "k": "캡처",
+   "name": "02-켜짐-919-세로-390x844"
+  },
+  {
+   "k": "캡처",
+   "name": "02-켜짐-919-가로-844x390"
+  },
+  {
+   "k": "캡처",
+   "name": "02-켜짐-919-PC-1920x1080"
+  },
+  {
+   "k": "통과 방송 사이는 잡음만·수신 불량",
+   "stxt": "수신 불량…",
+   "deck": null,
+   "chip": "📻 ~105.0",
+   "dB": "-30.3"
+  },
+  {
+   "k": "캡처",
+   "name": "03-수신불량-세로-390x844"
+  },
+  {
+   "k": "캡처",
+   "name": "03-수신불량-가로-844x390"
+  },
+  {
+   "k": "캡처",
+   "name": "03-수신불량-PC-1920x1080"
+  },
+  {
+   "k": "통과 다이얼 끌어 돌리기 → 99.1에 붙음",
+   "freq": 99.1
+  },
+  {
+   "k": "통과 다이얼 → 잡음 줄고 방송 또렷",
+   "seq": [
+    {
+     "f": 93.5,
+     "clarity": 0,
+     "noise": 0.33,
+     "bc": 0
+    },
+    {
+     "f": 92.8,
+     "clarity": 0,
+     "noise": 0.33,
+     "bc": 0
+    },
+    {
+     "f": 92.4,
+     "clarity": 0.5,
+     "noise": 0.19,
+     "bc": 0.212
+    },
+    {
+     "f": 92.1,
+     "clarity": 0.88,
+     "noise": 0.063,
+     "bc": 0.491
+    },
+    {
+     "f": 91.9,
+     "clarity": 1,
+     "noise": 0,
+     "bc": 0.6
+    }
+   ]
+  },
+  {
+   "k": "통과 볼륨 노브(0.2 → 0.9 커짐)",
+   "낮음": "-55.4",
+   "높음": "-48.8"
+  },
+  {
+   "k": "통과 내리기 뒤에도 소리 계속·칩 📻 91.9",
+   "text": "📻 91.9",
+   "hidden": true,
+   "dB": "-27.7"
+  },
+  {
+   "k": "캡처",
+   "name": "04-내린뒤-칩-세로-390x844"
+  },
+  {
+   "k": "캡처",
+   "name": "04-내린뒤-칩-가로-844x390"
+  },
+  {
+   "k": "캡처",
+   "name": "04-내린뒤-칩-PC-1920x1080"
+  },
+  {
+   "k": "통과 전체 소리 꺼짐이면 라디오도 무음",
+   "dB": "-Infinity",
+   "표시": "소리 꺼짐"
+  },
+  {
+   "k": "통과 95.5 자막(녹음 전)·낮은 톤",
+   "자막": "관악산 FM입니다. 지금 산은 하늘이 맑아요. 그늘진 길에서는 숨을 한 번 크게 쉬어 보세요. 서두를 일 없는 하루, 발걸음은 가볍게 가요.",
+   "dB": "-35.2"
+  },
+  {
+   "k": "캡처",
+   "name": "05-955-자막-세로-390x844"
+  },
+  {
+   "k": "캡처",
+   "name": "05-955-자막-가로-844x390"
+  },
+  {
+   "k": "캡처",
+   "name": "05-955-자막-PC-1920x1080"
+  },
+  {
+   "k": "실패 99.1 다음 파일로 끊김 없이 이어짐",
+   "전": [
+    1,
+    1
+   ],
+   "후": [
+    2,
+    1
+   ],
+   "최저dB": "-39.2",
+   "중간dB": "-36.9"
+  },
+  {
+   "k": "캡처",
+   "name": "06-991-세로-390x844"
+  },
+  {
+   "k": "캡처",
+   "name": "06-991-가로-844x390"
+  },
+  {
+   "k": "캡처",
+   "name": "06-991-PC-1920x1080"
+  },
+  {
+   "k": "캡처",
+   "name": "07-뒷면-세로-390x844"
+  },
+  {
+   "k": "캡처",
+   "name": "07-뒷면-가로-844x390"
+  },
+  {
+   "k": "캡처",
+   "name": "07-뒷면-PC-1920x1080"
+  },
+  {
+   "k": "통과 뒷면 링크 3개(새 탭·noopener)",
+   "links": [
+    {
+     "t": "CBS 음악FM↗",
+     "href": "https://www.cbs.co.kr/onair/musicFm",
+     "target": "_blank",
+     "rel": "noopener noreferrer"
+    },
+    {
+     "t": "CBS 표준FM↗",
+     "href": "https://www.cbs.co.kr/onair/fm",
+     "target": "_blank",
+     "rel": "noopener noreferrer"
+    },
+    {
+     "t": "MBC mini↗",
+     "href": "https://mini.imbc.com/",
+     "target": "_blank",
+     "rel": "noopener noreferrer"
+    }
+   ]
+  },
+  {
+   "k": "통과 소리 출처 화면: 91.9 문구 그대로·99.1·발소리",
+   "앞부분": "관악산 FM\n91.9 잔잔한 음악\n\"Morning\", \"Evening\", \"Windswept\", \"Fresh Air\", \"Reawakening\", \"Dream Culture\", \"Wholesome\", \"Healing\"\nKevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/license"
+  },
+  {
+   "k": "캡처",
+   "name": "08-소리출처-세로-390x844"
+  },
+  {
+   "k": "캡처",
+   "name": "08-소리출처-가로-844x390"
+  },
+  {
+   "k": "캡처",
+   "name": "08-소리출처-PC-1920x1080"
+  },
+  {
+   "k": "통과 설정 시트에 소리 출처 단추"
+  },
+  {
+   "k": "캡처",
+   "name": "09-켜짐-낮-PC"
+  },
+  {
+   "k": "캡처",
+   "name": "09-켜짐-낮-세로"
+  },
+  {
+   "k": "캡처",
+   "name": "09-켜짐-노을-PC"
+  },
+  {
+   "k": "캡처",
+   "name": "09-켜짐-노을-세로"
+  },
+  {
+   "k": "캡처",
+   "name": "09-켜짐-밤-PC"
+  },
+  {
+   "k": "캡처",
+   "name": "09-켜짐-밤-세로"
+  },
+  {
+   "k": "통과 끄면 연결 해제·칩은 📻 라디오",
+   "on": false,
+   "nodes": false,
+   "deck": null,
+   "chip": "📻 라디오",
+   "saved": "{\"freq\":91.9,\"vol\":0.6}"
+  },
+  {
+   "k": "통과 외부 주소 요청 0건",
+   "external": []
+  },
+  {
+   "k": "통과 페이지 오류 없음",
+   "errors": []
+  }
+ ],
+ "errors": [],
+ "result": {
+  "소리 파일 14개 모두 재생(중간 2.6초 소리·끝까지 재생)": {
+   "ok": false,
+   "통과": 11,
+   "길이다름": [
+    {
+     "file": "919-calm/healing.mp3",
+     "browser": 520,
+     "manifest": 378.139
+    }
+   ],
+   "파일": [
+    "919-calm/morning.mp3 153.3s 재생2.7s -21.2dB 끝3.0s",
+    "919-calm/evening.mp3 186.2s 재생2.6s -13.7dB 끝3.0s",
+    "919-calm/windswept.mp3 208.3s 재생2.6s -20.4dB 끝3.0s",
+    "919-calm/fresh-air.mp3 294.0s 재생2.6s -20.5dB 끝3.0s",
+    "919-calm/reawakening.mp3 214.0s 재생2.6s -41.7dB 끝2.9s",
+    "919-calm/dream-culture.mp3 214.3s 재생2.6s -20.5dB 끝3.0s",
+    "919-calm/wholesome.mp3 363.8s 재생2.6s -19.0dB 끝3.0s",
+    "919-calm/healing.mp3 520.0s 재생2.6s -26.7dB 끝끝나지 않음",
+    "991-forest-wind/819351-wind-macclesfield.mp3 274.5s 재생2.6s -37.0dB 끝끝 play 시간 초과",
+    "991-forest-wind/524203-wind-forest-04.mp3 55.5s 재생2.6s -17.0dB 끝3.1s",
+    "991-forest-wind/679109-birds-morning-forest.mp3 91.0s 재생2.6s -46.7dB 끝3.4s",
+    "991-forest-wind/474835-forest-morning.mp3 61.7s 재생2.6s -30.2dB 끝3.0s",
+    "991-forest-wind/869104-stream-dolomites.mp3 418.7s 재생2.6s -27.0dB 끝끝 play 시간 초과",
+    "991-forest-wind/588180-mountain-river.mp3 50.0s 재생2.6s -47.5dB 끝3.1s"
+   ]
+  },
+  "전원 → 91.9 수신(잡음 0)": {
+   "ok": true,
+   "stxt": "수신 좋음",
+   "name": "관악산 FM · 잔잔한 음악",
+   "info": "Windswept · Kevin MacLeod",
+   "mix": {
+    "channel": {
+     "id": "calm",
+     "freq": 91.9,
+     "name": "잔잔한 음악"
+    },
+    "nearest": {
+     "id": "calm",
+     "freq": 91.9,
+     "name": "잔잔한 음악"
+    },
+    "dist": 0,
+    "clarity": 1,
+    "broadcast": 0.6,
+    "noise": 0,
+    "cutoff": 6000,
+    "bars": 5,
+    "label": "수신 좋음",
+    "locked": true
+   },
+   "dB": "-31.3"
+  },
+  "방송 사이는 잡음만·수신 불량": {
+   "ok": true,
+   "stxt": "수신 불량…",
+   "deck": null,
+   "chip": "📻 ~105.0",
+   "dB": "-30.3"
+  },
+  "다이얼 끌어 돌리기 → 99.1에 붙음": {
+   "ok": true,
+   "freq": 99.1
+  },
+  "다이얼 → 잡음 줄고 방송 또렷": {
+   "ok": true,
+   "seq": [
+    {
+     "f": 93.5,
+     "clarity": 0,
+     "noise": 0.33,
+     "bc": 0
+    },
+    {
+     "f": 92.8,
+     "clarity": 0,
+     "noise": 0.33,
+     "bc": 0
+    },
+    {
+     "f": 92.4,
+     "clarity": 0.5,
+     "noise": 0.19,
+     "bc": 0.212
+    },
+    {
+     "f": 92.1,
+     "clarity": 0.88,
+     "noise": 0.063,
+     "bc": 0.491
+    },
+    {
+     "f": 91.9,
+     "clarity": 1,
+     "noise": 0,
+     "bc": 0.6
+    }
+   ]
+  },
+  "볼륨 노브(0.2 → 0.9 커짐)": {
+   "ok": true,
+   "낮음": "-55.4",
+   "높음": "-48.8"
+  },
+  "내리기 뒤에도 소리 계속·칩 📻 91.9": {
+   "ok": true,
+   "text": "📻 91.9",
+   "hidden": true,
+   "dB": "-27.7"
+  },
+  "전체 소리 꺼짐이면 라디오도 무음": {
+   "ok": true,
+   "dB": "-Infinity",
+   "표시": "소리 꺼짐"
+  },
+  "95.5 자막(녹음 전)·낮은 톤": {
+   "ok": true,
+   "자막": "관악산 FM입니다. 지금 산은 하늘이 맑아요. 그늘진 길에서는 숨을 한 번 크게 쉬어 보세요. 서두를 일 없는 하루, 발걸음은 가볍게 가요.",
+   "dB": "-35.2"
+  },
+  "99.1 다음 파일로 끊김 없이 이어짐": {
+   "ok": false,
+   "전": [
+    1,
+    1
+   ],
+   "후": [
+    2,
+    1
+   ],
+   "최저dB": "-39.2",
+   "중간dB": "-36.9"
+  },
+  "뒷면 링크 3개(새 탭·noopener)": {
+   "ok": true,
+   "links": [
+    {
+     "t": "CBS 음악FM↗",
+     "href": "https://www.cbs.co.kr/onair/musicFm",
+     "target": "_blank",
+     "rel": "noopener noreferrer"
+    },
+    {
+     "t": "CBS 표준FM↗",
+     "href": "https://www.cbs.co.kr/onair/fm",
+     "target": "_blank",
+     "rel": "noopener noreferrer"
+    },
+    {
+     "t": "MBC mini↗",
+     "href": "https://mini.imbc.com/",
+     "target": "_blank",
+     "rel": "noopener noreferrer"
+    }
+   ]
+  },
+  "소리 출처 화면: 91.9 문구 그대로·99.1·발소리": {
+   "ok": true,
+   "앞부분": "관악산 FM\n91.9 잔잔한 음악\n\"Morning\", \"Evening\", \"Windswept\", \"Fresh Air\", \"Reawakening\", \"Dream Culture\", \"Wholesome\", \"Healing\"\nKevin MacLeod (incompetech.com)\nLicensed under Creative Commons: By Attribution 4.0\nhttp://creativecommons.org/license"
+  },
+  "설정 시트에 소리 출처 단추": {
+   "ok": true
+  },
+  "끄면 연결 해제·칩은 📻 라디오": {
+   "ok": true,
+   "on": false,
+   "nodes": false,
+   "deck": null,
+   "chip": "📻 라디오",
+   "saved": "{\"freq\":91.9,\"vol\":0.6}"
+  },
+  "외부 주소 요청 0건": {
+   "ok": true,
+   "external": []
+  },
+  "페이지 오류 없음": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "files": [
+  {
+   "file": "919-calm/morning.mp3",
+   "expected": 153.313,
+   "duration": 153.25322,
+   "played": 2.671937,
+   "rmsDb": -21.162525399934623,
+   "endedAfter": 2.953300000190735
+  },
+  {
+   "file": "919-calm/evening.mp3",
+   "expected": 186.253,
+   "duration": 186.190476,
+   "played": 2.631360000000001,
+   "rmsDb": -13.707200483947448,
+   "endedAfter": 2.9531000003814696
+  },
+  {
+   "file": "919-calm/windswept.mp3",
+   "expected": 208.344,
+   "duration": 208.291125,
+   "played": 2.632148000000001,
+   "rmsDb": -20.441054787536473,
+   "endedAfter": 2.9546999998092653
+  },
+  {
+   "file": "919-calm/fresh-air.mp3",
+   "expected": 294.06,
+   "duration": 294,
+   "played": 2.634855999999999,
+   "rmsDb": -20.457826433850382,
+   "endedAfter": 2.9577999997138975
+  },
+  {
+   "file": "919-calm/reawakening.mp3",
+   "expected": 214.073,
+   "duration": 214,
+   "played": 2.635465,
+   "rmsDb": -41.731362605327924,
+   "endedAfter": 2.9455
+  },
+  {
+   "file": "919-calm/dream-culture.mp3",
+   "expected": 214.361,
+   "duration": 214.285714,
+   "played": 2.6380490000000023,
+   "rmsDb": -20.510342770024536,
+   "endedAfter": 2.9531000003814696
+  },
+  {
+   "file": "919-calm/wholesome.mp3",
+   "expected": 363.807,
+   "duration": 363.75,
+   "played": 2.632562,
+   "rmsDb": -18.977452311883887,
+   "endedAfter": 2.9549000000953676
+  },
+  {
+   "file": "919-calm/healing.mp3",
+   "expected": 378.139,
+   "duration": 520,
+   "played": 2.6340410000000034,
+   "rmsDb": -26.653456066090083,
+   "endError": "끝나지 않음"
+  },
+  {
+   "file": "991-forest-wind/819351-wind-macclesfield.mp3",
+   "expected": 274.512,
+   "duration": 274.474667,
+   "played": 2.6400000000000006,
+   "rmsDb": -36.95542641614769,
+   "endError": "끝 play 시간 초과"
+  },
+  {
+   "file": "991-forest-wind/524203-wind-forest-04.mp3",
+   "expected": 55.536,
+   "duration": 55.509615,
+   "played": 2.6350760000000015,
+   "rmsDb": -17.02730708614228,
+   "endedAfter": 3.1335999999046327
+  },
+  {
+   "file": "991-forest-wind/679109-birds-morning-forest.mp3",
+   "expected": 91.037,
+   "duration": 91,
+   "played": 2.6302420000000026,
+   "rmsDb": -46.68263879070995,
+   "endedAfter": 3.3595999999046327
+  },
+  {
+   "file": "991-forest-wind/474835-forest-morning.mp3",
+   "expected": 61.701,
+   "duration": 61.655669,
+   "played": 2.635465,
+   "rmsDb": -30.178948718433197,
+   "endedAfter": 3.005800000190735
+  },
+  {
+   "file": "991-forest-wind/869104-stream-dolomites.mp3",
+   "expected": 418.704,
+   "duration": 418.666083,
+   "played": 2.637343999999999,
+   "rmsDb": -26.997998437508457,
+   "endError": "끝 play 시간 초과"
+  },
+  {
+   "file": "991-forest-wind/588180-mountain-river.mp3",
+   "expected": 50.016,
+   "duration": 49.980167,
+   "played": 2.6326430000000016,
+   "rmsDb": -47.47995828139865,
+   "endedAfter": 3.0662999997138978
+  }
+ ],
+ "levels": {
+  "on919": -31.314478739456376,
+  "noise": -30.338093347775782,
+  "natureTrace": [
+   -23.6,
+   -24.1,
+   -25.2,
+   -23.9,
+   -24.6,
+   -23.7,
+   -23.7,
+   -24,
+   -25,
+   -23.7,
+   -25.2,
+   -23.8,
+   -25.3,
+   -25.6,
+   -23,
+   -25.4,
+   -24.8,
+   -25.1,
+   -23.4,
+   -25,
+   -24.5,
+   -24.4,
+   -26.1,
+   -25.1,
+   -25.5,
+   -27.1,
+   -28.8,
+   -28.3,
+   -27.5,
+   -28.2,
+   -27.6,
+   -29.4,
+   -31,
+   -29.1,
+   -30.2,
+   -30.4,
+   -31.1,
+   -31.9,
+   -32.5,
+   -32.9,
+   -32.7,
+   -32.8,
+   -32.8,
+   -33,
+   -35.6,
+   -33.9,
+   -36.4,
+   -34.7,
+   -34.8,
+   -35.5,
+   -35.6,
+   -35.3,
+   -36.8,
+   -35,
+   -37,
+   -37.1,
+   -37.1,
+   -36.3,
+   -36.9,
+   -36.6,
+   -36.2,
+   -37.7,
+   -37.7,
+   -38.1,
+   -37,
+   -38.9,
+   -37.3,
+   -37.7,
+   -35.7,
+   -37.6,
+   -38.2,
+   -38.3,
+   -38.5,
+   -38.2,
+   -38.2,
+   -38.6,
+   -37.4,
+   -33.9,
+   -37.8,
+   -38.3,
+   -37.4,
+   -38.5,
+   -38.1,
+   -37.8,
+   -38.5,
+   -38.1,
+   -36.3,
+   -37.4,
+   -37.6,
+   -36.8,
+   -37.6,
+   -38.3,
+   -37.4,
+   -37.5,
+   -37.9,
+   -36.6,
+   -37.3,
+   -37.7,
+   -38,
+   -35.5,
+   -38.7,
+   -38.3,
+   -36.8,
+   -37.6,
+   -35.6,
+   -37.3,
+   -37.8,
+   -36.8,
+   -38.4,
+   -37.4,
+   -37.4,
+   -36.7,
+   -37.6,
+   -36.3,
+   -37.2,
+   -38.9,
+   -36.2,
+   -36,
+   -37,
+   -37.6,
+   -36.5,
+   -36.4,
+   -38.5,
+   -36.4,
+   -37,
+   -38.1,
+   -36.7,
+   -37.4,
+   -38.5,
+   -39.2,
+   -37,
+   -37.1,
+   -35.7,
+   -38.5,
+   -36.9,
+   -36.3,
+   -38.1,
+   -37,
+   -36.7,
+   -37.5,
+   -38.8,
+   -37.1,
+   -37.4,
+   -38.4,
+   -38,
+   -37.7,
+   -36.4,
+   -36.9,
+   -37.5,
+   -36.8,
+   -38.5,
+   -37.6,
+   -35.9,
+   -38.1,
+   -35.4,
+   -37.7,
+   -37.5,
+   -37.3,
+   -37.2,
+   -37.8,
+   -38.5,
+   -37.3,
+   -38.2,
+   -38,
+   -37.9,
+   -38.4,
+   -35.8,
+   -34.7,
+   -36.1
+  ]
+ },
+ "external": [],
+ "lengthMismatch": [
+  {
+   "file": "919-calm/healing.mp3",
+   "browser": 520,
+   "manifest": 378.139
+  }
+ ]
+}

@@ -1,0 +1,502 @@
+[
+ {
+  "file": "land-day-pick-new.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-pick-new.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-pick-new.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-pick-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-pick-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-pick-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-pick-dev.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-pick-dev.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-pick-dev.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-pick-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-pick-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-pick-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-pick-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-pick-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-pick-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-pick-many.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-pick-many.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-pick-many.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-game-settings.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-game-settings.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-game-settings.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-game-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-game-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-game-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-game-live.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-game-live.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-game-live.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-game-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-game-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-game-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-game-dev.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": [
+   "sheet +25px"
+  ]
+ },
+ {
+  "file": "port-day-game-dev.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-game-dev.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-summit-unlock.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-summit-unlock.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-summit-unlock.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-day-map-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-day-map-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-day-map-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-night-pick-new.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-night-pick-new.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-night-pick-new.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-night-pick-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-night-pick-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-night-pick-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-night-game-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-night-game-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-night-game-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-night-game-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-night-game-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-night-game-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-night-map-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-night-map-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-night-map-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-night-summit-unlock.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-night-summit-unlock.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-night-summit-unlock.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-dusk-pick-new.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-dusk-pick-new.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-dusk-pick-new.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-dusk-pick-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-dusk-pick-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-dusk-pick-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-dusk-game-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-dusk-game-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-dusk-game-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-dusk-game-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-dusk-game-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-dusk-game-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-dusk-map-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-dusk-map-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-dusk-map-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "land-dusk-summit-unlock.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "port-dusk-summit-unlock.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "pc-dusk-summit-unlock.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "wide-day-pick-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "wide-day-pick-dev.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "wide-day-pick-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "wide-day-game-free.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "wide-day-game-locked.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "wide-day-game-settings.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "wide-day-map-done.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ },
+ {
+  "file": "wide-day-summit-unlock.png",
+  "errors": [],
+  "issues": [],
+  "scrolls": []
+ }
+]

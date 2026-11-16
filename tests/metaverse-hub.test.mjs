@@ -25,9 +25,9 @@ test('세 페이지가 있고 각자 자기 진입 스크립트를 쓴다',()=>{
  assert.match(read('hiking/index.html'),/src="\/src\/main\.js"/);
  assert.match(read('smoking/index.html'),/src="\/src\/lounge\/main\.js"/);
 });
-test('vite 빌드 입력에 세 페이지가 모두 있다',async()=>{
+test('vite 빌드 입력에 네 페이지가 모두 있다',async()=>{
  const {PAGES}=await import('../vite.config.js');
- assert.deepEqual(Object.values(PAGES).sort(),['hiking/index.html','index.html','smoking/index.html']);
+ assert.deepEqual(Object.values(PAGES).sort(),['christmas/index.html','hiking/index.html','index.html','smoking/index.html']);
  for(const p of Object.values(PAGES))assert.ok(existsSync(new URL('../'+p,import.meta.url)),p);
 });
 test('흡연장은 등산과 같은 에셋 경로(BASE_URL 기준 assets/toon)로 동동이 뼈대를 받는다',()=>{

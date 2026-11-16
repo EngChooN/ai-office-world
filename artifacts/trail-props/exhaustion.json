@@ -1,0 +1,49 @@
+{
+ "start": 2580,
+ "errors": [],
+ "runSeconds": 1.727,
+ "firstPhase": "pant",
+ "uphillStart": {
+  "zone": "route",
+  "x": 45.39608429329602,
+  "z": 2283.999073130325,
+  "heading": 3.115030151100953,
+  "s": 2582.421542487138,
+  "lateral": 0
+ },
+ "slopeHere": 0.247,
+ "pant": {
+  "phase": "pant",
+  "bubble": "헥… 헥… 다리가… 내 말을… 안 들어…",
+  "moved": 0,
+  "seconds": 1.4789999999999999
+ },
+ "trudge": {
+  "trudge": true,
+  "acts": 1,
+  "runExhausted": true,
+  "stamina": 16.999600000000036
+ },
+ "recovered": 0,
+ "cramp": {
+  "label": "쥐 0:03",
+  "hatOff": true,
+  "hatAt": [
+   46,
+   184.75,
+   2283.43
+  ],
+  "bubble": "으아아 쥐났다!! 종아리!!",
+  "moved": 0,
+  "hatBackOnHead": true
+ },
+ "release": {
+  "seconds": 1.013
+ },
+ "firstPerson": {
+  "view": "first",
+  "drop300ms": 0.08,
+  "drop1800ms": 0.3,
+  "afterRecover": 0
+ }
+}

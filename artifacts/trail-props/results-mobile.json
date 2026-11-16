@@ -1,0 +1,114 @@
+{
+ "gym-hang": {
+  "file": "artifacts/trail-props/gym-hang-mobile.png",
+  "started": "ok",
+  "ok": true,
+  "t": 3.4,
+  "acts": {
+   "active": {
+    "name": "gym-hang",
+    "t": 3.4,
+    "w": 1,
+    "state": "hold",
+    "reps": 0
+   },
+   "dizzy": 0,
+   "boost": 0,
+   "hatDetached": true,
+   "packDetached": false,
+   "poles": [
+    false,
+    false
+   ],
+   "held": {},
+   "hands": [
+    [
+     51.391,
+     173.409,
+     2158.611
+    ],
+    [
+     51.279,
+     173.408,
+     2157.943
+    ]
+   ]
+  },
+  "animals": [
+   {
+    "id": "cat-pavilion",
+    "kind": "cat",
+    "state": "idle",
+    "x": 49.68,
+    "z": 2145.66
+   }
+  ],
+  "bubble": {
+   "text": "피가 머리로 쏠린다… 원래 머리가 몸 절반인데…",
+   "kind": ""
+  },
+  "seconds": 11.285
+ },
+ "gym": {
+  "errors": []
+ },
+ "bench": {
+  "file": "artifacts/trail-props/bench-mobile.png",
+  "started": "ok",
+  "ok": true,
+  "t": 3.2,
+  "acts": {
+   "active": {
+    "name": "bench-sit",
+    "t": 3.2,
+    "w": 1,
+    "state": "hold",
+    "reps": 0
+   },
+   "dizzy": 0,
+   "boost": 0,
+   "hatDetached": false,
+   "packDetached": true,
+   "poles": [
+    false,
+    false
+   ],
+   "held": {
+    "soul": [
+     199.929,
+     152.175,
+     1957.313
+    ]
+   },
+   "hands": [
+    [
+     200.067,
+     151.811,
+     1957.094
+    ],
+    [
+     199.675,
+     151.812,
+     1957.321
+    ]
+   ]
+  },
+  "animals": [
+   {
+    "id": "cat-bench",
+    "kind": "cat",
+    "state": "bench",
+    "x": 200.52,
+    "z": 1956.66
+   }
+  ],
+  "bubble": {
+   "text": "(자리 맡아 둠)",
+   "kind": "tag"
+  },
+  "seconds": 8.479
+ },
+ "bench-2156": {
+  "errors": []
+ }
+}

@@ -5,6 +5,7 @@ export const EXPERIENCES=[
  {id:'hiking',path:'hiking/',title:'온라인 등산',place:'관악산',desc:'등산복 입은 동동이와 연주대까지 걸어 올라요',tags:['혼자·함께','낮·노을·밤'],art:'mountain',
   record:storage=>{const r=summitOf(loadSummits(storage),'gwanak');return r?`완등 ${r.count}회`:null;}},
  {id:'smoking',path:'smoking/',title:'온라인 흡연장',place:'서울 옥상',desc:'회사원 옷 입은 동동이와 옥상에서 수다 한 대',tags:['수다','옥상 야경'],art:'rooftop',record:null},
+ {id:'christmas',path:'christmas/',title:'온라인 크리스마스',place:'눈마을 광장',desc:'동동이와 트리를 꾸미고 눈사람을 만들어요',tags:['함께','눈 오는 밤'],art:'village',record:null},
 ];
 /** 카드 링크 주소: base(import.meta.env.BASE_URL)에 상대 경로를 붙인다. */
 export const experienceHref=(e,base='/')=>`${base.endsWith('/')?base:base+'/'}${e.path}`;

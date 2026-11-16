@@ -1,0 +1,146 @@
+{
+ "tree-spring": {
+  "file": "artifacts/seasons/tree-spring-night.png",
+  "season": {
+   "manual": "spring",
+   "auto": "autumn",
+   "season": "spring",
+   "source": "manual",
+   "label": "봄",
+   "weights": [
+    1,
+    0,
+    0,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 135.8,
+   "instancedMB": 168.4,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 416.5,
+   "meshes": 15395,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 316,
+    "textures": 23
+   },
+   "jsHeapMB": 930.4
+  }
+ },
+ "tree-summer": {
+  "file": "artifacts/seasons/tree-summer-night.png",
+  "season": {
+   "manual": "summer",
+   "auto": "autumn",
+   "season": "summer",
+   "source": "manual",
+   "label": "여름",
+   "weights": [
+    0,
+    1,
+    0,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 135.8,
+   "instancedMB": 168.4,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 416.5,
+   "meshes": 15395,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 316,
+    "textures": 23
+   },
+   "jsHeapMB": 940.9
+  }
+ },
+ "tree-autumn": {
+  "file": "artifacts/seasons/tree-autumn-night.png",
+  "season": {
+   "manual": "autumn",
+   "auto": "autumn",
+   "season": "autumn",
+   "source": "manual",
+   "label": "가을",
+   "weights": [
+    0,
+    0,
+    1,
+    0
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 135.8,
+   "instancedMB": 168.4,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 416.5,
+   "meshes": 15395,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 316,
+    "textures": 23
+   },
+   "jsHeapMB": 943.8
+  }
+ },
+ "tree-winter": {
+  "file": "artifacts/seasons/tree-winter-night.png",
+  "season": {
+   "manual": "winter",
+   "auto": "autumn",
+   "season": "winter",
+   "source": "manual",
+   "label": "겨울",
+   "weights": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  "shaderErrors": 0,
+  "memory": {
+   "geometryMB": 135.8,
+   "instancedMB": 168.4,
+   "textureMB": 51.5,
+   "renderTargetsMB": 60.7,
+   "totalMB": 416.5,
+   "meshes": 15395,
+   "drawingBuffer": [
+    1440,
+    810
+   ],
+   "dpr": 1,
+   "info": {
+    "geometries": 316,
+    "textures": 23
+   },
+   "jsHeapMB": 949
+  }
+ },
+ "tree": {
+  "errors": [],
+  "pageLoads": 1
+ }
+}

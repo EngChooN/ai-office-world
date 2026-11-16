@@ -1,0 +1,12 @@
+import {chromium} from 'playwright';
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--use-angle=metal']});
+const page=await browser.newPage({viewport:{width:1200,height:700}});
+await page.goto('http://127.0.0.1:5181/src/christmas/preview.html?hud=0'+(process.argv[2]??''));
+await page.waitForFunction(()=>window.xmas&&window.xmas.frames>5,null,{timeout:90000});
+const r=await page.evaluate(()=>{const out={},sc=window.xmas.scene;
+ const top=o=>{let p=o;while(p.parent&&p.parent!==sc&&p.parent.name!=='눈마을 광장'&&p.parent.name!=='world')p=p.parent;return p.name||p.type;};
+ sc.traverse(o=>{if(!o.isMesh&&!o.isPoints)return;let vis=true;for(let p=o;p;p=p.parent)if(!p.visible)vis=false;if(!vis)return;
+  const g=o.geometry,t=(g.index?g.index.count:g.attributes.position.count)/3*(o.isInstancedMesh?o.count:1);const k=top(o).replace(/[0-9]+/g,'#');out[k]??={meshes:0,tris:0};out[k].meshes++;out[k].tris+=Math.round(t);});
+ return Object.entries(out).sort((a,b)=>b[1].meshes-a[1].meshes);});
+for(const [k,v] of r)console.log(k.padEnd(18),v.meshes,v.tris);
+await browser.close();

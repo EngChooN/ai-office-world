@@ -1,0 +1,189 @@
+{
+ "sizes": {
+  "360x640": {
+   "cardH": 490,
+   "bottom": 565,
+   "vh": 640,
+   "fits": true,
+   "wrapScroll": false,
+   "small": 0,
+   "mode": "ask"
+  },
+  "390x844": {
+   "cardH": 472,
+   "bottom": 658,
+   "vh": 844,
+   "fits": true,
+   "wrapScroll": false,
+   "small": 0,
+   "mode": "ask"
+  },
+  "844x390": {
+   "cardH": 280,
+   "bottom": 292,
+   "vh": 390,
+   "fits": true,
+   "wrapScroll": false,
+   "small": 0,
+   "mode": "ask"
+  },
+  "1920x1080": {
+   "cardH": 472,
+   "bottom": 776,
+   "vh": 1080,
+   "fits": true,
+   "wrapScroll": false,
+   "small": 0,
+   "mode": "ask"
+  }
+ },
+ "flow": {
+  "enterOffAtStart": true,
+  "minor": {
+   "mode": "block",
+   "stored": null,
+   "gameStarted": false
+  },
+  "minorAskedAgain": true,
+  "badErr": "",
+  "adult": {
+   "stored": "{\"y\":2000,\"ok\":true,\"at\":\"2026-11-16\"}",
+   "gateGone": true
+  },
+  "askedAgainAfterAdult": false,
+  "lobbyAfter": true,
+  "read": {
+   "shown": true,
+   "inputs": 0
+  },
+  "readClosed": true
+ },
+ "sit": {
+  "1920x1080": {
+   "seatY": 0.4375,
+   "hipsY": 0.498,
+   "knee": 33,
+   "footY": 0.359,
+   "hand": [
+    {
+     "a": "stand",
+     "label": "일어나기",
+     "w": 107,
+     "h": 44
+    }
+   ],
+   "marks": [
+    "rail:0:난간에 기대기",
+    "ashtray:2:재떨이"
+   ],
+   "camDist": 3.12,
+   "camInside": true,
+   "pose": "sit",
+   "afterE": "stand",
+   "withCan": {
+    "pose": "sit",
+    "held": true,
+    "hand": [
+     "stand:107",
+     "sip:101",
+     "dropCan:115"
+    ]
+   },
+   "lean": {
+    "pose": "lean",
+    "hand": [
+     "난간에서 떨어지기",
+     "한 모금",
+     "캔 버리기"
+    ],
+    "railMark": false
+   }
+  },
+  "390x844": {
+   "seatY": 0.4375,
+   "hipsY": 0.498,
+   "knee": 33,
+   "footY": 0.361,
+   "hand": [
+    {
+     "a": "stand",
+     "label": "일어나기",
+     "w": 107,
+     "h": 44
+    }
+   ],
+   "marks": [
+    "ashtray:0:재떨이",
+    "rail:0:난간에 기대기"
+   ],
+   "camDist": 3.51,
+   "camInside": true,
+   "pose": "sit",
+   "afterE": "stand",
+   "withCan": {
+    "pose": "sit",
+    "held": false,
+    "hand": [
+     "stand:107"
+    ]
+   },
+   "lean": {
+    "pose": "lean",
+    "hand": [
+     "난간에서 떨어지기"
+    ],
+    "railMark": false
+   }
+  },
+  "844x390": {
+   "seatY": 0.4375,
+   "hipsY": 0.498,
+   "knee": 33,
+   "footY": 0.367,
+   "hand": [
+    {
+     "a": "stand",
+     "label": "일어나기",
+     "w": 107,
+     "h": 44
+    }
+   ],
+   "marks": [
+    "ashtray:0:재떨이",
+    "rail:0:난간에 기대기",
+    "ashtray:2:재떨이"
+   ],
+   "camDist": 3.51,
+   "camInside": true,
+   "pose": "sit",
+   "afterE": "stand",
+   "withCan": {
+    "pose": "sit",
+    "held": true,
+    "hand": [
+     "stand:44",
+     "sip:101",
+     "dropCan:44"
+    ]
+   },
+   "lean": {
+    "pose": "lean",
+    "hand": [
+     "난간에서 떨어지기",
+     "한 모금",
+     "캔 버리기"
+    ],
+    "railMark": false
+   }
+  }
+ },
+ "npc": {
+  "id": "npc-daeho",
+  "hipsY": 0.497,
+  "knee": 33,
+  "marks": [
+   "bench:0"
+  ]
+ },
+ "errors": []
+}

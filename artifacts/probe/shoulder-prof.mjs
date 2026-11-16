@@ -1,0 +1,11 @@
+import {readFileSync} from 'node:fs';
+import {Vector3} from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {buildToonHikerGltf} from '../../src/toon/link-hiker.js';
+globalThis.self??=globalThis;globalThis.createImageBitmap??=async()=>({width:1,height:1,close(){}});
+const buf=readFileSync('assets/toon/models/hiker/Hiker.glb');const w=console.warn;console.warn=()=>{};
+const g=buildToonHikerGltf(await new GLTFLoader().parseAsync(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength),''));console.warn=w;
+const body=g.scene.getObjectByName('ToonHiker_Body'),p=body.geometry.attributes.position,si=body.geometry.attributes.skinIndex;
+const names=body.skeleton.bones.map(b=>b.name);const out=[];
+for(let i=0;i<p.count;i++)if(Math.abs(p.getZ(i))<.012&&p.getY(i)>1.2&&p.getY(i)<1.36&&p.getX(i)>0)out.push([p.getX(i).toFixed(3),p.getY(i).toFixed(3),names[si.getX(i)]]);
+console.log(out.length,out.slice(0,40).map(r=>r.join(' ')).join('\n'));

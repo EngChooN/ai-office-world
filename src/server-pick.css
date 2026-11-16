@@ -112,3 +112,6 @@
 .sp-row.sp-down{cursor:default;opacity:.85;border-style:dashed;box-shadow:none}
 .sp-row.sp-down .sp-art{filter:grayscale(.9)}
 .sp-row.sp-down .sp-go{background:var(--paper2,#f4e7c8);color:var(--ink2,#7a5f3a);border-color:var(--rule,#d9c79d);box-shadow:none;min-height:0;padding:6px 10px;font-size:13px}
+/* 크리스마스(11-16): 혼자 둘러보기 단추 안 아래 한 줄 안내(그리드 칸을 늘리지 않게 단추 안에 둔다) */
+.sp-solo:has(.sp-solo-note){flex-wrap:wrap;row-gap:2px;padding:6px 12px}
+.sp-solo-note{flex-basis:100%;font-size:12px;font-weight:600;line-height:1.35;opacity:.85}

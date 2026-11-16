@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>온라인 크리스마스 — 체험 설계 v1 화면</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;background:#0f1b2d;color:#eef3fb;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 60px}h1{font-size:26px;margin:0 0 4px}.sub{color:#9fb3d1;font-size:13px}
+h2{font-size:19px;color:#ffd98a;margin:34px 0 10px;padding-top:8px;border-top:1px solid #2a3b57}
+.row{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start}.cap{font-size:12.5px;color:#9fb3d1;margin:6px 2px}
+svg{display:block;max-width:100%;height:auto}
+.row>div:has(>.phone){width:262px}.row>div:has(>.pc){width:570px}
+/* 휴대폰 틀 */
+.phone{width:250px;height:520px;border-radius:30px;border:6px solid #3a4f73;background:linear-gradient(#142446,#24385d 60%,#dfe8f3 60.5%,#f4f8fc);position:relative;overflow:hidden;flex:none}
+.pc{width:560px;height:315px;border-radius:10px;border:5px solid #3a4f73;background:linear-gradient(#142446,#24385d 58%,#dfe8f3 58.5%,#f4f8fc);position:relative;overflow:hidden;flex:none}
+.paper{background:#fbf3df;color:#4a3618;border-radius:4px 12px 12px 4px;box-shadow:1px 2px 0 #b49563,0 6px 16px rgba(0,0,0,.35);font-size:11px}
+.chip{position:absolute;top:10px;left:50%;transform:translateX(-50%);white-space:nowrap;padding:4px 10px;font-size:10px;border-radius:99px}
+.btn{display:inline-grid;place-items:center;border-radius:50%;background:#f4e7c8;color:#4a3618;box-shadow:1px 2px 0 #b49563;font-size:15px}
+.act{position:absolute;right:12px;bottom:18px;width:58px;height:58px;font-size:12px;text-align:center;line-height:1.1;background:#b9472f;color:#fff}
+.act small{font-size:9px}.sub2{position:absolute;right:76px;bottom:22px;width:40px;height:40px;font-size:15px}
+.chat{position:absolute;left:12px;bottom:18px;width:40px;height:40px}
+.stick{position:absolute;left:40px;bottom:120px;width:70px;height:70px;border-radius:50%;border:2px dashed rgba(255,255,255,.45)}
+.sheet{position:absolute;left:0;right:0;bottom:0;padding:10px 12px 14px;border-radius:14px 14px 0 0}
+.sheet h4{margin:0 0 6px;font-size:12px;display:flex;justify-content:space-between}
+.steps{font-size:9.5px;color:#8a6d3b;margin-bottom:6px}.steps b{color:#b9472f}
+.grid{display:grid;gap:5px}.cell{background:#f4e7c8;border-radius:8px;min-height:40px;display:grid;place-items:center;font-size:16px;box-shadow:inset 0 0 0 1px #d9c49a}
+.cell.on{box-shadow:inset 0 0 0 2px #b9472f}.cell small{display:block;font-size:8.5px}
+.big{display:block;text-align:center;background:#b9472f;color:#fff;border-radius:10px;padding:8px;margin-top:8px;font-weight:700}
+.tree{position:absolute;left:50%;transform:translateX(-50%);width:0;height:0;border-left:70px solid transparent;border-right:70px solid transparent;border-bottom:190px solid #1f6b4a;top:70px}
+.dot{position:absolute;width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.75);box-shadow:0 0 6px #fff}
+.orn{position:absolute;width:11px;height:11px;border-radius:50%}
+.toast{position:absolute;left:50%;transform:translateX(-50%);top:40px;padding:6px 10px;white-space:nowrap;font-size:10.5px}
+.bar{position:absolute;top:38px;left:50%;transform:translateX(-50%);font-size:9.5px;padding:3px 8px;border-radius:99px}
+.lr{position:absolute;bottom:20px;width:64px;height:64px;font-size:22px}
+.ball{position:absolute;border-radius:50%;background:#fff;box-shadow:inset -6px -6px 0 #d7e2ee}
+.note{font-size:13px;color:#cfdcf0}.note li{margin:3px 0}
+table{border-collapse:collapse;font-size:12.5px}td,th{border:1px solid #2a3b57;padding:5px 8px;text-align:left}th{background:#1b2f4e}
+</style></head><body><div class="wrap">
+<h1>🎄 온라인 크리스마스 — 체험 설계 v1 · 화면 그림</h1>
+<div class="sub">월드디자인 · 2026-11-16 · 본문: <code>docs/크리스마스/체험설계-v1.md</code> · 개략 시안(색·모양은 월드아트가 확정). 숫자와 배치는 모두 제안(대표 미확인)</div>
+
+<h2>1. 마을 광장 배치도 (위에서 본 모습)</h2>
+<div class="row">
+<svg viewBox="0 0 760 560" width="760">
+ <defs><radialGradient id="fire" r=".5"><stop offset="0" stop-color="#ffcf6a"/><stop offset="1" stop-color="#ff7a2f" stop-opacity="0"/></radialGradient>
+ <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ffd98a"/></marker></defs>
+ <rect x="0" y="0" width="760" height="560" fill="#e9f0f8"/>
+ <!-- 썰매 언덕 -->
+ <path d="M150 20 Q380 -10 610 20 L600 120 Q380 150 160 120 Z" fill="#cfdceb"/>
+ <path d="M300 40 C330 70 260 85 330 110 S420 120 470 130" fill="none" stroke="#9bb2cc" stroke-width="22" stroke-linecap="round"/>
+ <rect x="282" y="26" width="58" height="22" rx="4" fill="#7a5a3a"/><text x="311" y="41" font-size="11" text-anchor="middle" fill="#fff">출발대 3줄</text>
+ <rect x="440" y="118" width="90" height="34" rx="8" fill="#dbe6f2" stroke="#9bb2cc" stroke-dasharray="4 3"/><text x="485" y="139" font-size="11" text-anchor="middle" fill="#4a5b72">멈춤 구역 ⬆</text>
+ <text x="610" y="60" font-size="15" fill="#4a5b72">🛷 썰매 언덕 (북)</text>
+ <!-- 광장 -->
+ <ellipse cx="380" cy="330" rx="250" ry="175" fill="#f7fafd" stroke="#c4d2e2" stroke-width="3"/>
+ <!-- 집 -->
+ <g fill="#b98a5e"><rect x="40" y="170" width="70" height="55"/><rect x="40" y="420" width="70" height="55"/><rect x="650" y="170" width="70" height="55"/><rect x="650" y="420" width="70" height="55"/></g>
+ <g font-size="11" fill="#fff" text-anchor="middle"><text x="75" y="202">집(장식)</text><text x="75" y="452">집</text><text x="685" y="202">집(장식)</text><text x="685" y="452">집</text></g>
+ <!-- 눈싸움 마당 -->
+ <rect x="20" y="250" width="120" height="150" rx="10" fill="#e3edf8" stroke="#6f9fd6" stroke-width="2" stroke-dasharray="6 4"/>
+ <g fill="#fff" stroke="#b9cbe0"><rect x="45" y="280" width="34" height="12" rx="5"/><rect x="90" y="320" width="34" height="12" rx="5"/><rect x="45" y="360" width="34" height="12" rx="5"/></g>
+ <text x="80" y="268" font-size="12" text-anchor="middle" fill="#2e5d93">❄️ 눈싸움 마당</text>
+ <!-- 벽: 눈싸움과 모닥불 사이 -->
+ <rect x="150" y="270" width="12" height="110" rx="5" fill="#fff" stroke="#b9cbe0"/><text x="156" y="395" font-size="9.5" text-anchor="middle" fill="#7d8ea5">눈벽</text>
+ <!-- 모닥불 -->
+ <circle cx="230" cy="325" r="42" fill="url(#fire)"/><circle cx="230" cy="325" r="10" fill="#ff8a3d"/>
+ <g fill="#8b5a2b"><rect x="196" y="282" width="68" height="9" rx="4"/><rect x="196" y="360" width="68" height="9" rx="4"/><rect x="186" y="292" width="9" height="66" rx="4"/><rect x="266" y="292" width="9" height="66" rx="4"/></g>
+ <text x="230" y="395" font-size="12" text-anchor="middle" fill="#8b4a1f">🔥 모닥불 8자리</text>
+ <!-- 트리 -->
+ <circle cx="380" cy="300" r="48" fill="#1f6b4a"/><circle cx="380" cy="300" r="64" fill="none" stroke="#aac4b6" stroke-width="2" stroke-dasharray="3 4"/>
+ <text x="380" y="305" font-size="20" text-anchor="middle">⭐</text><text x="380" y="378" font-size="11" text-anchor="middle" fill="#2c5a45">둘레 길 3m · 장식 120자리</text>
+ <!-- 전시 줄 -->
+ <path d="M300 410 Q380 445 460 410" fill="none" stroke="#c4d2e2" stroke-width="2"/>
+ <g font-size="14" text-anchor="middle"><text x="300" y="420">⛄</text><text x="322" y="428">⛄</text><text x="345" y="434">⛄</text><text x="368" y="437">⛄</text><text x="392" y="437">⛄</text><text x="415" y="434">⛄</text><text x="438" y="428">⛄</text><text x="460" y="420">⛄</text></g>
+ <text x="380" y="455" font-size="11" text-anchor="middle" fill="#4a5b72">완성 눈사람 전시 8자리</text>
+ <!-- 우체통 -->
+ <rect x="520" y="300" width="26" height="40" rx="6" fill="#c0392b"/><text x="533" y="358" font-size="12" text-anchor="middle" fill="#8b1f15">🎁 우체통</text>
+ <!-- 눈사람 마당 -->
+ <rect x="620" y="250" width="125" height="150" rx="10" fill="#f0f5fb" stroke="#8fb39b" stroke-width="2" stroke-dasharray="6 4"/>
+ <circle cx="660" cy="320" r="14" fill="#fff" stroke="#c9d6e4"/><circle cx="700" cy="350" r="9" fill="#fff" stroke="#c9d6e4"/><circle cx="690" cy="300" r="6" fill="#fff" stroke="#c9d6e4"/>
+ <text x="682" y="268" font-size="12" text-anchor="middle" fill="#2c6b45">⛄ 눈사람 마당</text><text x="682" y="388" font-size="10" text-anchor="middle" fill="#5b7a66">눈덩이 최대 6개</text>
+ <!-- 입구·등장 -->
+ <circle cx="380" cy="480" r="22" fill="#fff6dd" stroke="#e6c06a" stroke-dasharray="4 3"/><text x="380" y="485" font-size="13" text-anchor="middle">🧍</text>
+ <text x="380" y="530" font-size="13" text-anchor="middle" fill="#4a5b72">마을 입구 · 첫 등장 자리 (남, 트리를 정면으로)</text>
+ <!-- 동선 -->
+ <g stroke="#e0a83a" stroke-width="2.5" fill="none" marker-end="url(#ar)" opacity=".9">
+  <path d="M380 458 L380 375"/><path d="M360 470 Q280 440 245 375"/><path d="M400 470 Q480 440 525 350"/>
+  <path d="M215 300 Q170 250 120 255"/><path d="M548 315 Q600 300 625 305"/><path d="M380 250 Q380 190 340 140"/>
+ </g>
+</svg>
+<div class="note" style="max-width:340px"><ul>
+<li><b>처음 화면 = 트리 정면.</b> 남쪽 입구에서 등장.</li>
+<li><b>조용한 곳(모닥불) ↔ 시끄러운 곳(눈싸움)</b> 사이를 눈벽·집으로 가림. 눈덩이는 눈싸움 마당 안에서만.</li>
+<li>주 동선(주황 화살표)은 입구 → 트리 → 모닥불/우체통. 전시 눈사람·썰매 멈춤 구역은 주 동선 밖.</li>
+<li>광장 경계는 눈 더미·울타리·집(보이지 않는 벽 없음).</li>
+<li>크기 감: 트리 = 동동이 키의 8~10배, 모닥불 통나무 4개 × 2자리.</li>
+</ul></div>
+</div>
+
+<h2>2. 휴대폰 세로 — 광장 기본 화면 · 트리 장식 고르기 · 선물 보내기</h2>
+<div class="row">
+ <div><div class="phone">
+  <div class="paper chip">🎄 눈마을 광장 1서버 · 👥 12/20</div>
+  <div class="paper bar">🎄 47/120</div>
+  <div class="tree" style="top:95px;border-bottom-width:160px;border-left-width:55px;border-right-width:55px"></div>
+  <div class="paper toast" style="top:300px">🎄 장식 달기</div>
+  <div class="stick"></div>
+  <div class="btn chat">💬</div>
+  <div class="btn sub2">😊</div>
+  <div class="btn act">🎄<br><small>장식 달기</small></div>
+ </div><div class="cap">① 기본: 위 칩(서버·인원) · 트리 진행 · 대상 위 단추 · 왼쪽 아래 💬 · 오른쪽 아래 행동 단추</div></div>
+
+ <div><div class="phone">
+  <div class="paper chip">✕ 그만하기 · 이번 1분 3개 남음</div>
+  <div class="tree" style="top:50px;border-bottom-width:250px;border-left-width:95px;border-right-width:95px"></div>
+  <div class="dot" style="left:115px;top:150px"></div><div class="dot" style="left:92px;top:205px"></div><div class="dot" style="left:150px;top:220px"></div><div class="dot" style="left:70px;top:260px"></div><div class="dot" style="left:170px;top:268px"></div>
+  <div class="orn" style="left:135px;top:180px;background:#e74c3c"></div><div class="orn" style="left:105px;top:240px;background:#f1c40f"></div><div class="orn" style="left:150px;top:250px;background:#3498db"></div>
+  <div class="orn" style="left:92px;top:205px;background:#e74c3c;opacity:.5;outline:2px dashed #fff"></div>
+  <div class="paper toast" style="top:178px;left:70px;transform:none">[달기] [취소]</div>
+  <div class="paper sheet"><h4><span>장식 고르기</span><span>✕</span></h4>
+   <div class="grid" style="grid-template-columns:repeat(4,1fr)"><div class="cell on">🔴</div><div class="cell">🟡</div><div class="cell">🔵</div><div class="cell">⚪</div><div class="cell">🍭</div><div class="cell">🔔</div><div class="cell">❄️</div><div class="cell">🎁</div></div></div>
+ </div><div class="cap">② 장식 모드: 빈 자리 = 흰 점, 고른 장식 미리 보기 → 달기. 좌우 끌기로 트리 둘레 돌기</div></div>
+
+ <div><div class="phone">
+  <div class="paper sheet" style="height:72%"><h4><span>🎁 선물 보내기</span><span>✕</span></h4>
+   <div class="steps">1 누구 · 2 선물 · <b>3 카드</b> · 4 확인</div>
+   <div style="font-size:10.5px;margin-bottom:5px">받는 사람: <b>지은</b> · 선물: 🎅 산타 모자</div>
+   <div class="grid" style="grid-template-columns:repeat(3,1fr)"><div class="cell on">🎄<small>트리</small></div><div class="cell">⛄<small>눈사람</small></div><div class="cell">🔥<small>모닥불</small></div></div>
+   <div style="background:#fff;border-radius:8px;padding:8px;margin-top:7px;min-height:70px;box-shadow:inset 0 0 0 1px #d9c49a">메리 크리스마스! 내년에도 같이 산 가자 ⛰<div style="text-align:right;font-size:9px;color:#8a6d3b">22/60</div></div>
+   <div style="font-size:9px;color:#8a6d3b;margin-top:4px">기본 문구 · 「메리 크리스마스!」「고마워요」 …</div>
+   <div style="font-size:9px;color:#b9472f;margin-top:4px">전화번호·주소·SNS 아이디는 적지 마세요</div>
+   <span class="big">다음 ▶</span></div>
+ </div><div class="cap">③ 선물: 아래에서 올라오는 시트(화면 70%), 4단계 점 표시, 카드 60자</div></div>
+
+ <div><div class="phone">
+  <div class="paper toast" style="top:60px">🎁 민수에게서 선물이 왔어요 <b style="color:#b9472f">[열어 보기]</b></div>
+  <div class="paper" style="position:absolute;left:22px;right:22px;top:150px;padding:14px;border-radius:12px;text-align:center">
+   <div style="font-size:34px">🎅</div><b>산타 모자</b><div style="margin:8px 0;padding:8px;background:#fff;border-radius:8px;text-align:left">메리 크리스마스! 내년에도 같이 산 가자 ⛰<div style="text-align:right;font-size:9.5px;color:#8a6d3b">— 민수</div></div>
+   <span class="big" style="margin-top:4px">입어 보기</span><div style="margin-top:6px;font-size:10px;color:#8a6d3b">닫기 · ⋯ 🔇 음소거 / 🚩 신고</div></div>
+  <div class="btn act" style="background:#f4e7c8;color:#4a3618">📬<br><small>받은 선물 1</small></div>
+ </div><div class="cap">④ 받기: 위 알림 5초 + 📬 배지(놓쳐도 남음) → 카드 열기</div></div>
+</div>
+
+<h2>3. 미니게임 화면 (휴대폰 세로)</h2>
+<div class="row">
+ <div><div class="phone">
+  <div class="paper chip">⛄ 눈사람 마당</div>
+  <div class="ball" style="width:90px;height:90px;left:80px;top:300px"></div>
+  <div class="paper toast" style="top:265px">크기 ■■□ · 👥2</div>
+  <div class="ball" style="width:40px;height:40px;left:170px;top:345px"></div>
+  <div class="stick"></div><div class="btn chat">💬</div>
+  <div class="btn sub2">🎨</div><div class="btn act">⬆<br><small>올리기</small></div>
+ </div><div class="cap">⑤ 눈사람: 밀어서 굴리면 커짐(작음·중간·큼), 둘이 밀면 빠름, 작은 걸 큰 것 옆에 → 올리기 → 꾸미기 → 완성</div></div>
+
+ <div><div class="phone">
+  <div class="paper chip">❄️ 눈싸움 마당 · ❄️❄️❄️</div>
+  <div class="paper toast" style="top:250px;background:#fff;color:#2e5d93">민수의 눈덩이! ❄️</div>
+  <svg viewBox="0 0 250 520" style="position:absolute;inset:0"><path d="M190 430 Q140 260 110 300" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="5 5"/><circle cx="110" cy="300" r="14" fill="none" stroke="#fff" stroke-width="2"/></svg>
+  <div class="stick"></div><div class="btn chat">💬</div>
+  <div class="btn sub2">🤲</div><div class="btn act">❄️<br><small>던지기</small></div>
+ </div><div class="cap">⑥ 눈싸움: 짧게 = 앞 60°·12m 자동 조준, 길게 끌기 = 포물선 조준. 손에 3개, 🤲 뭉치기·3초 자동. 마당 밖은 안 맞음</div></div>
+
+ <div><div class="phone">
+  <div class="paper chip" style="opacity:.6">🛷 둘이 타는 중 · 지은</div>
+  <svg viewBox="0 0 250 520" style="position:absolute;inset:0"><path d="M60 520 C90 400 170 380 140 270" fill="none" stroke="#cbd8e8" stroke-width="80" stroke-linecap="round"/><text x="125" y="380" font-size="40" text-anchor="middle">🛷</text></svg>
+  <div class="btn lr" style="left:14px">◀</div><div class="btn lr" style="right:14px">▶</div>
+  <div class="btn chat" style="bottom:100px">💬</div>
+ </div><div class="cap">⑦ 썰매: 속도는 저절로, 좌우만(◀ ▶ / A·D). 둘이 타면 앞사람만 조종. 다른 썰매와 통과(부딪힘 없음)</div></div>
+
+ <div><div class="phone">
+  <div class="paper" style="position:absolute;left:12px;right:12px;bottom:20px;padding:10px;border-radius:12px">
+   <b style="font-size:12px">💬 눈마을 광장 사람들</b>
+   <div style="font-size:9.5px;background:#f4e7c8;border-radius:6px;padding:4px 6px;margin:5px 0">전화번호·주소·SNS 아이디는 적지 마세요. 채팅은 저장되지 않아요.</div>
+   <p style="margin:3px 0"><b>민수</b> 트리 크다!🎄</p><p style="margin:3px 0"><b>지은</b> 눈사람 같이 만들어요</p><p style="margin:3px 0"><b>손님1234</b> *** 진짜 예쁘다</p>
+   <div style="font-size:10px;color:#b9472f;margin:4px 0">같은 말은 연속 두 번까지만 보낼 수 있어요</div>
+   <div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0"><span class="cell" style="min-height:26px;padding:0 6px;font-size:10px">메리 크리스마스</span><span class="cell" style="min-height:26px;padding:0 6px;font-size:12px">👋</span><span class="cell" style="min-height:26px;padding:0 6px;font-size:12px">❤️</span><span class="cell" style="min-height:26px;padding:0 6px;font-size:12px">😂</span></div>
+   <div style="display:flex;gap:5px"><div style="flex:1;background:#fff;border-radius:8px;padding:7px;font-size:10px;color:#a08b66">30초 뒤에 다시 쓸 수 있어요 · 29</div><span class="cell" style="min-height:30px;padding:0 8px;font-size:10px;opacity:.5">보내기</span></div>
+  </div>
+ </div><div class="cap">⑧ 채팅: 기존 창 + 안전 안내 한 줄 고정, 금칙어 ***, 같은 말 반복 막기, 계속 막히면 30초 쉬기(카운트다운)</div></div>
+</div>
+
+<h2>4. PC (1920×1080 축소) — 모닥불에 앉은 화면 · 사람 카드</h2>
+<div class="row">
+ <div><div class="pc">
+  <div class="paper chip">🎄 눈마을 광장 1서버 · 👥 12/20</div>
+  <svg viewBox="0 0 560 315" style="position:absolute;inset:0"><circle cx="280" cy="230" r="70" fill="#ffb347" opacity=".35"/><circle cx="280" cy="235" r="16" fill="#ff8a3d"/><rect x="200" y="255" width="160" height="12" rx="6" fill="#8b5a2b"/></svg>
+  <div class="paper toast" style="top:120px;left:200px;transform:none;font-size:11px"><small>지은</small><br>불 따뜻하다~</div>
+  <div class="paper" style="position:absolute;left:330px;top:95px;padding:8px 10px;border-radius:10px;font-size:11px">
+   <b>민수</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:5px"><span class="cell" style="min-height:24px;font-size:10px">👋 인사</span><span class="cell" style="min-height:24px;font-size:10px">🎁 선물</span><span class="cell" style="min-height:24px;font-size:10px">🔇 음소거</span><span class="cell" style="min-height:24px;font-size:10px">🚩 신고</span></div></div>
+  <div class="btn chat" style="width:32px;height:32px">💬</div>
+  <div class="btn sub2" style="width:44px;height:30px;border-radius:8px;font-size:10px;right:70px">일어나기</div>
+  <div class="btn act" style="width:48px;height:48px;font-size:10px">🙌<br><small>손 녹이기 E</small></div>
+ </div><div class="cap">⑨ 모닥불: 카메라가 불 쪽으로, 말풍선 6초·조금 크게. 이름표 클릭 → 사람 카드(인사·선물·음소거·신고). PC는 행동 단추 옆에 키 글자</div></div>
+ <div class="note" style="max-width:520px">
+ <table><tr><th>키</th><th>하는 일</th></tr>
+ <tr><td>W A S D · 방향키</td><td>걷기(카메라 기준) · Shift 뛰기</td></tr>
+ <tr><td>마우스 끌기 · 휠</td><td>시점 · 멀리/가까이</td></tr>
+ <tr><td>E</td><td>가까운 할 일(장식·선물·앉기·눈덩이·썰매)</td></tr>
+ <tr><td>F · 왼쪽 클릭</td><td>눈덩이 던지기(마당 안), 누르고 있으면 조준</td></tr>
+ <tr><td>R</td><td>눈 뭉치기</td></tr>
+ <tr><td>A/D · ←/→</td><td>썰매 조종 / 장식 모드에서 트리 둘레 돌기</td></tr>
+ <tr><td>1~6</td><td>이모지 👋 🎄 ❤️ 😂 👏 ⛄</td></tr>
+ <tr><td>Enter · Esc</td><td>채팅 열기 · 창 닫기/그만하기</td></tr>
+ <tr><td>H</td><td>화면 글 가리기(기존)</td></tr>
+ </table>
+ <p>모든 키 기능은 화면 단추로도 됩니다(휴대폰에는 키보드가 없음).</p></div>
+</div>
+</div></body></html>

@@ -127,30 +127,38 @@ function partsMesh(hiker){
  return body.userData.outfitParts={mesh,line,weights};
 }
 
-export function applyOutfit(hiker,key=DEFAULT_OUTFIT){
- const o=OUTFITS[outfitKey(key)],target=Object.fromEntries(KEYS.map(k=>[k,lin(o.colors[k]??ORIGINAL[k])]));
- for(const n of HIDE){const m=hiker.scene.getObjectByName(n);if(m)m.visible=false;}
+// table·hide·fold: 다른 체험(크리스마스 등)이 자기 옷 표로 같은 방식을 쓸 때 넘긴다. 기본값은 흡연장 회사원 옷.
+// 접어 넣기는 원래 꼭짓점 자리를 기억해 두고 옷마다 다시 계산한다(옷을 바꾸면 접었던 부품이 다시 나올 수 있다).
+export function applyOutfit(hiker,key=DEFAULT_OUTFIT,{table=OUTFITS,hide=HIDE,fold=FOLD}={}){
+ const o=table===OUTFITS?OUTFITS[outfitKey(key)]:(table[key]??Object.values(table)[0]),target=Object.fromEntries(KEYS.map(k=>[k,lin(o.colors[k]??ORIGINAL[k])]));
+ const folds=(o.fold??fold).map(n=>KEYS.indexOf(n));
+ for(const n of hide){const m=hiker.scene.getObjectByName(n);if(m)m.visible=false;}
  // 쌍안경은 몸이 처음 움직일 때(realistic-hiker update) 가슴 뼈에 붙는다. 그때도 숨도록 붙는 순간을 잡는다.
+ hiker.scene.userData.outfitHide=hide;
  if(!hiker.scene.userData.outfitHideHook){hiker.scene.userData.outfitHideHook=true;
-  const hide=e=>{if(HIDE.includes(e.child?.name))e.child.visible=false;};
-  hiker.scene.traverse(o=>o.addEventListener('childadded',hide));}
+  const onAdd=e=>{if(hiker.scene.userData.outfitHide?.includes(e.child?.name))e.child.visible=false;};
+  hiker.scene.traverse(o=>o.addEventListener('childadded',onAdd));}
  hiker.scene.traverse(m=>{
-  if(!m.isSkinnedMesh||m.userData.outline||!m.visible||m.name==='Outfit_Parts')return;
+  if(!m.isSkinnedMesh||m.userData.outline||!m.visible||m.name==='Outfit_Parts'||m.userData.outfitExtra)return;
   const g=m.geometry,c=g.attributes.color;if(!c)return;
-  // 처음 한 번 원래 색이 어떤 옷 칸인지 기록한다(-1 = 피부·얼굴 등 바꾸지 않음).
+  // 처음 한 번 원래 색이 어떤 옷 칸인지, 원래 꼭짓점 자리가 어디인지 기록한다(-1 = 피부·얼굴 등 바꾸지 않음).
   if(!g.userData.outfitSlot){const slot=new Int8Array(c.count).fill(-1);
    for(let i=0;i<c.count;i++){const r=c.getX(i),gg=c.getY(i),b=c.getZ(i);const k=ORIG.findIndex(x=>close(r,gg,b,x));slot[i]=k;}
-   g.userData.outfitSlot=slot;
-   // 등산복 부품(목도리·지퍼·배낭끈)은 몸통 가운데로 접어 넣어 보이지 않게 한다(외곽선도 같은 형상이라 함께 사라진다).
-   const fold=FOLD.map(n=>KEYS.indexOf(n)),p=g.attributes.position;let folded=false;
-   for(let i=0;i<c.count;i++)if(fold.includes(slot[i])){p.setXYZ(i,0,TRUNK.y,0);folded=true;}
-   if(folded){p.needsUpdate=true;g.computeBoundingSphere();}}
-  const slot=g.userData.outfitSlot;
+   g.userData.outfitSlot=slot;g.userData.outfitRest=g.attributes.position.array.slice();}
+  const slot=g.userData.outfitSlot,rest=g.userData.outfitRest,p=g.attributes.position;
+  // 이 옷에 안 맞는 등산복 부품(목도리·지퍼·배낭끈 등)은 몸통 가운데로 접어 넣어 보이지 않게 한다(외곽선도 같은 형상이라 함께 사라진다).
+  let moved=false;
+  for(let i=0;i<c.count;i++){const k=slot[i];if(k<0)continue;
+   const want=folds.includes(k),now=p.getX(i)===0&&p.getY(i)===Math.fround(TRUNK.y)&&p.getZ(i)===0;
+   if(want&&!now){p.setXYZ(i,0,TRUNK.y,0);moved=true;}else if(!want&&now){p.setXYZ(i,rest[i*3],rest[i*3+1],rest[i*3+2]);moved=true;}}
+  if(moved){p.needsUpdate=true;g.computeBoundingSphere();}
   for(let i=0;i<c.count;i++){const k=slot[i];if(k<0)continue;const t=target[KEYS[k]];c.setXYZ(i,t.r,t.g,t.b);}
   c.needsUpdate=true;
  });
  // 회사원 옷 부품(깃·넥타이·라펠·단추·누빔)을 이 옷에 맞게 다시 만든다. 메시·재질은 그대로 두고 형상만 바꾼다.
  const parts=partsMesh(hiker);
- if(parts){const old=parts.mesh.geometry,geo=buildParts(o.parts,parts.weights);parts.mesh.geometry=geo;parts.line.geometry=geo;old.dispose();}
+ if(parts){const old=parts.mesh.geometry,geo=buildParts(o.parts??{},parts.weights);parts.mesh.geometry=geo;parts.line.geometry=geo;old.dispose();}
  return o;
 }
+// 다른 체험이 몸통 겉면 부품을 만들 때 쓰는 도구(형상 한 벌, 사본 금지)
+export {Kit,TRUNK,surfA,angleAt,trunkRadii,ORIGINAL,KEYS};

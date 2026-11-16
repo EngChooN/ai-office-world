@@ -51,7 +51,7 @@ test('서버 채팅: 보낸 사람 포함 같은 방에 {t,id,text}, 이름은 �
 test('서버 채팅 속도 제한: 2초 1번·10초 4번, 넘으면 보낸 사람에게만 c-limit',()=>{
  const {rooms,join,advance}=setup();const a=join('a'),b=join('b');
  rooms.message(a,{t:'c',text:'1'});rooms.message(a,{t:'c',text:'2'});
- assert.deepEqual(a.inbox.filter(m=>m.t==='c-limit'),[{t:'c-limit'}]);assert.equal(b.inbox.some(m=>m.t==='c-limit'),false);
+ assert.deepEqual(a.inbox.filter(m=>m.t==='c-limit'),[{t:'c-limit',reason:'rate',wait:2}]);assert.equal(b.inbox.some(m=>m.t==='c-limit'),false);
  for(let i=0;i<3;i++){advance(2000);rooms.message(a,{t:'c',text:`n${i}`});}
  advance(2000);rooms.message(a,{t:'c',text:'다섯째'});
  assert.deepEqual(chats(b).map(m=>m.text),['1','n0','n1','n2']);assert.equal(rooms.stats.chatLimited,2);
@@ -104,7 +104,7 @@ test('담배 상태 허용 목록 = src/lounge/smoke.js가 내는 상태 이름(
  assert.equal(sanitizeSmoke({state:'done',lit:false}).state,'done');assert.equal(sanitizeSmoke(null),null);
 });
 test('체험별 익명 이름: 등산 등산객XXXX, 흡연장 손님XXXX(이름을 비우거나 신고로 숨겨졌을 때)',()=>{
- assert.deepEqual(ANON_PREFIX,{hiking:'등산객',smoking:'손님'});
+ assert.deepEqual(ANON_PREFIX,{hiking:'등산객',smoking:'손님',christmas:'눈송이'});
  assert.equal(anonymousName('ab12cd34'),'등산객CD34');assert.equal(anonymousName('ab12cd34','smoking'),'손님CD34');assert.equal(anonymousName('x9','golf'),'등산객X9');
  const {join}=setup();
  assert.equal(join('','옥상',{experience:'smoking'}).name,'손님P1');assert.equal(join('','산').name,'등산객P2');
@@ -132,7 +132,7 @@ test('BroadcastChannel 채팅: 정리 뒤 상대와 나에게, 2초 1번(넘으�
  const ga=[],gb=[];a.onmessage(m=>ga.push(m));b.onmessage(m=>gb.push(m));
  a.send({t:'c',id:'aa',text:' 안‮녕 '});
  assert.deepEqual(ga,[{t:'c',id:'aa',text:'안녕'}]);assert.deepEqual(gb,[{t:'c',id:'aa',text:'안녕'}]);
- t=500;a.send({t:'c',id:'aa',text:'또'});assert.deepEqual(ga.at(-1),{t:'c-limit'});assert.equal(gb.length,1);
+ t=500;a.send({t:'c',id:'aa',text:'또'});assert.deepEqual(ga.at(-1),{t:'c-limit',reason:'rate',wait:2});assert.equal(gb.length,1);
  // 옛 클라이언트·조작된 탭이 정리 안 된 글을 보내도 받는 쪽이 정리한다
  const raw=new BC('gwanak-multi:방');raw.postMessage({t:'c',id:'zz',text:'x'.repeat(200)});raw.postMessage({t:'c',id:'zz',text:'   '});raw.postMessage({t:'c',text:'id 없음'});
  assert.equal([...gb.at(-1).text].length,80);assert.equal(gb.filter(m=>m.t==='c').length,2);

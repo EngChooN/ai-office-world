@@ -133,7 +133,7 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
   if(typeof m?.t==='string'&&m.t.startsWith('pair:')){pairEvents(pair.handle(m,Date.now()));return;}
   if(m?.t==='moved'){hiddenSelf=!!m.h||hiddenSelf;room=m.room;for(const id of [...roster.keys()])dropPlayer(id);say('다른 방으로 옮겼어요');emitStatus();return;}
   if(m?.t==='report-ok')return;
-  if(m?.t==='c-limit'){window.dispatchEvent(new CustomEvent('hiking:chat-limit',{detail:{reason:'rate'}}));return;}
+  if(m?.t==='c-limit'){window.dispatchEvent(new CustomEvent('hiking:chat-limit',{detail:{reason:['repeat','mute'].includes(m.reason)?m.reason:'rate',wait:Number.isFinite(m.wait)?m.wait:0}}));return;}
   if(m?.t==='c'){onChat(m);return;}
   if(!m||m.id===myId)return;
   // 행동 상태(11-10): 자세·기구·동작. 모르는 사람이면 목록에 넣고 인사(위치는 서버가 같이 준다)

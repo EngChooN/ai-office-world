@@ -14,6 +14,7 @@
 import {createWebSocketTransport,createBroadcastTransport,multiServerUrl,createBackgroundTimer} from '../multi-transport.js';
 import {anonymousName,sanitizeName,createInterpolator,decodeState,FLAG,NET,findServer,PRESENCE,createPresence,sanitizeAct} from '../multi-protocol.js';
 import {OUTFITS} from './outfit.js';
+import {limitText} from '../hiking-chat-ui.js';
 import {createPoser,applyRemoteAct,newPoseState} from './spots.js';
 
 export const DEFAULT_ROOM='옥상-1';
@@ -160,7 +161,7 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
    case 'welcome':myId=m.id;room=m.room??room;myName=m.name||myName;emitStatus();return;
    case 'moved':room=m.room??room;for(const id of [...roster.keys()])drop(id);dispatch('lounge:multi-note',{text:`다른 옥상(${room})으로 옮겼어요`});emitStatus();return;
    case 'reject':dispatch('lounge:multi-note',{text:'서버가 흡연장 연결을 받지 않았어요'});return;
-   case 'c-limit':dispatch('lounge:multi-note',{text:'잠깐만요, 조금 천천히 말해요',kind:'limit'});return;
+   case 'c-limit':dispatch('lounge:multi-note',{text:limitText(m.reason,m.wait),kind:'limit'});return;
    case 'c':{const route=chatRoute(m,myId);if(route==='mine'){stats.chatsEchoSkipped++;return;}if(route!=='show')return;
     const r=roster.get(m.id);stats.chatsReceived++;
     dispatch('lounge:chat',{id:m.id,name:nameOf(r??{id:m.id}),text:m.text,remote:true});return;}

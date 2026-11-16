@@ -9,7 +9,7 @@
 // 11-08 입장 흐름 개편: 서버를 허브 체험 카드와 같은 카드(그림·이름·인원 막대·들어가기)로 보여 준다. 입장 전(current 없음·closable false)은
 // 게임 화면을 가리는 불투명 전체 화면(data-mode=entry), 게임 안에서 서버를 바꿀 때는 같은 카드의 창(data-mode=switch).
 // 체험 코드(main.js·lounge)와는 콜백으로만 만난다. 모양은 server-pick.css(등산 수첩 종이 톤, 단추 44px 이상, 안전 영역 안).
-import {SERVERS,SERVER_MAX,EXPERIENCES,NET} from './multi-protocol.js';
+import {SERVERS,SERVER_MAX,EXPERIENCES,NET,serverMax} from './multi-protocol.js';
 import {ART,hubTime} from './hub/hub.js';
 import {sunPosition} from './daytime.js';
 
@@ -18,7 +18,9 @@ export const REFRESH_MS=5000;
 export const FETCH_TIMEOUT_MS=4000;
 export const PICK_LABELS=Object.freeze({
  hiking:Object.freeze({art:'mountain',title:'함께 걷기 서버',icon:'👋',solo:'혼자 걷기',soloIcon:'🥾',leave:'나가서 혼자 걷기',anon:'등산객XXXX'}),
- smoking:Object.freeze({art:'rooftop',title:'같이 피우기 서버',icon:'👥',solo:'혼자 피우기',soloIcon:'🚬',leave:'나가서 혼자 피우기',anon:'손님XXXX'})
+ smoking:Object.freeze({art:'rooftop',title:'같이 피우기 서버',icon:'👥',solo:'혼자 피우기',soloIcon:'🚬',leave:'나가서 혼자 피우기',anon:'손님XXXX'}),
+ // 크리스마스(11-16, 체험설계 §3-1): 혼자일 때 트리 장식은 내 화면에만 남는다는 안내를 혼자 둘러보기 단추 아래 한 줄로(soloNote)
+ christmas:Object.freeze({art:'village',title:'눈마을 광장 서버',icon:'🎄',solo:'혼자 둘러보기',soloIcon:'⛄',leave:'나가서 혼자 둘러보기',anon:'눈송이XXXX',soloNote:'혼자 둘러보면 트리 장식은 내 화면에만 남고, 새로고침하면 사라져요'})
 });
 const clean=s=>String(s??'').normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f]/g,'').replace(/\s+/g,' ').trim();
 export const cleanPickName=raw=>[...clean(raw)].slice(0,NET.nameMax).join('').trim();
@@ -45,7 +47,7 @@ export function serverPickMode(search='',webdriver=false){
 export function pickRows(experience,health=null,servers=SERVERS){
  const got=Array.isArray(health?.servers?.[experience])?health.servers[experience]:null;
  return (servers[experience]??[]).map(s=>{
-  const h=got?.find(x=>String(x?.id)===s.id),count=h&&Number.isFinite(h.count)?Math.max(0,h.count):got?0:null,max=h&&Number.isFinite(h.max)&&h.max>0?h.max:SERVER_MAX;
+  const h=got?.find(x=>String(x?.id)===s.id),count=h&&Number.isFinite(h.count)?Math.max(0,h.count):got?0:null,max=h&&Number.isFinite(h.max)&&h.max>0?h.max:serverMax(experience);
   return {id:s.id,name:s.name,room:s.room,count,max,full:count!==null&&count>=max};
  });
 }
@@ -85,7 +87,7 @@ export function createServerPick({experience='hiking',serverUrl=null,serverOff=f
  <p class="sp-note" role="status" hidden></p>
  <ul class="sp-list" role="list"></ul>
  <label class="sp-name">닉네임 <small>(${NET.nameMax}자까지 · 비우면 ${esc(L.anon)})</small><input name="sp-name" type="text" maxlength="${NET.nameMax}" placeholder="${esc(L.anon)}" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"></label>
- <button type="button" class="sp-solo" data-sp="solo"><em aria-hidden="true">${L.soloIcon}</em><span>${esc(L.solo)}</span></button>
+ <button type="button" class="sp-solo" data-sp="solo"><em aria-hidden="true">${L.soloIcon}</em><span>${esc(L.solo)}</span>${L.soloNote?`<small class="sp-solo-note">${esc(L.soloNote)}</small>`:''}</button>
 </section>`;
   doc.body.append(root);
   const input=root.querySelector('input');input.value=name;

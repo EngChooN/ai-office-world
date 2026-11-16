@@ -1,15 +1,15 @@
 {
-  "date": "2026-11-03T09:16:58.229Z",
-  "base": "http://127.0.0.1:5190",
+  "date": "2026-11-16T08:12:36.343Z",
+  "base": "http://127.0.0.1:5180",
   "quality": "balanced",
   "viewport": "1440×900",
   "flow": {
     "loading": {
-      "wallMs": 38326,
-      "loadMs": 35715,
+      "wallMs": 13742,
+      "loadMs": 11021,
       "readiness": {
         "radius": 60,
-        "terrainSamples": 12,
+        "terrainSamples": 49,
         "terrainMissing": [],
         "terrain": true,
         "nearLod": true,
@@ -18,7 +18,7 @@
         "zone": "plaza",
         "stableFrames": 12,
         "stableTimeout": false,
-        "firstFrameMs": 24835
+        "firstFrameMs": 8272
       },
       "stagesSeen": [
         "terrain",
@@ -27,23 +27,23 @@
         "stabilizing",
         "ready"
       ],
-      "eventCount": 95,
+      "eventCount": 73,
       "monotonic": true,
       "firstEvents": [
         {
-          "t": 168,
+          "t": 299,
           "stage": "terrain",
           "progress": 0,
           "label": "지형 준비 중"
         },
         {
-          "t": 682,
+          "t": 1160,
           "stage": "terrain",
           "progress": 0.18000000000000002,
           "label": "지형 준비 중"
         },
         {
-          "t": 770,
+          "t": 1809,
           "stage": "terrain",
           "progress": 0.24000000000000002,
           "label": "지형 준비 중"
@@ -51,19 +51,19 @@
       ],
       "lastEvents": [
         {
-          "t": 35864,
+          "t": 11304,
           "stage": "stabilizing",
           "progress": 0.9933333333333334,
           "label": "첫 프레임 안정 준비 중"
         },
         {
-          "t": 35882,
+          "t": 11319,
           "stage": "stabilizing",
           "progress": 0.999,
           "label": "첫 프레임 안정 준비 중"
         },
         {
-          "t": 35882,
+          "t": 11320,
           "stage": "ready",
           "progress": 1,
           "label": "준비 완료"
@@ -106,13 +106,13 @@
     "freeRoam": {
       "d": {
         "zone": "plaza",
-        "x": -43.19574751947251,
-        "z": -35.94198909533905,
+        "x": -43.37704569190863,
+        "z": -35.74063707611596,
         "heading": -2.303834612632515,
         "s": null,
         "lateral": null,
-        "elapsed": 3.0164999999999953,
-        "steps": 5,
+        "elapsed": 3.0165,
+        "steps": 18,
         "auto": false,
         "pose": "stand",
         "course": 0,
@@ -121,13 +121,13 @@
       },
       "a": {
         "zone": "plaza",
-        "x": -36.88653786148596,
-        "z": -42.949076300181645,
+        "x": -36.89520162893099,
+        "z": -42.93945421163137,
         "heading": -2.303834612632515,
         "s": null,
         "lateral": null,
-        "elapsed": 10.899600000000003,
-        "steps": 18,
+        "elapsed": 10.549600000000007,
+        "steps": 65,
         "auto": false,
         "pose": "stand",
         "course": 0,
@@ -136,13 +136,13 @@
       },
       "s": {
         "zone": "plaza",
-        "x": -42.63597307473131,
-        "z": -48.12589101861605,
+        "x": -42.6382964032842,
+        "z": -48.110559973244186,
         "heading": -2.303834612632515,
         "s": null,
         "lateral": null,
-        "elapsed": 17.39929999999989,
-        "steps": 29,
+        "elapsed": 20.565899999999743,
+        "steps": 115,
         "auto": false,
         "pose": "stand",
         "course": 0,
@@ -154,20 +154,20 @@
     "dragWalk": {
       "headingBefore": -2.303834612632515,
       "headingAfter": -2.703834612632515,
-      "moveHeading": -2.7038346126325075,
+      "moveHeading": -2.703834612632544,
       "turnedDeg": -22.918311805232925,
       "ok": true
     },
     "reload": {
       "before": {
         "zone": "plaza",
-        "x": -41.89012192872636,
-        "z": -46.53234370377262,
+        "x": -41.82062492081882,
+        "z": -46.3635650101256,
         "heading": -2.703834612632515,
         "s": null,
         "lateral": null,
-        "elapsed": 18.8991999999999,
-        "steps": 32,
+        "elapsed": 22.0658999999997,
+        "steps": 124,
         "auto": false,
         "pose": "stand",
         "course": 0,
@@ -175,13 +175,13 @@
       },
       "after": {
         "zone": "plaza",
-        "x": -41.89012192872636,
-        "z": -46.53234370377262,
+        "x": -41.82062492081882,
+        "z": -46.3635650101256,
         "heading": -2.703834612632515,
         "s": null,
         "lateral": null,
-        "elapsed": 18.8991999999999,
-        "steps": 32,
+        "elapsed": 22.0658999999997,
+        "steps": 124,
         "auto": false,
         "pose": "stand",
         "course": 0,
@@ -190,28 +190,28 @@
       "ok": true
     },
     "gatePassage": {
-      "frames": 2136,
-      "maxStepM": 0.03994969751241713,
-      "maxTurnDeg": 2.870518553606164,
+      "frames": 1970,
+      "maxStepM": 0.12859200000000173,
+      "maxTurnDeg": 2.2638198482965515,
       "switches": [
         {
           "from": "plaza",
           "to": "route",
-          "step": 0.019855238883405357,
-          "turnDeg": 0,
-          "cameraStep": 0.02002449488814155,
-          "s": -26.10530604041299
+          "step": 0.021474863999997627,
+          "turnDeg": 0.013712251467319643,
+          "cameraStep": 0.021478516473446122,
+          "s": -26.10636156651008
         }
       ],
       "after": {
         "zone": "route",
-        "x": -14.054479744200492,
-        "z": -14.157139392344913,
+        "x": -14.045317360676142,
+        "z": -14.147910083037047,
         "heading": -2.359833387857947,
-        "s": -19.94875927606592,
+        "s": -19.935754299243662,
         "lateral": 0,
-        "elapsed": 54.64780000000088,
-        "steps": 93,
+        "elapsed": 55.19180000000016,
+        "steps": 330,
         "auto": true,
         "pose": "stand",
         "course": 6,
@@ -220,28 +220,28 @@
       "ok": true
     },
     "back": {
-      "frames": 415,
-      "maxStepM": 0.02009445862900584,
+      "frames": 592,
+      "maxStepM": 0.012962073600006415,
       "maxTurnDeg": 0,
       "switches": [
         {
           "from": "route",
           "to": "plaza",
-          "step": 0.019974848756210698,
+          "step": 0.012884918400000145,
           "turnDeg": 0,
-          "cameraStep": 0.0200895155397653,
+          "cameraStep": 0.01288725979628877,
           "s": null
         }
       ],
       "after": {
         "zone": "plaza",
-        "x": -19.729930405978216,
-        "z": -19.755780963469405,
-        "heading": -2.3133731257738366,
+        "x": -19.218086350749147,
+        "z": -19.358463063185653,
+        "heading": -2.3598333857386855,
         "s": null,
         "lateral": null,
-        "elapsed": 61.78080000000136,
-        "steps": 105,
+        "elapsed": 65.24150000000067,
+        "steps": 380,
         "auto": false,
         "pose": "stand",
         "course": 0,

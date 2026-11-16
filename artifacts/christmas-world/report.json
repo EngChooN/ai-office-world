@@ -1,0 +1,204 @@
+{
+ "at": "2026-11-16T08:41:44.433Z",
+ "checks": {
+  "① PC: 다른 사람 19명이 모두 동동이로 보임": {
+   "ok": true,
+   "bodies": {
+    "dongdong": 19
+   },
+   "count": 19
+  },
+  "① 휴대폰: 19명 보임(가까운 6명 동동이 + 나머지 가벼운 동동이)": {
+   "ok": true,
+   "bodies": {
+    "dongdong": 6,
+    "lite": 13
+   }
+  },
+  "① 연결 칩 20/20": {
+   "ok": true,
+   "chip": "🎄눈마을 광장 1서버 · 👥 20/20"
+  },
+  "① 상대 옷이 그 사람이 고른 옷(act)": {
+   "ok": true,
+   "lookB": {
+    "outfit": "sweater",
+    "hat": "beanie",
+    "scarf": "stripe"
+   }
+  },
+  "① 다른 사람 움직임이 보임": {
+   "ok": true,
+   "p0": {
+    "id": "6tblh3ro",
+    "name": "눈송이봇3",
+    "muted": false,
+    "shown": true,
+    "body": "dongdong",
+    "look": {
+     "outfit": "santa",
+     "hat": "beanie",
+     "scarf": null
+    },
+    "x": -8.52,
+    "z": 4.69
+   },
+   "p1": {
+    "id": "6tblh3ro",
+    "name": "눈송이봇3",
+    "muted": false,
+    "shown": true,
+    "body": "dongdong",
+    "look": {
+     "outfit": "santa",
+     "hat": "beanie",
+     "scarf": null
+    },
+    "x": -8.79,
+    "z": 6.25
+   }
+  },
+  "② 21번째 접속은 꽉 참(full)": {
+   "ok": true,
+   "full": true
+  },
+  "③ 휴대폰에 하나·봇 말풍선": {
+   "ok": true,
+   "bub": [
+    "하나메리 크리스마스! 🎄",
+    "눈송이봇2트리 예뻐요"
+   ]
+  },
+  "④ 같은 말 세 번째는 막힘·글이 입력칸에 남음": {
+   "ok": true,
+   "input": "눈 온다",
+   "hint": "같은 말은 연속 두 번까지만 보낼 수 있어요",
+   "mine": 2
+  },
+  "④ 계속 막히면 30초 쉬기(mute)": {
+   "ok": true,
+   "limits": [
+    "rate",
+    "rate",
+    "mute",
+    "mute",
+    "mute",
+    "mute",
+    "mute"
+   ]
+  },
+  "⑤ 음소거한 사람은 모습·이름표·말이 모두 안 보임": {
+   "ok": true,
+   "shown": false,
+   "body": "none",
+   "chat": false,
+   "tag": false
+  },
+  "⑤ 음소거 풀면 다시 보임": {
+   "ok": true
+  },
+  "⑥ 장식 3개가 다른 사람 화면에도 보임": {
+   "ok": true,
+   "count": 3,
+   "s3": {
+    "k": "ballRed",
+    "n": "하나",
+    "id": "jr94jb7c",
+    "at": 1794818526581
+   },
+   "drawn": 0
+  },
+  "⑥ 1분에 4번째는 막힘": {
+   "ok": true,
+   "toastA": "장식은 1분에 3개까지 달 수 있어요 · 60초 뒤"
+  },
+  "⑥ 꾸미는 사람은 다른 화면에서 🎄 표시": {
+   "ok": true
+  },
+  "⑥ 40개·전구 2단계·꼭대기 별(봇0)": {
+   "ok": true,
+   "count": 42,
+   "stage": 2,
+   "star": "눈송이봇0",
+   "drawnStar": true,
+   "drawnStage": 2
+  },
+  "⑥ 휴대폰: 빈 자리 누름 → [달기] → 모두에게 보임": {
+   "ok": true,
+   "tapped": {
+    "x": 76,
+    "y": 220,
+    "s": 86
+   },
+   "conf": true
+  },
+  "⑦ 나중에 온 사람도 같은 트리(개수·별·자리)": {
+   "ok": true,
+   "count": 43,
+   "star": "눈송이봇0",
+   "s3": "ballRed",
+   "stage": 2
+  },
+  "⑨ 서버가 꺼져도 트리 유지·다른 사람 사라짐·화면 계속": {
+   "ok": true,
+   "state": "reconnecting",
+   "count": 43,
+   "people": 0,
+   "chip": "🔄다시 연결 중…",
+   "fps": 60.330333277604396
+  },
+  "⑨ 다시 연결 중 누른 장식은 버리고 안내": {
+   "ok": true,
+   "r": {
+    "ok": false,
+    "reason": "offline"
+   },
+   "toastDown": "연결이 돌아오면 다시 눌러 주세요"
+  },
+  "⑧ 잠깐 비면 트리 유지, 아무도 없이 초기화 시간이 지나면 빈 트리": {
+   "ok": true,
+   "keptCount": 2,
+   "lateCount": 0,
+   "resetMs": 4000
+  },
+  "⑩ 서버 없으면 혼자 둘러보기로 장식(내 화면에만)": {
+   "ok": true,
+   "pickTxt": {
+    "title": "🎄눈마을 광장 서버",
+    "solo": "⛄혼자 둘러보기혼자 둘러보면 트리 장식은 내 화면에만 남고, 새로고침하면 사라져요"
+   },
+   "solo": {
+    "r": {
+     "ok": true,
+     "slot": 5,
+     "kind": "snowflake",
+     "name": "나",
+     "id": "me"
+    },
+    "count": 1,
+    "state": "off",
+    "chip": "⛄혼자 둘러보기"
+   }
+  },
+  "허브에 온라인 크리스마스 카드": {
+   "ok": true,
+   "hubHref": "/christmas/"
+  },
+  "서버 고르기: 눈마을 광장 1~3서버·정원 20": {
+   "ok": true,
+   "rows": [
+    "눈마을 광장 1서버 0 / 20명",
+    "눈마을 광장 2서버 0 / 20명",
+    "눈마을 광장 3서버 0 / 20명"
+   ]
+  },
+  "서버 고르기 → 2서버 입장": {
+   "ok": true
+  },
+  "페이지 오류 0건": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": []
+}

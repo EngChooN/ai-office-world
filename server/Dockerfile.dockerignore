@@ -2,6 +2,12 @@
 *
 !package.json
 !src/multi-protocol.js
+!src/christmas/tree-state.js
+!src/christmas/room-play.js
+!src/christmas/gift-state.js
+!src/christmas/snowman-state.js
+!src/christmas/snowfight.js
+!src/christmas/layout.js
 !server/ws.mjs
 !server/rooms.mjs
 !server/multi-server.mjs
