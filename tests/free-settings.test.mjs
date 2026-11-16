@@ -101,9 +101,9 @@ test('상태 줄·꼬리표·카드 꼬리표 글자', ()=>{
  assert.deepEqual(statusLine({weather:null,time:null,season:null},actual),{manual:false,head:'지금은 실제 서울을 따라가요',sub:'가을 · 맑음 · 낮'});
  const picked={weather:'snow',time:'night',season:'winter'};
  assert.equal(statusLine(picked,actual).head,'✎ 직접 고른 설정 · 겨울 · 눈 · 밤');
- assert.deepEqual(chipText(picked),{long:'✎ ❄ 눈 · 밤 · 겨울 직접 고름',short:'✎ ❄ 눈'});
+ assert.deepEqual(chipText(picked),{ic:'c-wx-snow',long:'✎ 눈 · 밤 · 겨울 직접 고름',short:'✎ 눈'});
  assert.equal(chipText({weather:null,time:null,season:null}),null);
- assert.equal(seasonTag({season:null},'autumn'),'🍁 지금 가을 · 단풍');
+ assert.equal(seasonTag({season:null},'autumn'),'지금 가을 · 단풍');
  assert.equal(seasonTag({season:'winter'},'autumn'),'✎ 고른 계절 · 겨울 · 눈');
 });
 

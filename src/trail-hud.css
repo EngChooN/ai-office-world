@@ -41,7 +41,7 @@
 @keyframes tb-in{from{transform:translateY(20px) scale(.9);opacity:0}}
 /* 역기 연타: 크게, '득근 게이지' = 수첩 도장 칸 10개. 찬 칸은 형광펜, 10칸째는 빨간 '득' */
 .tb-lift{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:240px;min-height:80px;padding:8px 16px 10px;background:var(--stamp);color:#fff;border:3px dashed var(--stamp-dash);box-shadow:0 4px 0 var(--stamp-d),0 8px 16px rgba(60,15,5,.35)}
-.tb-lift em{display:none}.tb-lift b::before{content:"💪 "}
+.tb-lift em{display:none}.tb-lift b .ic{vertical-align:-.2em}
 .tb-lift b{font-size:17px}.tb-lift b span{font-variant-numeric:tabular-nums}
 .tb-gauge{display:flex;gap:4px;padding:3px 6px;border-radius:9px;background:var(--stamp-d)}
 .tb-gauge i{width:15px;height:15px;border-radius:50%;box-shadow:inset 0 0 0 1.5px #ffffff66;transition:background .08s,transform .08s}

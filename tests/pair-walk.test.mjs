@@ -103,7 +103,7 @@ test('동행 HUD 모양: 남은 초·칩·목록 단추',()=>{
  assert.equal(secondsLeft(30000,0),30);assert.equal(secondsLeft(1000,1500),0);assert.equal(secondsLeft(10100,0),11);
  assert.equal(chipModel({phase:'idle'}),null);
  assert.equal(chipModel({phase:'outgoing',offer:{name:'곰'}}).label,'취소');
- const c=chipModel({phase:'paired',partner:{name:'곰'},walk:{mode:'side',near:true}});assert.equal(c.title,'🤝 곰님과 동행 중');assert.equal(c.sub,'나란히 걷는 중');assert.equal(c.label,'동행 끝내기');
+ const c=chipModel({phase:'paired',partner:{name:'곰'},walk:{mode:'side',near:true}});assert.equal(c.title,'곰님과 동행 중');assert.equal(c.ic,'h-pair');assert.equal(c.sub,'나란히 걷는 중');assert.equal(c.label,'동행 끝내기');
  assert.equal(chipModel({phase:'paired',partner:{name:'곰'},walk:{waiting:true,lag:'곰님 기다리는 중'}}).sub,'곰님 기다리는 중');
  assert.equal(chipModel({phase:'paired',partner:{name:'곰'},away:true}).sub,'곰님 연결을 기다리는 중…');
  assert.deepEqual(rowModel({partner:true},{phase:'paired'}),{label:'동행 중',disabled:true});

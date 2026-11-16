@@ -2,6 +2,7 @@
 // 시간대 색은 서울 지금 시각의 해 높이로 정한다(수첩 HUD와 같은 기준: -4° 미만 밤, 8° 미만 노을). 시험용 ?hubtime=day|dusk|night.
 import {EXPERIENCES,experienceHref} from './experiences.js';
 import {sunPosition} from '../daytime.js';
+import {iconText} from '../icons/icon.js';
 export const hubTime=(elevation)=>!Number.isFinite(elevation)?'day':elevation<-4?'night':elevation<8?'dusk':'day';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // 카드 그림(240×120). fill은 CSS 변수로 시간대에 따라 바뀐다.
@@ -16,7 +17,7 @@ export function cardHTML(e,base='/',storage=null){
  return `<a class="hub-card" id="hub-${esc(e.id)}" href="${esc(experienceHref(e,base))}" data-exp="${esc(e.id)}">
 <div class="hub-art">${ART[e.art]??''}${rec?`<span class="hub-stamp">${esc(rec)}</span>`:''}</div>
 <div class="hub-body"><span class="hub-place">${esc(e.place)}</span><b class="hub-title">${esc(e.title)}</b><span class="hub-desc">${esc(e.desc)}</span>
-<span class="hub-tags">${(e.tags??[]).map(t=>`<i>${esc(t)}</i>`).join('')}</span><span class="hub-go">들어가기 ▶</span></div></a>`;
+<span class="hub-tags">${(e.tags??[]).map(t=>`<i>${esc(t)}</i>`).join('')}</span><span class="hub-go">${iconText('c-enter','들어가기',{size:'xs',after:true})}</span></div></a>`;
 }
 export function mountHub(doc=document,{base=import.meta.env.BASE_URL,storage=globalThis.localStorage,nowMs=Date.now(),forced=null}={}){
  const root=doc.getElementById('hub');if(!root)return null;

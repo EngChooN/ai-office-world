@@ -1,4 +1,4 @@
-// 흡연장 멀티 화면: 위 오른쪽 '👥 같이 피우기' 단추(참가하면 연결 상태 칩으로 바뀜) → 서버 고르기 창(src/server-pick.js, 등산과 공용), 다른 사람 머리 위 이름표, 알림.
+// 흡연장 멀티 화면: 위 오른쪽 '같이 피우기' 단추(아이콘 c-multi-join)(참가하면 연결 상태 칩으로 바뀜) → 서버 고르기 창(src/server-pick.js, 등산과 공용), 다른 사람 머리 위 이름표, 알림.
 // 연결 쪽(multi.js)과는 반환 객체(join·leave·people·avatarOf)와 'lounge:multi-status'·'lounge:multi-note' 이벤트로만 만난다.
 // 서버 고르기(11-08): 방 이름 칸은 없앴다. 서버가 full(정원 30명)로 거절하면 나간 뒤 창을 '방금 꽉 찼어요'로 다시 띄운다.
 // 모양은 hud.css(「등산 수첩」 종이 톤, 단추 44px 이상) + multi.css + ../server-pick.css.
@@ -8,6 +8,7 @@ import {cleanName,loungeStatusView} from './multi.js';
 import {createServerPick} from '../server-pick.js';
 import {currentChoice} from '../server-link.js';
 import {findServer} from '../multi-protocol.js';
+import {icon} from '../icons/icon.js';
 
 // 서버 방 이름(welcome room: 옥상) → 서버 id. 목록 밖 방(옛 주소)은 null.
 export const loungeServerId=room=>room?findServer('smoking',room)?.id??null:null;
@@ -17,7 +18,7 @@ export function installLoungeMultiUi({multi,ctx,hud=null,root=document.getElemen
  doc.body.classList.add('lg-mp');
  // ── 단추(= 상태 칩)
  const btn=doc.createElement('button');btn.type='button';btn.className='lg-btn lg-mp-btn';btn.dataset.mp='open';btn.setAttribute('aria-haspopup','dialog');
- btn.innerHTML='<i aria-hidden="true">👥</i><span class="lg-mp-t">같이 피우기</span><b class="lg-mp-n" hidden></b>';
+ btn.innerHTML=`<i aria-hidden="true" data-ic="c-multi-join">${icon('c-multi-join',{size:'s'})}</i><span class="lg-mp-t">같이 피우기</span><b class="lg-mp-n" hidden></b>`;
  top.prepend(btn);
  // ── 이름표 층(말풍선 아래에 깔리게 맨 앞에)
  const tags=doc.createElement('div');tags.className='lg-mp-tags';root.prepend(tags);
@@ -33,7 +34,7 @@ export function installLoungeMultiUi({multi,ctx,hud=null,root=document.getElemen
  function render(){
   const v=last?.joined?loungeStatusView(last):null;
   btn.dataset.tone=v?.tone??'';btn.dataset.state=last?.joined?last.state:'';
-  btn.querySelector('i').textContent=v?.ic??'👥';
+  {const i=btn.querySelector('i'),ic=v?.ic??'c-multi-join';if(i.dataset.ic!==ic){i.dataset.ic=ic;i.innerHTML=icon(ic,{size:'s'});}} // 연결 상태 아이콘(multi.js ic = 아이콘 이름)
   btn.querySelector('.lg-mp-t').textContent=v?.text??'같이 피우기';
   const n=btn.querySelector('.lg-mp-n');n.hidden=!v;n.textContent=v?.short??'';
   btn.setAttribute('aria-label',v?`같이 피우기 ${v.text}${v.sub?' · '+v.sub:''}`:'같이 피우기');

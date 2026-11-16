@@ -23,12 +23,12 @@ export const benchRecoverRate=()=>SIT_RECOVER*BENCH_RECOVER_MULT;
 // ── 들르기 버튼: 자동걷기 중에만, 제안 뒤 4초 동안. 그 사이 자동걷기를 끄거나 다른 동작이 시작되면 숨긴다.
 export function offerVisible(offer,{now,auto,busy=false}){return !!offer&&auto&&!busy&&now<offer.until;}
 
-// ── 오브젝트 옆 버튼(직접 걸을 때 6m 안). 산스장은 기구마다, 나머지는 하나.
+// ── 오브젝트 옆 버튼(직접 걸을 때 6m 안). 산스장은 기구마다, 나머지는 하나. ic = 화면 아이콘 이름(아이콘-규칙-v1 §7-2)
 export const TRAIL_BUTTONS=Object.freeze({
- gym:[{act:'gym-lift',ic:'🏋',label:'역기',sub:'연타 10번'},{act:'gym-hang',ic:'🙃',label:'거꾸리',sub:'3초 매달리기'},{act:'gym-twist',ic:'🌀',label:'허리돌리기',sub:'빙글빙글'},{act:'gym-bar',ic:'🤸',label:'철봉',sub:'매달리기'}],
- bench:[{act:'bench-sit',ic:'🪑',label:'벤치에 앉기',sub:'스테미너 1.5배'}],
- airgun:[{act:'airgun',ic:'💨',label:'신발 털기',sub:'에어건'}],
- cat:[{act:'pet-cat',ic:'🐱',label:'쓰다듬기',sub:'산고양이'}],
+ gym:[{act:'gym-lift',ic:'h-gym-barbell',label:'역기',sub:'연타 10번'},{act:'gym-hang',ic:'h-gym-inversion',label:'거꾸리',sub:'3초 매달리기'},{act:'gym-twist',ic:'h-gym-twist',label:'허리돌리기',sub:'빙글빙글'},{act:'gym-bar',ic:'h-gym-bar',label:'철봉',sub:'매달리기'}],
+ bench:[{act:'bench-sit',ic:'c-sit',label:'벤치에 앉기',sub:'스테미너 1.5배'}],
+ airgun:[{act:'airgun',ic:'h-airgun',label:'신발 털기',sub:'에어건'}],
+ cat:[{act:'pet-cat',ic:'h-cat',label:'쓰다듬기',sub:'산고양이'}],
 });
 // 즐길거리 줄에 띄울 것 하나를 고른다(우선순위: 쥐 발끝 당기기 → 역기 연타 → 벤치 일어나기 → 들르기 → 옆 버튼).
 // view = {act:{name,state,reps,of}|null, near:{id,kind,act?}|null, offer:{…}|null, auto, busy, exhaust:{phase,release}|null(⑥ src/exhaustion.js)}

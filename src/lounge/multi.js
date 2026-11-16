@@ -65,21 +65,21 @@ export function chatRoute(m,myId){
  if(!m||m.t!=='c'||typeof m.text!=='string'||!m.text)return null;
  return m.id===myId?'mine':'show';
 }
-// 상태 칩(등산 multi-entry-ui statusView의 6종을 흡연장 말투로). tone: wait·ok·local·warn·bad
+// 상태 칩(등산 multi-entry-ui statusView의 6종을 흡연장 말투로). tone: wait·ok·local·warn·bad, ic = 아이콘 이름(src/icons, 아이콘-규칙-v1 §7-1 마)
 // 방 이름(서버 welcome의 room: 옥상)은 서버 목록이면 서버 이름(옥상 1서버)으로 보인다.
 export function loungeStatusView(d={}){
  const local=d.transport==='local',n=Math.max(0,Number(d.count)||0),where=d.room?findServer('smoking',d.room)?.name??`방 ${d.room}`:'';
  switch(d.state){
-  case 'connecting':return {tone:'wait',ic:'⏳',text:'옥상 문 여는 중…',short:'…',sub:where,action:null};
+  case 'connecting':return {tone:'wait',ic:'c-net-connecting',text:'옥상 문 여는 중…',short:'…',sub:where,action:null};
   // 서버 주소가 없거나(이 창끼리만) 서버 목록 밖 방이면 분명히 알린다(11-08)
   case 'online':return local
-   ?{tone:'local',ic:'💻',text:`내 컴퓨터 모드 · ${n||1}명`,short:`${n||1}`,sub:'서버 없음 · 이 브라우저 창끼리만(다른 기기 ✕)',action:null}
+   ?{tone:'local',ic:'c-net-local',text:`내 컴퓨터 모드 · ${n||1}명`,short:`${n||1}`,sub:'서버 없음 · 이 브라우저 창끼리만(다른 기기 ✕)',action:null}
    :d.room&&!findServer('smoking',d.room)
-   ?{tone:'warn',ic:'🟡',text:`다른 방 · ${n||1}명`,short:`${n||1}`,sub:`'${d.room}' · 서버 고르기와 따로`,action:null}
-   :{tone:'ok',ic:'🟢',text:`같이 피우는 중 · ${n||1}명`,short:`${n||1}`,sub:where,action:null};
-  case 'reconnecting':return {tone:'warn',ic:'🔄',text:'다시 연결 중…',short:'…',sub:'옥상 NPC랑은 계속 놀 수 있어요',action:null};
-  case 'offline':return {tone:'bad',ic:'⚠',text:'연결 끊김',short:'!',sub:'눌러서 다시 연결해요',action:'retry'};
-  case 'full':return {tone:'warn',ic:'🚪',text:'방금 꽉 찼어요',short:'꽉',sub:'다른 서버를 골라 주세요',action:'other'};
+   ?{tone:'warn',ic:'c-net-other',text:`다른 방 · ${n||1}명`,short:`${n||1}`,sub:`'${d.room}' · 서버 고르기와 따로`,action:null}
+   :{tone:'ok',ic:'c-net-ok',text:`같이 피우는 중 · ${n||1}명`,short:`${n||1}`,sub:where,action:null};
+  case 'reconnecting':return {tone:'warn',ic:'c-net-retry',text:'다시 연결 중…',short:'…',sub:'옥상 NPC랑은 계속 놀 수 있어요',action:null};
+  case 'offline':return {tone:'bad',ic:'c-net-lost',text:'연결 끊김',short:'!',sub:'눌러서 다시 연결해요',action:'retry'};
+  case 'full':return {tone:'warn',ic:'c-net-full',text:'방금 꽉 찼어요',short:'꽉',sub:'다른 서버를 골라 주세요',action:'other'};
   default:return null;
  }
 }

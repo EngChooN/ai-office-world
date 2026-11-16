@@ -6,6 +6,7 @@
 import {FREQ_MIN,FREQ_MAX,FREQ_STEP,FM_CHANNELS,EXTERNAL_LINKS,clampFreq,snapFreq,mixAt} from './radio-stations.js';
 import {MANIFEST_FILE,trackLabel,creditBlocks,validateManifest} from './radio-tracks.js';
 import {createRadioAudio} from './radio-audio.js';
+import {icon,iconText} from './icons/icon.js';
 
 export const RADIO_SAVE_KEY='gwanak-radio';
 export const RADIO_DEFAULT=Object.freeze({freq:91.9,vol:.6});
@@ -16,8 +17,9 @@ export function loadRadio(storage){
  try{const v=JSON.parse(storage?.getItem(RADIO_SAVE_KEY)??'null');if(v&&typeof v==='object')return {on:false,freq:clampFreq(Number.isFinite(v.freq)?v.freq:RADIO_DEFAULT.freq),vol:Number.isFinite(v.vol)?Math.max(0,Math.min(1,v.vol)):RADIO_DEFAULT.vol};}catch{}
  return {on:false,...RADIO_DEFAULT};
 }
-// HUD 칩 글자: 꺼짐 = 📻 라디오, 방송 = 📻 91.9, 잡음 = 📻 ~87.5
-export function chipText(on,freq){if(!on)return '📻 라디오';const m=mixAt(freq);return `📻 ${m.clarity>0?'':'~'}${fmt(freq)}`;}
+// HUD 칩 글자: 꺼짐 = 라디오, 방송 = 91.9, 잡음 = ~87.5. 앞에 라디오 아이콘(h-radio)을 붙여 그린다(chipHTML)
+export function chipText(on,freq){if(!on)return '라디오';const m=mixAt(freq);return `${m.clarity>0?'':'~'}${fmt(freq)}`;}
+export const chipHTML=(on,freq)=>iconText('h-radio',chipText(on,freq),{size:'xs'});
 // 표시창 글자: {freq,name,status}
 export function displayModel({on,freq,vol,deckState,sound=true,trackLine=''}){
  if(!on)return null;const m=mixAt(freq,vol);
@@ -49,7 +51,7 @@ export function installRadio({doc=document,win=window,context=()=>null,destinati
    <header><button type="button" class="rd-power" aria-pressed="false"><i aria-hidden="true"></i><span>OFF</span></button><b class="rd-brand">관악산 FM</b><button type="button" class="rd-flip" aria-label="뒷면 보기 — 실제 방송 듣기·소리 출처">⟲</button></header>
    <div class="rd-screen" aria-live="polite"><div class="rd-freq"><b>--.-</b><small>MHz</small></div><div class="rd-name"></div><div class="rd-status"><span class="rd-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="rd-stxt"></span></div><div class="rd-caption" hidden></div></div>
    <div class="rd-dial" role="slider" tabindex="0" aria-label="주파수 다이얼" aria-valuemin="${FREQ_MIN}" aria-valuemax="${FREQ_MAX}"><div class="rd-scale"><span>${FREQ_MIN}</span><span>${FREQ_MAX}</span></div>${FM_CHANNELS.map(c=>`<i class="rd-mark" style="left:${(c.freq-FREQ_MIN)/(FREQ_MAX-FREQ_MIN)*100}%" title="${c.freq}"></i>`).join('')}<i class="rd-needle"></i></div>
-   <div class="rd-row rd-tune"><button type="button" data-step="-1" aria-label="주파수 0.1 내리기">◀</button>${FM_CHANNELS.map(c=>`<button type="button" data-go="${c.freq}" aria-label="${c.freq} ${esc(c.name)}">${c.freq}</button>`).join('')}<button type="button" data-step="1" aria-label="주파수 0.1 올리기">▶</button></div>
+   <div class="rd-row rd-tune"><button type="button" data-step="-1" aria-label="주파수 0.1 내리기">${icon('c-left',{size:'s'})}</button>${FM_CHANNELS.map(c=>`<button type="button" data-go="${c.freq}" aria-label="${c.freq} ${esc(c.name)}">${c.freq}</button>`).join('')}<button type="button" data-step="1" aria-label="주파수 0.1 올리기">${icon('c-right',{size:'s'})}</button></div>
    <div class="rd-row rd-bottom"><div class="rd-vol"><button type="button" data-vol="-1" aria-label="볼륨 줄이기">−</button><div class="rd-knob" role="slider" tabindex="0" aria-label="볼륨" aria-valuemin="0" aria-valuemax="100"><i></i></div><button type="button" data-vol="1" aria-label="볼륨 키우기">+</button></div>
     <button type="button" class="rd-info" aria-label="곡 정보와 소리 출처"><span>♪ 곡 정보</span><small></small></button><button type="button" class="rd-down">내리기 ✕</button></div>
    <p class="rd-hint" hidden>전원을 켜 보세요</p>
@@ -57,7 +59,7 @@ export function installRadio({doc=document,win=window,context=()=>null,destinati
   <div class="rd-face rd-back" aria-label="라디오 뒷면">
    <header><button type="button" class="rd-flip rd-unflip">← 앞면으로</button></header>
    <h4>실제 방송 듣기</h4>
-   <ul class="rd-links">${EXTERNAL_LINKS.map(l=>`<li><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(l.name)}, 새 탭에서 열림">${esc(l.name)}<span aria-hidden="true">↗</span></a></li>`).join('')}</ul>
+   <ul class="rd-links">${EXTERNAL_LINKS.map(l=>`<li><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(l.name)}, 새 탭에서 열림">${esc(l.name)}<span aria-hidden="true">${icon('c-link-out',{size:'xs'})}</span></a></li>`).join('')}</ul>
    <p class="rd-note">${EXTERNAL_LINKS.length?'누르면 새 탭에서 방송사 공식 페이지가 열려요. 실제 방송은 이 게임 소리와 섞이지 않아요. 게임 소리는 라디오를 끄거나 볼륨을 줄여 주세요. 돌아오면 이어서 걸어요.':'준비 중이에요'}</p>
    <p class="rd-fine">방송사 이름은 안내용 글자일 뿐, 방송사와 관계가 없어요.</p>
    <button type="button" class="rd-credits-open">소리 출처 보기 →</button>
@@ -72,14 +74,14 @@ export function installRadio({doc=document,win=window,context=()=>null,destinati
  const credits=mk('dialog','nb-dlg rd-credits',`<div class="dialog-heading"><h2>소리 출처<small>관악산 FM과 발소리·효과음</small></h2><button type="button" class="nb-close rd-cx" aria-label="소리 출처 닫기">✕</button></div><div class="rd-cbody"></div>`);
  body.append(credits);
  const settingsGrid=doc.querySelector('#nb-sheet-settings .nb-grid');
- if(settingsGrid){const b=mk('button','nb-it rd-credit-btn','<em aria-hidden="true">🎵</em><span>소리 출처</span><small>곡·소리 크레딧</small>');b.type='button';b.addEventListener('click',()=>openCredits());settingsGrid.insertBefore(b,settingsGrid.querySelector('[data-dev-slot]'));}
+ if(settingsGrid){const b=mk('button','nb-it rd-credit-btn',`<em aria-hidden="true">${icon('c-music',{size:'m'})}</em><span>소리 출처</span><small>곡·소리 크레딧</small>`);b.type='button';b.addEventListener('click',()=>openCredits());settingsGrid.insertBefore(b,settingsGrid.querySelector('[data-dev-slot]'));}
  let footCredits=null;
  async function openCredits(focus=null){
   if(footCredits===null)footCredits=await fetchFn(`${base}sounds/CREDITS.md`).then(r=>r.ok?r.text():'').catch(()=>'');
   const blocks=creditBlocks(manifest);
   credits.querySelector('.rd-cbody').innerHTML=`<h3>관악산 FM</h3>${blocks.map(b=>`<section class="rd-cblock" id="rd-credit-${b.id}"><h4>${esc(b.heading)}</h4><pre>${esc(b.text)}</pre>${b.links.length?`<ul>${b.links.map(l=>`<li><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)}</a></li>`).join('')}</ul>`:''}</section>`).join('')||'<p>목록을 불러오지 못했어요.</p>'}
    ${footCredits?`<h3>발소리·효과음</h3><pre class="rd-foot">${esc(footCredits)}</pre>`:''}
-   <h3>실제 방송 듣기</h3><ul>${EXTERNAL_LINKS.map(l=>`<li><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.name)} ↗</a></li>`).join('')}</ul><p class="rd-fine">방송사 이름은 안내용 글자일 뿐, 방송사와 관계가 없어요. 새 탭에서 열리고 게임 소리와 섞이지 않아요.</p>`;
+   <h3>실제 방송 듣기</h3><ul>${EXTERNAL_LINKS.map(l=>`<li><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${iconText('c-link-out',l.name,{size:'xs',after:true})}</a></li>`).join('')}</ul><p class="rd-fine">방송사 이름은 안내용 글자일 뿐, 방송사와 관계가 없어요. 새 탭에서 열리고 게임 소리와 섞이지 않아요.</p>`;
   if(!credits.open)credits.showModal();
   if(focus)credits.querySelector(`#rd-credit-${focus}`)?.scrollIntoView({block:'start'});
  }
@@ -108,7 +110,7 @@ export function installRadio({doc=document,win=window,context=()=>null,destinati
  function render(){
   soundOn=!!enabled();
   const on=!!st.on&&(audio?.on??false);
-  tag.textContent=chipText(on,st.freq);tag.classList.toggle('on',on);tag.setAttribute('aria-label',on?`라디오 ${fmt(st.freq)} — 눌러서 라디오 올리기`:'라디오 꺼짐 — 눌러서 라디오 올리기');
+  {const h=chipHTML(on,st.freq);if(tag.dataset.html!==h){tag.dataset.html=h;tag.innerHTML=h;}}tag.classList.toggle('on',on);tag.setAttribute('aria-label',on?`라디오 ${fmt(st.freq)} — 눌러서 라디오 올리기`:'라디오 꺼짐 — 눌러서 라디오 올리기');
   dev.hidden=!open;body.classList.toggle('rd-open',open);dev.classList.toggle('flipped',back);dev.dataset.on=on?'1':'';
   power.setAttribute('aria-pressed',String(on));power.querySelector('span').textContent=on?'ON':'OFF';
   const m=displayModel({on,freq:st.freq,vol:st.vol,deckState:audioStatus?.deckState,sound:soundOn,trackLine:trackLine()});

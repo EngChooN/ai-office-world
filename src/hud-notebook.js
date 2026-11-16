@@ -9,7 +9,9 @@ import {DONATE_URL} from './donate.js';
 import {checkpoints} from './route.js';
 import {GATE_S} from './plaza.js';
 import {COURSE_LENGTH} from './movement.js';
+import {icon} from './icons/icon.js';
 
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 export const SHEETS=Object.freeze(['backpack','rest','settings','jump','free']);
 // 해 높이(도) → HUD 색. 노을은 해가 지평선 근처(−4°~8°)일 때다. 값을 모르면 낮.
 export function timeOfDay(elevation){
@@ -30,6 +32,11 @@ const STAMP_RULES=[
  [/^인사/,'👋','인사',(l,r)=>r.sub||'함께 걷기'],
  [/자세히$/,'🔎','자세히',l=>l.replace(/\s*자세히$/,'')],
 ];
+// 도장 글자 → 제작 아이콘 이름(아이콘-규칙-v1 §7). ㊞·✓은 도장 글자라 그대로 글자로 그린다.
+export const STAMP_IC=Object.freeze({'🪧':'h-sign','🏅':'h-medal','💧':'h-spring','🖐':'h-hand-water','🪨':'h-stone-tower','👋':'c-wave','🔎':'c-detail','☝':'c-tap','⏳':'c-wait','🧘':'h-breathe','🧍':'c-stand-up','✋':'h-stop','▶':'h-walk'});
+export const stampIcon=(ic,size='l')=>STAMP_IC[ic]?icon(STAMP_IC[ic],{size,fallback:ic}):esc(ic);
+// 정적 화면(hiking/index.html)의 아이콘 자리 <x data-icon="이름" data-icon-size="m"> 채우기
+export function fillIcons(root){for(const el of root?.querySelectorAll?.('[data-icon]')??[])if(!el.firstElementChild)el.innerHTML=icon(el.dataset.icon,{size:el.dataset.iconSize||'m'});}
 export function stampFor(row={}){
  const label=String(row.label??'');
  const hit=STAMP_RULES.find(([re])=>re.test(label));
@@ -62,10 +69,10 @@ export function qualityModeFromText(text=''){
  if(/자동/.test(text))return 'auto';
  return /높음/.test(text)?'high':/균형/.test(text)?'balanced':/낮음/.test(text)?'low':'auto';
 }
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 export function installNotebookHud(doc=document,win=window){
  const app=doc.getElementById('app');if(!app||!app.querySelector('.nb-tabs'))return null;
+ fillIcons(app);
  const root=doc.documentElement,body=doc.body,$=s=>app.querySelector(s),all=s=>[...doc.querySelectorAll(s)];
  const send=(id,value)=>win.dispatchEvent(new CustomEvent('hiking:command',{detail:{id,value}}));
  const stamp=doc.getElementById('auto'),ctx=$('.nb-ctx'),tabs=$('.nb-tabs'),sheets=$('.nb-sheets');
@@ -104,13 +111,13 @@ export function installNotebookHud(doc=document,win=window){
  const fbSlot=$('#nb-sheet-settings .nb-grid');
  if(fbSlot&&!fbSlot.querySelector('[data-act=feedback]')){
   const fb=doc.createElement('button');fb.type='button';fb.className='nb-it';fb.dataset.act='feedback';
-  fb.innerHTML='<em aria-hidden="true">💌</em><span>의견 보내기</span><small>고장·바라는 점</small>';
+  fb.innerHTML=`<em aria-hidden="true">${icon('c-feedback',{size:'m'})}</em><span>의견 보내기</span><small>고장·바라는 점</small>`;
   fbSlot.insertBefore(fb,fbSlot.querySelector('[data-dev-slot]'));
  }
  // 그 옆에 「💗 후원하기」 링크(새 탭). <a>라 아래 시트 click 처리(button만 봄)를 타지 않는다
  if(fbSlot&&!fbSlot.querySelector('[data-act=donate]')){
   const dn=doc.createElement('a');dn.className='nb-it';dn.dataset.act='donate';dn.href=DONATE_URL;dn.target='_blank';dn.rel='noopener noreferrer';dn.style.textDecoration='none';
-  dn.innerHTML='<em aria-hidden="true">💗</em><span>후원하기</span><small>새 탭에서 열려요</small>';
+  dn.innerHTML=`<em aria-hidden="true">${icon('c-donate',{size:'m'})}</em><span>후원하기</span><small>새 탭에서 열려요</small>`;
   fbSlot.insertBefore(dn,fbSlot.querySelector('[data-dev-slot]'));
  }
  let envView={};
@@ -154,7 +161,7 @@ export function installNotebookHud(doc=document,win=window){
  }
  // ── 도장·상황 꼬리표 ──
  let rows=null,action=null,stampSig='',ctxSig='';
- const stampHtml=v=>`<i class="ic" aria-hidden="true">${esc(v.ic)}</i><span>${esc(v.label)}</span><small>${esc(v.sub)}</small>${v.key?`<kbd>${esc(v.key)}</kbd>`:''}`;
+ const stampHtml=v=>`<i class="ic" aria-hidden="true">${stampIcon(v.ic,'l')}</i><span>${esc(v.label)}</span><small>${esc(v.sub)}</small>${v.key?`<kbd>${esc(v.key)}</kbd>`:''}`;
  function renderStamp(){
   const v=stampView({rows,action,pose:lastState.pose,auto:!!lastState.auto,gadget:lastState.gadget});
   const sig=`${v.mode}|${v.ic}|${v.label}|${v.sub}|${v.key}|${v.cls}`;
@@ -166,8 +173,8 @@ export function installNotebookHud(doc=document,win=window){
   const c=v.mode==='interact'?contextView(rows):null,cs=c?JSON.stringify(c)+lastState.auto:'';
   if(cs!==ctxSig){ctxSig=cs;ctx.hidden=!c;
    if(c)ctx.innerHTML=`<b class="nb-ctx-head">${esc(c.head)}</b>${c.sub?`<span class="nb-ctx-sub">${esc(c.sub)}</span>`:''}${c.lock?`<span class="nb-ctx-sub nb-lock">${esc(c.lock)}</span>`:''}`
-    +c.alts.map(a=>`<button type="button" class="nb-alt${a.state==='lock'?' lock':''}" data-cmd="${a.cmd}"><em aria-hidden="true">${esc(stampFor(a).ic)}</em><span>${esc(a.label)}<kbd>${esc(a.key)}</kbd><small>${esc(a.sub)}</small></span></button>`).join('')
-    +`<button type="button" class="nb-alt" data-cmd="auto"><em aria-hidden="true">${lastState.auto?'✋':'▶'}</em><span>${lastState.auto?'자동 걷기 멈추기':'자동 걷기'}<kbd>R</kbd><small>도장이 바뀌어도 여기서 켜고 끌 수 있어요</small></span></button>`;}
+    +c.alts.map(a=>`<button type="button" class="nb-alt${a.state==='lock'?' lock':''}" data-cmd="${a.cmd}"><em aria-hidden="true">${stampIcon(stampFor(a).ic,'xs')}</em><span>${esc(a.label)}<kbd>${esc(a.key)}</kbd><small>${esc(a.sub)}</small></span></button>`).join('')
+    +`<button type="button" class="nb-alt" data-cmd="auto"><em aria-hidden="true">${stampIcon(lastState.auto?'✋':'▶','xs')}</em><span>${lastState.auto?'자동 걷기 멈추기':'자동 걷기'}<kbd>R</kbd><small>도장이 바뀌어도 여기서 켜고 끌 수 있어요</small></span></button>`;}
  }
  ctx.addEventListener('click',e=>{const b=e.target.closest('[data-cmd]');if(b){send(b.dataset.cmd);b.blur();}});
  // 도장: 평소(걷기·멈추기)는 #auto 원래 클릭(main.js)으로 보내고, 다른 상태에서는 그 행동 명령으로 바꾼다.

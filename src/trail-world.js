@@ -46,7 +46,8 @@ export function pickAnimals(pos,candidates,active,{max=LIMITS.trailAnimals??3,ra
 }
 // 동작 이름과 들르기 표시
 export const OFFER_ACT=Object.freeze({gym:'gym-lift',bench:'bench-sit',airgun:'airgun',cat:'pet-cat'});
-export const OFFER_LABEL=Object.freeze({gym:'💪 산스장 들르기',bench:'🪑 벤치에 앉기',airgun:'💨 신발 털기',cat:'🐱 고양이 쓰다듬기'});
+export const OFFER_LABEL=Object.freeze({gym:'산스장 들르기',bench:'벤치에 앉기',airgun:'신발 털기',cat:'고양이 쓰다듬기'});
+export const OFFER_ICON=Object.freeze({gym:'h-gym-barbell',bench:'c-sit',airgun:'h-airgun',cat:'h-cat'}); // 화면 아이콘(아이콘-규칙-v1 §7)
 
 // env() = {season,hour}(출현 가중용, 시간 칸이 바뀔 때만 읽음), now() = 배회 시계(ms, 기본 Date.now — 여러 컴퓨터가 같은 값을 쓰도록 실제 시계).
 export function createTrailWorld({scene,camera,hiker,landscape,toonify,auto,sound=null,env=()=>({}),now=()=>Date.now()}){
@@ -120,7 +121,7 @@ export function createTrailWorld({scene,camera,hiker,landscape,toonify,auto,soun
  // ── 들르기·동작 진행
  let clock=0,active=null,offerAt=null,viewSig='';const offered=new Set();
  const offerItems=()=>[...props.map(s=>({id:s.id,kind:s.kind,x:s.x,z:s.z,r:OFFER_REACH[s.kind]??0})),...[...animals.values()].filter(a=>a.kind==='cat'&&a.state!=='flee'&&a.state!=='gone').map(a=>({id:a.id,kind:'cat',x:a.pos.x,z:a.pos.z}))];
- const offer=item=>{const detail={id:item.id,kind:item.kind,act:OFFER_ACT[item.kind],label:OFFER_LABEL[item.kind],seconds:R.offer};offerAt={...detail,until:clock+R.offer};window.dispatchEvent(new CustomEvent('hiking:trail-offer',{detail}));};
+ const offer=item=>{const detail={id:item.id,kind:item.kind,act:OFFER_ACT[item.kind],label:OFFER_LABEL[item.kind],icon:OFFER_ICON[item.kind],seconds:R.offer};offerAt={...detail,until:clock+R.offer};window.dispatchEvent(new CustomEvent('hiking:trail-offer',{detail}));};
  // 동작 하나를 시작한다: 소품 앞까지 걸어가(approach) → 동작 → (자동걷기였으면) 길로 돌아와 자동걷기를 다시 켠다.
  function play(act,id,{auto:autoAct=true,from=null}={}){
   if(active)return false;const site=props.find(s=>s.id===id)??null,animal=animals.get(id)??null;

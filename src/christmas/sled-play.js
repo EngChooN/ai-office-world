@@ -8,6 +8,7 @@ import * as P from './props.js';
 import {SLED_RUN,TARGETS} from './layout.js';
 import {createRide,SLED_RULES} from './sled.js';
 import {SLED_SEAT_Y} from './poses.js';
+import {icon} from '../icons/icon.js';
 
 export const SLED_TEXT=Object.freeze({busy:'앞 썰매가 출발하면 탈 수 있어요',asked:'같이 타자고 했어요. 앞사람이 수락하면 뒤에 앉아요',declined:'이번에는 혼자 탄대요',
  ask:n=>`${n}님이 같이 타고 싶어 해요`,offline:'연결이 돌아오면 다시 눌러 주세요',up:'언덕 위 출발대로 왔어요',bank:'푹! 눈 더미에 파묻혔어요',air:'와!',end:'도착! 한 번 더 탈까요?'});
@@ -26,7 +27,7 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
  // ── 화면: 좌우 단추·카운트다운·초대 카드
  const ui=doc.createElement('div');ui.className='xl';ui.innerHTML=`
 <div class="xl-count" hidden aria-live="assertive"></div>
-<div class="xl-steer" hidden><button type="button" class="xl-btn" data-steer="-1" aria-label="왼쪽으로">◀</button><button type="button" class="xl-btn" data-steer="1" aria-label="오른쪽으로">▶</button></div>
+<div class="xl-steer" hidden><button type="button" class="xl-btn" data-steer="-1" aria-label="왼쪽으로" title="왼쪽으로">${icon('c-left',{size:'l'})}</button><button type="button" class="xl-btn" data-steer="1" aria-label="오른쪽으로" title="오른쪽으로">${icon('c-right',{size:'l'})}</button></div>
 <section class="xl-ask" hidden role="dialog" aria-label="같이 타기"><p></p><div class="xh-row"><button type="button" class="xh-ok" data-l="ok">같이 타요</button><button type="button" class="xh-no" data-l="no">혼자 탈게요</button></div></section>`;
  root.appendChild(ui);
  const countEl=ui.querySelector('.xl-count'),steerEl=ui.querySelector('.xl-steer'),askEl=ui.querySelector('.xl-ask');
@@ -63,7 +64,7 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
    case 'sled:busy':if(S.mode==='ready'||S.mode==='count')leave(SLED_TEXT.busy);return;
    case 'sled:ask':{if(multi.isMuted?.(m.id))return;if(S.mode!=='ready'||S.partner){net.send({t:'sled:no',to:m.id});return;}
     S.asked=m.id;askEl.querySelector('p').textContent=SLED_TEXT.ask(multi.nameOf(m.id));askEl.hidden=false;audio?.play('pop');return;}
-   case 'sled:ok':if(S.mode==='asking'&&m.id===S.front){S.mode='back';seat();onChange();hud?.say('뒷자리에 앉았어요 · 🙌 만세를 눌러 보세요',2.4);}return;
+   case 'sled:ok':if(S.mode==='asking'&&m.id===S.front){S.mode='back';seat();onChange();hud?.say('뒷자리에 앉았어요 · 만세를 눌러 보세요',2.4,'x-cheer');}return;
    case 'sled:no':if(S.mode==='asking'&&m.id===S.front){S.mode='none';S.front=null;hud?.say(SLED_TEXT.declined,2);}return;
   }
  });
@@ -73,16 +74,16 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
   actFields(){const sl=S.mode==='ready'||S.mode==='count'?S.lane:S.mode==='ride'?4:S.mode==='back'?5:0;return {sl,sp:S.mode==='back'?S.front??'':'',...(sl===5?{wm:S.cheer?1:0}:{})};},
   actions(){
    switch(S.mode){
-    case 'ready':return [{id:'sled:go',ic:'🛷',label:`출발! ${Math.ceil(S.wait)}`,key:'E'},{id:'sled:off',ic:'↩',label:'내리기',key:'Q'}];
+    case 'ready':return [{id:'sled:go',ic:'x-sled',label:`출발! ${Math.ceil(S.wait)}`,key:'E'},{id:'sled:off',ic:'c-leave',label:'내리기',key:'Q'}];
     case 'count':return [];
     case 'ride':return [];
-    case 'back':return [{id:'sled:cheer',ic:'🙌',label:S.cheer?'만세 내리기':'만세',key:'E'},...(S.frontRiding?[]:[{id:'sled:off',ic:'↩',label:'내리기',key:'Q'}])];
-    case 'asking':return [{id:'sled:cancel',ic:'↩',label:'그만',key:'Q'}];
+    case 'back':return [{id:'sled:cheer',ic:'x-cheer',label:S.cheer?'만세 내리기':'만세',key:'E'},...(S.frontRiding?[]:[{id:'sled:off',ic:'c-leave',label:'내리기',key:'Q'}])];
+    case 'asking':return [{id:'sled:cancel',ic:'c-leave',label:'그만',key:'Q'}];
    }
-   if(nearDeck(player.x,player.z)){const out=[{id:'sled:board',ic:'🛷',label:'타기',key:'E'}];
+   if(nearDeck(player.x,player.z)){const out=[{id:'sled:board',ic:'x-sled',label:'타기',key:'E'}];
     const waiting=others().some(p=>p.act?.sl>=1&&p.act.sl<=3&&Math.hypot(p.sample.x-player.x,p.sample.z-player.z)<3&&!others().some(q=>q.act?.sl===5&&q.act.sp===p.id));
-    if(waiting)out.push({id:'sled:ask',ic:'👥',label:'둘이 타기',key:'R'});return out;}
-   if(nearStop(player.x,player.z))return [{id:'sled:up',ic:'⬆',label:'언덕 위로',key:'E'}];
+    if(waiting)out.push({id:'sled:ask',ic:'x-sled-pair',label:'둘이 타기',key:'R'});return out;}
+   if(nearStop(player.x,player.z))return [{id:'sled:up',ic:'x-uphill',label:'언덕 위로',key:'E'}];
    return [];
   },
   act(id){

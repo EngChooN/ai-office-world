@@ -4,6 +4,7 @@
 //  - 보냄: hiking:pair-offer {to} · hiking:pair-accept · hiking:pair-decline · hiking:pair-cancel · hiking:pair-end
 //  - 받음: hiking:pair-state · hiking:pair-note · hiking:pair-people · hiking:pair-pick · hiking:multi-status · hiking:multi-leave
 // 모양은 등산 수첩 톤(hud-notebook.css 토큰: 낮·노을·밤)으로 산개발이 먼저 만들었고, 산디자인이 다듬는다(pair-ui.css).
+import {icon,iconText} from './icons/icon.js';
 export const WALK_TEXT=Object.freeze({side:'나란히 걷는 중',file:'앞뒤로 걷는 중',far:'조금 떨어져 있어요'});
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 // 남은 초(올림, 0 아래로 안 감)
@@ -14,7 +15,7 @@ export function chipModel(st){
  if(st.phase==='outgoing'&&st.offer)return {kind:'wait',title:`${st.offer.name}님에게 제안했어요`,sub:'기다리는 중…',action:'cancel',label:'취소'};
  if(st.phase==='paired'&&st.partner){
   const w=st.walk,sub=st.away?`${st.partner.name}님 연결을 기다리는 중…`:w?.waiting?w.lag:w?.near&&w.mode?WALK_TEXT[w.mode]:WALK_TEXT.far;
-  return {kind:'pair',title:`🤝 ${st.partner.name}님과 동행 중`,sub,action:'end',label:'동행 끝내기',lag:!!(w?.waiting||st.away)};
+  return {kind:'pair',ic:'h-pair',title:`${st.partner.name}님과 동행 중`,sub,action:'end',label:'동행 끝내기',lag:!!(w?.waiting||st.away)};
  }
  return null;
 }
@@ -22,8 +23,8 @@ export function chipModel(st){
 export function rowModel(p,st){
  if(p.partner)return {label:'동행 중',disabled:true};
  if(p.offer)return {label:st?.phase==='incoming'?'제안 받음':'제안 중',disabled:true};
- if(st&&st.phase!=='idle')return {label:'🤝 같이 등산하기',disabled:true};
- return {label:'🤝 같이 등산하기',disabled:false};
+ if(st&&st.phase!=='idle')return {label:'같이 등산하기',ic:'h-pair',disabled:true};
+ return {label:'같이 등산하기',ic:'h-pair',disabled:false};
 }
 
 export function installPairUI({doc=document,win=window,now=()=>Date.now()}={}){
@@ -33,10 +34,10 @@ export function installPairUI({doc=document,win=window,now=()=>Date.now()}={}){
  const fire=(type,detail)=>win.dispatchEvent(new CustomEvent(type,detail===undefined?undefined:{detail}));
  let joined=false,left=false,st={phase:'idle'},people=[],sheetOpen=false,pickId=null,noteT=0,timer=0;
 
- const btn=mk('button','pw-btn','<span aria-hidden="true">👥</span><b class="pw-count" hidden></b>');
+ const btn=mk('button','pw-btn',`<span aria-hidden="true">${icon('c-people',{size:'m'})}</span><b class="pw-count" hidden></b>`);
  btn.type='button';btn.hidden=true;btn.setAttribute('aria-label','함께 있는 사람');btn.setAttribute('aria-expanded','false');
- const sheet=mk('section','pw-sheet',`<h4><span>👥 함께 있는 사람</span><button type="button" class="pw-x" aria-label="목록 닫기">✕</button></h4>
-  <p class="pw-help">이름을 고르고 🤝를 누르면 같이 등산하자고 제안해요. 머리 위 이름표를 눌러도 돼요.</p><ul class="pw-list"></ul>`);
+ const sheet=mk('section','pw-sheet',`<h4><span>${iconText('c-people','함께 있는 사람')}</span><button type="button" class="pw-x" aria-label="목록 닫기">✕</button></h4>
+  <p class="pw-help">이름을 고르고 ${iconText('h-pair','같이 등산하기',{size:'xs'})}를 누르면 같이 등산하자고 제안해요. 머리 위 이름표를 눌러도 돼요.</p><ul class="pw-list"></ul>`);
  sheet.hidden=true;
  const pick=mk('section','pw-pick');pick.hidden=true;
  const offer=mk('section','pw-offer');offer.hidden=true;offer.setAttribute('role','alertdialog');
@@ -70,7 +71,7 @@ export function installPairUI({doc=document,win=window,now=()=>Date.now()}={}){
  function renderList(){
   if(!sheetOpen)return;
   listEl.innerHTML=people.length?people.map(p=>{const m=rowModel(p,st);
-   return `<li><span class="pw-name"><b>${esc(p.name)}</b><small>${p.distance===null?'다른 곳':`${p.distance}m`}</small></span><button type="button" class="pw-go" data-id="${esc(p.id)}" ${m.disabled?'disabled':''}>${esc(m.label)}</button></li>`;}).join('')
+   return `<li><span class="pw-name"><b>${esc(p.name)}</b><small>${p.distance===null?'다른 곳':`${p.distance}m`}</small></span><button type="button" class="pw-go" data-id="${esc(p.id)}" ${m.disabled?'disabled':''}>${m.ic?iconText(m.ic,m.label,{size:'xs'}):esc(m.label)}</button></li>`;}).join('')
    :'<li class="pw-empty">아직 같은 서버에 아무도 없어요.</li>';
  }
  listEl.addEventListener('click',e=>{const b=e.target.closest('.pw-go');if(!b||b.disabled)return;fire('hiking:pair-offer',{to:b.dataset.id});setSheet(false);});
@@ -80,7 +81,7 @@ export function installPairUI({doc=document,win=window,now=()=>Date.now()}={}){
   pickId=id;pick.hidden=!id;if(!id)return;
   const p=people.find(x=>x.id===id),name=p?.name??pickName,m=rowModel(p??{id},st);
   pick.innerHTML=`<p><b>${esc(name)}</b>${p&&p.distance!==null?` <small>· ${p.distance}m</small>`:''}</p>
-   <div class="pw-row"><button type="button" class="pw-yes" ${m.disabled?'disabled':''}>${esc(m.label)}</button><button type="button" class="pw-no">닫기</button></div>`;
+   <div class="pw-row"><button type="button" class="pw-yes" ${m.disabled?'disabled':''}>${m.ic?iconText(m.ic,m.label,{size:'s'}):esc(m.label)}</button><button type="button" class="pw-no">닫기</button></div>`;
  }
  let pickName='';
  pick.addEventListener('click',e=>{
@@ -95,7 +96,7 @@ export function installPairUI({doc=document,win=window,now=()=>Date.now()}={}){
   if(!inc)return;
   if(offer.dataset.id!==st.offer.id||!offer.firstChild){
    offer.dataset.id=st.offer.id;
-   offer.innerHTML=`<p class="pw-offer-text"><span class="pw-stamp" aria-hidden="true">🤝</span><b>${esc(st.offer.name)}님이 같이 등산하자고 해요</b></p>
+   offer.innerHTML=`<p class="pw-offer-text"><span class="pw-stamp" aria-hidden="true">${icon('h-pair',{size:'l'})}</span><b>${esc(st.offer.name)}님이 같이 등산하자고 해요</b></p>
     <div class="pw-bar"><i></i></div><div class="pw-row"><button type="button" class="pw-accept">수락</button><button type="button" class="pw-decline">거절 <small></small></button></div>`;
   }
   tickOffer();
@@ -124,7 +125,7 @@ export function installPairUI({doc=document,win=window,now=()=>Date.now()}={}){
   placeChip();if(!m)return;
   chip.dataset.kind=m.kind;chip.classList.toggle('lag',!!m.lag);
   const sig=JSON.stringify(m);if(chip.dataset.sig===sig)return;chip.dataset.sig=sig;
-  chip.innerHTML=`<span class="pw-chip-text"><b>${esc(m.title)}</b><small>${esc(m.sub)}</small></span><button type="button" class="pw-chip-act" data-act="${m.action}">${esc(m.label)}</button>`;
+  chip.innerHTML=`<span class="pw-chip-text"><b>${m.ic?iconText(m.ic,m.title,{size:'xs'}):esc(m.title)}</b><small>${m.lag?icon('c-wait',{size:'xs'})+' ':''}${esc(m.sub)}</small></span><button type="button" class="pw-chip-act" data-act="${m.action}">${esc(m.label)}</button>`;
   placeChip();
  }
  chip.addEventListener('click',e=>{const b=e.target.closest('.pw-chip-act');if(!b)return;fire(b.dataset.act==='end'?'hiking:pair-end':'hiking:pair-cancel');});
@@ -133,7 +134,7 @@ export function installPairUI({doc=document,win=window,now=()=>Date.now()}={}){
 
  // ── 알림
  function showNote(text,kind=''){
-  if(!text)return;note.textContent=text;note.dataset.kind=kind;placeChip();note.classList.add('on');clearTimeout(noteT);noteT=setTimeout(()=>note.classList.remove('on'),2800);
+  if(!text)return;if(kind==='on')note.innerHTML=iconText('h-pair',text,{size:'xs'});else note.textContent=text;note.dataset.kind=kind;placeChip();note.classList.add('on');clearTimeout(noteT);noteT=setTimeout(()=>note.classList.remove('on'),2800);
  }
 
  // ── 받기

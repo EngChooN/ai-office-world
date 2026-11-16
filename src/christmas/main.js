@@ -172,8 +172,8 @@ let hud=null;
 treePlay=createTreePlay({tree:village.tree,multi,me:()=>multi.id??'me',myName:()=>multi.joined?multi.name:(profile.nickname||'나'),
  note:t=>hud?.say(t),
  event(type,d){
-  if(type==='stage'){const msg=d.stage===4?'트리가 다 채워졌어요! 🎄':d.stage===2?'전구가 더 켜졌어요 · 이제 꼭대기 별을 달 수 있어요 ⭐':'전구가 더 켜졌어요 ✨';hud?.say(msg,3.2);}
-  else if(type==='star')hud?.say(`${d.mine?'내가':(d.name||'누군가')+'님이'} 꼭대기 별을 달았어요 ⭐`,3.2);
+  if(type==='stage'){const [msg,ic]=d.stage===4?['트리가 다 채워졌어요!','x-tree']:d.stage===2?['전구가 더 켜졌어요 · 이제 꼭대기 별을 달 수 있어요','x-star']:['전구가 더 켜졌어요','x-sparkle'];hud?.say(msg,3.2,ic);}
+  else if(type==='star')hud?.say(`${d.mine?'내가':(d.name||'누군가')+'님이'} 꼭대기 별을 달았어요`,3.2,'x-star');
   else if(type==='set'&&d.mine){hud?.say(`${d.name||'나'} · ${d.gift?'선물 오너먼트를':'장식을'} 달았어요`,1.4);pendingMark(null);audio.play('jingle');}
   else if(type==='set'){const s=village.tree.slots[d.slot];if(s)audio.play('jingle',{at:{x:s.x,z:s.z},gain:.6});}
   else if(type==='near'){pendingMark(d.slot);}
@@ -218,8 +218,8 @@ hud=createXmasHud({multi,treePlay,mobile,look,wardrobe:()=>profile.wardrobe,proj
  do:id=>doAction(id),
  aim:(dx,dy,done)=>snowfight.aimDrag(dx,dy,done),
  inbox:()=>gifts.openInbox(),
- sound(){profile.sound=!profile.sound;saveProfile();audio.setMuted(!profile.sound);hud.setSound(!profile.sound);showCarol();hud.say(profile.sound?'소리를 켰어요 🔊':'소리를 껐어요 🔇',1.4);},
- carol(){profile.carol=!profile.carol;saveProfile();audio.setCarol(profile.carol);showCarol();hud.say(profile.carol?(profile.sound?'캐럴을 켰어요 🎵':'캐럴을 켰어요. 🔊 소리도 켜야 들려요'):'캐럴을 껐어요',1.6);},
+ sound(){profile.sound=!profile.sound;saveProfile();audio.setMuted(!profile.sound);hud.setSound(!profile.sound);showCarol();hud.say(profile.sound?'소리를 켰어요':'소리를 껐어요',1.4,profile.sound?'c-sound':'c-sound-off');},
+ carol(){profile.carol=!profile.carol;saveProfile();audio.setCarol(profile.carol);showCarol();hud.say(profile.carol?(profile.sound?'캐럴을 켰어요':'캐럴을 켰어요. 소리도 켜야 들려요'):'캐럴을 껐어요',1.6,profile.carol?(profile.sound?'c-music':'c-sound-off'):'c-music-off');},
  musicOpen(){showCarol();},
  gift:id=>gifts.startSend(id),
  decorate:setDecorate,
@@ -238,7 +238,7 @@ const near=(t,r)=>Math.hypot(player.x-t.x,player.z-t.z)<r;
 // ── 놀이: 소리·요청 길·선물·모닥불·눈사람·눈싸움·썰매
 const audio=createXmasAudio({muted:!profile.sound,carol:profile.carol});hud.setSound(!profile.sound);
 // 🎵 창의 지금 곡 줄
-function showCarol(){const c=audio.carolNow();hud.setCarol(profile.carol,!profile.sound?'🔇 소리가 꺼져 있어요':!profile.carol?'캐럴이 꺼져 있어요':!audio.unlocked?'♪ 화면을 한 번 누르면 캐럴이 나와요':c.state==='error'?'캐럴을 받지 못했어요':c.title?`♪ 지금: ${c.title}`:'♪ 캐럴을 받는 중이에요');}
+function showCarol(){const c=audio.carolNow();hud.setCarol(profile.carol,!profile.sound?'소리가 꺼져 있어요':!profile.carol?'캐럴이 꺼져 있어요':!audio.unlocked?'♪ 화면을 한 번 누르면 캐럴이 나와요':c.state==='error'?'캐럴을 받지 못했어요':c.title?`♪ 지금: ${c.title}`:'♪ 캐럴을 받는 중이에요',!profile.sound?'c-sound-off':null);}
 showCarol();
 net=createPlayNet({multi,player,myName:()=>multi.joined?multi.name:(profile.nickname||'나'),myAct});
 const resend=()=>{}; // act는 multi.update가 바뀔 때마다 보낸다(sendAct 비교)
@@ -256,14 +256,14 @@ addEventListener('xmas:multi-leave',()=>{net.resetLocal();});
 function currentActions(){
  if(deco.on)return [];
  if(sledPlay.mode!=='none')return sledPlay.actions();
- if(campfire.sitting)return [{id:'fire:warm',ic:'🙌',label:'손 녹이기',key:'E'},...(campfire.cocoaLeft?[{id:'fire:cocoa',ic:'🍫',label:`코코아 ${campfire.cocoaLeft}`,key:'R'}]:[]),{id:'fire:stand',ic:'↩',label:'일어나기',key:'Q'}];
- if(campfire.walking)return [{id:'fire:stand',ic:'↩',label:'그만',key:'Q'}];
- if(nearTree())return [{id:'tree:deco',ic:'🎄',label:giftOrn?`장식 달기 · 🎁${giftOrn}`:'장식 달기',key:'E'}];
+ if(campfire.sitting)return [{id:'fire:warm',ic:'x-warm-hands',label:'손 녹이기',key:'E'},...(campfire.cocoaLeft?[{id:'fire:cocoa',ic:'x-cocoa',label:`코코아 ${campfire.cocoaLeft}`,key:'R'}]:[]),{id:'fire:stand',ic:'c-stand-up',label:'일어나기',key:'Q'}];
+ if(campfire.walking)return [{id:'fire:stand',ic:'c-leave',label:'그만',key:'Q'}];
+ if(nearTree())return [{id:'tree:deco',ic:'x-tree',label:'장식 달기',...(giftOrn?{tailIc:'x-orn-gift',tail:giftOrn}:{}),key:'E'}];
  // 우체통과 모두의 카드 판은 2m 남짓 떨어져 있어 더 가까운 쪽 단추를 먼저
  const dMail=Math.hypot(player.x-MAILBOX.x,player.z-MAILBOX.z),dBoard=Math.hypot(player.x-CARD_BOARD.x,player.z-CARD_BOARD.z);
- if(dBoard<2.4&&dBoard<dMail)return [{id:'gift:board',ic:'🎄',label:'모두의 카드',key:'E'},{id:'gift:send',ic:'🎁',label:'선물 보내기',key:'R'}];
- if(dMail<TARGETS.mailbox.r+.8)return [{id:'gift:send',ic:'🎁',label:'선물 보내기',key:'E'},{id:'gift:inbox',ic:'📬',label:'받은 선물',key:'R',badge:gifts.unopened}];
- if(nearFire(player.x,player.z))return [{id:'fire:sit',ic:'🔥',label:'앉기',key:'E'}];
+ if(dBoard<2.4&&dBoard<dMail)return [{id:'gift:board',ic:'x-cards-all',label:'모두의 카드',key:'E'},{id:'gift:send',ic:'x-gift',label:'선물 보내기',key:'R'}];
+ if(dMail<TARGETS.mailbox.r+.8)return [{id:'gift:send',ic:'x-gift',label:'선물 보내기',key:'E'},{id:'gift:inbox',ic:'x-mailbox',label:'받은 선물',key:'R',badge:gifts.unopened}];
+ if(nearFire(player.x,player.z))return [{id:'fire:sit',ic:'c-sit',label:'앉기',key:'E'}];
  const fa=snowfight.actions();if(fa.length)return fa;
  const sa=snowman.actions();if(sa.length)return sa;
  return sledPlay.actions();
@@ -286,11 +286,11 @@ function doAction(id){
  return false;
 }
 // 놀이 구역에 들어가면 이름 띠(처음은 규칙 한 줄과 4초)
-const ZONES=Object.freeze({fight:{title:'❄️ 눈싸움 마당',rule:FIGHT_TEXT.enter},snowman:{title:'⛄ 눈사람 마당',rule:'눈덩이를 만들어 굴리면 커져요. 같이 밀면 더 빨라요'},sled:{title:'🛷 썰매 언덕',rule:'출발대에서 「타기」 · 좌우만 조종해요'},fire:{title:'🔥 모닥불',rule:'통나무에 앉아 이야기해요'}});
+const ZONES=Object.freeze({fight:{ic:'x-snowball',title:'눈싸움 마당',rule:FIGHT_TEXT.enter},snowman:{ic:'x-snowman',title:'눈사람 마당',rule:'눈덩이를 만들어 굴리면 커져요. 같이 밀면 더 빨라요'},sled:{ic:'x-sled',title:'썰매 언덕',rule:'출발대에서 「타기」 · 좌우만 조종해요'},fire:{ic:'x-campfire',title:'모닥불',rule:'통나무에 앉아 이야기해요'}});
 let zoneNow=null;
 function zoneAt(){if(inFightYard(player.x,player.z,-.3))return 'fight';if(inSnowmanYard(player.x,player.z,-.5))return 'snowman';if(player.z<-24&&Math.abs(player.x)<25)return 'sled';if(Math.hypot(player.x-CAMPFIRE.x,player.z-CAMPFIRE.z)<FIRE.talkR-1)return 'fire';return null;}
 function updateZone(){const z=zoneAt();if(z===zoneNow)return;zoneNow=z;if(!z)return;const Z=ZONES[z],first=!profile.zones.includes(z);
- hud.banner(Z.title,first?Z.rule:'',first?4:1.5);if(first){profile.zones.push(z);saveProfile();}}
+ hud.banner(Z.title,first?Z.rule:'',first?4:1.5,Z.ic);if(first){profile.zones.push(z);saveProfile();}}
 // PC 키: 단추에 적힌 글자(E·R·Q·F) = 그 단추, E는 장식 모드 끄기도, Esc 그만하기
 const KEYS={KeyE:'E',KeyR:'R',KeyQ:'Q',KeyF:'F'};
 addEventListener('keydown',e=>{const a=document.activeElement;if(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'))return;
@@ -347,7 +347,7 @@ renderer.setAnimationLoop(()=>{
 });
 loading?.classList.add('done');setTimeout(()=>loading?.remove(),700);
 // 첫 방문 안내(4초, 한 번만): 트리 위 표시 + 말
-if(!profile.tip){setTimeout(()=>{hud.say('트리 가까이 가서 장식을 달아 보세요 🎄',4);profile.tip=true;saveProfile();},1200);}
+if(!profile.tip){setTimeout(()=>{hud.say('트리 가까이 가서 장식을 달아 보세요',4,'x-tree');profile.tip=true;saveProfile();},1200);}
 dispatch('xmas:ready',{});
 
 // 진단·자동 점검용(브라우저 콘솔 window.xmas)

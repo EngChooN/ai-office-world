@@ -4,6 +4,7 @@
 import {checkpoints} from './route.js';
 import {PLAZA_START,GATE_S} from './plaza.js';
 import {DEV_BUILD,devBuild} from './free-settings.js';
+import {icon} from './icons/icon.js';
 export const SECTION_JUMP_ENABLED=DEV_BUILD;
 export const sectionJumpEnabled=(search='')=>SECTION_JUMP_ENABLED&&devBuild(search);
 const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
@@ -43,9 +44,9 @@ export function mountSectionJump({targets,onJump,root=document.body}){
 function mountInSettings({targets,onJump,slot,sheets}){
  const sheetOpen=id=>window.dispatchEvent(new CustomEvent('hiking:sheet',{detail:{id}}));
  const box=document.createElement('div');box.id='section-jump';box.hidden=true;
- box.innerHTML='<button type="button" class="sj-toggle nb-it nb-dev" aria-expanded="false" aria-controls="sj-list"><em aria-hidden="true">🧭</em><span>구간 이동</span><small>개발용 · 바로 이동</small></button>';
+ box.innerHTML='<button type="button" class="sj-toggle nb-it nb-dev" aria-expanded="false" aria-controls="sj-list"><em aria-hidden="true">'+icon('h-section-jump',{size:'m'})+'</em><span>구간 이동</span><small>개발용 · 바로 이동</small></button>';
  const sheet=document.createElement('section');sheet.className='nb-sheet nb-jump';sheet.dataset.sheet='jump';sheet.setAttribute('role','dialog');sheet.setAttribute('aria-label','구간 이동');sheet.hidden=true;
- sheet.innerHTML='<h4><span>🧭 구간 이동 <i class="nb-devmark">개발용</i></span><button type="button" class="nb-close" data-sheet-close aria-label="구간 이동 닫기">✕</button></h4><p class="nb-note">고르면 그 지점으로 바로 옮겨요 · 진행 기록은 그대로</p><ul id="sj-list" class="sj-list nb-grid"></ul>';
+ sheet.innerHTML='<h4><span>'+icon('h-section-jump',{size:'s'})+' 구간 이동 <i class="nb-devmark">개발용</i></span><button type="button" class="nb-close" data-sheet-close aria-label="구간 이동 닫기">✕</button></h4><p class="nb-note">고르면 그 지점으로 바로 옮겨요 · 진행 기록은 그대로</p><ul id="sj-list" class="sj-list nb-grid"></ul>';
  const toggle=box.querySelector('.sj-toggle'),list=sheet.querySelector('.sj-list');
  for(const t of targets){const li=document.createElement('li'),b=document.createElement('button');b.type='button';b.className='nb-it';b.textContent=t.label;b.dataset.jump=t.id;b.addEventListener('click',()=>{if(onJump(t)!==false)sheetOpen(null);});li.append(b);list.append(li);}
  toggle.addEventListener('click',()=>sheetOpen('jump'));

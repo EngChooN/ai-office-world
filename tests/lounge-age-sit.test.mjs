@@ -85,8 +85,8 @@ assert.ok(Math.abs(f.y-(seat.y+SEAT_PAD))<.3,`${s} 발 높이 좌판 근처(${f.
 test('일어나기는 머리 위 표시가 아니라 아래 손 단추 줄(E 키), NPC도 같은 앉기 자세 코드를 쓴다',()=>{
  const sp=readFileSync(new URL('../src/lounge/spots.js',import.meta.url),'utf8');
  assert.match(sp,/if\(mine\)return null;/);
- assert.match(sp,/btn\('stand','↩','일어나기','sec stand',' title="E"'\)/);
- assert.match(sp,/btn\('stand','↩','난간에서 떨어지기','sec stand',' title="E"'\)/);
+ assert.match(sp,/btn\('stand','c-stand-up','일어나기','sec stand',' title="E"'\)/);
+ assert.match(sp,/btn\('stand','c-leave','난간에서 떨어지기','sec stand',' title="E"'\)/);
  const npc=readFileSync(new URL('../src/lounge/npc.js',import.meta.url),'utf8');
  assert.match(npc,/createPoser\(/);assert.match(npc,/a\.extra\.unshift\(poser\.pose\)/);
 });

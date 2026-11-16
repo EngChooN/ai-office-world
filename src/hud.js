@@ -1,7 +1,8 @@
 // 앉기·차 마시기·달리기 버튼, 스테미너 막대, 시각·날씨 아이콘. main.js와는 window 이벤트로만 만난다.
 //  - 읽기: 'hiking:state'(자세·스테미너), 'hiking:environment'(시각·날씨)
 //  - 쓰기: 앉기·차 마시기는 버튼 클릭(main.js가 #sit·#tea 클릭을 command로 연결), 달리기는 Shift 키 이벤트를 흉내 낸다.
-import {ATTRIBUTION} from './weather.js';
+import {ATTRIBUTION,WX_IC} from './weather.js';
+import {icon as iconSvg} from './icons/icon.js';
 export const RUN_RECOVER_AT=30;
 export const LEVEL_LABEL={light:'약',medium:'보통',heavy:'강'};
 export function staminaView({stamina=100,runExhausted=false}={}){
@@ -39,7 +40,7 @@ export function installEnvironmentHud(){
  });
  window.addEventListener('hiking:environment',e=>{
   const v=environmentView(e.detail||{});if(!chip)return;
-  chip.querySelector('i').textContent=v.icon;chip.querySelector('b').textContent=v.time;chip.querySelector('span').textContent=v.text;chip.title=v.title;
+  {const i=chip.querySelector('i');if(i&&i.dataset.wx!==v.icon){i.dataset.wx=v.icon;i.innerHTML=iconSvg(WX_IC[v.icon]??'c-wx-clear',{size:'xs',fallback:v.icon});}}chip.querySelector('b').textContent=v.time;chip.querySelector('span').textContent=v.text;chip.title=v.title;
  });
  // 모바일 달리기: 누르고 있는 동안 Shift를 누른 것으로 취급한다(input.js가 키 집합을 읽는다).
  if(run){

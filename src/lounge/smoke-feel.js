@@ -3,12 +3,12 @@
 
 // 누른 시간(초) 경계: 짧게 탭 / 꿀모금 시작 / 진한 모금 시작 / 기침
 export const DRAW=Object.freeze({tap:.25,sweet:.6,deep:2.2,cough:3});
-// 담배 종류(꺼낼 때 고름). smoke = 연기 양 배수. 시가는 굵고(thick) 갈색이다.
+// 담배 종류(꺼낼 때 고름). icon = 아이콘 이름(src/icons, 아이콘-규칙-v1 §7-3). smoke = 연기 양 배수. 시가는 굵고(thick) 갈색이다.
 export const CIG_KINDS=Object.freeze({
- mild:{label:'순한 맛',icon:'🍃',smoke:.8,thick:1,paper:'#f6f2e8',filter:'#f1eee6',burn:1},
- strong:{label:'독한 맛',icon:'🔥',smoke:1.3,thick:1,paper:'#f6f2e8',filter:'#c9843f',burn:1.1},
- menthol:{label:'멘솔',icon:'❄️',smoke:1,thick:1,paper:'#f6f2e8',filter:'#bfe6d6',burn:1},
- cigar:{label:'시가',icon:'🟤',smoke:2,thick:1.75,paper:'#7a4a2a',filter:'#c9a24a',burn:.55},
+ mild:{label:'순한 맛',icon:'s-mild',smoke:.8,thick:1,paper:'#f6f2e8',filter:'#f1eee6',burn:1},
+ strong:{label:'독한 맛',icon:'s-strong',smoke:1.3,thick:1,paper:'#f6f2e8',filter:'#c9843f',burn:1.1},
+ menthol:{label:'멘솔',icon:'s-menthol',smoke:1,thick:1,paper:'#f6f2e8',filter:'#bfe6d6',burn:1},
+ cigar:{label:'시가',icon:'s-cigar',smoke:2,thick:1.75,paper:'#7a4a2a',filter:'#c9a24a',burn:.55},
 });
 export const DEFAULT_KIND='mild';
 export const cigKind=k=>k in CIG_KINDS?k:DEFAULT_KIND;

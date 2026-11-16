@@ -10,6 +10,7 @@ import {jumpTargets} from './section-jump.js';
 import {route} from './route.js';
 import {loadProgress,stampCount} from './interaction-logic.js';
 import {STAMPS} from './interaction-data.js';
+import {icon,iconText} from './icons/icon.js';
 
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const store=k=>{try{return globalThis[k]??null;}catch{return null;}};
@@ -35,7 +36,7 @@ export function sealSVG(size,{name='관악산',date='',count=1,cls=''}={}){
 <path d="M38 57 L50 44 L56 50 L63 40 L82 57" fill="none" stroke-width="2.6" stroke-linejoin="round"/><line x1="33" y1="61" x2="87" y2="61" stroke-width="1.4"/>
 <text x="60" y="81" font-size="17" font-weight="900" stroke="none" text-anchor="middle" letter-spacing="1">등산 완료</text></g>${count>1?`<g transform="rotate(12 104 100)"><circle cx="104" cy="100" r="13" fill="var(--paper)" stroke="currentColor" stroke-width="2"/><text x="104" y="104.5" font-size="12" font-weight="900" fill="currentColor" text-anchor="middle">×${count}</text></g>`:''}</svg>`;
 }
-export const sealSlot=size=>`<div class="fs-seal-slot" style="width:${size}px;height:${size}px"><span><i aria-hidden="true">⛰</i>완등 도장<br>자리</span></div>`;
+export const sealSlot=size=>`<div class="fs-seal-slot" style="width:${size}px;height:${size}px"><span><i aria-hidden="true">${icon('h-summit',{size:'s'})}</i>완등 도장<br>자리</span></div>`;
 export const recordHTML=r=>recordLine(r)?.map(([t,b])=>b?`<b>${esc(t)}</b>`:esc(t)).join('')??'';
 export function sealFor(id,size,records){const r=summitOf(records,id);return r?sealSVG(size,{name:mountainById(id)?.name??'',date:sealDate(r.first),count:r.count}):sealSlot(size);}
 
@@ -76,7 +77,7 @@ export function applyHudTime(){
 
 // ── 자유 설정판 HTML ──
 const seg=(group,list,picked,real,locked)=>`<div class="fs-seg" style="grid-template-columns:repeat(${list.length},1fr)" role="group" aria-label="${group}">${list.map(([v,ic,label])=>{const on=picked===v,isReal=real===v;
- return `<button type="button" data-free-${group}="${v}" class="${on?'on':''}${isReal?' real':''}" aria-pressed="${on}"${locked?' disabled':''} title="${esc(label)}${isReal?' · 지금 실제 값':''}"><em aria-hidden="true">${ic}</em>${esc(label)}</button>`;}).join('')}</div>`;
+ return `<button type="button" data-free-${group}="${v}" class="${on?'on':''}${isReal?' real':''}" aria-pressed="${on}"${locked?' disabled':''} title="${esc(label)}${isReal?' · 지금 실제 값':''}">${locked?`<i class="fs-lockbadge" aria-hidden="true">${icon('c-lock',{size:'xs'})}</i>`:''}<em aria-hidden="true">${icon(ic,{size:'m'})}</em>${esc(label)}</button>`;}).join('')}</div>`;
 const GROUP_LABEL={weather:'날씨',time:'시간',season:'계절'};
 function routeSVG(sel,here){
  const n=START_POINTS.length,x=i=>14+i*(292/(n-1));
@@ -85,7 +86,7 @@ function routeSVG(sel,here){
 export function panelHTML({context='game'}={}){
  const f=freeState.free,a=freeState.actual,unlocked=freeState.unlocked,dev=freeState.dev&&!summitOf(freeState.records,DEFAULT_MOUNTAIN);
  const st=statusLine(f,a),here=freeState.started?hereIndex(freeState.game):-1,selIdx=START_POINTS.findIndex(p=>p.id===freeState.startPick);
- const head=`<h4><span class="fs-t">🎛 자유 설정${dev?' <i class="nb-devmark">🛠 개발 버전</i>':''}</span><button type="button" class="nb-close" data-free-close aria-label="자유 설정 닫기">✕</button></h4>`;
+ const head=`<h4><span class="fs-t">${iconText('h-free-settings','자유 설정')}${dev?` <i class="nb-devmark">${iconText('c-dev','개발 버전',{size:'xs'})}</i>`:''}</span><button type="button" class="nb-close" data-free-close aria-label="자유 설정 닫기">✕</button></h4>`;
  if(!unlocked){
   const g=freeState.game,remain=g&&Number.isFinite(g.courseLength)?Math.max(0,(g.courseLength-(g.courseDistance||0))/1000):null,stamps=stampCount(loadProgress(ls));
   return `${head}<div class="fs-cols fs-lockcols"><div class="fs-lockbox">${sealSlot(context==='pick'?84:64)}<div><b>연주대 정상에서 완등 도장을 받으면 열려요</b><small>${remain!==null?`정상까지 ${remain.toFixed(1)} km · `:''}스탬프 ${stamps} / ${STAMPS.length}</small><div class="nb-prog fs-prog"><i style="width:${Math.round(stamps/STAMPS.length*100)}%"></i></div><small>열리면 날씨 · 시간 · 계절 · 출발 지점을 마음대로 골라요</small></div></div>
@@ -95,7 +96,7 @@ export function panelHTML({context='game'}={}){
 <div class="fs-lb">날씨<small>고르면 바로 바뀌어요</small></div>${seg('weather',WEATHER_CHOICES,f.weather,a.weather)}
 <div class="fs-lb">시간</div>${seg('time',TIME_CHOICES,f.time,a.time)}
 <div class="fs-lb">계절</div>${seg('season',SEASON_CHOICES,f.season,a.season)}`;
- const goLabel=context==='pick'?'▶ 이대로 오르기':'📍 여기서 다시 출발';
+ const goLabel=context==='pick'?iconText('c-enter','이대로 오르기'):iconText('h-start-here','여기서 다시 출발');
  const goNote=context==='pick'?(selIdx>=0?`${START_POINTS[selIdx].label}에서 출발해요`:'고르지 않으면 원래 자리에서 출발해요'):'진행 기록은 새로 시작해요 · 완등 도장은 그대로 남아요';
  const right=`<div class="fs-lb">출발 지점<small>${here>=0?'초록 = 지금 있는 곳':'고른 곳에서 출발'}</small></div>${routeSVG(selIdx,here)}
 <div class="fs-start" role="group" aria-label="출발 지점">${START_POINTS.map((p,i)=>`<button type="button" data-free-start="${p.id}" class="${selIdx===i?'on':''}${here===i?' here':''}" aria-pressed="${selIdx===i}"><i aria-hidden="true">${i+1}</i>${esc(p.label)}</button>`).join('')}</div>
@@ -132,13 +133,13 @@ export function mountFreeSettingsHud(doc=document,win=window){
  sheets.append(sheet);
  // 개발용 칸: 완등 기록 지우기
  const devSlot=app.querySelector('[data-dev-slot]');let clearBtn=null;
- if(freeState.dev&&devSlot){clearBtn=doc.createElement('button');clearBtn.type='button';clearBtn.className='nb-it nb-dev fs-clear';clearBtn.innerHTML='<em aria-hidden="true">🧽</em><span>완등 기록 지우기</span><small>개발용 · 도장 다시 보기</small>';
+ if(freeState.dev&&devSlot){clearBtn=doc.createElement('button');clearBtn.type='button';clearBtn.className='nb-it nb-dev fs-clear';clearBtn.innerHTML=`<em aria-hidden="true">${icon('h-clear-record',{size:'m'})}</em><span>완등 기록 지우기</span><small>개발용 · 도장 다시 보기</small>`;
   clearBtn.addEventListener('click',()=>{clearSummits(ls);refreshRecords();clearBtn.querySelector('small').textContent='지웠어요 · 다시 오르면 도장이 찍혀요';clearBtn.blur();});
   win.addEventListener('hiking:started',()=>setTimeout(()=>devSlot.append(clearBtn),0),{once:true});}
  // 오른쪽 위 시각·날씨 꼬리표(직접 고르면 점선 + '✎ … 직접 고름', 누르면 판이 열린다)
  const chip=doc.getElementById('env-chip');
  const paintChip=()=>{if(!chip)return;const t=chipText(freeState.free);chip.classList.toggle('fs-manual',!!t);
-  let tag=chip.querySelector('.fs-chip');if(t){if(!tag){tag=doc.createElement('em');tag.className='fs-chip';chip.append(tag);}tag.dataset.short=t.short;tag.textContent=t.long;chip.setAttribute('role','button');chip.tabIndex=0;chip.setAttribute('aria-label',`${t.long} · 눌러서 자유 설정 열기`);}
+  let tag=chip.querySelector('.fs-chip');if(t){if(!tag){tag=doc.createElement('em');tag.className='fs-chip';chip.append(tag);}tag.innerHTML=`${icon(t.ic,{size:'xs'})}<span class="fs-chip-l">${esc(t.long)}</span><span class="fs-chip-s">${esc(t.short)}</span>`;chip.setAttribute('role','button');chip.tabIndex=0;chip.setAttribute('aria-label',`${t.long} · 눌러서 자유 설정 열기`);}
   else{tag?.remove();chip.setAttribute('role','status');chip.removeAttribute('tabindex');chip.setAttribute('aria-label','서울 현재 시각과 날씨');}};
  chip?.addEventListener('click',()=>{if(isManual(freeState.free))open('free');});
  chip?.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&isManual(freeState.free)){e.preventDefault();open('free');}});
@@ -147,11 +148,11 @@ export function mountFreeSettingsHud(doc=document,win=window){
  const mapSubBase=mapSub?.textContent??'';let mapSeal=null,mapRec=null,mapLink=null;
  if(mapBox){mapSeal=doc.createElement('div');mapSeal.className='fs-mapseal';mapBox.append(mapSeal);}
  if(mapSide){mapRec=doc.createElement('p');mapRec.className='fs-maprec';mapSide.prepend(mapRec);
-  const choice=mapSide.querySelector('.start-choice');mapLink=doc.createElement('button');mapLink.type='button';mapLink.className='btn-paper fs-maplink';mapLink.textContent='🎛 자유 설정에서 더 고르기';
+  const choice=mapSide.querySelector('.start-choice');mapLink=doc.createElement('button');mapLink.type='button';mapLink.className='btn-paper fs-maplink';mapLink.innerHTML=iconText('h-free-settings','자유 설정에서 더 고르기');
   mapLink.addEventListener('click',()=>{map.close();open('free');});choice?.after(mapLink);}
  // 정상 도착 창: 도장(찍히는 동작) + '자유 설정이 열렸어요'
  const summit=doc.getElementById('summit'),summitSeal=summit?.querySelector('.nb-seal');let summitLink=null;
- if(summit){summitLink=doc.createElement('button');summitLink.type='button';summitLink.className='fs-summit-link';summitLink.hidden=true;summitLink.innerHTML='🎛 자유 설정이 열렸어요 · 열어 보기 ›';
+ if(summit){summitLink=doc.createElement('button');summitLink.type='button';summitLink.className='fs-summit-link';summitLink.hidden=true;summitLink.innerHTML=iconText('h-free-settings','자유 설정이 열렸어요 · 열어 보기 ›',{size:'xs'});
   summitLink.addEventListener('click',()=>{summit.close();open('free');});summit.querySelector('.nb-dlg-row')?.before(summitLink);}
  win.addEventListener('hiking:summit-record',()=>{
   refreshRecords();const r=summitOf(freeState.records,DEFAULT_MOUNTAIN);if(!r||!summitSeal)return;
@@ -166,8 +167,8 @@ export function mountFreeSettingsHud(doc=document,win=window){
  function render(){
   const r=summitOf(freeState.records,DEFAULT_MOUNTAIN),unlocked=freeState.unlocked,devOnly=freeState.dev&&!r;
   entry.classList.toggle('nb-dev',devOnly);entry.classList.toggle('fs-locked',!unlocked);
-  entry.innerHTML=unlocked?`<em aria-hidden="true">🎛</em><span>자유 설정</span><small>${devOnly?'개발 버전이라 처음부터 열려 있어요':'날씨 · 시간 · 계절 · 출발 지점'}</small>${r?`<b class="fs-entry-seal">${sealSVG(40,{date:sealDate(r.first),count:r.count})}</b>`:devOnly?'<i class="nb-devmark">🛠 개발</i>':''}`
-   :'<em aria-hidden="true">🔒</em><span>자유 설정</span><small>완등하면 열려요</small>';
+  entry.innerHTML=unlocked?`<em aria-hidden="true">${icon('h-free-settings',{size:'m'})}</em><span>자유 설정</span><small>${devOnly?'개발 버전이라 처음부터 열려 있어요':'날씨 · 시간 · 계절 · 출발 지점'}</small>${r?`<b class="fs-entry-seal">${sealSVG(40,{date:sealDate(r.first),count:r.count})}</b>`:devOnly?`<i class="nb-devmark">${iconText('c-dev','개발',{size:'xs'})}</i>`:''}`
+   :`<em aria-hidden="true">${icon('c-lock',{size:'m'})}</em><span>자유 설정</span><small>완등하면 열려요</small>`;
   entry.setAttribute('aria-label',unlocked?'자유 설정 열기':'자유 설정 · 완등하면 열려요');
   const html=panelHTML({context:'game'});if(html!==sheetSig){sheetSig=html;sheet.innerHTML=html;}
   sheet.classList.toggle('fs-locked',!unlocked);

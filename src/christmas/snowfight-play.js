@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import * as P from './props.js';
 import {FIGHT,FIGHT_TEXT,inFightYard,autoAim,createAmmo} from './snowfight.js';
+import {icon} from '../icons/icon.js';
 
 const PACK_SECS=FIGHT.packMs/1000;
 // ctx: {doc,root,world,toon,heightAt,player,poser(내 자세),net,multi,hud,audio,camera,canvas,mobile,onChange()}
@@ -47,7 +48,7 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
   S.aim={x:player.x+wx*dist,z:player.z+wz*dist,dx:wx,dz:wz,dist};
   if(done){const a=S.aim;S.aim=null;throwDir(a.dx,a.dz,a.dist);}
  }
- function pack(){if(!inFightYard(player.x,player.z,-.3)||S.pack>0)return false;if(ammo.n>=FIGHT.ammo){hud?.say('손에 눈덩이가 가득해요 ❄️❄️❄️',1.4);return false;}S.pack=PACK_SECS;onChange();audio?.play('roll');return true;}
+ function pack(){if(!inFightYard(player.x,player.z,-.3)||S.pack>0)return false;if(ammo.n>=FIGHT.ammo){hud?.say('손에 눈덩이가 가득해요',1.4,'x-snowball');return false;}S.pack=PACK_SECS;onChange();audio?.play('roll');return true;}
  // ── 눈투성이(사람마다 머리 위 눈 덩어리 + 몸 얼룩): 겉모습 그룹 하나를 머리 자리에 붙인다
  function coverMesh(){const g=new THREE.Group();g.name='눈투성이';// 0~2 머리 위 눈 더미, 3~4 어깨·가슴 얼룩, 5~6 셋째 단계(더 쌓임)
   const r=[[0,.02,0,.13],[-.1,-.03,.03,.08],[.1,-.04,.02,.09],[-.07,-.46,.15,.07],[.09,-.52,.14,.06],[.02,.09,-.05,.09],[-.11,-.6,.12,.05]];
@@ -78,14 +79,14 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
   const m=f.m,soft=!!m.soft;let y=f.y1??heightAt(f.tx,f.tz);
   if(m.hit&&!multi.isMuted?.(m.hit)){const h=headOf(m.hit);if(h)y=h.p.y-.3;coverHit(m.hit,soft);}
   burst(f.tx,y,f.tz,{small:soft});audio?.play('hit',{at:{x:f.tx,z:f.tz},gain:soft?.5:1});
-  if(f.hitMe)hud?.say(soft?'눈덩이를 맞았어요':`${multi.nameOf(m.id)}의 눈덩이! ❄️`,soft?.8:1.2);
-  else if(f.me&&m.hit)hud?.say('명중! ❄️',.9);
+  if(f.hitMe)hud?.say(soft?'눈덩이를 맞았어요':`${multi.nameOf(m.id)}의 눈덩이!`,soft?.8:1.2,soft?null:'x-snowball');
+  else if(f.me&&m.hit)hud?.say('명중!',.9,'x-snowball');
  }
  return {
   forward,auto,toward,aimDrag,pack,throwDir,
   get ammo(){return ammo.n;},get packing(){return S.pack>0;},get inYard(){return S.inYard;},
   actFields(){return {pk:S.pack>0?1:0};},
-  actions(){if(!S.inYard)return [];return [{id:'sb:throw',ic:'❄️',label:'던지기',key:'F',aim:true},{id:'sb:pack',ic:'🤲',label:'눈 뭉치기',key:'R'}];},
+  actions(){if(!S.inYard)return [];return [{id:'sb:throw',ic:'x-snowball',label:'던지기',key:'F',aim:true},{id:'sb:pack',ic:'x-scoop',label:'눈 뭉치기',key:'R'}];},
   act(id){if(id==='sb:throw')return mobile?auto():forward();if(id==='sb:pack')return pack();return false;},
   update(dt,{moveInput=false}={}){
    const inside=inFightYard(player.x,player.z,-.3);
@@ -93,7 +94,7 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
    if(S.pack>0){if(moveInput){S.pack=0;onChange();}else{S.pack-=dt;if(S.pack<=0){S.pack=0;ammo.pack();onChange();}}}
    poser.setArms(S.pack>0?'pack':poser.arms==='pack'?'none':poser.arms);
    // 손 눈덩이 표시
-   ammoEl.hidden=!inside;if(inside){const n=ammo.n,txt=`${'❄️'.repeat(n)}${'·'.repeat(FIGHT.ammo-n)}`;if(ammoEl.textContent!==txt)ammoEl.textContent=txt;}
+   ammoEl.hidden=!inside;if(inside){const n=ammo.n,k=String(n);if(ammoEl.dataset.n!==k){ammoEl.dataset.n=k;ammoEl.setAttribute('aria-label',`손에 든 눈덩이 ${n}개`);ammoEl.innerHTML=icon('x-snowball',{size:'s'}).repeat(n)+'<i class="xf-empty" aria-hidden="true"></i>'.repeat(FIGHT.ammo-n);}}
    // 조준 고리
    if(S.aim&&inside){ring.visible=true;ring.position.set(S.aim.x,heightAt(S.aim.x,S.aim.z)+.04,S.aim.z);}else ring.visible=false;
    // 날아가는 눈덩이(포물선)

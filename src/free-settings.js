@@ -5,7 +5,7 @@
 //  - 저장: sessionStorage(같은 탭에서 다시 열려도 유지, 새로 들어오면 현재 그대로).
 //  - main.js에는 'hiking:free-settings' 이벤트(바뀐 칸만)로 넘긴다. 시간은 기존 ?time= 처리(daytime.js)를, 날씨는 ?weather= 처리(weather.js)를 그대로 쓴다.
 import {sunPosition,seoulClock,SEOUL_OFFSET_MS} from './daytime.js';
-import {SEASONS,SEASON_LABEL,SEASON_ICON,seasonForDate} from './season.js';
+import {SEASONS,SEASON_LABEL,SEASON_IC,seasonForDate} from './season.js';
 import {summitOf} from './summit-records.js';
 
 // 개발 버전: 완등하지 않아도 자유 설정이 열린다. 구간 이동 버튼(section-jump.js)과 같은 조건이다.
@@ -18,9 +18,10 @@ export function devBuild(search=globalThis.location?.search??''){
 }
 export const freeUnlocked=({records,mountain='gwanak',dev=false})=>dev||!!summitOf(records,mountain);
 
-export const WEATHER_CHOICES=Object.freeze([['clear','☀','맑음'],['overcast','☁','흐림'],['rain','🌧','비'],['snow','❄','눈'],['fog','🌫','안개']]);
-export const TIME_CHOICES=Object.freeze([['day','☀','낮'],['dusk','🌇','노을'],['night','🌙','밤']]);
-export const SEASON_CHOICES=Object.freeze(SEASONS.map(s=>[s,SEASON_ICON[s],{spring:'봄 벚꽃',summer:'여름',autumn:'가을 단풍',winter:'겨울 눈'}[s]]));
+// [값, 화면 아이콘 이름(아이콘-규칙-v1 §7 사), 이름]
+export const WEATHER_CHOICES=Object.freeze([['clear','c-wx-clear','맑음'],['overcast','c-wx-cloud','흐림'],['rain','c-wx-rain','비'],['snow','c-wx-snow','눈'],['fog','c-wx-fog','안개']]);
+export const TIME_CHOICES=Object.freeze([['day','c-time-day','낮'],['dusk','c-time-dusk','노을'],['night','c-time-night','밤']]);
+export const SEASON_CHOICES=Object.freeze(SEASONS.map(s=>[s,SEASON_IC[s],{spring:'봄 벚꽃',summer:'여름',autumn:'가을 단풍',winter:'겨울 눈'}[s]]));
 const has=(list,v)=>list.some(c=>c[0]===v);
 // 실제 날씨 6종 → 고르기 5칸. '구름'은 맑음 칸에 넣는다.
 export const weatherChoiceOf=kind=>kind==='cloud'?'clear':has(WEATHER_CHOICES,kind)?kind:'clear';
@@ -58,13 +59,14 @@ export function statusLine(free,actual){
  const picked=[free.season&&SEASON_LABEL[free.season],free.weather&&label(WEATHER_CHOICES,free.weather),free.time&&label(TIME_CHOICES,free.time)].filter(Boolean);
  return {manual:true,head:`✎ 직접 고른 설정 · ${picked.join(' · ')}`,sub:'나머지는 실제 서울을 따라가요'};
 }
-// 오른쪽 위 시각·날씨 꼬리표(사양 §3-3): '✎ ❄ 눈 · 밤 · 겨울 직접 고름', 좁은 화면은 '✎ ❄ 밤'.
+// 오른쪽 위 시각·날씨 꼬리표(사양 §3-3): [눈 아이콘] '✎ 눈 · 밤 · 겨울 직접 고름', 좁은 화면은 '✎ 밤'. ic = 화면 아이콘 이름
 export function chipText(free){
  if(!isManual(free))return null;
- const ic=free.weather?icon(WEATHER_CHOICES,free.weather):free.time?icon(TIME_CHOICES,free.time):SEASON_ICON[free.season];
+ const ic=free.weather?icon(WEATHER_CHOICES,free.weather):free.time?icon(TIME_CHOICES,free.time):SEASON_IC[free.season];
  const words=[free.weather&&label(WEATHER_CHOICES,free.weather),free.time&&label(TIME_CHOICES,free.time),free.season&&SEASON_LABEL[free.season]].filter(Boolean);
- return {long:`✎ ${ic} ${words.join(' · ')} 직접 고름`,short:`✎ ${ic} ${words[0]}`};
+ return {ic,long:`✎ ${words.join(' · ')} 직접 고름`,short:`✎ ${words[0]}`};
 }
-// 산 고르기 카드 그림의 꼬리표: '🍁 지금 가을 · 단풍' 또는 '✎ 고른 계절 · 겨울 · 눈'
+// 산 고르기 카드 그림의 꼬리표: [가을 아이콘] '지금 가을 · 단풍' 또는 '✎ 고른 계절 · 겨울 · 눈'. 아이콘 이름은 seasonTagIcon
 const SEASON_LONG={spring:'봄 · 벚꽃',summer:'여름',autumn:'가을 · 단풍',winter:'겨울 · 눈'};
-export const seasonTag=(free,actualSeason)=>free?.season?`✎ 고른 계절 · ${SEASON_LONG[free.season]}`:`${SEASON_ICON[actualSeason]} 지금 ${SEASON_LONG[actualSeason]}`;
+export const seasonTag=(free,actualSeason)=>free?.season?`✎ 고른 계절 · ${SEASON_LONG[free.season]}`:`지금 ${SEASON_LONG[actualSeason]}`;
+export const seasonTagIcon=(free,actualSeason)=>free?.season?null:SEASON_IC[actualSeason]??null;

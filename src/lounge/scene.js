@@ -1,11 +1,11 @@
 // 상황 고르기(B6): 출근 전 한 대(아침)·점심 먹고 한 대(낮)·퇴근길 한 대(노을)·회식 후 한 대(밤).
 // 시간대는 main.js의 기존 setTime(낮·노을·밤 프리셋)을 그대로 쓰고, 'lounge:scene' {id}를 보낸다(NPC 화제는 npc.js가 받아서 바꾼다).
-// 분위기는 <html data-scene>으로만 알린다(spots.css가 화면 가장자리에 아주 옅은 색을 얹는다). 단추·패널은 spots.js가 만든다.
+// 분위기는 <html data-scene>으로만 알린다(spots.css가 화면 가장자리에 아주 옅은 색을 얹는다). 단추·패널은 spots.js가 만든다. icon = 아이콘 이름(src/icons, 아이콘-규칙-v1 §7-3).
 export const SCENES=Object.freeze({
- morning:Object.freeze({id:'morning',icon:'☕',label:'출근 전 한 대',sub:'아침 · 쌀쌀해요',time:'day',mood:'chilly'}),
- lunch:Object.freeze({id:'lunch',icon:'🍱',label:'점심 먹고 한 대',sub:'낮 · 배불러요',time:'day',mood:'calm'}),
- evening:Object.freeze({id:'evening',icon:'🌇',label:'퇴근길 한 대',sub:'노을 · 홀가분',time:'dusk',mood:'warm'}),
- afterparty:Object.freeze({id:'afterparty',icon:'🍻',label:'회식 후 한 대',sub:'밤 · 알딸딸',time:'night',mood:'tipsy'}),
+ morning:Object.freeze({id:'morning',icon:'s-scene-morning',label:'출근 전 한 대',sub:'아침 · 쌀쌀해요',time:'day',mood:'chilly'}),
+ lunch:Object.freeze({id:'lunch',icon:'s-scene-lunch',label:'점심 먹고 한 대',sub:'낮 · 배불러요',time:'day',mood:'calm'}),
+ evening:Object.freeze({id:'evening',icon:'s-scene-evening',label:'퇴근길 한 대',sub:'노을 · 홀가분',time:'dusk',mood:'warm'}),
+ afterparty:Object.freeze({id:'afterparty',icon:'s-scene-dinner',label:'회식 후 한 대',sub:'밤 · 알딸딸',time:'night',mood:'tipsy'}),
 });
 export const SCENE_IDS=Object.freeze(Object.keys(SCENES));
 export const sceneOf=id=>SCENES[id]??null;

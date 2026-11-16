@@ -9,9 +9,10 @@ import * as P from './props.js';
 import {SNOWMAN_RULES,SNOWMAN_PARTS,SNOWMAN_NEED,SNOWMAN_TEXT,ballStage,coopMul,inYard,sanitizeBallRow,sanitizeDisplay,namesText} from './snowman-state.js';
 import {SNOWMAN_YARD} from './layout.js';
 import {BODY_R} from './collide.js';
+import {icon,iconText} from '../icons/icon.js';
 
 export const PUSH=Object.freeze({sendHz:10,hold:.4,near:.35});
-export const PART_ICON=Object.freeze({eyes:'⚫',nose:'🥕',mouth:'〰️',arms:'🌿',hat:'🎩',scarf:'🧣'});
+export const PART_ICON=Object.freeze({eyes:'x-part-eyes',nose:'x-part-nose',mouth:'x-part-mouth',arms:'x-part-arm',hat:'x-part-hat',scarf:'x-scarf'}); // 아이콘 이름(아이콘-규칙-v1 §7-4)
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // ctx: {doc,root(hud .xh),world,toon,heightAt,village,player,net,multi,hud,audio,camera,mobile,onChange()(act 다시 보내기)}
@@ -56,10 +57,10 @@ export function createSnowmanPlay({doc=document,root,world,toon,heightAt,village
  const panel=doc.createElement('section');panel.className='xs-deco';panel.hidden=true;panel.setAttribute('aria-label','눈사람 꾸미기');root.appendChild(panel);
  function renderDeco(){
   const o=balls.get(S.deco);if(!o){closeDeco();return;}const p=new Set(o.row.p),ready=SNOWMAN_NEED.every(k=>p.has(k));
-  panel.innerHTML=`<header><b>🎨 눈사람 꾸미기</b><button type="button" class="xh-x" data-s="close" aria-label="꾸미기 그만하기">✕</button></header>
+  panel.innerHTML=`<header><b>${iconText('x-decorate','눈사람 꾸미기')}</b><button type="button" class="xh-x" data-s="close" aria-label="꾸미기 그만하기">✕</button></header>
    <p class="xh-hint">눈(돌)·코(당근)는 꼭 붙여요. 붙인 부품은 30초 안에 다시 누르면 떼요</p>
-   <div class="xs-parts">${SNOWMAN_PARTS.map(k=>`<button type="button" class="xh-kind" data-part="${k}" aria-pressed="${p.has(k)}"><em aria-hidden="true">${PART_ICON[k]}</em><span>${esc(P.SNOWMAN_PART_LABELS[k])}${SNOWMAN_NEED.includes(k)?' *':''}</span></button>`).join('')}</div>
-   <button type="button" class="xh-ok xs-done" data-s="finish" ${ready?'':'disabled'}>⛄ 완성!</button>`;
+   <div class="xs-parts">${SNOWMAN_PARTS.map(k=>`<button type="button" class="xh-kind" data-part="${k}" aria-pressed="${p.has(k)}"><em aria-hidden="true">${icon(PART_ICON[k],{size:'xl'})}</em><span>${esc(P.SNOWMAN_PART_LABELS[k])}${SNOWMAN_NEED.includes(k)?' *':''}</span></button>`).join('')}</div>
+   <button type="button" class="xh-ok xs-done" data-s="finish" ${ready?'':'disabled'}>${iconText('x-snowman','완성!')}</button>`;
  }
  function openDeco(id){S.deco=id;panel.hidden=false;hud?.closeSheet?.();renderDeco();}
  function closeDeco(){S.deco=null;panel.hidden=true;}
@@ -78,7 +79,7 @@ export function createSnowmanPlay({doc=document,root,world,toon,heightAt,village
    case 'snow:ball':for(const b of Array.isArray(m.b)?m.b:[]){const r=sanitizeBallRow(b);if(r){const isNew=!balls.has(r.id);const o=upsert(r);if(isNew){o.born=1;audio?.play('roll',{at:{x:r.x,z:r.z}});}}}return;
    case 'snow:gone':remove(String(m.b??''),m.why);return;
    case 'snow:done':{const d=sanitizeDisplay(m.d);if(!d)return;showDisplay(d,{celebrate:true});audio?.play('done');
-    const mine=m.by===multi.id||!multi.joined;hud?.say(`⛄ 눈사람 완성! · ${namesText(d)}${mine?' · 트리 앞에 전시돼요':''}`,mine?3:1.6);
+    const mine=m.by===multi.id||!multi.joined;hud?.say(`눈사람 완성! · ${namesText(d)}${mine?' · 트리 앞에 전시돼요':''}`,mine?3:1.6,'x-snowman');
     if(d.p&&S.deco)closeDeco();return;}
    case 'snow:no':hud?.say(SNOWMAN_TEXT[m.reason]??SNOWMAN_TEXT.bad,2.2);return;
   }
@@ -101,9 +102,9 @@ export function createSnowmanPlay({doc=document,root,world,toon,heightAt,village
  function actions(){
   if(!inYard(player.x,player.z,-1))return [];
   const out=[];const pair=stackPair();
-  if(pair)out.push({id:'snow:stack',ic:'⬆',label:'올리기',key:'E'});
-  const st=nearest(o=>o.row.r.length>1);if(st&&st.d<1.4)out.push({id:'snow:deco',ic:'🎨',label:'꾸미기',key:out.length?'R':'E'});
-  if(balls.size<SNOWMAN_RULES.maxBalls&&inYard(player.x,player.z,.2)){const n=nearest();if(!n||n.d>.9||!out.length)out.push({id:'snow:make',ic:'⛄',label:'눈덩이 만들기',key:out.length?(out.length>1?'F':'R'):'E'});}
+  if(pair)out.push({id:'snow:stack',ic:'x-stack',label:'올리기',key:'E'});
+  const st=nearest(o=>o.row.r.length>1);if(st&&st.d<1.4)out.push({id:'snow:deco',ic:'x-decorate',label:'꾸미기',key:out.length?'R':'E'});
+  if(balls.size<SNOWMAN_RULES.maxBalls&&inYard(player.x,player.z,.2)){const n=nearest();if(!n||n.d>.9||!out.length)out.push({id:'snow:make',ic:'x-roll',label:'눈덩이 만들기',key:out.length?(out.length>1?'F':'R'):'E'});}
   return out;
  }
  function act(id){
@@ -154,7 +155,7 @@ export function createSnowmanPlay({doc=document,root,world,toon,heightAt,village
     if(o.row.r.length===1)o.mesh.scale.setScalar(r*(1-o.born*.6));else o.mesh.scale.setScalar(1-o.born*.3);
     // 크기 막대 + 미는 사람 수
     if(o.row.r.length===1&&Math.hypot(o.x-player.x,o.z-player.z)<12){seen.add(o.id);let el=tags.get(o.id);if(!el){el=doc.createElement('div');el.className='xs-tag';tagLayer.appendChild(el);tags.set(o.id,el);}
-     const stg=ballStage(r),html=`<i class="xs-bar">${[0,1,2].map(i=>`<b data-on="${i<=stg}"></b>`).join('')}</i>${o.row.n>1?`<span>👥${o.row.n}</span>`:''}`;if(el.dataset.h!==html){el.innerHTML=html;el.dataset.h=html;}
+     const stg=ballStage(r),html=`<i class="xs-bar">${[0,1,2].map(i=>`<b data-on="${i<=stg}"></b>`).join('')}</i>${o.row.n>1?`<span class="ic-row" aria-label="같이 미는 사람 ${o.row.n}명">${icon('c-people',{size:'xs'})}<span class="ic-num">${o.row.n}</span></span>`:''}`;if(el.dataset.h!==html){el.innerHTML=html;el.dataset.h=html;}
      tagV.set(o.x,heightAt(o.x,o.z)+r*1.9+.25,o.z).project(camera);const vis=tagV.z<1&&Math.abs(tagV.x)<1.1&&Math.abs(tagV.y)<1.1;el.style.display=vis?'':'none';
      if(vis)el.style.transform=`translate(${Math.round((tagV.x*.5+.5)*innerWidth)}px,${Math.round((-tagV.y*.5+.5)*innerHeight)}px) translate(-50%,-100%)`;}
    }

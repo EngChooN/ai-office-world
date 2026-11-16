@@ -17,16 +17,10 @@ import {XMAS_OUTFITS,XMAS_HATS} from './outfits.js';
 import {CAROLS} from './carols.js';
 import {icon,iconText} from '../icons/icon.js';
 
-// 장식·옷·모자 고르기 칸 아이콘 이름(아이콘-규칙-v1 §7-4). ORN_ICON 글자는 다른 곳(알림 글)에서 쓰므로 그대로 둠
+// 장식·옷·모자 고르기 칸 아이콘 이름(아이콘-규칙-v1 §7-4)
 const ORN_IC={ballRed:'x-orn-red',ballGold:'x-orn-yellow',ballBlue:'x-orn-blue',ballSilver:'x-orn-white',candy:'x-orn-candy',bell:'x-orn-bell',snowflake:'x-orn-snow',gift:'x-orn-gift'};
 const OUTFIT_IC={santa:'x-outfit-santa',sweater:'x-outfit-knit',elf:'x-outfit-elf'};
 const HAT_IC={'':'x-hat-auto',santa:'x-hat-santa',antlers:'x-hat-reindeer',beanie:'x-hat-cap',elf:'x-hat-elf',none:'x-hat-none'};
-// 행동 단추(main.js currentActions의 id) → 아이콘. 표에 없으면 넘어온 글자 그대로
-const ACT_IC={'fire:warm':'x-warm-hands','fire:cocoa':'x-cocoa','fire:stand':'c-stand-up','fire:sit':'c-sit','tree:deco':'x-tree','gift:board':'x-cards-all','gift:send':'x-gift','gift:inbox':'x-mailbox',
- 'sled:go':'x-sled','sled:off':'c-leave','sled:cheer':'x-cheer','sled:cancel':'c-leave','sled:board':'x-sled','sled:ask':'x-sled-pair','sled:up':'x-uphill','sb:throw':'x-snowball','sb:pack':'x-scoop','snow:stack':'x-stack','snow:deco':'x-decorate','snow:make':'x-roll'};
-// 연결 칩(multi.js xmasStatusView의 tone) → 아이콘(§7-1 마)
-const TONE_IC={wait:'c-net-connecting',local:'c-net-local',ok:'c-net-ok',warn:null,bad:'c-net-lost',solo:'c-person'};
-export const ORN_ICON=Object.freeze({ballRed:'🔴',ballGold:'🟡',ballBlue:'🔵',ballSilver:'⚪',candy:'🍭',bell:'🔔',snowflake:'❄️',gift:'🎁'});
 export const ORN_LABEL=Object.freeze({ballRed:'빨간 공',ballGold:'금빛 공',ballBlue:'파란 공',ballSilver:'은빛 공',candy:'지팡이 사탕',bell:'종',snowflake:'눈송이',gift:'작은 선물상자'});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 남은 개수 글(체험설계 §5-1 "이번 1분 3개 남음")
@@ -91,8 +85,8 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  let status={state:'off'},toastT=0,zoneT=0,kind=ORNAMENTS[0],cardId=null,sheet=null,decorating=false,pending=null,actSig='',actList=[];
  // ── 행동 단추 줄(첫 줄 = 큰 단추)
  function setActions(list=[]){
-  const sig=JSON.stringify(list.map(a=>[a.id,a.ic,a.label,a.key,a.badge??0,a.dim?1:0]));if(sig===actSig)return;actSig=sig;actList=list;
-  acts.innerHTML=list.slice(0,3).map((a,i)=>`<button type="button" class="${i?'xh-sub-act':'xh-act'}" data-act="${esc(a.id)}"${a.aim?' data-aim="1"':''}${a.dim?' data-dim="1"':''}><em aria-hidden="true">${ACT_IC[a.id]?icon(ACT_IC[a.id],{size:i?'m':'l'}):esc(a.ic)}</em><span>${esc(a.label)}</span>${a.key?`<kbd>${esc(a.key)}</kbd>`:''}${a.badge?`<b class="xh-badge">${a.badge}</b>`:''}</button>`).join('');
+  const sig=JSON.stringify(list.map(a=>[a.id,a.ic,a.label,a.tailIc??'',a.tail??'',a.key,a.badge??0,a.dim?1:0]));if(sig===actSig)return;actSig=sig;actList=list;
+  acts.innerHTML=list.slice(0,3).map((a,i)=>`<button type="button" class="${i?'xh-sub-act':'xh-act'}" data-act="${esc(a.id)}"${a.aim?' data-aim="1"':''}${a.dim?' data-dim="1"':''}><em aria-hidden="true">${icon(a.ic,{size:i?'m':'l'})}</em><span>${esc(a.label)}${a.tailIc?` · ${iconText(a.tailIc,String(a.tail??''),{size:'xs'})}`:''}</span>${a.key?`<kbd>${esc(a.key)}</kbd>`:''}${a.badge?`<b class="xh-badge">${a.badge}</b>`:''}</button>`).join('');
  }
  // 휴대폰 조준 단추(❄️): 짧게 누르면 act.do, 길게 누르고 끌면 act.aim(dx,dy,끝?)
  {let hold=null;
@@ -105,16 +99,17 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
   acts.addEventListener('pointerup',end);acts.addEventListener('pointercancel',end);}
  let lastAim=0;
  // ── 구역 이름 띠
- function banner(title,sub='',sec=1.5){zone.querySelector('b').textContent=title;zone.querySelector('span').textContent=sub;zone.hidden=false;zone.classList.remove('out');zoneT=sec;}
+ function banner(title,sub='',sec=1.5,ic=null){const t=zone.querySelector(':scope>b');if(ic)t.innerHTML=iconText(ic,title);else t.textContent=title;zone.querySelector(':scope>span').textContent=sub;zone.hidden=false;zone.classList.remove('out');zoneT=sec;}
  function setBadge(name,n){if(name!=='inbox')return;const b=$('[data-x=inbox] .xh-badge');b.hidden=!n;b.textContent=n>9?'9+':String(n);}
- function setCarol(on,now){const b=$('[data-x=carol]');b.innerHTML=iconText('c-music',on?'캐럴 켜짐':'캐럴 꺼짐',{off:!on});b.setAttribute('aria-pressed',String(!!on));if(now!=null){const el=$('[data-carol-now]');if(el.textContent!==now)el.textContent=now;}}
+ function setCarol(on,now,nowIc=null){const b=$('[data-x=carol]');b.innerHTML=iconText('c-music',on?'캐럴 켜짐':'캐럴 꺼짐',{off:!on});b.setAttribute('aria-pressed',String(!!on));if(now!=null){const el=$('[data-carol-now]'),k=(nowIc??'')+'|'+now;if(el.dataset.k!==k){el.dataset.k=k;if(nowIc)el.innerHTML=iconText(nowIc,now,{size:'xs'});else el.textContent=now;}}}
  function setSound(muted){const b=$('[data-x=sound]');b.innerHTML=icon('c-sound',{size:'m',off:!!muted});b.setAttribute('aria-pressed',String(!!muted));b.setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');}
 
  // ── 알림
- function say(text,sec=2.6){toast.textContent=text;toast.hidden=false;toast.classList.remove('out');toastT=sec;}
+ // ic: 알림 줄 맨 앞 XS 아이콘(아이콘-규칙-v1 §6-4). 글은 그대로 이스케이프
+ function say(text,sec=2.6,ic=null){if(ic)toast.innerHTML=iconText(ic,text,{size:'xs'});else toast.textContent=text;toast.hidden=false;toast.classList.remove('out');toastT=sec;}
  // ── 연결 칩
  function renderPlace(){
-  const v=xmasStatusView(status);place.dataset.tone=v.tone;{const em=place.querySelector('em'),ic=TONE_IC[v.tone]??(v.ic==='🚪'?'c-net-full':v.ic==='🔄'?'c-net-retry':null),key=ic??v.ic;if(em.dataset.ic!==key){em.dataset.ic=key;em.innerHTML=ic?icon(ic,{size:'s'}):esc(v.ic);}}place.querySelector('span').textContent=v.text;
+  const v=xmasStatusView(status);place.dataset.tone=v.tone;{const em=place.querySelector('em');if(em.dataset.ic!==v.ic){em.dataset.ic=v.ic;em.innerHTML=icon(v.ic,{size:'s'});}const sp=place.querySelector(':scope>span');if(sp.dataset.t!==v.text){sp.dataset.t=v.text;sp.innerHTML=esc(v.text).replace('👥 ',icon('c-people',{size:'xs'})+' ');}}
   place.setAttribute('aria-label',`${v.text}${v.sub?' · '+v.sub:''}`);
  }
  win.addEventListener('xmas:multi-status',e=>{const d=e.detail;if(!d)return;const was=status.state;status=d;
@@ -159,7 +154,7 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
   $('[data-people-title]').innerHTML=status.joined?iconText('c-people',`광장 사람 ${people.length+1}명`):iconText('c-person','혼자 둘러보기');
   $('[data-people-sub]').textContent=status.joined?`${v.text}${v.sub?' · '+v.sub:''}`:'혼자 둘러보면 트리 장식은 내 화면에만 남아요. 서버를 고르면 함께 꾸밀 수 있어요';
   $('[data-x=retry]').hidden=!(status.joined&&status.state==='offline');
-  $('[data-people-list]').innerHTML=status.joined?`<li class="me"><b>${esc(multi.name)}</b><small>나</small></li>`+people.map(p=>`<li><b>${p.decorating?icon('x-tree',{size:'xs'})+' ':''}${esc(p.name)}</b><button type="button" class="xh-mini" data-gift="${esc(p.id)}" aria-label="${esc(p.name)}에게 선물">${icon('x-gift',{size:'s'})}</button><button type="button" class="xh-mini" data-mute="${esc(p.id)}">🔇 음소거</button><button type="button" class="xh-mini" data-report="${esc(p.id)}">🚩 신고</button></li>`).join(''):'';
+  $('[data-people-list]').innerHTML=status.joined?`<li class="me"><b>${esc(multi.name)}</b><small>나</small></li>`+people.map(p=>`<li><b>${p.decorating?icon('x-tree',{size:'xs'})+' ':''}${esc(p.name)}</b><button type="button" class="xh-mini" data-gift="${esc(p.id)}" aria-label="${esc(p.name)}에게 선물">${icon('x-gift',{size:'s'})}</button><button type="button" class="xh-mini" data-mute="${esc(p.id)}">${iconText('c-mute-person','음소거')}</button><button type="button" class="xh-mini" data-report="${esc(p.id)}">${iconText('c-report','신고')}</button></li>`).join(''):'';
   const muted=multi.mutedList();$('[data-muted-n]').textContent=muted.length;
   $('[data-muted-list]').innerHTML=muted.map(m=>`<li><b>${esc(m.name)}</b><button type="button" class="xh-mini" data-unmute="${esc(m.id)}">음소거 풀기</button></li>`).join('')||'<li class="xh-empty">없어요</li>';
  }
@@ -211,7 +206,7 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
    if(p.muted||!p.shown)continue;
    const s=project(p.id);if(!s)continue;seen.add(p.id);
    let el=tagEls.get(p.id);if(!el){el=doc.createElement('button');el.type='button';el.className='xh-tag';el.dataset.tag=p.id;tags.appendChild(el);tagEls.set(p.id,el);}
-   const text=(p.decorating?'🎄 ':'')+p.name;if(el.textContent!==text)el.textContent=text;
+   const key=(p.decorating?'1':'0')+p.name;if(el.dataset.k!==key){el.dataset.k=key;el.innerHTML=p.decorating?iconText('x-tree',p.name,{size:'xs'}):esc(p.name);}
    // 22m 넘게 먼 사람은 이름표를 숨긴다(20명이 모이면 먼 이름표가 화면을 덮음). 말풍선은 그대로 뜬다
    const hide=!s.visible||s.dist>22||hasBubble?.(p.id);el.style.display=hide?'none':'';
    if(!hide){el.style.opacity=String(Math.max(.55,1-s.dist/30));el.style.transform=`translate(${Math.round(s.x)}px,${Math.round(s.y)}px) translate(-50%,-100%)`;}

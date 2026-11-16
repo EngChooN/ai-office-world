@@ -4,9 +4,11 @@
 // 건너뛰기: ?pick=off, 자동화 브라우저(navigator.webdriver)는 ?pick=on일 때만 보인다(기존 점검 스크립트가 그대로 돌게).
 import {serverReady} from './server-link-pin.js';   // 맨 먼저: 서버 주소 고르기 시작(공개 파일 multi-server.json을 새로 받음). 서버 창은 끝난 뒤 연다
 import './free-settings.css';
+import './icons/icons.css';   // 아이콘 공통 모양(산 고르기는 main.js보다 먼저 뜸)
 import {MOUNTAINS,formatEta} from './mountains.js';
-import {SEASON_LABEL,SEASON_ICON} from './season.js';
-import {seasonTag} from './free-settings.js';
+import {SEASON_LABEL,SEASON_IC} from './season.js';
+import {seasonTag,seasonTagIcon} from './free-settings.js';
+import {iconText} from './icons/icon.js';
 import {freeState,onFreeChange,panelHTML,handlePanelClick,sealFor,recordHTML,sealSeenOnce,applyHudTime,mountFreeSettingsHud} from './free-settings-ui.js';
 import {summitOf} from './summit-records.js';
 import {SAVE_KEY} from './movement.js';
@@ -66,17 +68,19 @@ export function bindNickInput(input,{storage=globalThis.localStorage,win=globalT
 function hasResume(){try{const v=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');return !!v&&(v.zone!=='plaza'||(v.elapsed||0)>5);}catch{return false;}}
 function headSub(){
  const c=seoulClock(Date.now()),a=freeState.actual,time=freeState.free.time??a.time,season=freeState.free.season??a.season;
- const wIcon={clear:time==='night'?'🌙':'☀',overcast:'☁',rain:'🌧',snow:'❄',fog:'🌫'}[freeState.free.weather??a.weather]??'☀';
+ const wIcon={clear:time==='night'?'c-wx-clear-night':'c-wx-clear',overcast:'c-wx-cloud',rain:'c-wx-rain',snow:'c-wx-snow',fog:'c-wx-fog'}[freeState.free.weather??a.weather]??'c-wx-clear';
  const wLabel={clear:'맑음',overcast:'흐림',rain:'비',snow:'눈',fog:'안개'}[freeState.free.weather??a.weather];
- return `지금 서울 · ${c.month}월 ${c.day}일 ${SEASON_ICON[season]} ${SEASON_LABEL[season]} · ${wIcon} ${c.label} ${wLabel}`;
+ // 글 사이 아이콘은 XS(아이콘-규칙-v1 §2·§6). innerHTML로 넣는다
+ return `지금 서울 · ${c.month}월 ${c.day}일 ${iconText(SEASON_IC[season],SEASON_LABEL[season],{size:'xs'})} · ${iconText(wIcon,`${c.label} ${wLabel??''}`.trim(),{size:'xs'})}`;
 }
 
 export function mountMountainPick(doc=document,win=window){
+ doc.documentElement.dataset.icExp='hiking';   // 아이콘 면 색 = 등산 숲 초록(main.js보다 먼저 뜨므로 여기서도)
  const root=doc.createElement('div');root.id='mountain-pick';root.setAttribute('role','dialog');root.setAttribute('aria-modal','true');root.setAttribute('aria-label','산 고르기');
- root.innerHTML=`<div class="pk-dim"></div><header class="pk-head"><p class="pk-brand"><b>산길</b>등산 수첩${freeState.dev?'<span class="pk-devtag">🛠 개발 버전 · 자유 설정 열림</span>':''}</p><h1 class="pk-title">어느 산에 오를까요?</h1><p class="pk-sub" data-pk-now></p><p class="pk-sub pk-sub2">${MOUNTAINS.length===1?'지금은 1곳 · 산은 계속 늘어나요':`산 ${MOUNTAINS.length}곳 · 넘겨 보세요`}</p>${nickFieldHTML(loadPickName())}</header><div class="pk-list" role="list"></div><div class="pk-free" hidden><section class="fs-panel fs-pick" role="dialog" aria-label="자유 설정"></section></div><p class="pk-toast" role="status" hidden></p>`;
+ root.innerHTML=`<div class="pk-dim"></div><header class="pk-head"><p class="pk-brand"><b>산길</b>등산 수첩${freeState.dev?`<span class="pk-devtag">${iconText('c-dev','개발 버전 · 자유 설정 열림',{size:'xs'})}</span>`:''}</p><h1 class="pk-title">어느 산에 오를까요?</h1><p class="pk-sub" data-pk-now></p><p class="pk-sub pk-sub2">${MOUNTAINS.length===1?'지금은 1곳 · 산은 계속 늘어나요':`산 ${MOUNTAINS.length}곳 · 넘겨 보세요`}</p>${nickFieldHTML(loadPickName())}</header><div class="pk-list" role="list"></div><div class="pk-free" hidden><section class="fs-panel fs-pick" role="dialog" aria-label="자유 설정"></section></div><p class="pk-toast" role="status" hidden></p>`;
  doc.body.append(root);doc.documentElement.classList.add('pk-open');
  const nick=bindNickInput(root.querySelector('.pk-nick input'),{win}),list=root.querySelector('.pk-list'),freeBox=root.querySelector('.pk-free'),panel=freeBox.firstElementChild,toast=root.querySelector('.pk-toast'),now=root.querySelector('[data-pk-now]');
- let toastTimer=0;const say=t=>{toast.textContent=t;toast.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{toast.hidden=true;},2600);};
+ let toastTimer=0;const say=(t,ic)=>{if(ic)toast.innerHTML=iconText(ic,t,{size:'xs'});else toast.textContent=t;toast.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{toast.hidden=true;},2600);};
  const size=()=>{const land=matchMedia('(orientation:landscape) and (max-height:540px)').matches,port=matchMedia('(orientation:portrait)').matches;return land?{w:300,art:112,seal:70}:port?{w:Math.min(362,innerWidth-28),art:150,seal:84}:{w:400,art:220,seal:104};};
  let animateSeal=MOUNTAINS.map(m=>sealSeenOnce(m.id)),sizeSig='';
  function cards(){
@@ -85,15 +89,15 @@ export function mountMountainPick(doc=document,win=window){
    const r=summitOf(freeState.records,m.id),soon=!m.ready,unlocked=freeState.unlocked,devOnly=freeState.dev&&!r;
    const rec=soon?'산이 추가되면 이 카드가 열려요':r?recordHTML(r):devOnly?'아직 완등 전 · 개발 버전이라 자유 설정이 열려 있어요':'아직 오르지 않았어요 · 연주대에서 도장을 받아요';
    return `<article class="pk-card${soon?' soon':''}" role="listitem" data-mountain="${m.id}" style="width:${z.w}px">
-<div class="pk-art-wrap">${mountainArt(m,{season:soon?'summer':season,time,w:z.w,h:z.art,gray:soon})}<span class="pk-tag">${soon?'⏳ 준비 중':esc(seasonTag(freeState.free,a.season))}</span></div>
+<div class="pk-art-wrap">${mountainArt(m,{season:soon?'summer':season,time,w:z.w,h:z.art,gray:soon})}<span class="pk-tag">${soon?iconText('c-wait','준비 중',{size:'xs'}):(t=>t?iconText(t,seasonTag(freeState.free,a.season),{size:'xs'}):esc(seasonTag(freeState.free,a.season)))(seasonTagIcon(freeState.free,a.season))}</span></div>
 <div class="pk-body"><div class="pk-top"><div class="pk-who"><h2 class="pk-name">${esc(m.name)} <small>${m.altitudeM} m</small></h2><span class="pk-course">${esc(m.course)}</span></div><div class="pk-seal${animateSeal[i]?' fs-stamping':''}">${soon?'':sealFor(m.id,z.seal,freeState.records)}</div></div>
 <div class="pk-facts"><span>거리<b>${soon?'—':`${m.distanceKm} km`}</b></span><span>예상<b>${soon?'—':formatEta(m.etaMin)}</b></span><span>스탬프<b>${soon?'—':`${m.stamps}곳`}</b></span><span>난이도<b>${soon?'—':esc(m.difficulty)}</b></span></div>
 <p class="pk-rec">${rec}</p>
-<div class="pk-acts">${soon?'<button type="button" class="btn-paper fs-locked-btn" disabled style="flex:1">준비 중</button>':`<button type="button" class="btn-stamp" data-pk-go="${m.id}">▶ ${resume?'이어 오르기':'오르기'}</button><button type="button" class="btn-paper${unlocked?'':' fs-locked-btn'}" data-pk-free="${m.id}">${unlocked?'🎛':'🔒'} 자유 설정</button>`}</div></div></article>`;
-  }).join('')+(MOUNTAINS.length===1?'<div class="pk-soon" aria-label="다음 산 준비 중"><b>⛰ 다음 산 준비 중</b><span>산이 늘어나면 이 자리에 카드가 붙어요</span></div>':'');
+<div class="pk-acts">${soon?'<button type="button" class="btn-paper fs-locked-btn" disabled style="flex:1">준비 중</button>':`<button type="button" class="btn-stamp" data-pk-go="${m.id}">${iconText('c-enter',resume?'이어 오르기':'오르기')}</button><button type="button" class="btn-paper${unlocked?'':' fs-locked-btn'}" data-pk-free="${m.id}">${iconText(unlocked?'h-free-settings':'c-lock','자유 설정')}</button>`}</div></div></article>`;
+  }).join('')+(MOUNTAINS.length===1?`<div class="pk-soon" aria-label="다음 산 준비 중"><b>${iconText('h-summit','다음 산 준비 중')}</b><span>산이 늘어나면 이 자리에 카드가 붙어요</span></div>`:'');
   animateSeal=animateSeal.map(()=>false);
  }
- function render(){now.textContent=headSub();cards();if(!freeBox.hidden)panel.innerHTML=panelHTML({context:'pick'});applyHudTime();}
+ function render(){now.innerHTML=headSub();cards();if(!freeBox.hidden)panel.innerHTML=panelHTML({context:'pick'});applyHudTime();}
  // 산 고르기 → 서버 고르기(함께 걷기 서버 or 혼자 걷기) → 출발. 서버 창을 건너뛰면 바로 출발.
  function go(){
   if(root.classList.contains('leaving'))return;
@@ -107,12 +111,12 @@ export function mountMountainPick(doc=document,win=window){
   if(!freeBox.hidden&&freeBox.contains(e.target)){if(e.target===freeBox){freeBox.hidden=true;return;}handlePanelClick(e,{context:'pick',onGo:go,onClose:()=>{freeBox.hidden=true;}});return;}
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.pkGo)go();
-  else if(b.dataset.pkFree){if(!freeState.unlocked){say('🔒 연주대에서 완등 도장을 받으면 열려요');return;}panel.innerHTML=panelHTML({context:'pick'});freeBox.hidden=false;panel.querySelector('button')?.focus({preventScroll:true});}
+  else if(b.dataset.pkFree){if(!freeState.unlocked){say('연주대에서 완등 도장을 받으면 열려요','c-lock');return;}panel.innerHTML=panelHTML({context:'pick'});freeBox.hidden=false;panel.querySelector('button')?.focus({preventScroll:true});}
  });
  win.addEventListener('keydown',e=>{if(e.key==='Escape'&&!freeBox.hidden&&root.isConnected){freeBox.hidden=true;e.stopPropagation();}},true);
  onFreeChange(()=>{if(root.isConnected)render();});
  win.addEventListener('resize',()=>{const s=JSON.stringify(size());if(s!==sizeSig&&root.isConnected){sizeSig=s;cards();}});
- win.addEventListener('hiking:environment',e=>{if(e.detail?.realKind&&root.isConnected)now.textContent=headSub();});
+ win.addEventListener('hiking:environment',e=>{if(e.detail?.realKind&&root.isConnected)now.innerHTML=headSub();});
  sizeSig=JSON.stringify(size());render();
  root.querySelector('[data-pk-go]')?.focus({preventScroll:true});
  return {root,go};

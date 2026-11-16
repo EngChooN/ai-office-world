@@ -85,10 +85,10 @@ test('95.5 멘트: 정상 근처 최우선, 같은 줄은 마지막 3개 안에�
  assert.ok(lines.some(l=>l.id==='fm-id'));for(const id of ['clear-day','night','summit-near','long-walk'])assert.ok(lines.some(l=>l.id===id),id);
  assert.ok(captionSeconds(lines[0].text)>=6&&captionSeconds(lines[0].text)<=10);
 });
-test('저장·화면 글자: 전원은 늘 꺼진 채 시작, 칩 📻 91.9 / 잡음 ~, 표시창 상태',()=>{
+test('저장·화면 글자: 전원은 늘 꺼진 채 시작, 칩 91.9 / 잡음 ~(앞에 라디오 아이콘), 표시창 상태',()=>{
  const mem=new Map([[RADIO_SAVE_KEY,JSON.stringify({on:true,freq:99.14,vol:.3})]]),st={getItem:k=>mem.get(k)??null};
  assert.deepEqual(loadRadio(st),{on:false,freq:99.1,vol:.3});assert.deepEqual(loadRadio(null),{on:false,freq:91.9,vol:.6});
- assert.equal(chipText(false,91.9),'📻 라디오');assert.equal(chipText(true,91.9),'📻 91.9');assert.equal(chipText(true,87.5),'📻 ~87.5');
+ assert.equal(chipText(false,91.9),'라디오');assert.equal(chipText(true,91.9),'91.9');assert.equal(chipText(true,87.5),'~87.5');
  assert.equal(displayModel({on:false,freq:91.9,vol:.6}),null);
  assert.equal(displayModel({on:true,freq:91.9,vol:.6,deckState:'playing'}).name,'관악산 FM · 잔잔한 음악');
  assert.equal(displayModel({on:true,freq:91.9,vol:.6,deckState:'error'}).status,'방송이 끊겼어요');

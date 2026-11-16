@@ -45,7 +45,7 @@
 /* 동행 중 = 도장 점선 테두리, 기다리는 중 = 점선 테두리가 천천히 깜빡 */
 .pw-chip[data-kind=pair]{border:2px dashed var(--stamp,#b9472f);padding-top:3px;padding-bottom:3px}
 .pw-chip:not([data-kind=pair]){border:2px dashed var(--rule,#d9c79d);animation:pw-wait 1.8s ease-in-out infinite}
-.pw-chip.lag .pw-chip-text small::before{content:'⏳ '}
+/* 기다리는 중 = c-wait 아이콘(pair-ui.js가 small 앞에 넣음) */
 @keyframes pw-wait{50%{border-color:var(--mid,#d39a2e)}}
 .pw-chip[data-kind=pair]{box-shadow:var(--lift,1px 2px 0 #b49563),var(--soft,0 4px 12px rgba(52,34,8,.25)),inset 0 0 0 2px var(--accent,#b9472f)}
 /* 알림: 위쪽 칩 아래 */

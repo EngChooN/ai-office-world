@@ -69,7 +69,7 @@ try{
  check('① PC: 다른 사람 19명이 모두 동동이로 보임',sa.multi.people.filter(p=>p.shown).length===19&&bodies(sa).dongdong===19,{bodies:bodies(sa),count:sa.multi.people.length});
  check('① 휴대폰: 19명 보임(가까운 6명 동동이 + 나머지 가벼운 동동이)',sb.multi.people.filter(p=>p.shown).length===19&&bodies(sb).dongdong===6&&bodies(sb).lite===13,{bodies:bodies(sb)});
  const chip=await A.evaluate(()=>document.querySelector('.xh-place')?.textContent);
- check('① 연결 칩 20/20',/눈마을 광장 1서버 · 👥 20\/20/.test(chip),{chip});
+ check('① 연결 칩 20/20',/눈마을 광장 1서버 ·\s*20\/20/.test(chip),{chip});
  const lookB=sa.multi.people.find(p=>p.name==='둘')?.look;
  check('① 상대 옷이 그 사람이 고른 옷(act)',lookB?.outfit==='sweater'&&lookB?.scarf==='stripe',{lookB});
  // 움직임: 봇 위치가 바뀌는지

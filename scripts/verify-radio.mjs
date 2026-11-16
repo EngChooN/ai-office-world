@@ -75,7 +75,7 @@ out.lengthMismatch=out.files.filter(f=>Math.abs(f.duration-f.expected)>=1.5).map
  await R(()=>hiking.radio.setFreq(105));await sleep(600);
  const lvNoise=await avgLevel();out.levels.noise=lvNoise;
  const st2=await R(()=>({stxt:document.querySelector('.rd-stxt').textContent,deck:hiking.radio.state.audio.deck,chip:document.querySelector('#radio-tag').textContent}));
- check('방송 사이는 잡음만·수신 불량',st2.stxt==='수신 불량…'&&st2.deck===null&&lvNoise>-55&&st2.chip==='📻 ~105.0',{...st2,dB:lvNoise.toFixed(1)});
+ check('방송 사이는 잡음만·수신 불량',st2.stxt==='수신 불량…'&&st2.deck===null&&lvNoise>-55&&st2.chip==='~105.0',{...st2,dB:lvNoise.toFixed(1)});
  await shots3('03-수신불량');
  // 다이얼을 끌어 돌리기: 105 → 왼쪽으로 끌어 99 근처, 놓으면 99.1에 붙음
  const box=await p.locator('.rd-dial').boundingBox();
@@ -97,7 +97,7 @@ out.lengthMismatch=out.files.filter(f=>Math.abs(f.duration-f.expected)>=1.5).map
  // 내리기 뒤 계속
  await p.click('.rd-down');await sleep(800);
  const lvDown=await avgLevel(1200),chip=await R(()=>({text:document.querySelector('#radio-tag').textContent,hidden:document.querySelector('.rd').hidden}));
- check('내리기 뒤에도 소리 계속·칩 📻 91.9',chip.hidden&&chip.text==='📻 91.9'&&lvDown>-50,{...chip,dB:lvDown.toFixed(1)});
+ check('내리기 뒤에도 소리 계속·칩 📻 91.9',chip.hidden&&chip.text==='91.9'&&lvDown>-50,{...chip,dB:lvDown.toFixed(1)});
  await shots3('04-내린뒤-칩');
  // 소리 꺼짐 연동
  await R(()=>dispatchEvent(new CustomEvent('hiking:sound',{detail:{enabled:false}})));await sleep(700);
@@ -140,7 +140,7 @@ out.lengthMismatch=out.files.filter(f=>Math.abs(f.duration-f.expected)>=1.5).map
  // 끄면 연결 해제
  await p.click('.rd-power');await sleep(600);
  const offInfo=await R(()=>({on:hiking.radio.audio.on,nodes:hiking.radio.audio.debug().nodes,deck:hiking.radio.audio.debug().deck,chip:document.querySelector('#radio-tag').textContent,saved:localStorage.getItem('gwanak-radio')}));
- check('끄면 연결 해제·칩은 📻 라디오',!offInfo.on&&!offInfo.nodes&&offInfo.deck===null&&offInfo.chip==='📻 라디오',offInfo);
+ check('끄면 연결 해제·칩은 📻 라디오',!offInfo.on&&!offInfo.nodes&&offInfo.deck===null&&offInfo.chip==='라디오',offInfo);
 }catch(e){check('진행 오류',false,{message:e.message,stack:e.stack?.split('\n').slice(0,3).join(' | ')});}
 check('외부 주소 요청 0건',out.external.length===0,{external:out.external.slice(0,5)});
 check('페이지 오류 없음',out.errors.length===0,{errors:out.errors.slice(0,6)});

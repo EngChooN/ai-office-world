@@ -6,6 +6,7 @@
 import './trail-hud.css';
 import {CHOCO_MAX,chocoCount,chocoLeft,formatBoost,trailBarView} from './trail-rules.js';
 import {chipScreen} from './trail-chip.js';
+import {icon} from './icons/icon.js';
 
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -14,9 +15,10 @@ export function installTrailHud(doc=document,win=window){
  const send=(id,value)=>win.dispatchEvent(new CustomEvent('hiking:command',{detail:{id,value}}));
  // ── 간식 줄(진행 카드 스테미너 밑)
  const card=app.querySelector('.nb-card'),snack=doc.createElement('div');snack.className='nb-snack';
- snack.innerHTML=`<span id="choco-count" class="nb-snack-chip" aria-label="초콜릿 개수">🍫 ${CHOCO_MAX}/${CHOCO_MAX}</span><button id="choco" type="button" class="nb-snack-eat" title="초콜릿 먹기 · 30초 동안 빨라져요"><span>🍫 먹기</span></button><span id="choco-boost" class="nb-snack-chip boost" role="status" hidden>⚡ 빨라짐 0:30</span>`;
+ snack.innerHTML=`<span id="choco-count" class="nb-snack-chip" aria-label="초콜릿 개수">${icon('h-choco',{size:'xs'})}<span class="ic-num">${CHOCO_MAX}/${CHOCO_MAX}</span></span><button id="choco" type="button" class="nb-snack-eat" title="초콜릿 먹기 · 30초 동안 빨라져요">${icon('h-choco',{size:'xs'})}<span>먹기</span></button><span id="choco-boost" class="nb-snack-chip boost" role="status" hidden>${icon('h-boost',{size:'xs'})}<span>빨라짐 0:30</span></span>`;
  (card?.querySelector('.nb-stam')??card)?.after(snack);
  const count=snack.querySelector('#choco-count'),eat=snack.querySelector('#choco'),boostChip=snack.querySelector('#choco-boost');
+ const countText=count.querySelector('span'),boostText=boostChip.querySelector('span'),eatText=eat.querySelector('span');
  eat.addEventListener('click',()=>{send('chocolate');eat.blur();});
  // ── 즐길거리 줄
  const bar=doc.createElement('div');bar.id='trail-bar';bar.className='hud-ui';bar.hidden=true;bar.setAttribute('aria-live','polite');app.append(bar);
@@ -26,22 +28,22 @@ export function installTrailHud(doc=document,win=window){
  const busy=()=>!!tv.busy;
  function renderSnack(){
   const n=chocoCount(st),left=Math.max(0,(boostEnd-performance.now())/1000),on=left>0;
-  const c=`🍫 ${n}/${CHOCO_MAX}`;if(count.textContent!==c)count.textContent=c;if(count.dataset.n!==String(n))count.dataset.n=n; // 0개면 trail-hud.css가 흐리게
-  boostChip.hidden=!on;if(on){const t=`⚡ 빨라짐 ${formatBoost(left)}`;if(boostChip.textContent!==t)boostChip.textContent=t;}
+  const c=`${n}/${CHOCO_MAX}`;if(countText.textContent!==c)countText.textContent=c;if(count.dataset.n!==String(n))count.dataset.n=n; // 0개면 trail-hud.css가 흐리게
+  boostChip.hidden=!on;if(on){const t=`빨라짐 ${formatBoost(left)}`;if(boostText.textContent!==t)boostText.textContent=t;}
   const dis=n<=0||on||busy();eat.disabled=dis;eat.classList.toggle('off',dis);eat.hidden=on; // 빨라진 동안은 ⚡ 칩이 먹기 버튼 자리에 선다(겹쳐 먹기 막힘)
-  const l=n<=0?'🍫 다 먹음':on?'🍫 먹는 중':'🍫 먹기';if(eat.firstElementChild.textContent!==l)eat.firstElementChild.textContent=l;
+  const l=n<=0?'다 먹음':on?'먹는 중':'먹기';if(eatText.textContent!==l)eatText.textContent=l;
  }
  function renderBar(){
   const v=trailBarView({act:tv.act,near:tv.near,offer:tv.offer&&{...tv.offer,until:Infinity},auto:!!tv.auto,busy:busy(),now:0,exhaust:ex});
   const sig=JSON.stringify(v);if(sig===barSig)return;barSig=sig;
   const onChip=v.mode==='offer'||v.mode==='near';
   bar.dataset.mode=onChip?'none':v.mode;bar.hidden=onChip||v.mode==='none';chip.dataset.mode=onChip?v.mode:'none';chip.hidden=!onChip;chipBox=null;
-  if(v.mode==='offer'){const o=v.offer,[ic,...rest]=String(o.label).split(' ');chip.innerHTML=`<button type="button" class="tc-btn tc-offer" data-act="${esc(o.act)}" data-id="${esc(o.id)}" style="--sec:${o.seconds}s" aria-label="${esc(o.label)} · 들렀다가 자동 걷기를 이어 가요"><em aria-hidden="true">${esc(ic)}</em><b>${esc(rest.join(' '))}</b><i class="tc-time" aria-hidden="true"></i></button>`;}
-  else if(v.mode==='near')chip.innerHTML=v.buttons.map(b=>`<button type="button" class="tc-btn" data-act="${esc(b.act)}" data-id="${esc(v.id)}" data-manual="1" aria-label="${esc(b.label)} · ${esc(b.sub)}" title="${esc(b.sub)}"><em aria-hidden="true">${b.ic}</em><b>${esc(b.label)}</b><small>${esc(b.sub)}</small></button>`).join('');
+  if(v.mode==='offer'){const o=v.offer,[ic,...rest]=o.icon?[null,o.label]:String(o.label).split(' ');chip.innerHTML=`<button type="button" class="tc-btn tc-offer" data-act="${esc(o.act)}" data-id="${esc(o.id)}" style="--sec:${o.seconds}s" aria-label="${esc(rest.join(' '))} · 들렀다가 자동 걷기를 이어 가요"><em aria-hidden="true">${o.icon?icon(o.icon,{size:'m'}):esc(ic)}</em><b>${esc(rest.join(' '))}</b><i class="tc-time" aria-hidden="true"></i></button>`;}
+  else if(v.mode==='near')chip.innerHTML=v.buttons.map(b=>`<button type="button" class="tc-btn" data-act="${esc(b.act)}" data-id="${esc(v.id)}" data-manual="1" aria-label="${esc(b.label)} · ${esc(b.sub)}" title="${esc(b.sub)}"><em aria-hidden="true">${icon(b.ic,{size:'m'})}</em><b>${esc(b.label)}</b><small>${esc(b.sub)}</small></button>`).join('');
   if(onChip){chip.classList.remove('tc-pop');void chip.offsetWidth;chip.classList.add('tc-pop');bar.innerHTML='';placeChip();return;}
-  if(v.mode==='lift')bar.innerHTML=`<button type="button" class="tb-btn tb-lift" data-press="1"><em aria-hidden="true">💪</em><b>들어 올리기 <span>${v.reps}/${v.of}</span></b><span class="tb-gauge" aria-hidden="true">${Array.from({length:v.of},(_,i)=>`<i class="${i<v.reps?'on':''}"></i>`).join('')}</span></button>`;
-  else if(v.mode==='cramp')bar.innerHTML=`<button type="button" class="tb-btn tb-cramp" data-cramp="1"><em aria-hidden="true">🦶</em><b>발끝 당기기</b><small>누르면 1초 만에 풀려요</small></button>`;
-  else if(v.mode==='stand-up')bar.innerHTML=`<button type="button" class="tb-btn" data-stop="1"><em aria-hidden="true">🧍</em><b>일어나기</b><small>벤치 쉬기 · 스테미너 1.5배</small></button>`;
+  if(v.mode==='lift')bar.innerHTML=`<button type="button" class="tb-btn tb-lift" data-press="1"><em aria-hidden="true">${icon('h-gym-barbell',{size:'m'})}</em><b>${icon('h-gym-barbell',{size:'s'})} 들어 올리기 <span>${v.reps}/${v.of}</span></b><span class="tb-gauge" aria-hidden="true">${Array.from({length:v.of},(_,i)=>`<i class="${i<v.reps?'on':''}"></i>`).join('')}</span></button>`;
+  else if(v.mode==='cramp')bar.innerHTML=`<button type="button" class="tb-btn tb-cramp" data-cramp="1"><em aria-hidden="true">${icon('h-cramp',{size:'m'})}</em><b>발끝 당기기</b><small>누르면 1초 만에 풀려요</small></button>`;
+  else if(v.mode==='stand-up')bar.innerHTML=`<button type="button" class="tb-btn" data-stop="1"><em aria-hidden="true">${icon('c-stand-up',{size:'m'})}</em><b>일어나기</b><small>벤치 쉬기 · 스테미너 1.5배</small></button>`;
   else bar.innerHTML='';
  }
  // 역기는 빠르게 연타하므로 pointerdown에서 바로 센다(click 지연·더블탭 확대 없이). 다른 버튼은 click.

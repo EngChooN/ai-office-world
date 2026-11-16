@@ -22,10 +22,11 @@ export function chatRow(d){
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // 다른 체험도 같은 창을 쓴다(11-16 크리스마스): ns = 이벤트 앞말('hiking' → 'hiking:chat' …), title·quick = 창 제목·빠른 말, cls = 단추·창에 더할 class(자리·색 덮기),
+// titleIcon = 창 제목 앞 아이콘 이름(기본 c-chat, 옛 호출처럼 제목 앞에 💬 글자가 붙어 오면 떼고 아이콘으로 그림).
 // chipSelector = 💬 단추를 옆에 붙일 상태 칩(없으면 CSS 기본 자리).
 // bubbleFor(id) = 말풍선을 사람마다 다르게(11-16 크리스마스 모닥불 둘레: {ms:6000,big:true}). 없으면 4초·보통 크기(등산·흡연장 그대로).
 export function installHikingChat({doc=document,win=window,lookup=id=>win.hiking?.multiApi?.screenPos?.(id)??null,raf=win.requestAnimationFrame?.bind(win),
- ns='hiking',title='💬 같이 걷는 사람들',quick=QUICK,cls='',chipSelector='.me-chip',notice='',bubbleFor=null}={}){
+ ns='hiking',title='같이 걷는 사람들',titleIcon='c-chat',quick=QUICK,cls='',chipSelector='.me-chip',notice='',bubbleFor=null}={}){
  const body=doc.body;if(!body||doc.querySelector('.hc-btn'))return null;
  const EV=n=>`${ns}:${n}`;
  import('./hiking-chat-ui.css');
@@ -34,7 +35,7 @@ export function installHikingChat({doc=document,win=window,lookup=id=>win.hiking
 
  const btn=mk('button','hc-btn'+(cls?' '+cls:''),`<span aria-hidden="true">${icon('c-chat',{size:'m'})}</span><i class="hc-dot" hidden></i>`);
  btn.type='button';btn.hidden=true;btn.setAttribute('aria-label','채팅 열기');btn.setAttribute('aria-expanded','false');
- const panel=mk('section','hc-panel'+(cls?' '+cls:''),`<h4><span>${/^💬\s*/.test(title)?iconText('c-chat',title.replace(/^💬\s*/,''),{size:'s'}):esc(title)}</span><button type="button" class="hc-x" aria-label="채팅 접기">✕</button></h4>
+ const panel=mk('section','hc-panel'+(cls?' '+cls:''),`<h4><span>${titleIcon?iconText(titleIcon,String(title).replace(/^💬\s*/,''),{size:'s'}):esc(title)}</span><button type="button" class="hc-x" aria-label="채팅 접기">✕</button></h4>
   ${notice?`<p class="hc-notice">${esc(notice)}</p>`:''}<div class="hc-log" role="log" aria-live="polite"></div>
   <div class="hc-hint" role="status" aria-live="polite" hidden></div>
   <div class="hc-chips" aria-label="빠른 말">${quick.map(t=>`<button type="button" class="hc-chip" data-say="${esc(t)}">${esc(t)}</button>`).join('')}</div>

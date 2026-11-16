@@ -22,6 +22,7 @@ import {createSimCrowd} from './multi-sim.js';
 import {createHikerActs,ACT_SECONDS} from './toon/hiker-acts.js';
 import {hikingAct,createActSender,remoteActPlan,remoteBody,frameFromSpot} from './multi-act.js';
 import './multi-ui.css';
+import {icon} from './icons/icon.js';
 
 const COLORS=[0xd9534f,0x3b82c4,0x4caf6a,0xe0a030,0x9b59b6,0x16a5a5,0xd2691e,0x7a8b2e];
 const hash=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
@@ -278,6 +279,9 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
   let t=tagEls.get(r.id);if(!t){const id=r.id;t={root:el('div','multi-tag'),label:el('span','multi-tag-name')};t.root.append(t.label);
    // 이름표를 누르면 화면(pair-ui)이 '같이 등산하기' 카드를 띄운다. 손가락으로 누르기 쉽게 보이지 않는 넓은 누름 칸을 단다.
    const hit=el('i','multi-tag-hit');hit.setAttribute('role','button');hit.setAttribute('aria-label','이 사람 고르기');t.label.append(hit);
+   // 동행 표시·몸짓 표시 아이콘(아이콘-규칙-v1 §7). 보일지는 multi-ui.css가 data-pair·data-gesture로 정한다
+   const pi=el('i','multi-tag-pair');pi.setAttribute('aria-hidden','true');pi.innerHTML=icon('h-pair',{size:'xs'});t.label.append(pi);
+   const gi=el('i','multi-tag-gest');gi.setAttribute('aria-hidden','true');gi.innerHTML=icon('c-wave',{size:'xs',className:'g-wave'})+icon('h-bow',{size:'xs',className:'g-hello'});t.root.append(gi);
    t.label.addEventListener('click',e=>{e.stopPropagation();const rr=roster.get(id);if(rr&&!rr.tagHidden)window.dispatchEvent(new CustomEvent('hiking:pair-pick',{detail:{id,name:rr.name}}));});
    tagLayer.append(t.root);tagEls.set(r.id,t);}
   v3.set(r.sample.x,y+tagHeight,r.sample.z).project(camera);

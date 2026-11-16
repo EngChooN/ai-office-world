@@ -4,16 +4,18 @@
 //  - 순수 함수(노드 테스트): buildIssueUrl·buildIssueTitle·buildIssueBody·buildIssueText·collectInfo·cleanPath·browserName
 //  - 화면: installFeedback({exp,openEvent,state}) → {open,close,isOpen}. 열린 동안 키 입력·조이스틱을 막는다(body.fb-open).
 //    나중에 멀티 서버로 직접 받게 되면 buildIssueText만 서버로 보내면 된다.
+import {icon,iconText} from './icons/icon.js';
 
 export const REPO_URL='https://github.com/EngChooN/ai-office-world';
 export const MAX_BODY=6000; // 주소 길이가 넘치지 않게(GitHub·브라우저 주소 한도 안)
 export const MAX_TEXT=500;
 export const TITLE_LEN=40;
 export const EXPS=Object.freeze({hiking:'등산',smoking:'흡연장'});
+// icon = 깃허브 글 제목·본문에 들어가는 글자(화면 밖이라 이모지 그대로), ic = 카드 고르기 칸에 그리는 제작 아이콘(아이콘-규칙-v1 §1)
 export const KINDS=Object.freeze({
- bug:{icon:'🐞',label:'고장·이상해요',sub:'안 돼요·멈춰요',labels:['bug']},
- idea:{icon:'💡',label:'이런 게 있으면',sub:'바라는 점',labels:['idea']},
- talk:{icon:'💬',label:'그냥 한마디',sub:'느낌·응원',labels:[]},
+ bug:{icon:'🐞',ic:'c-fb-bug',label:'고장·이상해요',sub:'안 돼요·멈춰요',labels:['bug']},
+ idea:{icon:'💡',ic:'c-fb-idea',label:'이런 게 있으면',sub:'바라는 점',labels:['idea']},
+ talk:{icon:'💬',ic:'c-chat',label:'그냥 한마디',sub:'느낌·응원',labels:[]},
 });
 // 주소 옵션 중 사람을 알아볼 수 있는 값(닉네임·방 이름)은 지운다
 const DROP_PARAMS=['name','multi'];
@@ -106,12 +108,12 @@ export function installFeedback({exp='hiking',openEvent='',state=null,doc=global
   <div class="fb-head"><h2 class="fb-title" id="fb-t">의견 보내기</h2><span class="fb-seal" aria-hidden="true">의견</span></div>
   <p class="fb-guide"><b>GitHub 계정이 있으면 바로 올라가요.</b> 없으면 「내용 복사」로 복사해서 보내 주세요.</p>
   <div class="fb-main">
-   <fieldset class="fb-kinds" aria-label="종류">${Object.entries(KINDS).map(([k,v])=>`<button type="button" class="fb-kind" data-kind="${k}" aria-pressed="${k===kind}"><i aria-hidden="true">${v.icon}</i>${esc(v.label)}<small>${esc(v.sub)}</small></button>`).join('')}</fieldset>
+   <fieldset class="fb-kinds" aria-label="종류">${Object.entries(KINDS).map(([k,v])=>`<button type="button" class="fb-kind" data-kind="${k}" aria-pressed="${k===kind}"><i aria-hidden="true">${icon(v.ic,{size:'m'})}</i>${esc(v.label)}<small>${esc(v.sub)}</small></button>`).join('')}</fieldset>
    <textarea class="fb-text" maxlength="${MAX_TEXT}" rows="4" aria-label="내용" placeholder="무슨 일이 있었나요? 어디서·언제 그랬는지 적어 주면 좋아요."></textarea><span class="fb-count" aria-live="polite">0 / ${MAX_TEXT}</span>
   </div>
   <div class="fb-side">
-   <details class="fb-info"><summary>📎 같이 올라가는 정보 (펼쳐 보기)</summary><dl class="fb-rows">${info.map(([a,b])=>`<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join('')}</dl><p class="fb-safe">닉네임·채팅·위치·IP는 들어가지 않아요.</p></details>
-   <div class="fb-actions"><button type="button" class="fb-btn primary" data-fb="send" disabled>🐙 GitHub에 올리기</button><button type="button" class="fb-btn" data-fb="copy" disabled>📋 내용 복사</button><button type="button" class="fb-btn" data-fb="close">닫기</button></div>
+   <details class="fb-info"><summary>${iconText('c-attach','같이 올라가는 정보 (펼쳐 보기)',{size:'xs'})}</summary><dl class="fb-rows">${info.map(([a,b])=>`<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join('')}</dl><p class="fb-safe">닉네임·채팅·위치·IP는 들어가지 않아요.</p></details>
+   <div class="fb-actions"><button type="button" class="fb-btn primary" data-fb="send" disabled>${iconText('c-upload','GitHub에 올리기')}</button><button type="button" class="fb-btn" data-fb="copy" disabled>${iconText('c-copy','내용 복사')}</button><button type="button" class="fb-btn" data-fb="close">닫기</button></div>
    <p class="fb-status" role="status"></p>
   </div></div>`;
   modal.addEventListener('click',onClick);

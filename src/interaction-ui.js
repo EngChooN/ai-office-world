@@ -3,6 +3,7 @@
 import './interaction-ui.css';
 import {CHIP_LABEL,NOT_SIGN_NOTICE,CARD_NOTICE,STAMPS} from './interaction-data.js';
 import {clock,TAPE_HALF} from './interaction-logic.js';
+import {icon,iconText} from './icons/icon.js';
 
 const FONT="-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif";
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -64,7 +65,7 @@ export function mountInteractionUI(doc=document,win=window){
   else{pillWrap.dataset.where='world';pillWrap.style.left=pillWrap.style.top='';pillWrap.style.transform='';}
   if(sig===pillSig)return;pillSig=sig;pillWrap.hidden=false;
   pillWrap.replaceChildren(...view.rows.map((r,i)=>{const b=doc.createElement('button');b.type='button';b.className=`ix-pill${i?' sub':''}${r.state==='done'?' done':r.state==='lock'?' lock':''}`;b.dataset.num=String(i+1);
-   b.innerHTML=`<kbd class="key">${esc(r.key)}</kbd><span><b>${esc(r.label)}</b>${r.state==='lock'&&r.reason?`<small>${esc(r.reason)}</small>`:r.sub?`<small>${esc(r.sub)}</small>`:''}</span>`;
+   b.innerHTML=`${i?'':`<i class="ix-tap" aria-hidden="true">${icon('c-tap',{size:'l'})}</i>`}<kbd class="key">${esc(r.key)}</kbd><span><b>${esc(r.label)}</b>${r.state==='lock'&&r.reason?`<small>${esc(r.reason)}</small>`:r.sub?`<small>${esc(r.sub)}</small>`:''}</span>`;
    b.setAttribute('aria-label',`${r.label} (${r.key})`);b.addEventListener('pointerdown',stop);b.addEventListener('click',()=>{b.blur();send(i?`choice-${i+1}`:'interact');});return b;}));
   pillWrap.setAttribute('aria-live','polite');
  }
@@ -72,7 +73,7 @@ export function mountInteractionUI(doc=document,win=window){
  function setMarkers(list){
   const seen=new Set();
   for(const m of list){seen.add(m.id);let el=markerEls.get(m.id);if(!el){el=doc.createElement('div');el.className='ix-marker';markerEls.set(m.id,el);markers.append(el);}
-   el.classList.toggle('far',!!m.far);el.textContent=m.far?'':m.glyph;el.style.transform=`translate(${m.x.toFixed(1)}px,${m.y.toFixed(1)}px)`;}
+   el.classList.toggle('far',!!m.far);{const k=m.far?'':m.icon?'ic:'+m.icon:m.glyph;if(el.dataset.k!==k){el.dataset.k=k;if(m.far||!m.icon)el.textContent=m.far?'':m.glyph;else el.innerHTML=icon(m.icon,{size:'s'});}}el.style.transform=`translate(${m.x.toFixed(1)}px,${m.y.toFixed(1)}px)`;}
   for(const [id,el] of markerEls)if(!seen.has(id)){el.remove();markerEls.delete(id);}
  }
  // ── 행동 진행 ──
@@ -83,7 +84,7 @@ export function mountInteractionUI(doc=document,win=window){
   const sig=m.label+'|'+m.step;if(sig!==actionSig){actionSig=sig;actionEl.innerHTML=`${m.breath?'<div class="ix-breath"></div>':''}<b>${esc(m.label)}</b><small>${esc(m.step)}</small><div class="bar"><i></i></div><small>${esc(m.hint)}</small>`;}
   actionEl.hidden=false;actionEl.querySelector('.bar i').style.width=`${Math.round(m.progress*100)}%`;vignette.classList.toggle('on',m.tint==='water');
  }
- function toast(text,{ms=2600}={}){clearTimeout(toastTimer);toastEl.className='ix-toast plain';toastEl.innerHTML=`<div class="tx"><b>${esc(text)}</b></div>`;toastEl.hidden=false;toastTimer=setTimeout(()=>{toastEl.hidden=true;},ms);}
+ function toast(text,{ms=2600,icon:ic=null}={}){clearTimeout(toastTimer);toastEl.className='ix-toast plain';toastEl.innerHTML=`<div class="tx"><b>${ic?iconText(ic,text,{size:'xs'}):esc(text)}</b></div>`;toastEl.hidden=false;toastTimer=setTimeout(()=>{toastEl.hidden=true;},ms);}
  const stampHtml=(s,sz,cls='')=>`<div class="ix-stp ${cls}" style="--sz:${sz}px;--rot:${s.tilt}deg"><span>${s.glyph}</span></div>`;
  function stampToast(m){
   clearTimeout(toastTimer);toastEl.className='ix-toast';
@@ -97,7 +98,7 @@ export function mountInteractionUI(doc=document,win=window){
   boardEl.innerHTML=`<div class="eyebrow"><span>${esc(board.eyebrow)}</span><em>${multi?`${boardIndex+1} / ${board.pages.length}`:''}</em></div><h2>${esc(p.title)}</h2>${rows}${(p.body??[]).map(t=>`<p>${esc(t)}</p>`).join('')}
    ${p.chips?.length?`<div class="ix-chips">${p.chips.map(c=>`<span class="ix-chip ${c.kind}">${CHIP_LABEL[c.kind]} · ${esc(c.text)}</span>`).join('')}</div>`:''}
    <div class="src">${esc(p.source)}</div><div class="why">${esc(board.notice??NOT_SIGN_NOTICE)}</div>
-   <div class="foot"><div>${multi?`<button type="button" data-a="prev" aria-label="이전 쪽">◀</button> <button type="button" data-a="next" aria-label="다음 쪽">▶</button>`:''}</div><div class="ix-dots">${board.pages.map((_,i)=>`<i class="${i===boardIndex?'on':''}"></i>`).join('')}</div><button type="button" data-a="close">닫기 <kbd>F</kbd></button></div>`;
+   <div class="foot"><div>${multi?`<button type="button" data-a="prev" aria-label="이전 쪽">${icon('c-left',{size:'s'})}</button> <button type="button" data-a="next" aria-label="다음 쪽">${icon('c-right',{size:'s'})}</button>`:''}</div><div class="ix-dots">${board.pages.map((_,i)=>`<i class="${i===boardIndex?'on':''}"></i>`).join('')}</div><button type="button" data-a="close">닫기 <kbd>F</kbd></button></div>`;
  }
  function openBoard(model){board=model;boardIndex=0;renderBoard();boardEl.hidden=scrim.hidden=false;}
  function closeBoard(){board=null;boardEl.hidden=scrim.hidden=true;}
@@ -114,7 +115,7 @@ export function mountInteractionUI(doc=document,win=window){
   const prof=`<svg viewBox="0 0 1080 74" preserveAspectRatio="none"><path d="M30 66 C300 60 500 40 800 22 L1050 14 V74 H30Z" fill="#25403420"/><path d="M30 66 C300 60 500 40 800 22 L1050 14" fill="none" stroke="#25403488" stroke-width="2"/>${pts.map((p,i)=>{const got=m.slots[i].got;return `<circle cx="${p[0]}" cy="${p[1]}" r="${got?9:6}" fill="${got?'#b3382a':'#f1ead2'}" stroke="${got?'#b3382a':'#8a9a82'}" stroke-width="2.5"/>`;}).join('')}</svg>`;
   bookEl.innerHTML=`<div class="hd"><h2>스탬프 수첩<small>서울대 계곡 코스</small></h2><div style="display:flex;align-items:center;gap:14px"><div><div style="display:flex;justify-content:space-between;font-size:13px;color:#dbdfc5;margin-bottom:4px"><span>모은 스탬프</span><b style="color:#f4d67c">${m.count} / 6</b></div><div class="prog"><i style="width:${m.count/6*100}%"></i></div></div><button class="btn" type="button" data-a="close" aria-label="수첩 닫기">✕ <kbd>J</kbd></button></div></div>
    <div class="pg"><div class="ix-slots">${slots}</div><div class="ix-prof">${prof}</div><div class="ix-profl"><span>일주문 99m</span><span>정상 629m</span></div></div>
-   ${m.fun?`<div class="ix-fun"><b>즐길거리</b>${m.fun.map(f=>`<div class="ix-fun-slot${f.got?' got':''}"><div class="ix-stp ${f.got?'':'empty'}" style="--sz:${m.small?56:72}px;--rot:-6deg"><span>${f.got?esc(f.glyph):'?'}</span></div><span><b>${esc(f.name)}</b><small>${f.got?clock(f.at):esc(f.hint)}</small></span></div>`).join('')}</div>`:''}
+   ${m.fun?`<div class="ix-fun"><b>즐길거리</b>${m.fun.map(f=>`<div class="ix-fun-slot${f.got?' got':''}"><div class="ix-stp ${f.got?'':'empty'}" style="--sz:${m.small?56:72}px;--rot:-6deg"><span>${f.got?(f.icon?icon(f.icon,{size:'xl'}):esc(f.glyph)):'?'}</span></div><span><b>${esc(f.name)}</b><small>${f.got?clock(f.at):esc(f.hint)}</small></span></div>`).join('')}</div>`:''}
    <div class="cardbtn"><span>스탬프 위치는 지도 기준 후보 · 현장 표지와 다를 수 있어요</span><button type="button" class="btn ${m.canCard?'ix-btn-gold':''}" data-a="card" ${m.canCard?'':'disabled style="opacity:.5"'}>${m.canCard?'완등 기록 카드 보기':'정상 스탬프가 남았어요'}</button></div>
    <div class="stats">${esc(m.stats)}</div>`;
   bookEl.hidden=scrim.hidden=false;
@@ -140,13 +141,13 @@ export function mountInteractionUI(doc=document,win=window){
   if(sig!==tapeSig){tapeSig=sig;let h='';for(let b=-TAPE_HALF;b<=TAPE_HALF;b++){const deg=m.bearing+b,rounded=Math.round(deg),off=(rounded-m.bearing)*px,x=c+off;if(Math.abs(rounded-m.bearing)>TAPE_HALF)continue;const major=rounded%5===0;h+=`<i class="tk${major?' m':''}" style="left:${x}px"></i>`;if(major)h+=`<span class="tn" style="left:${x}px;top:${tape.clientHeight*.48}px">${((rounded%360)+360)%360}°</span>`;}
    const ends=[-1e9,-1e9,-1e9];[...m.tape].sort((a,b)=>a.delta-b.delta).forEach(t=>{const x=c+t.delta*px,w=t.short.length*15+14;let r=ends.findIndex(e=>x-w/2>e);if(r<0)r=0;ends[r]=x+w/2;h+=`<span class="mk${t.directionOnly?' dirOnly':''}" style="left:${x}px;top:${2+r*17}px">${esc(t.short)}</span>`;});h+='<i class="cur"></i>';tape.innerHTML=h;}
   bino.querySelector('.ix-labels').innerHTML=m.labels.map(l=>`<div class="ix-lm${l.focus?' focus':''}${l.dim?' dim':''}${l.directionOnly?' dirOnly':''}" style="left:${l.x}px;top:${l.y}px"><span class="tag">${esc(l.name)}${l.sub?`<small>${esc(l.sub)}</small>`:''}</span>${l.directionOnly?'':`<i class="ln" style="height:${l.rise}px"></i><i class="dot"></i>`}</div>`).join('');
-  bino.querySelector('.ix-edges').innerHTML=m.edges.map(e=>`<div class="ix-edge ${e.delta<0?'l':'r'}${e.directionOnly?' dirOnly':''}">${e.delta<0?'◀ ':''}${esc(e.text)}${e.delta>0?' ▶':''}</div>`).join('');
+  bino.querySelector('.ix-edges').innerHTML=m.edges.map(e=>`<div class="ix-edge ${e.delta<0?'l':'r'}${e.directionOnly?' dirOnly':''}">${e.delta<0?icon('c-left',{size:'xs'})+' ':''}${esc(e.text)}${e.delta>0?' '+icon('c-right',{size:'xs'}):''}</div>`).join('');
   const note=bino.querySelector('.ix-bino-note');note.hidden=!m.note;note.textContent=m.note??'';
   const f=bino.querySelector('.ix-focus');f.hidden=!m.focus;if(m.focus){const k=`${m.focus.name}|${m.focus.lines.join('|')}`;if(f.dataset.k!==k){f.dataset.k=k;f.innerHTML=`<span class="key">F</span><div><b>${esc(m.focus.name)}</b><small>${m.focus.lines.map(esc).join('<br>')}</small></div>`;f.onclick=()=>send('interact');}}
  }
  // ── 인사 메뉴(X 누르고 있기, 멀티 전용) ──
  function showWheel(items,selected=-1,center=''){
-  wheelEl.hidden=false;wheelEl.innerHTML=items.map((it,i)=>`<button type="button" data-i="${i}" class="${i===selected?'sel':''}"><span class="e">${it.icon}</span>${esc(it.label)}<kbd>${i+1}</kbd></button>`).join('')+`<div class="c">${esc(center)}</div>`;
+  wheelEl.hidden=false;wheelEl.innerHTML=items.map((it,i)=>`<button type="button" data-i="${i}" class="${i===selected?'sel':''}"><span class="e">${icon(it.icon,{size:'l'})}</span>${esc(it.label)}<kbd>${i+1}</kbd></button>`).join('')+`<div class="c">${esc(center)}</div>`;
   for(const b of wheelEl.querySelectorAll('button'))b.addEventListener('click',()=>send('emote-pick',Number(b.dataset.i)));
  }
  const hideWheel=()=>{wheelEl.hidden=true;};

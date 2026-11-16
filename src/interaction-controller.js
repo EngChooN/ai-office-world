@@ -5,7 +5,7 @@ import {addFun,FUN_BADGES,pickCandidate,markerCandidates,arrowAngle,headingToBea
 
 const FRAME_KEY='gwanak-photo-frame';
 const READ_KIND={trailSign:'이정표 읽기',infoBoard:'안내판 읽기',summitBoard:'안내판 읽기'};
-const EMOTES=[{icon:'🙇',label:'인사',id:'hello'},{icon:'👋',label:'손 흔들기',id:'wave'},{icon:'📸',label:'같이 셀카',id:'selfie'}];
+const EMOTES=[{icon:'h-bow',label:'인사',id:'hello'},{icon:'c-wave',label:'손 흔들기',id:'wave'},{icon:'h-selfie',label:'같이 셀카',id:'selfie'}]; // icon = 화면 아이콘 이름(아이콘-규칙-v1 §7)
 const smooth=t=>t<=0?0:t>=1?1:t*t*(3-2*t);
 // 행동 중 카메라 숙임(rad, 음수 = 아래)·눈높이 낮춤(m). 설계 §⑥ 타임라인의 제안값.
 export function actionPose(id,t,total){
@@ -50,7 +50,7 @@ export function createInteraction({state,sites=[],streams=[],player,ui,sound,sto
  const hidden=()=>(state.pose&&state.pose!=='stand')||!!action||ui.boardOpen||ui.bookOpen||ui.cardOpen||curSpeed>RULES.runSpeed;
  function personCandidate(p){
   const m=multi();if(!m?.nearest)return null;const n=m.nearest(RULES.show);if(!n)return null;
-  return {id:'greet',action:'greet',x:n.player.x,z:n.player.z,name:n.player.name,showRadius:RULES.show,group:'greet',glyph:'👋'};
+  return {id:'greet',action:'greet',x:n.player.x,z:n.player.z,name:n.player.name,showRadius:RULES.show,group:'greet',glyph:'',icon:'c-wave'};
  }
 
  // ── 스탬프 ──
@@ -184,7 +184,7 @@ export function createInteraction({state,sites=[],streams=[],player,ui,sound,sto
   // 15m 마커
   if(g==='none'&&!ui.boardOpen&&!ui.bookOpen&&!ui.cardOpen&&!action){
    const list=markerCandidates(cands,p,{done:c=>doneFor(c)||c.id===current}),out=[];
-   for(const o of list){const q=projectWorld(o.c.x,(o.c.y??0)+1.6,o.c.z);if(q?.visible)out.push({id:o.c.id,x:q.x,y:q.y,glyph:o.c.glyph,far:o.d>RULES.show+4});}
+   for(const o of list){const q=projectWorld(o.c.x,(o.c.y??0)+1.6,o.c.z);if(q?.visible)out.push({id:o.c.id,x:q.x,y:q.y,glyph:o.c.glyph,icon:o.c.icon,far:o.d>RULES.show+4});}
    ui.setMarkers(out);
   }else ui.setMarkers([]);
   // 인증샷 틀 오버레이
@@ -230,7 +230,7 @@ export function createInteraction({state,sites=[],streams=[],player,ui,sound,sto
  function reset(){if(action){sound.cancel();action=null;}ui.setAction(null);ui.closeBoard();ui.closeBook();ui.closeCard();ui.hideWheel();ui.setPill(null);ui.setMarkers([]);wheelOn=false;holdX=null;current=null;view=null;}
  const frameActive=()=>frameOn&&gadget()==='phone'&&player().zone==='summit'&&nearSummitStone(RULES.showStamp);
  // 즐길거리 도장(main.js가 hiking:trail 이벤트로 부른다). 처음이면 알림 한 번.
- function award(id){const b=FUN_BADGES.find(x=>x.id===id);if(!b||!addFun(progress,id,now()))return false;persist();sound.play('stamp');ui.toast(id==='gym'?'💪 산스장 득근 도장 쾅! · 수첩에 남겼어요':'✨ 깨끗한 신발 · 수첩에 남겼어요',{ms:3000});return true;}
+ function award(id){const b=FUN_BADGES.find(x=>x.id===id);if(!b||!addFun(progress,id,now()))return false;persist();sound.play('stamp');ui.toast(id==='gym'?'산스장 득근 도장 쾅! · 수첩에 남겼어요':'깨끗한 신발 · 수첩에 남겼어요',{ms:3000,icon:id==='gym'?'h-gym-flex':'h-clean-shoe'});return true;}
  const api={update,handle,run,reset,frameActive,openBook,award,openCard,notePhoto,bakeFrame,pitch:0,drop:0,
   active:()=>!!view,anyPanel:()=>ui.boardOpen||ui.bookOpen||ui.cardOpen,modal:()=>ui.bookOpen||ui.cardOpen,panelPages:()=>ui.boardPages,wheel:()=>wheelOn,
   progress,cands,

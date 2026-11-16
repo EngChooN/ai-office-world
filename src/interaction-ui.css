@@ -26,8 +26,8 @@ body.touch .ix-pill{flex-direction:column;justify-content:center;gap:2px;width:8
 body.touch .ix-pill .key{display:none}
 body.touch .ix-pill b{font-size:13px;line-height:1.15;white-space:normal;max-width:70px;margin-top:0}
 body.touch .ix-pill small{display:none}
-body.touch .ix-pill::before{content:'☝';font-size:26px;line-height:1}
-body.touch .ix-pill.sub{width:56px;height:56px}body.touch .ix-pill.sub::before{content:attr(data-num);font-size:20px;font-weight:800}body.touch .ix-pill.sub b{display:none}
+.ix-tap{display:none}body.touch .ix-pill .ix-tap{display:block;line-height:0}
+body.touch .ix-pill.sub{width:56px;height:56px}body.touch .ix-pill.sub::before{content:attr(data-num);font-size:20px;font-weight:800;line-height:1}body.touch .ix-pill.sub b{display:none}
 body.touch .ix-pill.done{background:#8fbf7a}body.touch .ix-pill.lock{background:#ffffff40;color:#fff}
 body.touch .ix-pill-hint{display:none}
 @media(max-height:540px) and (orientation:landscape){body.touch .ix-pill-wrap{bottom:calc(96px + env(safe-area-inset-bottom));right:calc(120px + env(safe-area-inset-right))}}

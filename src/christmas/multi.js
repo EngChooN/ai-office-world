@@ -34,17 +34,17 @@ export function multiParams(search='',envUrl=''){
  const q=new URLSearchParams(search);
  return {auto:q.has('multi'),room:cleanRoom(q.get('multi')),name:q.has('name')?cleanName(q.get('name')):null,server:multiServerUrl(search,envUrl)};
 }
-// 상태 칩 글(체험설계 §3-4). tone: wait·ok·local·warn·bad
+// 상태 칩 글(체험설계 §3-4). tone: wait·ok·local·warn·bad, ic: 아이콘 이름(아이콘-규칙-v1 §7-1 마). text 속 👥는 hud가 c-people 아이콘으로 그림(aria-label에는 글 그대로)
 export function xmasStatusView(d={}){
  const n=Math.max(0,Number(d.count)||0),max=d.max||serverMax(EXPERIENCE),srv=d.room?findServer(EXPERIENCE,d.room):null,where=srv?.name??(d.room?`방 ${d.room}`:'');
  switch(d.state){
-  case 'connecting':return {tone:'wait',ic:'⏳',text:'연결 중…',sub:where};
-  case 'online':return d.transport==='local'?{tone:'local',ic:'💻',text:`내 컴퓨터 모드 · 👥 ${n||1}`,sub:'서버 없음 · 이 브라우저 창끼리만'}
-   :{tone:'ok',ic:'🎄',text:`${where} · 👥 ${n||1}/${max}`,sub:''};
-  case 'reconnecting':return {tone:'warn',ic:'🔄',text:'다시 연결 중…',sub:'걸어 다닐 수는 있어요'};
-  case 'offline':return {tone:'bad',ic:'⛄',text:'혼자 보기 · 다시 연결',sub:'눌러서 다시 연결해요'};
-  case 'full':return {tone:'warn',ic:'🚪',text:'방금 꽉 찼어요',sub:'다른 서버를 골라 주세요'};
-  default:return {tone:'solo',ic:'⛄',text:'혼자 둘러보기',sub:'눌러서 광장 서버에 들어가요'};
+  case 'connecting':return {tone:'wait',ic:'c-net-connecting',text:'연결 중…',sub:where};
+  case 'online':return d.transport==='local'?{tone:'local',ic:'c-net-local',text:`내 컴퓨터 모드 · 👥 ${n||1}`,sub:'서버 없음 · 이 브라우저 창끼리만'}
+   :{tone:'ok',ic:'c-net-ok',text:`${where} · 👥 ${n||1}/${max}`,sub:''};
+  case 'reconnecting':return {tone:'warn',ic:'c-net-retry',text:'다시 연결 중…',sub:'걸어 다닐 수는 있어요'};
+  case 'offline':return {tone:'bad',ic:'c-net-lost',text:'혼자 보기 · 다시 연결',sub:'눌러서 다시 연결해요'};
+  case 'full':return {tone:'warn',ic:'c-net-full',text:'방금 꽉 찼어요',sub:'다른 서버를 골라 주세요'};
+  default:return {tone:'solo',ic:'c-person',text:'혼자 둘러보기',sub:'눌러서 광장 서버에 들어가요'};
  }
 }
 

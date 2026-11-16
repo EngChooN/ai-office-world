@@ -148,7 +148,7 @@
 .fs-lockbox small{display:block;margin-top:2px;font-size:12px;font-weight:600;color:var(--ink2);line-height:1.4}
 .fs-prog{margin:6px 0 4px}
 .fs-ghost{opacity:.42;filter:saturate(.4);pointer-events:none}
-.fs-ghost .fs-seg button::before{content:"🔒";position:absolute;left:4px;top:3px;font-size:9px}
+.fs-ghost .fs-seg .fs-lockbadge{position:absolute;left:3px;top:3px;line-height:0}.fs-lockbadge .ic{width:12px;height:12px}
 /* 게임 안 시트(설정 탭): PC 680, 가로 590(위아래 꽉), 세로 1단 */
 .nb-sheet.fs-sheet{width:680px;padding:12px 16px 14px}
 @media (orientation:landscape) and (max-height:540px){
@@ -182,10 +182,12 @@
 /* 직접 고른 상태의 시각·날씨 꼬리표(사양 §3-3) */
 #env-chip.fs-manual{outline:1.5px dashed var(--accent);outline-offset:-3px;cursor:pointer}
 #env-chip.fs-manual>i,#env-chip.fs-manual>span{display:none}
-#env-chip .fs-chip{font-style:normal;font-size:12px;font-weight:800;color:var(--accent);white-space:nowrap}
+#env-chip .fs-chip{font-style:normal;font-size:12px;font-weight:800;color:var(--accent);white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+#env-chip .fs-chip-s{display:none}
 @media (orientation:portrait){
- #env-chip .fs-chip{font-size:0}
- #env-chip .fs-chip::after{content:attr(data-short);font-size:13px}
+ #env-chip .fs-chip{font-size:13px}
+ #env-chip .fs-chip-l{display:none}
+ #env-chip .fs-chip-s{display:inline}
 }
 /* 산 고르기가 떠 있는 동안 뒤 로딩 카드는 감춘다(글자가 비쳐 보이지 않게). 오르기를 누르면 다시 보인다. */
 :root.pk-open #loading-screen .ls-card{visibility:hidden}

@@ -46,6 +46,7 @@ import {AdaptiveQuality} from './adaptive-quality.js';
 import './hud-v2.css';
 import './hud-notebook.css';
 import './icons/icons.css';   // 아이콘 공통 모양(아이콘-규칙-v1)
+import {icon} from './icons/icon.js';
 document.documentElement.dataset.icExp='hiking';
 import {installNotebookHud,formatRemainKm} from './hud-notebook.js';
 import {markLoad,installGlbTiming,loadTiming} from './load-timing.js';
@@ -77,7 +78,7 @@ function save(){if(multiMode)return;try{localStorage.setItem(SAVE_KEY,JSON.strin
 storageOK=true;}catch{storageOK=false;$('resume-note').textContent='저장 공간을 사용할 수 없습니다. 이 세션의 진행만 유지됩니다.';}}
 let soundEnabled=true;try{soundEnabled=localStorage.getItem(SOUND_SAVE_KEY)!=='false';}catch{}
 const audioDebug=new URLSearchParams(location.search).has('audioDebug');
-function updateAudioUI(){const a=audio.snapshot();$('sound-toggle').setAttribute('aria-pressed',String(a.enabled));$('sound-toggle').querySelector('span').textContent=a.enabled?'소리 켜짐':'소리 꺼짐';$('sound-toggle').title=a.errors.length?'일부 소리 재생 오류 · 조작 안내의 소리 출처 참고':a.context==='입력 대기'?'클릭하거나 키를 누르면 소리를 시작합니다':a.decoded<a.total?'발소리 준비 중':'발소리 켜기/끄기';if(audioDebug){$('sound-debug').hidden=false;$('sound-debug').textContent='발소리 확인 · '+a.context+' · '+a.decoded+'/'+a.total+'개\n'+a.logs.slice(-8).map(r=>`${r.step}걸음 ${r.material} #${String(r.variant).padStart(2,'0')} ${r.pan<0?'왼':'오른'}\n  ${r.eventElapsed.toFixed(3)}s · ${r.rate.toFixed(3)}배 · ${r.variationDb.toFixed(2)}dB`).join('\n');}}
+function updateAudioUI(){const a=audio.snapshot();$('sound-toggle').setAttribute('aria-pressed',String(a.enabled));$('sound-toggle').querySelector('span').textContent=a.enabled?'소리 켜짐':'소리 꺼짐';for(const el of document.querySelectorAll('[data-sound-ic]'))el.innerHTML=icon('c-sound',{size:el.dataset.iconSize||'m',off:!a.enabled});$('sound-toggle').title=a.errors.length?'일부 소리 재생 오류 · 조작 안내의 소리 출처 참고':a.context==='입력 대기'?'클릭하거나 키를 누르면 소리를 시작합니다':a.decoded<a.total?'발소리 준비 중':'발소리 켜기/끄기';if(audioDebug){$('sound-debug').hidden=false;$('sound-debug').textContent='발소리 확인 · '+a.context+' · '+a.decoded+'/'+a.total+'개\n'+a.logs.slice(-8).map(r=>`${r.step}걸음 ${r.material} #${String(r.variant).padStart(2,'0')} ${r.pan<0?'왼':'오른'}\n  ${r.eventElapsed.toFixed(3)}s · ${r.rate.toFixed(3)}배 · ${r.variationDb.toFixed(2)}dB`).join('\n');}}
 const audio=new FootstepAudio({base:`${import.meta.env.BASE_URL}sounds/`,enabled:soundEnabled,onChange:updateAudioUI,style}); // 카툰은 가벼운 '톡톡' 소리를 두 걸음에 한 번
 let userVolume=.7;try{const stored=localStorage.getItem(VOLUME_SAVE_KEY);if(stored!==null&&Number.isFinite(Number(stored)))userVolume=Math.max(0,Math.min(1,Number(stored)));}catch{}
 audio.setVolume(userVolume);

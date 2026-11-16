@@ -10,6 +10,9 @@ export const KIND_ICON={clear:'☀',cloud:'⛅',overcast:'☁',rain:'🌧',snow:
 // 해가 진 뒤(태양 고도 0° 미만)에는 맑음이 달, 구름(해가 비치는 ⛅)은 구름만 남긴다. 흐림·비·눈·안개는 낮과 같은 날씨 아이콘.
 export const NIGHT_KIND_ICON={...KIND_ICON,clear:'🌙',cloud:'☁'};
 export const iconFor=(kind,night=false)=>(night?NIGHT_KIND_ICON:KIND_ICON)[kind]??KIND_ICON.clear;
+// 화면 아이콘(아이콘-규칙-v1 §7 사): 위 날씨 글자 → 제작 아이콘 이름. 글자 표는 그대로 두고(시험·대신 보일 글자) 화면은 이 이름으로 그린다.
+export const WX_IC=Object.freeze({'☀':'c-wx-clear','🌙':'c-wx-clear-night','⛅':'c-wx-partly','☁':'c-wx-cloud','🌧':'c-wx-rain','❄':'c-wx-snow','🌫':'c-wx-fog'});
+export const iconNameFor=(kind,night=false)=>WX_IC[iconFor(kind,night)]??'c-wx-clear';
 const RAIN={51:'light',53:'medium',55:'heavy',56:'light',57:'heavy',61:'light',63:'medium',65:'heavy',66:'light',67:'heavy',80:'light',81:'medium',82:'heavy',95:'heavy',96:'heavy',97:'heavy',99:'heavy'};
 const SNOW={71:'light',73:'medium',75:'heavy',77:'light',85:'light',86:'heavy'};
 const FOG={45:'medium',48:'heavy'};

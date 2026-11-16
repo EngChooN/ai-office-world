@@ -14,6 +14,7 @@ import {legTargets} from '../hiker-ik.js';
 import {part} from '../toon/concept-kit.js';
 import {finishTrailModel,BENCH} from '../toon/trail-props.js';
 import {SCENES} from './scene.js';
+import {icon,iconText} from '../icons/icon.js';
 
 export const SPOT_RANGE=Object.freeze({rail:1.2,bench:1.5,vending:1.6,ashtray:1.6});
 // 자동 걷기 판정: arrive 안이면 도착, stall초 동안 더 가까워지지 않으면 near 안에선 그 자리에서 시작·밖이면 실패. 시간 한도 = extra + 거리/0.9m/s(불 붙이기·끄기로 못 걷는 동안은 세지 않는다)
@@ -241,7 +242,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
 
  // 짧은 알림: HUD 알림 자리(.lg-toast)를 같이 쓴다(hud.js는 그대로). 노드 테스트에서는 S.notice에만 남는다.
  let toastH=0;
- function toast(t){S.notice=t;const el=globalThis.document?.querySelector?.('.lg-toast');if(!el)return;el.textContent=t;el.hidden=false;el.style.opacity=1;
+ function toast(t,ic=null){S.notice=t;const el=globalThis.document?.querySelector?.('.lg-toast');if(!el)return;if(ic)el.innerHTML=icon(ic,{size:'xs'})+' '+String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));else el.textContent=t;el.hidden=false;el.style.opacity=1;
   clearTimeout(toastH);toastH=setTimeout(()=>{el.style.opacity=0;setTimeout(()=>{el.hidden=true;},400);},1800);}
  const spotName=k=>k==='bench'?'bench':k==='vending'?'vending':k==='ashtray'?'ashtray':'rail';
  // ── 할 일
@@ -271,7 +272,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   send(spotName(P?.spot.kind),'fail',{reason});render();}
  function buy(){
   S.pending=null;const c=S.can;c.held=false;c.drop={t:0};can.visible=false;
-  send('vending','use',{item:'can-coffee'});toast('덜컹! 캔커피 나왔어요 ☕');render();
+  send('vending','use',{item:'can-coffee'});toast('덜컹! 캔커피 나왔어요','s-can-coffee');render();
  }
  // 난간 기대기(닿을 거리): 걸어가지 않고 가장 가까운 빈 난간 지점에서 바로 시작한다(몸은 자세가 들어가는 동안 그 지점으로 스르륵 붙는다)
  function leanHere(s){
@@ -346,15 +347,15 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   const marks=document.createElement('div');marks.className='sp-marks';marks.hidden=true;cssReady.then(()=>{marks.hidden=false;});mood.after(marks);
   const panel=document.createElement('section');panel.className='lg-card sp-panel';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','상황 고르기');app.appendChild(panel);
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const btn=(a,icon,label,cls='',extra='')=>`<button class="lg-btn sp-btn ${cls}" data-sp="${a}" aria-label="${esc(label)}"${extra}><span class="sp-i" aria-hidden="true">${icon}</span><span class="sp-t">${esc(label)}</span></button>`;
+  const btn=(a,ic,label,cls='',extra='')=>`<button class="lg-btn sp-btn ${cls}" data-sp="${a}" aria-label="${esc(label)}"${extra}><span class="sp-i" aria-hidden="true">${icon(ic,{size:'s'})}</span><span class="sp-t">${esc(label)}</span></button>`;
   let sig='';
   function renderDock(){
    const cur=scene?.current?SCENES[scene.current]:null;
    const s=JSON.stringify([S.can.held,cur?.id,S.pose]);if(s===sig)return;sig=s;
-   dock.innerHTML=scene?btn('scene',cur?cur.icon:'🕐',cur?cur.label:'상황 고르기','',' aria-haspopup="dialog"'):'';
+   dock.innerHTML=scene?btn('scene',cur?cur.icon:'s-scene',cur?cur.label:'상황 고르기','',' aria-haspopup="dialog"'):'';
    // 앉음·기댐: 일어나기는 머리 위가 아니라 이 손 단추 줄 맨 앞(종이색 보조 단추, E 키). 머리 위 표시는 얼굴을 가려서 뺐다(11-13)
-   const up=S.pose==='sit'?btn('stand','↩','일어나기','sec stand',' title="E"'):S.pose==='lean'?btn('stand','↩','난간에서 떨어지기','sec stand',' title="E"'):'';
-   hand.innerHTML=up+(S.can.held?btn('sip','☕','한 모금','',' title="C"')+btn('dropCan','🗑','캔 버리기','sec'):'');
+   const up=S.pose==='sit'?btn('stand','c-stand-up','일어나기','sec stand',' title="E"'):S.pose==='lean'?btn('stand','c-leave','난간에서 떨어지기','sec stand',' title="E"'):'';
+   hand.innerHTML=up+(S.can.held?btn('sip','s-can-coffee','한 모금','',' title="C"')+btn('dropCan','s-bin','캔 버리기','sec'):'');
   }
   // ── 대상 위 표시: 0.2초마다 목록·상태를 정하고(바뀔 때만 글을 다시 쓴다 — 누르는 사이 단추가 다시 그려져 클릭이 사라지지 않게), 매 프레임 화면 좌표로 옮긴다
   const LIFT={vending:2.05,bench:1.0,benchBusy:1.55,rail:1.2,ashtray:1.05};
@@ -376,8 +377,8 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
    if(mine)return null; // 내가 앉은 벤치·기댄 난간: 일어나기는 아래 손 단추 줄에 있다(머리 위 표시는 얼굴을 가림)
    const busy=t.kind==='vending'&&buying(),going=S.pending&&S.pending.spot.kind===t.kind&&(S.pending.spot.index??0)===t.index;
    const near=t.d<=SPOT_RANGE[t.kind];
-   const L={vending:['🥫','캔커피 뽑기'],bench:['🪑','걸터앉기'],rail:['🧍','난간에 기대기'],ashtray:['🚏','재떨이']}[t.kind];
-   if(busy)return {st:'act',icon:'🥫',label:'뽑는 중…',off:true};
+   const L={vending:['s-vending','캔커피 뽑기'],bench:['c-sit','걸터앉기'],rail:['s-lean-rail','난간에 기대기'],ashtray:['s-ashtray','재떨이']}[t.kind]; // [아이콘 이름, 글]
+   if(busy)return {st:'act',icon:'s-vending',label:'뽑는 중…',off:true};
    if(going)return {st:'act',icon:L[0],label:'가는 중…',off:true};
    if(t.kind==='ashtray'&&near)return null; // 재떨이 앞에서는 흡연 단추(꽁초 버리기)가 할 일
    if(near)return {st:'act',icon:L[0],label:L[1]};
@@ -391,8 +392,8 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
     if(!o){const el=document.createElement('button');el.type='button';el.dataset.sp='go';marks.appendChild(el);o={el,sig:''};els.set(t.key,o);}
     o.t=t;const sg=JSON.stringify(m);if(sg===o.sig)continue;o.sig=sg;
     const {el}=o;el.className=`sp-mark ${m.st}`;el.dataset.k=t.kind+':'+t.index;el.disabled=!!m.off;
-    el.setAttribute('aria-label',m.label);el.title=m.st==='act'&&!m.off&&m.icon!=='↩'?m.label+(primary()&&t.d<=SPOT_RANGE[t.kind]?' (E)':''):m.label;
-    el.innerHTML=`<span class="sp-i" aria-hidden="true">${m.icon}</span>`+(m.st==='act'?`<span class="sp-t">${esc(m.label)}</span>`:'');
+    el.setAttribute('aria-label',m.label);el.title=m.st==='act'&&!m.off&&m.icon!=='c-stand-up'?m.label+(primary()&&t.d<=SPOT_RANGE[t.kind]?' (E)':''):m.label;
+    el.innerHTML=`<span class="sp-i" aria-hidden="true">${icon(m.icon,{size:'m'})}</span>`+(m.st==='act'?`<span class="sp-t">${esc(m.label)}</span>`:'');
     o.w=0; // 크기는 다음 배치 때 잰다
    }
    for(const [k,o] of els)if(!seen.has(k)){o.el.remove();els.delete(k);}
@@ -413,9 +414,9 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   function renderPanel(){
    const cur=scene?.current;
    panel.innerHTML=`<h3>어떤 한 대 피울까요? <button class="lg-btn sp-x" data-sp="close" aria-label="닫기">✕</button></h3>
-    <div class="sp-scenes">${scene.list.map(s=>`<button class="lg-btn ${s.id===cur?'on':''}" data-scene="${s.id}"><span class="sp-i" aria-hidden="true">${s.icon}</span><b>${esc(s.label)}</b><small>${esc(s.sub)}</small></button>`).join('')}</div>
+    <div class="sp-scenes">${scene.list.map(s=>`<button class="lg-btn ${s.id===cur?'on':''}" data-scene="${s.id}"><span class="sp-i" aria-hidden="true">${icon(s.icon,{size:'m'})}</span><b>${esc(s.label)}</b><small>${esc(s.sub)}</small></button>`).join('')}</div>
     <button class="lg-btn sp-keep" data-sp="close">지금 시간 그대로 둘게요</button>
-    <button class="lg-btn sp-fb" data-sp="feedback">💌 의견 보내기</button>`;
+    <button class="lg-btn sp-fb" data-sp="feedback">${iconText('c-feedback','의견 보내기')}</button>`;
   }
   const openPanel=()=>{if(!scene)return;renderPanel();panel.hidden=false;};
   const closePanel=()=>{panel.hidden=true;};
@@ -440,7 +441,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
    if(!modal||modal.hidden||!scene)return;const sheet=modal.querySelector('.lg-sheet');if(!sheet||!sheet.querySelector('[data-t]'))return;
    let box=sheet.querySelector('.sp-set');
    if(!box){box=document.createElement('div');box.className='sp-set';const h=[...sheet.querySelectorAll('h2')].find(x=>x.textContent==='소리');sheet.insertBefore(box,h??null);}
-   const html=`<h2>상황</h2><div class="opts">${scene.list.map(s=>`<button class="lg-btn ${s.id===scene.current?'on':''}" data-scene="${s.id}">${s.icon} ${esc(s.label)}</button>`).join('')}</div>`;
+   const html=`<h2>상황</h2><div class="opts">${scene.list.map(s=>`<button class="lg-btn ${s.id===scene.current?'on':''}" data-scene="${s.id}">${iconText(s.icon,s.label)}</button>`).join('')}</div>`;
    if(box.innerHTML!==html)box.innerHTML=html;
    sheet.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===globalThis.lounge?.timeState?.mode));
   }

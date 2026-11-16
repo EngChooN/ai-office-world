@@ -6,6 +6,7 @@ import {seoulClock} from './daytime.js';
 export const SEASONS=['spring','summer','autumn','winter'];
 export const SEASON_LABEL={spring:'봄',summer:'여름',autumn:'가을',winter:'겨울'};
 export const SEASON_ICON={spring:'🌸',summer:'🌿',autumn:'🍁',winter:'⛄'};
+export const SEASON_IC=Object.freeze({spring:'c-season-spring',summer:'c-season-summer',autumn:'c-season-autumn',winter:'c-season-winter'}); // 화면 아이콘(아이콘-규칙-v1 §7 사)
 // [시작 월일(월*100+일), 계절]. 해가 바뀌어도 월일 비교만으로 된다.
 export const SEASON_BOUNDS=[[325,'spring'],[501,'summer'],[1015,'autumn'],[1201,'winter']];
 export function seasonForMonthDay(month,day){

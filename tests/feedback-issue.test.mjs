@@ -100,12 +100,12 @@ test('연결: 공용 모듈 한 벌, 등산 설정 시트·흡연장 설정 창�
  assert.match(fb,/addEventListener\('keydown',onKey,true\)/,'열린 동안 키를 잡기 단계에서 막는다');
  const nb=read('src/hud-notebook.js');
  assert.match(nb,/installFeedback\(\{exp:'hiking',openEvent:'hiking:feedback-open'/);
- assert.match(nb,/💌<\/em><span>의견 보내기/);
+ assert.match(nb,/icon\('c-feedback',\{size:'m'\}\)\}<\/em><span>의견 보내기/);
  assert.match(nb,/dispatchEvent\(new CustomEvent\('hiking:feedback-open'\)\)/,'등산은 이벤트로 연다');
  const hud=read('src/lounge/hud.js'),sp=read('src/lounge/spots.js');
  assert.match(hud,/installFeedback\(\{exp:'smoking',openEvent:'lounge:feedback-open'/);
- assert.match(hud,/data-a="feedback">💌 의견 보내기/);
- assert.match(sp,/data-sp="feedback">💌 의견 보내기/);
+ assert.match(hud,/data-a="feedback">\$\{iconText\('c-feedback','의견 보내기'\)\}/);
+ assert.match(sp,/data-sp="feedback">\$\{iconText\('c-feedback','의견 보내기'\)\}/);
  assert.match(read('src/input.js'),/read:\(\)=>feedbackOpen\(\)\?\{forward:0,side:0/,'등산 조이스틱·키 이동 멈춤');
  assert.match(read('src/lounge/input.js'),/if\(feedbackOpen\(\)\)return \{forward:0,side:0/,'흡연장 조이스틱·키 이동 멈춤');
  // CSS는 한 벌(사본 금지), 새 색 없이 토큰만
