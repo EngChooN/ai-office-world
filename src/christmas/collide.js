@@ -2,11 +2,12 @@
 // three를 쓰지 않는다(시험에서 바로 부른다). 상자 돌림은 three rotation.y와 같다: 세계 = (lx·cos+lz·sin, −lx·sin+lz·cos).
 import {BOUNDS} from './layout.js';
 export const BODY_R=.22;
-// 언덕(썰매) 쪽 통로: 울타리를 열어 둔 북쪽(village.js 울타리 z<-24·|x|<26 빼기와 같은 곳)
-export const inNorthGap=(x,z)=>z<-24&&Math.abs(x)<25&&z>=BOUNDS.north+1;
+// 썰매 산 쪽 통로: 울타리를 열어 둔 북쪽(village.js 울타리 z<-23 빼기와 같은 곳). 11-17 2차: 산이 커져 |x|<36·z ≥ −115
+export const inNorthGap=(x,z)=>z<-24&&Math.abs(x)<BOUNDS.gapX&&z>=BOUNDS.north+1;
 export function collideXmas(x,z,cols=[],R=BODY_R){
- if(z<BOUNDS.north+1&&Math.abs(x)<25)z=BOUNDS.north+1; // 언덕 통로 끝
- const r=Math.hypot(x,z),lim=BOUNDS.r-.6;
+ const lim=BOUNDS.r-.6;
+ if(z<-24){if(z<BOUNDS.north+1)z=BOUNDS.north+1;if(Math.abs(x)>=BOUNDS.gapX&&Math.hypot(x,z)>lim)x=Math.sign(x)*(BOUNDS.gapX-.01);} // 산 통로 끝·옆
+ const r=Math.hypot(x,z);
  if(r>lim&&!inNorthGap(x,z)){const k=lim/r;x*=k;z*=k;}
  for(const c of cols){
   if(c.r!==undefined){const dx=x-c.x,dz=z-c.z,d=Math.hypot(dx,dz),m=c.r+R;if(d<m&&d>1e-6){x=c.x+dx/d*m;z=c.z+dz/d*m;}continue;}

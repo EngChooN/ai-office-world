@@ -1,7 +1,8 @@
 // 온라인 크리스마스 「눈마을 광장」 배치(월드아트, 2026-11-16). three를 쓰지 않는 순수 자료·계산이라 서버·테스트도 같이 쓴다.
 // 근거: 체험설계 v1 §2-1(월드디자인 추천 배치) — 가운데 트리, 서쪽 모닥불·눈싸움 마당, 동쪽 우체통·눈사람 마당, 북쪽 썰매 언덕, 남쪽 입구.
 // 좌표: 1m = 1, x 오른쪽(동), -Z 북쪽(처음 카메라가 보는 쪽 = 트리), 광장 바닥 y=0. heading 0 = -Z를 봄(흡연장 아바타와 같은 규칙).
-import {COURSE_POINTS,COURSE_W,START_H,mountainH,courseDist} from './sled-course.js';
+import {COURSE_W,START_H,mountainH,courseDist,makeCourse,dailySeed,skeletonAt,SKELETON_END,BENCH,MOUNTAIN_BOX} from './sled-course.js';
+import {GONDOLA} from './gondola.js';
 // 크기는 동동이 키 1.0m 기준이다. 숫자는 월드아트가 화면으로 맞춘 값이고, 놀이 판정 값(반경·제한)은 월드개발이 정한다.
 
 // 광장 돌바닥 반지름 17m: 트리 둘레 길·전시 줄·모닥불(서)·우체통(동)이 모두 돌바닥 안에 든다.
@@ -67,17 +68,20 @@ export const HOUSES=Object.freeze([
  [-33,-15,3,1.05],[33,-15,1,1.05],[-35,19,2,1],[35,20,0,1],
 ]);
 export const houseHeading=(x,z)=>Math.atan2(-x,-z);
-// 썰매 산(북쪽, 11-17 긴 코스): 출발대 높이 18m → 지그재그 5줄(가운데 선 약 207m) → 멈춤 구역(지금 자리 그대로). 코스 자료는 sled-course.js(월드개발).
+// 썰매 산(북쪽, 11-17 2차 긴 코스): 출발대 높이 26m → 단 7줄 지그재그(뼈대 456m) → 멈춤 구역(마지막 줄 동쪽 끝). 코스(길·블록)는 시드마다 다르고 땅은 늘 같다(sled-course.js).
 // HILL = 산이 차지하는 대략 타원(숲·울타리 빼기용)
-export const HILL=Object.freeze({x:0,z:-38,top:START_H,rx:27,rz:21});
+export const HILL=Object.freeze({x:0,z:-72,top:START_H,rx:44,rz:46});
+const RUN0=makeCourse(dailySeed());
+const stopAt=skeletonAt(SKELETON_END-1.5);
 export const SLED_RUN=Object.freeze({
- // 길 가운데 선(x, z) 2m 간격(출발선 → 멈춤 구역). 높이는 heightAt이 정한다.
- path:Object.freeze(COURSE_POINTS.filter((p,i)=>p.s>=0&&(i%4===0)).map(p=>Object.freeze([+p.x.toFixed(3),+p.z.toFixed(3)]))),
+ // 오늘의 코스 가운데 선(x, z) 2m 간격(출발선 → 멈춤 구역) — 옛 이름(시험·미리보기). 실제 길은 그때그때 코스(sled-play)
+ path:Object.freeze(RUN0.points.filter((p,i)=>p.s>=0&&(i%4===0)).map(p=>Object.freeze([+p.x.toFixed(3),+p.z.toFixed(3)]))),
  width:COURSE_W,
- // 출발대: 출발선 뒤 평평한 4m(가로 = 진행 방향 x, 세로 = 길 폭). 4줄
- deck:Object.freeze({x:COURSE_POINTS[0].x+2,z:COURSE_POINTS[0].z,w:3.6,d:4.4,lanes:4,heading:-Math.PI/2}),stop:Object.freeze({x:8.6,z:-20.4,r:3}),
+ // 출발대: 출발선 뒤 평평한 4m(가로 = 진행 방향 x, 세로 = 길 폭). 4줄. 시드와 상관없이 같은 자리
+ deck:Object.freeze({x:skeletonAt(-2).x,z:skeletonAt(-2).z,w:3.6,d:4.4,lanes:4,heading:-Math.PI/2}),stop:Object.freeze({x:+stopAt.x.toFixed(2),z:+stopAt.z.toFixed(2),r:3}),
  stairs:Object.freeze([]),
 });
+export {GONDOLA};
 // 가로등: 광장 둘레 8개 + 마당 입구 4개
 export const LAMPS=Object.freeze([...Array.from({length:8},(_,i)=>{const a=(i+.5)*Math.PI/4;return [Math.sin(a)*17.7,Math.cos(a)*17.7];}),[-19.5,-6.8],[-19.5,7.8],[19.5,-6.2],[19.5,8.8]]);
 
@@ -96,13 +100,15 @@ export function heightAt(x,z){
  let flat=smooth(PLAZA.radius+1,PLAZA.radius+5,r);
  for(const y of [SNOWMAN_YARD,SNOWBALL_YARD]){const dx=Math.abs(x-y.x)-y.w/2,dz=Math.abs(z-y.z)-y.d/2;flat*=smooth(0,2.5,Math.max(dx,dz));}
  {const s=SLED_RUN.stop;flat*=smooth(s.r,s.r+2,Math.hypot(x-s.x,z-s.z));}
- if(flat>0)flat*=smooth(COURSE_W/2+.7,COURSE_W/2+2.2,courseDist(x,z));
+ {const g=GONDOLA.base;flat*=smooth(3.5,5.5,Math.hypot(x-g.x,z-g.z));} // 마을 케이블카 승강장 바닥
+ if(flat>0)flat*=smooth(BENCH,BENCH+1.5,courseDist(x,z));
  return h+Math.max(0,drift+.12)*flat;
 }
-// 광장 밖 경계(보이지 않는 벽 대신 울타리·눈 더미): 반지름 PLAZA.fence 원. 언덕 쪽은 언덕 끝까지 열려 있다.
-export const BOUNDS=Object.freeze({r:PLAZA.fence,north:-58});
+// 광장 밖 경계(보이지 않는 벽 대신 울타리·눈 더미): 반지름 PLAZA.fence 원. 북쪽 썰매 산 쪽(z < −24, |x| < gapX)은 산 끝(north)까지 열려 있다.
+export const BOUNDS=Object.freeze({r:PLAZA.fence,north:-116,gapX:36});
 // 가까이 가면 할 일 표시가 뜨는 대상(체험설계 §1-3). r = 표시 반경 추천값(월드개발 조정).
 export const TARGETS=Object.freeze({
  tree:{x:TREE.x,z:TREE.z,r:5.2},campfire:{x:CAMPFIRE.x,z:CAMPFIRE.z,r:3.6},mailbox:{x:MAILBOX.x,z:MAILBOX.z,r:2.2},
  snowmanYard:{x:SNOWMAN_YARD.x,z:SNOWMAN_YARD.z,r:7},snowballYard:{x:SNOWBALL_YARD.x,z:SNOWBALL_YARD.z,r:7.5},sledDeck:{x:SLED_RUN.deck.x,z:SLED_RUN.deck.z,r:3},
+ gondolaBase:{x:GONDOLA.base.x,z:GONDOLA.base.z,r:GONDOLA.near},gondolaTop:{x:GONDOLA.top.x,z:GONDOLA.top.z,r:GONDOLA.near},
 });

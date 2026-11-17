@@ -14,7 +14,7 @@ import {sanitizeTreeMsg} from './tree-state.js';
 import {applyXmasAct} from './poses.js';
 
 // 놀이 메시지(서버 → 화면). room-play.js 규격
-export const PLAY_TYPES=Object.freeze(['gift','gift:ok','gift:no','gift:post','board','snow','snow:ball','snow:gone','snow:done','snow:no','sb','sb:no','sled:ask','sled:ok','sled:no','seat:no','sled:busy','sr','sr:board','sr:no','sbm','sbm:no']);
+export const PLAY_TYPES=Object.freeze(['gift','gift:ok','gift:no','gift:post','board','snow','snow:ball','snow:gone','snow:done','snow:no','sb','sb:no','sled:ask','sled:ok','sled:no','seat:no','sled:busy','sr','sr:board','sr:no','sc','sc:no','sbm','sbm:no']);
 
 export const DEFAULT_ROOM='눈마을-1';
 export const EXPERIENCE='christmas';
@@ -165,7 +165,9 @@ export function createXmasMulti({ctx,search=globalThis.location?.search??'',envU
   const p=ctx.player,t=now();
   const moved=lastSent?Math.hypot(p.x-lastSent.x,p.z-lastSent.z):Infinity,turned=lastSent?Math.abs(Math.atan2(Math.sin(p.heading-lastSent.h),Math.cos(p.heading-lastSent.h))):Infinity;
   if(!force&&moved<.01&&turned<.02&&t-lastSentAt<XMAS_MULTI.idleSend)return;
-  const elapsed=Math.max(.05,t-lastSentAt),jump=jumpNext||(lastSent&&moved>XMAS_MULTI.jumpDist+3*elapsed);
+  // 순간이동 표시(받는 쪽이 보간을 끊고 바로 옮김)는 걷기·썰매·케이블카로 갈 수 없는 거리만. 케이블카(act.gd)는 건너뛰기 때 약 70m/s, 썰매는 12m/s까지(11-17 2차)
+  const a=myAct?.()??{},vmax=a.gd?90:a.sl>=5?14:3;
+  const elapsed=Math.max(.05,t-lastSentAt),jump=jumpNext||(lastSent&&moved>XMAS_MULTI.jumpDist+vmax*elapsed);
   let f=0;if(p.running)f|=FLAG.run;if(jump)f|=FLAG.jump;
   jumpNext=false;seq=(seq+1)&0xffff;
   const r2=v=>Math.round(v*100)/100;
@@ -209,18 +211,20 @@ export function createXmasMulti({ctx,search=globalThis.location?.search??'',envU
    if(f)s={...s,x:f.x+Math.sin(f.heading)*.54,z:f.z+Math.cos(f.heading)*.54,heading:f.heading,moving:false};}
   // 몸이 아직 없거나(읽는 중) 먼 사람이면 가벼운 동동이
   const useFull=show&&r.full&&!!r.avatar,useLite=show&&!useFull;
+  // 케이블카(act.gd): 높이는 케이블 선에서(ctx.gondolaY), 아니면 땅
+  const gy=show?(r.act?.gd&&ctx.gondolaY?ctx.gondolaY(s.x,s.z):ctx.heightAt(s.x,s.z)):0;
   r.shown=show;
   if(r.avatar)r.avatar.root.visible=useFull;
-  if(useLite){const l=liteOf(r);if(l){l.root.visible=true;l.root.position.set(s.x,ctx.heightAt(s.x,s.z)+(r.act?.sl>=1?.18:r.act?.st?.12:0),s.z);l.root.rotation.y=s.heading;l.update?.(dt,s.moving&&!(r.act?.sl>=1));}}
+  if(useLite){const l=liteOf(r);if(l){l.root.visible=true;l.root.position.set(s.x,gy+(r.act?.sl>=1?.18:r.act?.st?.12:0),s.z);l.root.rotation.y=s.heading;l.update?.(dt,s.moving&&!(r.act?.sl>=1));}}
   else if(r.lite)r.lite.root.visible=false;
   if(!useFull)return;
   const a=r.avatar;
   // 땅 높이는 더한다(앉기 자세가 root y를 바닥 0 기준으로 올려 둔다, poses.js)
-  if(r.snap){a.place(s.x,s.z,s.heading);r.snap=false;a.update(0,{moved:0});a.root.position.y+=ctx.heightAt(s.x,s.z);return;}
-  const moved=Math.hypot(s.x-a.x,s.z-a.z),seated=!!(r.act?.st||r.act?.sl>=1);
+  if(r.snap){a.place(s.x,s.z,s.heading);r.snap=false;a.update(0,{moved:0});a.root.position.y+=gy;return;}
+  const moved=Math.hypot(s.x-a.x,s.z-a.z),seated=!!(r.act?.st||r.act?.sl>=1||r.act?.gd);
   a.x=s.x;a.z=s.z;if(moved>1e-3||!s.moving||seated)a.heading=s.heading;
   // 썰매·자리에 앉아 움직이면 걷는 다리 동작 없이 미끄러진다
-  a.update(dt,{moved:seated?0:moved,running:!!(r.flags&FLAG.run)});a.root.position.y+=ctx.heightAt(s.x,s.z);
+  a.update(dt,{moved:seated?0:moved,running:!!(r.flags&FLAG.run)});a.root.position.y+=gy;
  }
 
  return {

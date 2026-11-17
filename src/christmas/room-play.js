@@ -7,7 +7,7 @@
 //                                               → {t:'snow:ball',b:[줄…]}(바뀐 눈덩이; 밀기는 10Hz 묶음), {t:'snow:gone',b,why}, {t:'snow:done',d:전시,by:id}, 못 하면 {t:'snow:no',reason}
 //  sb:throw {x,z,dx,dz,d}                      → 방 모두 {t:'sb',id,x,z,tx,tz,ms,hit,soft?,wall?}, 못 하면 보낸 사람 {t:'sb:no',reason}
 //  sled:ask|sled:ok|sled:no {to}               → 받는 사람에게 {t,id}(같은 방 안에서만 중계)
-//  sr:* 눈썰매 레이스·오늘의 기록판(sled-race.js) · sbm:* 눈싸움 한 판(fight-match.js)
+//  sr:* 눈썰매 레이스·오늘의 기록판·sc:new 새 코스(sled-race.js) · sbm:* 눈싸움 한 판(fight-match.js)
 //  act {st 모닥불 자리 1~8, sl 썰매 줄 1~4 …}   → 다른 사람이 이미 쓰는 자리·줄이면 그 칸을 빼고 보낸 사람에게 {t:'seat:no'}·{t:'sled:busy'}
 // 들어올 때: {t:'snow',…} 전체 마당·전시, {t:'board',c}, 끊긴 동안 온 선물(재접속 유예 안).
 // member = {id, name(숨김이면 익명 이름), state:{x,y}|null(서버 위치 규격: y가 z), act}
@@ -18,7 +18,7 @@ import {createFightMatch} from './fight-match.js';
 import {createSledRace} from './sled-race.js';
 
 export const XMAS_PLAY_MESSAGES=Object.freeze(['gift:send','snow:make','snow:push','snow:stack','snow:deco','snow:finish','sb:throw','sled:ask','sled:ok','sled:no',
- 'sr:open','sr:join','sr:go','sr:quit','sr:fin','sr:rec','sbm:join','sbm:leave','sbm:go']);
+ 'sr:open','sr:join','sr:go','sr:quit','sr:fin','sr:rec','sc:new','sbm:join','sbm:leave','sbm:go']);
 export const SEAT_COUNT=8,SLED_LANES=4;
 const posOf=m=>m?.state?{x:m.state.x,z:m.state.y}:null;
 const num=v=>typeof v==='number'&&Number.isFinite(v);
@@ -107,7 +107,7 @@ export function createRoomPlay({cleanText=t=>t,rules=GIFT_RULES}={}){
     case 'gift:send':return gift(c,m,t,ctx);
     case 'snow:make':case 'snow:push':case 'snow:stack':case 'snow:deco':case 'snow:finish':return snowMsg(c,m,t,ctx);
     case 'sb:throw':return throwBall(c,m,t,ctx);
-    case 'sr:open':case 'sr:join':case 'sr:go':case 'sr:quit':case 'sr:fin':case 'sr:rec':return race.handle(c,m,t,ctx);
+    case 'sr:open':case 'sr:join':case 'sr:go':case 'sr:quit':case 'sr:fin':case 'sr:rec':case 'sc:new':return race.handle(c,m,t,ctx);
     case 'sbm:join':case 'sbm:leave':case 'sbm:go':return match.handle(c,m,t,ctx);
     case 'sled:ask':case 'sled:ok':case 'sled:no':{const to=typeof m.to==='string'?ctx.members.get(m.to):null;if(to&&to.id!==c.id)ctx.send(to.id,{t:m.t,id:c.id});return;}
    }

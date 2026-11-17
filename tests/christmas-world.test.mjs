@@ -164,7 +164,7 @@ test('상태 칩 문구(체험설계 §3-4)',()=>{
 test('충돌: 울타리 안·언덕 통로·트리·돌린 상자',()=>{
  let p=collideXmas(50,0);assert.ok(Math.hypot(p.x,p.z)<=L.BOUNDS.r-.6+1e-9);
  assert.ok(inNorthGap(0,-40));p=collideXmas(0,-45);assert.equal(p.z,-45,'언덕 쪽은 울타리 밖으로 나감');
- p=collideXmas(0,-70);assert.equal(p.z,L.BOUNDS.north+1);
+ p=collideXmas(0,-125);assert.equal(p.z,L.BOUNDS.north+1);
  p=collideXmas(.5,.5,[{x:0,z:0,r:3.3}]);assert.ok(Math.hypot(p.x,p.z)>=3.3+.22-1e-9,'트리 밖으로');
  // 90° 돌린 4×1 상자: 세계에서는 z 방향으로 긴 벽
  const box={x:10,z:0,w:4,d:1,heading:Math.PI/2};

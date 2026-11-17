@@ -64,6 +64,11 @@ export const ICONS = {
   'x-target': { f: '<circle cx="12" cy="12" r="5" style="fill:#c23a32"/>', s: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>', color: true },
   'x-race': { f: '<path d="M6 3.5h12v7H6z"/>', s: '<path d="M6 21V3.5h12v7H6"/><path d="M9 3.5v7M12 3.5v7M15 3.5v7M6 7h12" style="stroke-width:1.2"/>' },
   'x-trophy': { f: `<path d="M7 3.5h10v5a5 5 0 0 1-10 0z" ${GOLD}/>`, s: '<path d="M7 3.5h10v5a5 5 0 0 1-10 0zM7 5.5H4.5a3 3 0 0 0 3 4.2M17 5.5h2.5a3 3 0 0 1-3 4.2M12 13.5v4M8 20.5h8M9.5 17.5h5v3h-5z"/>', color: true },
+  // 11-17 2차: 케이블카·새 코스
+  'x-gondola': { f: '<rect x="6" y="9" width="12" height="11" rx="2.2"/>', s: '<path d="M2.5 4.5 21.5 2M12 3.3V9"/><rect x="6" y="9" width="12" height="11" rx="2.2"/><path d="M6 14h12M9.5 9v5M14.5 9v5"/>' },
+  'x-downhill': { f: '<path d="M3 9v11.5h18z"/>', s: '<path d="M3 9v11.5h18zM11 3.5l7 7M18 6v4.5h-4.5"/>' },
+  'x-skip': { f: '<path d="M4 6l7.5 6L4 18zM11.5 6l7.5 6-7.5 6z"/>', s: '<path d="M4 6l7.5 6L4 18zM11.5 6l7.5 6-7.5 6zM20.5 5.5v13"/>' },
+  'x-new-course': { f: `<rect x="4" y="4" width="16" height="16" rx="3.5" ${WHITE}/>`, s: '<rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.1"/><circle cx="15.5" cy="8.5" r="1.1"/><circle cx="12" cy="12" r="1.1"/><circle cx="8.5" cy="15.5" r="1.1"/><circle cx="15.5" cy="15.5" r="1.1"/>', color: true },
   // 눈사람 부품
   'x-part-eyes': { f: '<circle cx="8" cy="12" r="3" style="fill:#2a2420"/><circle cx="16" cy="12" r="3" style="fill:#2a2420"/>', s: '<circle cx="8" cy="12" r="3"/><circle cx="16" cy="12" r="3"/>', color: true },
   'x-part-nose': { f: '<path d="M4 9.5c4-1 9.5 0 16.5 2.5-7 2.5-12.5 3.5-16.5 2.5z" style="fill:#e07b2e"/>', s: '<path d="M4 9.5c4-1 9.5 0 16.5 2.5-7 2.5-12.5 3.5-16.5 2.5zM8 9.5l.6 1.8M12 10.2l.6 1.6M7.5 14.4l1-1.3"/>', color: true },

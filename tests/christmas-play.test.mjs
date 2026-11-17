@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import {createGiftLimiter,parseGiftSend,cleanCardText,sanitizeGift,GIFT_RULES,GIFT_ITEMS,GIFT_INFO,giftDeniedText} from '../src/christmas/gift-state.js';
 import {createSnowmanState,ballStage,coopMul,SNOWMAN_RULES,inYard,sanitizeBallRow,namesText} from '../src/christmas/snowman-state.js';
 import {resolveThrow,autoAim,createAmmo,createHarassGuard,inFightYard,inWall,FIGHT} from '../src/christmas/snowfight.js';
-import {createRide,RUN_LENGTH,SLED_RULES,runAt} from '../src/christmas/sled.js';
+import {createRide,SLED_RULES,runAt,defaultCourse} from '../src/christmas/sled.js';
 import {createRoomPlay,XMAS_PLAY_MESSAGES} from '../src/christmas/room-play.js';
 import {nearestSeat,nearFire} from '../src/christmas/campfire.js';
 import {createTreeState} from '../src/christmas/tree-state.js';
@@ -174,15 +174,14 @@ test('눈싸움 판정(서버): 마당 밖·0.8초 안 연타는 거절, 맞으�
 });
 
 test('썰매: 출발대에서 멈춤 구역까지 저절로 내려가고 최고 속도는 서버 썰매 한도(14m/s) 안',()=>{
- for(const lane of [1,2,3,4]){const r=createRide({lane,start:-1.5});let t=0,max=0,ev=[];while(!r.done&&t<90){ev.push(...r.step(1/30,{}).map(e=>e.type));t+=1/30;max=Math.max(max,r.v);}
-  assert.ok(r.done,`줄 ${lane} 도착`);assert.ok(t>20&&t<60,`${t}초`);assert.ok(max<=SLED_RULES.boostMax+1e-9&&max<14);assert.ok(ev.includes('end')&&ev.includes('finish'));
+ for(const lane of [1,2,3,4]){const r=createRide({lane,start:-1.5});let t=0,max=0,ev=[];while(!r.done&&t<150){ev.push(...r.step(1/30,{}).map(e=>e.type));t+=1/30;max=Math.max(max,r.v);}
+  assert.ok(r.done,`줄 ${lane} 도착`);assert.ok(t>45&&t<110,`${t}초`);assert.ok(max<=SLED_RULES.boostMax+1e-9&&max<14);assert.ok(ev.includes('end')&&ev.includes('finish'));
   const p=r.pose();assert.ok(Math.hypot(p.x-L.SLED_RUN.stop.x,p.z-L.SLED_RUN.stop.z)<L.SLED_RUN.stop.r+SLED_RULES.stopLen+1,'멈춤 구역 근처');}
  // 한쪽으로 계속 꺾으면 눈둑(bank)에 닿지만 길 밖으로 안 나가고 끝까지 간다
- const r=createRide({lane:2});let ev=[],t=0;while(!r.done&&t<120){ev.push(...r.step(1/30,{steer:1}).map(e=>e.type));t+=1/30;}
- assert.ok(ev.includes('bank'));assert.ok(Math.abs(r.off)<=SLED_RULES.edge+1e-9);assert.ok(r.done);
- assert.ok(RUN_LENGTH>=180);const a=runAt(0);assert.ok(Math.hypot(a.x-L.SLED_RUN.path[0][0],a.z-L.SLED_RUN.path[0][1])<1e-6);
+ const r=createRide({lane:2});let ev=[],t=0;while(!r.done&&t<900){ev.push(...r.step(1/30,{steer:1}).map(e=>e.type));t+=1/30;}
+ assert.ok(ev.includes('bank'));assert.ok(Math.abs(r.off)<=r.course.widthAt(r.s)/2-SLED_RULES.edgeIn+1e-9);assert.ok(r.done);
+ const c=defaultCourse();assert.ok(c.finish>=400);const a=runAt(0);assert.ok(Math.hypot(a.x-L.SLED_RUN.path[0][0],a.z-L.SLED_RUN.path[0][1])<1e-6);
 });
-
 test('서버(rooms.mjs): 크리스마스 놀이 메시지가 열려 있고 판정 결과가 방에 퍼진다',()=>{
  assert.deepEqual(XMAS_PLAY_MESSAGES.filter(t=>!messageAllowed('christmas',t)),[]);
  for(const t of XMAS_PLAY_MESSAGES){assert.equal(messageAllowed('hiking',t),false);assert.equal(messageAllowed('smoking',t),false);}

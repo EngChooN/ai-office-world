@@ -99,7 +99,9 @@ export const ACT_SCHEMA=Object.freeze({
  //   + 11-17: sl 썰매가 0 없음·1~4 출발대 줄(4줄)·5 타는 중·6 뒷자리로 바뀜 · cr 웅크림(0·1, 눈벽 뒤면 안 맞음) · tm 눈싸움 한 판 팀(0 없음·1 빨강·2 초록, 장갑·목도리 색)
  christmas:Object.freeze({o:Object.freeze(['santa','sweater','elf']),hat:Object.freeze(['','santa','antlers','beanie','elf','none']),sc:Object.freeze([0,1]),d:Object.freeze([0,1]),
   st:Object.freeze([0,1,2,3,4,5,6,7,8]),wm:Object.freeze([0,1]),cc:Object.freeze([0,1]),sl:Object.freeze([0,1,2,3,4,5,6]),sp:'id',pu:Object.freeze([0,1]),pk:Object.freeze([0,1]),
-  cr:Object.freeze([0,1]),tm:Object.freeze([0,1,2])})
+  cr:Object.freeze([0,1]),tm:Object.freeze([0,1,2]),
+  //   + 11-17 2차: gd 케이블카(0 없음·1 올라가는 중·2 내려가는 중, 서버 위치 검사 한도가 넓어짐)
+  gd:Object.freeze([0,1,2])})
 });
 export function sanitizeAct(exp,a){
  const sc=ACT_SCHEMA[exp];if(!sc||!a||typeof a!=='object'||Array.isArray(a))return null;
@@ -257,7 +259,7 @@ export const EXPERIENCE_MESSAGES=Object.freeze({
  // 크리스마스(11-16): 위치 s + 트리 장식(달기·되돌리기·꼭대기 별). 트리 규칙은 src/christmas/tree-state.js(서버·화면 공용)
  //  + 놀이(11-16 2차): 선물·눈사람·눈싸움·썰매 같이 타기 요청. 판정은 src/christmas/room-play.js(XMAS_PLAY_MESSAGES와 같은 목록, 테스트가 맞춰 봄)
  christmas:Object.freeze([...COMMON_MESSAGES,'s','tree:put','tree:undo','tree:star','gift:send','snow:make','snow:push','snow:stack','snow:deco','snow:finish','sb:throw','sled:ask','sled:ok','sled:no',
-  'sr:open','sr:join','sr:go','sr:quit','sr:fin','sr:rec','sbm:join','sbm:leave','sbm:go'])
+  'sr:open','sr:join','sr:go','sr:quit','sr:fin','sr:rec','sc:new','sbm:join','sbm:leave','sbm:go'])
 });
 export const messageAllowed=(exp,type)=>EXPERIENCE_MESSAGES[exp]?.includes(type)??false;
 // 서버 목록(2026-11-08 서버 고르기, 11-13 대표 지시로 체험마다 3서버·정원 30). 줄 하나 = 서버 하나 = 서버 쪽 방 하나. 줄을 더하면 서버 고르기 창에 서버가 늘어난다.

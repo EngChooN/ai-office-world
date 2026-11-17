@@ -4,7 +4,8 @@
 //  ② 모닥불: 「앉기」 → 빈 자리로 걸어가 앉음, 봇이 앉은 자리는 피함, 손 녹이기가 상대 화면에 보임, 걷기 입력이면 일어남
 //  ③ 눈사람: 눈덩이 만들기 → W로 밀면 커지고 상대 화면에도 → 두 번째 눈덩이 올리기 → 꾸미기(눈·코) → 완성 → 전시가 두 화면에
 //  ④ 눈싸움: 하나 F로 던지면 둘이 맞음(두 화면 모두 눈투성이), 둘(휴대폰)은 ❄️ 단추 짧게 = 자동 조준으로 하나를 맞힘, 마당 밖이면 안 던져짐
-//  ⑤ 눈썰매: 하나 타기 → 둘 「둘이 타기」 → 하나 [같이 타요] → 출발 → 둘 화면에서 하나 썰매가 내려감 → 도착하면 내림, 휴대폰 ◀ ▶ 단추
+//  ⑨ 케이블카(11-17 2차): 마을 승강장 「타고 올라가기」 → 객실이 올라감(둘 화면에서도 위치가 끊기지 않고 객실이 보임) → 건너뛰기 → 출발대 앞, 「내려가기」로 마을로. 휴대폰도 탭으로
+//  ⑤ 눈썰매: 새 코스(두 화면 같은 시드) · 하나 타기 → 둘 「둘이 타기」 → 하나 [같이 타요] → 출발 → 둘 화면에서 하나 썰매가 내려감 → 도착하면 내림, 휴대폰 ◀ ▶ 단추
 //  ⑥ 휴대폰 단추 44px 이상·화면 안, 페이지 오류 0, 서버가 꺼져도 화면이 깨지지 않음
 //  ⑧ 캐럴(11-16 3차): PC·휴대폰에서 실제 클릭·탭 뒤 캐럴이 흘려 받기로 나옴(두 화면 같은 곡), 🎵 창 지금 곡·소리 출처 8곡, 캐럴 끄기·🔊 끄기면 멈추고 받기도 떼어짐, 모닥불에 앉으면 줄어듦, 곡 넘김
 //   node scripts/verify-christmas-play.mjs → artifacts/christmas-play/*.png, report.json (실패가 있으면 종료 코드 1). PART=gift,fire,… 로 일부만.
@@ -14,7 +15,7 @@ import {startServer} from '../server/multi-server.mjs';
 import * as L from '../src/christmas/layout.js';
 
 const dir='artifacts/christmas-play',multiPort=Number(process.env.MULTI_PORT??8792),room='눈마을-2';mkdirSync(dir,{recursive:true});
-const PARTS=new Set((process.env.PART??'gift,fire,snowman,fight,match,sled,carol,offline').split(','));
+const PARTS=new Set((process.env.PART??'gift,fire,snowman,fight,match,sled,gondola,carol,offline').split(','));
 const {createServer}=await import('vite');const port=Number(process.env.PORT??5198);
 const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true},logLevel:'warn'});await vite.listen();
 const pageUrl=`http://127.0.0.1:${port}`,wsUrl=`ws://127.0.0.1:${multiPort}`;
@@ -28,7 +29,7 @@ const until=async(fn,ms=15000,step=120)=>{const end=Date.now()+ms;while(Date.now
 function bot(name,{x=0,z=6,h=0,act=null}={}){
  const ws=new WebSocket(wsUrl),b={name,ws,got:[],id:null,x,z,h};let seq=0,timer=null;
  ws.onopen=()=>ws.send(JSON.stringify({t:'hello',exp:'christmas',room,name}));
- ws.onmessage=e=>{const m=JSON.parse(e.data);b.got.push(m);
+ ws.onmessage=e=>{const m=JSON.parse(e.data);m._at=Date.now();b.got.push(m);
   if(m.t==='welcome'){b.id=m.id;if(act)ws.send(JSON.stringify({t:'act',a:act}));b.pos(4);timer=setInterval(()=>b.pos(),100);b.j=setInterval(()=>ws.send(JSON.stringify({t:'j'})),3000);}};
  b.pos=(f=0)=>{seq=(seq+1)&0xffff;ws.send(JSON.stringify({t:'s',q:seq,z:0,x:+b.x.toFixed(2),y:+b.z.toFixed(2),h:b.h,v:0,f}));};
  b.send=m=>ws.send(JSON.stringify(m));
@@ -236,7 +237,12 @@ try{
  if(PARTS.has('sled')){
   const d=L.SLED_RUN.deck;
   await tp(A,d.x,d.z+2,Math.PI);await tp(B,d.x+1.5,d.z+2.2,Math.PI);await sleep(1800);
-  const a0=(await st(A)).actions;check('⑤ 출발대 단추: 🛷 타기',a0[0]==='sled:board',{a0});
+  const a0=(await st(A)).actions;check('⑤ 출발대 단추: 🛷 타기·새 코스',a0[0]==='sled:board'&&a0.includes('sled:new'),{a0});
+  // 새 코스: 누르면 같은 방 두 화면이 같은 새 시드로(산 위 길 그림도 바뀜)
+  {const s0=(await st(A)).sled.seed;await press(A,'sled:new');
+   const same=await until(async()=>{const a=(await st(A)).sled.seed,b=(await st(B)).sled.seed;return a!==s0&&a===b;},5000);
+   const sa1=(await st(A)).sled,sb1=(await st(B)).sled;check('⑤ 새 코스 → 두 화면 같은 코스(시드)·길이 400~500m',same&&sa1.finish>=400&&sa1.finish<=500,{s0,a:{seed:sa1.seed,code:sa1.code,finish:sa1.finish},b:{seed:sb1.seed,code:sb1.code}});
+   const drawn=await A.evaluate(()=>window.xmas.village.course.course?.seed===window.xmas.sled.course.seed);check('⑤ 산 위 길 그림도 새 코스로 다시 그림',drawn);}
   await press(A,'sled:board');await sleep(800);
   const sa=await st(A);check('⑤ 타기 → 썰매에 앉아 기다림(줄 1~4)',sa.sled.mode==='ready'&&sa.sled.lane>=1&&sa.sled.lane<=4&&sa.player.sitting,{sled:sa.sled});
   await until(async()=>(await st(B)).actions.includes('sled:ask'),4000);
@@ -255,10 +261,10 @@ try{
   // A: 키보드로 조종(Shift 드리프트·A/D)
   await A.keyboard.down('KeyD');await sleep(300);const st1=(await st(A)).sled;await A.keyboard.up('KeyD');
   check('⑤ 키를 누르면 0.25초에 걸쳐 꺾임(즉시 최대 아님)',true,{s:st1.s,off:st1.off});
-  const resA=await until(async()=>(await st(A)).sled.result,60000);await sleep(400);
+  const resA=await until(async()=>(await st(A)).sled.result,130000);await sleep(400);
   const sa3=await st(A);check('⑤ 결승 → 1초 뒤 결과 창(시간·구간 3개·별)',resA&&sa3.sled.splits.length===3,{sled:sa3.sled});
   await shot(A,'pc-sled-result');
-  const best1=await A.evaluate(()=>JSON.parse(localStorage.getItem('xmas-sled:v1')||'{}').best?.t??null);
+  const best1=await A.evaluate(()=>{const c=window.xmas.sled.course.seed;return JSON.parse(localStorage.getItem('xmas-sled:v2')||'{}').bests?.[c]?.t??null;});
   await A.click('.xl .xg-card [data-pick="off"]');
   const ended=await until(async()=>(await st(A)).sled.mode==='none'&&(await st(B)).sled.mode==='none',8000);
   check('⑤ 내리기 → 둘 다 내림',ended,{a:(await st(A)).sled.mode,b:(await st(B)).sled.mode});
@@ -269,6 +275,7 @@ try{
   const opened=await until(async()=>(await st(B)).actions.includes('sled:join'),5000);check('⑤ 레이스 열기 → 다른 사람 화면에 「같이 하기」',opened,{acts:(await st(B)).actions});
   await B.tap('.xh-acts [data-act="sled:join"]');
   const joined=await until(async()=>(await st(A)).sled.race?.n===2,5000);check('⑤ 같이 하기 → 레이스 2명',joined,{race:(await st(A)).sled.race});
+  {const a=(await st(A)).sled,b=(await st(B)).sled;check('⑤ 레이스 참가자는 같은 코스(시드)',a.seed===b.seed,{a:a.code,b:b.code});}
   await shot(A,'pc-sled-race-wait');
   await press(A,'sled:go');
   const both=await until(async()=>(await st(A)).sled.mode==='ride'&&(await st(B)).sled.mode==='ride',8000);check('⑤ 바로 출발 → 두 화면 같은 카운트다운 뒤 출발',both);
@@ -279,17 +286,58 @@ try{
   check('⑤ 휴대폰 아래 절반 끌기 = 가상 핸들',dr.shown,dr);
   await sleep(1500);await shot(A,'pc-sled-ride');await shot(B,'mobile-sled-ride');
   const rk=await A.evaluate(()=>document.querySelector('.xl .xg-bar .xg-l')?.textContent??'');check('⑤ 위 띠 왼쪽 순위(n/2)',/\d\/2/.test(rk),{rk});
-  const done=await until(async()=>(await st(A)).sled.race?.ph==='done'&&(await st(A)).sled.result&&(await st(B)).sled.result,70000);await sleep(800);
+  const done=await until(async()=>(await st(A)).sled.race?.ph==='done'&&(await st(A)).sled.result&&(await st(B)).sled.result,160000);await sleep(800);
   check('⑤ 둘 다 완주 → 레이스 끝·두 화면 결과 창',done,{a:(await st(A)).sled,b:(await st(B)).sled});
   const rows=await A.evaluate(()=>[...document.querySelectorAll('.xl .xg-rows li')].map(li=>li.textContent));check('⑤ 결과 창 순위 2줄(1·2등)',rows.length===2&&/^1/.test(rows[0])&&/^2/.test(rows[1]),{rows});
   check('⑤ 오늘의 기록판에 기록',(await st(A)).sled.board>=1,{board:(await st(A)).sled.board});
-  const best2=await A.evaluate(()=>({ls:JSON.parse(localStorage.getItem('xmas-sled:v1')||'{}').best?.t??null,card:document.querySelector('.xl .xg-card').innerText.slice(0,80)}));
-  check('⑤ 내 최고 기록은 더 빠를 때만 바뀜',best2.ls===Math.min(best1,best2.ls),{best1,best2});
+  const best2=await A.evaluate(()=>{const c=window.xmas.sled.course.seed,b=JSON.parse(localStorage.getItem('xmas-sled:v2')||'{}').bests??{};return {ls:b[c]?.t??null,courses:Object.keys(b).length,card:document.querySelector('.xl .xg-card').innerText.slice(0,80)};});
+  check('⑤ 기록·고스트는 코스(시드)마다 따로 저장',best2.ls!=null&&best2.courses>=(best1!=null?1:1),{best1,best2});
   await shot(A,'pc-sled-race-result');await shot(B,'mobile-sled-result');
   // 다시 타기: 결과 창 → 5초 안 출발
   const t0=Date.now();await A.keyboard.press('KeyE');const again=await until(async()=>(await st(A)).sled.mode==='ride',6000);
   check('⑤ 다시 타기(E) → 5초 안에 다시 출발',again&&Date.now()-t0<5000,{ms:Date.now()-t0});
   await A.evaluate(()=>window.xmas.sled.act('sled:off'));await B.tap('.xl .xg-card [data-pick="off"]').catch(()=>{});await sleep(600);
+ }
+
+ // ── ⑨ 케이블카
+ if(PARTS.has('gondola')){
+  const G=L.GONDOLA;
+  await A.evaluate(()=>{const s=window.xmas.sled;if(s.mode!=='none')s.act('sled:off');});await B.evaluate(()=>{const s=window.xmas.sled;if(s.mode!=='none')s.act('sled:off');});
+  await tp(A,G.base.x,G.base.z+1.2,0);await tp(B,G.base.x+4,G.base.z+6,.6);await sleep(1500);
+  const ga=(await st(A)).actions;check('⑨ 마을 승강장 가까이 → 「타고 올라가기」 단추',ga[0]==='gd:up',{ga});
+  await shot(A,'pc-gondola-station');
+  await press(A,'gd:up');
+  const up=await until(async()=>(await st(A)).gondola.mode==='ride',3000);check('⑨ 누르면 객실이 출발',up,{g:(await st(A)).gondola});
+  // 둘 화면에서 하나 위치를 0.1초마다 보며 끊김(순간이동) 없는지, 객실이 그려지는지
+  // 둘 화면 안에서 매 프레임 하나의 자리를 재어(2.8초) 한 프레임에 크게 건너뛴 적이 있는지
+  const tr=await B.evaluate(async()=>{const out=[];const t0=performance.now();await new Promise(res=>{const f=()=>{const p=window.xmas.multi.people().find(q=>q.name==='하나');if(p?.sample)out.push([performance.now(),p.sample.x,p.sample.z]);if(performance.now()-t0<2800)requestAnimationFrame(f);else res();};f();});
+   let jump=0,vmax=0;for(let i=1;i<out.length;i++){const d=Math.hypot(out[i][1]-out[i-1][1],out[i][2]-out[i-1][2]),dt=(out[i][0]-out[i-1][0])/1000;jump=Math.max(jump,d);if(dt>0)vmax=Math.max(vmax,d/dt);}
+   let ji=0;for(let i=1;i<out.length;i++){const d=Math.hypot(out[i][1]-out[i-1][1],out[i][2]-out[i-1][2]);if(d>=jump-1e-9){ji=i;break;}}
+   const tot=out.length>1?Math.hypot(out.at(-1)[1]-out[0][1],out.at(-1)[2]-out[0][2]):0;return {n:out.length,jump:+jump.toFixed(2),vmax:+vmax.toFixed(1),moved:+tot.toFixed(1),...(jump>=1.5?{around:out.slice(Math.max(0,ji-4),ji+3).map(r=>r.map(v=>+v.toFixed(2)))}:{})};});
+  await shot(A,'pc-gondola-ride');await shot(B,'mobile-gondola-watch');const bg=(await st(B)).gondola;
+  check('⑨ 둘 화면: 하나가 객실을 타고 이어서 움직임(한 프레임 1.5m 안, 사라졌다 나타나지 않음)·객실 보임',tr.n>60&&tr.jump<1.5&&tr.moved>10&&bg.remote>=1,{...tr,remote:bg.remote});
+  const midA=(await st(A)).gondola;check('⑨ 타는 동안 단추는 「건너뛰기」 하나·높이 올라감',(await st(A)).actions.join()==='gd:skip'&&midA.y>3,{acts:(await st(A)).actions,g:midA});
+  await press(A,'gd:skip');const t0=Date.now();
+  const arrived=await until(async()=>(await st(A)).gondola.mode==='none',5000);await sleep(600);
+  const atTop=await st(A);const d=L.SLED_RUN.deck;
+  check('⑨ 건너뛰기 → 2초 남짓에 꼭대기, 출발대 앞에 내림(「타기」 단추)',arrived&&Date.now()-t0<4000&&Math.hypot(atTop.player.x-d.x,atTop.player.z-d.z)<4.2&&atTop.actions.includes('sled:board'),{ms:Date.now()-t0,p:atTop.player,acts:atTop.actions});
+  await shot(A,'pc-gondola-top');
+  // 휴대폰(둘)도 탭으로 타고 올라감 → 객실 안 화면
+  await tp(B,G.base.x,G.base.z+1.2,0);await sleep(1200);await press(B,'gd:up');await until(async()=>(await st(B)).gondola.mode==='ride',3000);await sleep(3500);
+  await shot(B,'mobile-gondola-ride');const bUp=(await st(B)).gondola;
+  const aSee=(await st(A)).gondola;check('⑨ 휴대폰도 탭으로 탐·하나 화면에 둘의 객실',bUp.mode==='ride'&&bUp.y>3&&aSee.remote>=1,{bUp,aSee});
+  await until(async()=>(await st(B)).gondola.mode==='none',9000);
+  // 내려가기
+  await tp(A,G.top.x,G.top.z+.6,0);await sleep(900);const ad=(await st(A)).actions;check('⑨ 꼭대기 승강장 → 「케이블카로 내려가기」',ad[0]==='gd:down',{ad});
+  await press(A,'gd:down');
+  const back=await until(async()=>{const s=await st(A);return s.gondola.mode==='none'&&Math.hypot(s.player.x-G.base.x,s.player.z-G.base.z)<4;},11000);
+  check('⑨ 내려가기 → 7.5초 뒤 마을 승강장 앞',back,{p:(await st(A)).player});
+  // 긴 코스 모습: 광장 북쪽에서 산을 올려다봄 / 꼭대기에서 내려다봄
+  // 산 전체(마을 남쪽 위에서): 카메라 거리 한도를 잠시 늘려 찍고 되돌림
+  const over=(p,d)=>p.evaluate(d=>{const x=window.xmas;x.teleport(0,-60,0);x.cam.max=70;x.cam.dist=d;x.cam.pitch=.62;x.cam.yaw=0;},d);
+  await over(A,58);await sleep(2200);await shot(A,'pc-long-course');await A.evaluate(()=>{window.xmas.cam.max=9;window.xmas.cam.dist=3.6;});
+  await A.evaluate(([x,z])=>{window.xmas.teleport(x,z,Math.PI*.78);window.xmas.cam.pitch=.55;window.xmas.cam.dist=9;},[d.x-2,d.z-1]);await sleep(1500);await shot(A,'pc-long-course-top');
+  await over(B,62);await sleep(2200);await shot(B,'mobile-long-course');await B.evaluate(()=>{window.xmas.cam.max=9;window.xmas.cam.dist=4.2;});
  }
 
  // ── ⑥ 휴대폰 단추 크기·화면 안

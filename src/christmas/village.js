@@ -9,6 +9,8 @@ import * as L from './layout.js';
 import * as P from './props.js';
 import {createSnowfall} from './snowfall.js';
 import {buildSledCourse} from './sled-course-art.js';
+import {buildGondolaArt} from './gondola-art.js';
+import {BENCH} from './sled-course.js';
 
 const lin=hex=>new THREE.Color(hex);
 const smooth=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
@@ -37,12 +39,13 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false}){
 
  // ── 땅: 130m 네모(언덕·마당 포함), 꼭짓점 색 = 눈 + 다져진 길 + 썰매 길. 광장 안은 아래 돌바닥이 덮는다.
  {
-  const S=130,N=mobile?150:210,cz=-8,g=new THREE.PlaneGeometry(S,S,N,N);g.rotateX(-Math.PI/2);g.translate(0,0,cz);
+  // 11-17 2차: 썰매 산이 북쪽으로 커져 땅을 z −137까지 늘림(가로 130m × 세로 200m)
+  const S=130,D=200,N=mobile?150:210,cz=-37.5,g=new THREE.PlaneGeometry(S,D,N,Math.round(N*D/S));g.rotateX(-Math.PI/2);g.translate(0,0,cz);
   const p=g.attributes.position,col=new Float32Array(p.count*3),c=new THREE.Color(),snow=lin(XMAS.snow),shade=lin(XMAS.snowShade),path=lin(XMAS.snowPath),packed=lin(XMAS.snowPacked);
   for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),y=H(x,z);p.setY(i,y);
    const n=Math.sin(x*.37+z*.21)*Math.sin(z*.43-x*.17);c.copy(snow).lerp(shade,.08+.06*n);
    let k=0;for(const [a,b] of PATHS)k=Math.max(k,1-smooth(.9,2,segDist(x,z,a,b)));
-   const run=L.nearestRun(x,z);if(Math.hypot(x,z)>L.PLAZA.radius){k=Math.max(k,(1-smooth(L.SLED_RUN.width*.5,L.SLED_RUN.width*.5+1,run.d))*.9);}
+   const run=L.nearestRun(x,z);if(Math.hypot(x,z)>L.PLAZA.radius){k=Math.max(k,(1-smooth(BENCH-.6,BENCH+.6,run.d))*.75);}
    c.lerp(k>.5&&run.d<2.5?packed:path,k*.6);col.set([c.r,c.g,c.b],i*3);}
   g.setAttribute('color',new THREE.BufferAttribute(col,3));g.computeVertexNormals();
   noEdge(toonMesh(g,'눈 땅'));
@@ -98,6 +101,8 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false}){
  // ── 썰매 산(11-17 긴 코스): 길·눈둑·출발대·기록판·점프대·부스터·장애물·결승 아치·멈춤 구역(sled-course-art.js)
  const R=L.SLED_RUN;
  const course=buildSledCourse({group,tz,f,H,vcMat,noEdge,putS,mobile});
+ // ── 케이블카(마을 승강장 ↔ 꼭대기 승강장, gondola-art.js)
+ const gondola=buildGondolaArt({group,tz,f,H,putS,mobile});
  const sleds=samples?Array.from({length:R.deck.lanes},(_,i)=>{const s=P.buildSled(tz),d=R.deck;put(s,d.x,d.z+(i-1.5),Math.PI/2,H(d.x,d.z)+.11);return s;}):[];
  // ── 마을 입구 아치(남쪽, 처음 들어올 때 지나는 문)
  {const arch=P.buildArch(tz);putS(arch.group,L.ENTRANCE.x,L.ENTRANCE.z,0,0);for(const sx of [-1,1])circleC(L.ENTRANCE.x+sx*L.ENTRANCE.w/2,L.ENTRANCE.z,.35);}
@@ -107,12 +112,12 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false}){
   if(!mobile&&i%2===0&&i<8){const l=new THREE.PointLight(XMAS.lamp,0,8,1.8);l.position.set(x,H(x,z)+2.5,z);group.add(l);lights.push({l,base:()=>2.2,desk:true});}});
  // ── 울타리(광장 바깥 원, 언덕 쪽은 열어 둠)
  {const r=L.PLAZA.fence,seg=2.4,n=Math.round(2*Math.PI*r/seg),geos=[],base=P.fenceGeometry(seg);
-  for(let i=0;i<n;i++){const a=(i+.5)/n*Math.PI*2,x=Math.sin(a)*r,z=Math.cos(a)*r;if(z<-24&&Math.abs(x)<26)continue;const g=base.clone();g.rotateY(a);g.translate(x,H(x,z)-.05,z);geos.push(g);}
+  for(let i=0;i<n;i++){const a=(i+.5)/n*Math.PI*2,x=Math.sin(a)*r,z=Math.cos(a)*r;if(z<-23)continue;const g=base.clone();g.rotateY(a);g.translate(x,H(x,z)-.05,z);geos.push(g);}
   const m=new THREE.Mesh(mergeGeometries(geos),vcMat());m.name='울타리';tz(m,{kind:'prop'});m.castShadow=true;group.add(m);}
  // ── 숲(눈 덮인 전나무): 울타리 바깥과 언덕 뒤. 종류 3개 × InstancedMesh.
  const pines=[];{const r=rng(2026),count=mobile?170:320,kinds=[0,1,2].map(i=>P.pineGeometry(i+1)),spots=kinds.map(()=>[]);
   for(let i=0;i<count*3&&spots.flat().length<count;i++){const a=r()*Math.PI*2,d=L.PLAZA.fence+3+r()*55,x=Math.sin(a)*d,z=Math.cos(a)*d;
-   if(Math.hypot((x-L.HILL.x)/(L.HILL.rx+1),(z-L.HILL.z)/(L.HILL.rz+1))<1)continue;if(z<-24&&Math.abs(x)<26)continue;spots[Math.floor(r()*3)].push([x,z,.8+r()*1.1,r()*6.28]);}
+   if(Math.hypot((x-L.HILL.x)/(L.HILL.rx+1),(z-L.HILL.z)/(L.HILL.rz+1))<1)continue;if(z<-22&&Math.abs(x)<40)continue;spots[Math.floor(r()*3)].push([x,z,.8+r()*1.1,r()*6.28]);}
   // 언덕 뒤·옆 숲(언덕 위 능선을 감싼다)
   for(let i=0;i<(mobile?40:80);i++){const a=-Math.PI*.5+r()*Math.PI,x=L.HILL.x+Math.sin(a+Math.PI/2)*(L.HILL.rx+2+r()*10)*(r()<.5?1:-1)*.0+Math.cos(a)*(L.HILL.rx+1+r()*9),z=L.HILL.z-Math.abs(Math.sin(a))*(L.HILL.rz+r()*10)-2;spots[i%3].push([x,z,.9+r()*1.2,r()*6.28]);}
   const M=new THREE.Matrix4(),Q=new THREE.Quaternion(),S=new THREE.Vector3(),V=new THREE.Vector3();
@@ -142,10 +147,10 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false}){
  world.add(group);
  let time=0;
  return {
-  group,heightAt:H,layout:L,colliders,course,tree,mailbox,cardBoard:board,campfire:fire,seats,display,houses,sleds,snowfall,
+  group,heightAt:H,layout:L,colliders,course,gondola,tree,mailbox,cardBoard:board,campfire:fire,seats,display,houses,sleds,snowfall,
   // 매 프레임. camera = 눈 내림 기준, viewHeight = 캔버스 높이(px)
   update(dt,{camera=null,viewHeight=900,snow=1}={}){
-   time+=dt;tree.update(dt,time);course.update(dt);fire.update(dt,time,{power:mobile?4:6});
+   time+=dt;tree.update(dt,time);course.update(dt);gondola.update(dt);fire.update(dt,time,{power:mobile?4:6});
    for(const {l,base} of lights)l.intensity=base();
    for(const m of smoke){const u=(time*.12+m.userData.ph)%1;m.position.copy(m.userData.base).add(new THREE.Vector3(Math.sin(time*.5+m.userData.ph*9)*.3*u+u*.8,u*3.2,u*.3));m.scale.setScalar(.4+u*1.6);m.material.opacity=.5*(1-u);}
    if(camera)snowfall.update(time,camera,{amount:snow,viewHeight});

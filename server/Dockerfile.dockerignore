@@ -8,6 +8,10 @@
 !src/christmas/snowman-state.js
 !src/christmas/snowfight.js
 !src/christmas/layout.js
+!src/christmas/fight-match.js
+!src/christmas/sled-race.js
+!src/christmas/sled-course.js
+!src/christmas/gondola.js
 !server/ws.mjs
 !server/rooms.mjs
 !server/multi-server.mjs

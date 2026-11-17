@@ -1,126 +1,218 @@
-// 북쪽 「썰매 산」 긴 코스(월드개발, 2026-11-17, 눈썰매-눈싸움-개선-v1 §1-1). three 없음(서버·시험·layout.js가 같이 쓴다).
-// 설계안은 가로 60m × 세로 45m였지만 마을 경계(울타리를 열어 둔 북쪽 통로: |x| < 25, z ≥ -57)에 들어가지 않아(직접 확인)
-//  5줄 지그재그로 접어 가로 약 48.5m × 세로 37m에 넣었다(굽이 반지름은 설계 12·9m → 4~7m로 줄임, 길 폭 4.5m·출발대 높이 18m는 그대로).
-// 길 가운데 선(출발 → 멈춤): ① 출발 직선 20m → 오른쪽 180° 굽이 → ② S자(좌·우·좌) → 왼쪽 180° 굽이(구간 1 끝)
-//  → ③ 점프대 1(0.8m) → ④ 부스터 판 3개 → ⑤ 헤어핀 180°(반지름 5.5m, 드리프트, 구간 2 끝) → ⑥ 장애물(눈 더미 4·전나무 2)
-//  → ⑦ 큰 점프대(1.2m) + 착지 부스터 → 왼쪽 180° 굽이 → ⑧ 결승 직선·결승 아치(약 192m) → 감속 15m → 멈춤 구역(x 8.6, z -20.4, 지금 자리 그대로).
-// 좌표: x 동, z 남(+), 위에서 볼 때 방향 θ: 동 0, 남 π/2. 오른쪽으로 꺾기 = θ 커짐.
+// 북쪽 「썰매 산」 코스(월드개발, 2026-11-17 · 2차: 긴 코스 + 판마다 다른 코스). three 없음(서버·시험·layout.js가 같이 쓴다).
+// 산(땅)과 코스(길)를 나눴다.
+//  - 산 = 늘 같은 「뼈대」: 동서로 긴 단(段) 7줄을 지그재그로 잇는다(줄 간격 12m, 줄 직선 x −24~24, 끝은 반지름 6m 반원).
+//    단은 폭 8.6m(길 4.5m가 옆으로 1.6m까지 비켜도 들어감)로 옆으로 평평하고, 뼈대를 따라 출발대 높이 START_H에서 결승 0m까지 고르게 내려간다.
+//    걸어 다니는 땅 높이(mountainH)·눈 굴곡 끄기(courseDist)는 뼈대로만 정해 코스가 바뀌어도 땅은 그대로다(산 위에 서 있던 사람이 뜨거나 묻히지 않음).
+//  - 코스 = 시드(seed)로 고른 구간 블록을 뼈대 위에 늘어놓은 것: 굽이(S자)·점프대·부스터·좁은 길·장애물 숲·얼음 길·터널 + 줄 끝 굽이 3종(헤어핀·보통·크게).
+//    같은 시드 = 같은 코스(서버·혼자 모드·시험 모두 같은 계산). 같은 방은 서버가 정한 시드 하나를 같이 쓴다(sled-race.js).
+//  - 길이: 뼈대 456m(결승 438m) + 굽이로 비킨 몫 → 결승까지 약 440~460m, 보통 실력 약 60~75초(시험이 시드 여러 개로 확인).
+// 마을 경계: 북쪽 울타리를 연 곳(z < −24, |x| < 36, z ≥ −116) 안. 출발대 옆 꼭대기 승강장(케이블카, gondola.js) 자리는 평평하게 둔다.
+// 좌표: x 동, z 남(+), 위에서 볼 때 방향 θ: 동 0, 남 π/2. 오른쪽으로 꺾기 = θ 커짐. 옆 거리 off는 진행 방향 오른쪽 +.
 
-export const COURSE_W=4.5;            // 길 폭(4줄 동시 출발)
+export const COURSE_W=4.5;            // 기본 길 폭(4줄 동시 출발)
+export const NARROW_W=3.0;            // 좁은 길 폭
 export const BANK_H=.5;               // 양옆 눈둑 높이
-export const START_H=18;              // 출발대 높이
-const STEP=.5;                        // 가운데 선 점 간격(m)
+export const START_H=26;              // 출발대 높이(m)
+export const START_DROP=Object.freeze({len:40,h:5.6});   // 처음 40m는 가파르게 5.6m(빨리 속도가 붙게), 그 뒤 결승까지 고르게
+export const BENCH=4.3;               // 단 반폭(길 + 비킴 1.6m + 눈둑 자리)
+const STEP=.5;                        // 점 간격(m)
 const PRE=4;                          // 출발대 몫(출발선 뒤 평평한 길)
-const START={x:-2-PRE,z:-55.4,th:0};
+export const ROWS=7,ROW_GAP=12,ROW_X=24,TURN_R=ROW_GAP/2,ROW_Z0=-106;
+const START={x:-28-PRE,z:ROW_Z0,th:0};
+const LAST_X=27;                      // 마지막 줄 끝(멈춤 구역 끝)
+export const STOP_LEN=18;             // 결승 뒤 감속 15m + 멈춤 3m
+export const SUMMIT=Object.freeze({x:-33,z:ROW_Z0-7.5,r:4.5});   // 꼭대기 평평한 곳(케이블카 승강장, 출발대 북서쪽)
 
-// 거북이 명령: ['S',길이] 직진 · ['R'|'L',각도°,반지름] 굽이
-const PLAN=Object.freeze([
- ['S',PRE+20],                                   // 출발대 + ① 출발 직선 20m
- ['R',180,4],                                    // 동쪽 굽이(가로 줄 2로)
- ['S',4],['L',30,7],['R',60,7],['L',30,7],['S',18], // ② S자 굽이(남쪽으로 1.9m 비켰다 돌아옴)
- ['L',180,4],                                    // 서쪽 굽이 → 구간 1 끝
- ['S',34.5],                                     // ③ 점프대 1 · ④ 부스터 줄
- ['R',180,5.5],                                  // ⑤ 헤어핀(드리프트) → 구간 2 끝
- ['S',34.5],                                     // ⑥ 장애물 숲 · ⑦ 큰 점프대
- ['L',180,4],                                    // 서쪽 굽이
- ['S',26.6],                                     // ⑧ 결승 직선 → 결승 아치 → 감속 → 멈춤 구역
-]);
-
-function build(){
- const pts=[];let {x,z,th}=START,s=-PRE;
- const push=()=>pts.push({x,z,th,s,k:0});
- push();
- const parts=[];
- for(const [op,a,r] of PLAN){
-  const s0=s;
-  if(op==='S'){const n=Math.max(1,Math.round(a/STEP)),d=a/n;for(let i=0;i<n;i++){x+=Math.cos(th)*d;z+=Math.sin(th)*d;s+=d;push();}}
+// ── 뼈대(늘 같음): 거북이 명령 ['S',길이] · ['R'|'L',각도°,반지름]
+const PLAN=(()=>{const a=[['S',PRE+28+ROW_X]];for(let k=1;k<ROWS;k++){a.push([k%2?'R':'L',180,TURN_R]);a.push(['S',k===ROWS-1?ROW_X+LAST_X:2*ROW_X]);}return a;})();
+function buildSkeleton(){
+ const pts=[];let {x,z,th}=START,u=-PRE;
+ const push=k=>pts.push({x,z,th,u,k});
+ push(0);const parts=[];
+ for(const [op,a,r] of PLAN){const u0=u;
+  if(op==='S'){const n=Math.max(1,Math.round(a/STEP)),d=a/n;for(let i=0;i<n;i++){x+=Math.cos(th)*d;z+=Math.sin(th)*d;u+=d;push(0);}}
   else{const sg=op==='R'?1:-1,ang=a*Math.PI/180,len=ang*r,n=Math.max(2,Math.round(len/STEP)),dth=sg*ang/n,d=len/n;
-   for(let i=0;i<n;i++){th+=dth/2;x+=Math.cos(th)*d;z+=Math.sin(th)*d;th+=dth/2;s+=d;push();pts.at(-1).k=sg/r;}}
-  parts.push({op,a,r,s0,s1:s});
- }
- return {pts,parts,total:s};
+   for(let i=0;i<n;i++){th+=dth/2;x+=Math.cos(th)*d;z+=Math.sin(th)*d;th+=dth/2;u+=d;push(sg/r);}}
+  parts.push({op,r:r??0,sg:op==='R'?1:op==='L'?-1:0,u0,u1:u});}
+ return {pts,parts,total:u};
 }
-const B=build();
-export const COURSE_POINTS=B.pts;             // [{x,z,th,s,k(굽이 곡률, 오른쪽 +)}]
-export const COURSE_PARTS=B.parts;
-export const COURSE_END=B.total;               // 멈춤 구역 끝(가운데 선 길이)
-export const FINISH_S=+(COURSE_END-15).toFixed(2);        // 결승 아치(감속 구역 15m 앞)
-// 구간 기록점: ②끝(서쪽 굽이 끝)·⑤끝(헤어핀 끝)·결승
-export const CHECKPOINTS=Object.freeze([+B.parts[7].s1.toFixed(2),+B.parts[9].s1.toFixed(2),FINISH_S]);
-const ROW3=B.parts[8].s0,ROW4=B.parts[10].s0;
-// 점프대: s = 끝(발판 끝) 자리, h = 높이, len = 오르막 길이, air = 체공(초, 보통 속도 기준)
-export const JUMPS=Object.freeze([{s:+(ROW3+5).toFixed(2),h:.8,len:2.6,air:.6},{s:+(ROW4+26.5).toFixed(2),h:1.2,len:3.2,air:.9}]);
-// 부스터 판(폭 1.2m·길이 2m, 길 가운데): ④ 3개 + 큰 점프 착지 1개
-export const BOOSTERS=Object.freeze([ROW3+12,ROW3+19.5,ROW3+27,ROW4+32].map(s=>Object.freeze({s:+s.toFixed(2),off:0,w:1.2,len:2})));
-// 장애물(⑥, 지그재그·사이 2m 이상): pile = 눈 더미(반지름 0.5) · fir = 전나무(반지름 0.45)
-export const OBSTACLES=Object.freeze([[4,-1.1,'pile'],[8,1.1,'pile'],[12,-1.35,'fir'],[16,.55,'pile'],[20,1.4,'fir'],[24,-.7,'pile']]
- .map(([ds,off,kind])=>Object.freeze({s:+(ROW4+ds).toFixed(2),off,kind,r:kind==='fir'?.45:.5})));
-export const SECTIONS=Object.freeze({start:[0,20],curves:[20,CHECKPOINTS[0]],jump1:JUMPS[0].s,boost:[BOOSTERS[0].s,BOOSTERS[2].s+2],hairpin:[B.parts[9].s0,B.parts[9].s1],
- obstacles:[OBSTACLES[0].s,OBSTACLES.at(-1).s],jump2:JUMPS[1].s,finish:FINISH_S,end:COURSE_END});
+const SK=buildSkeleton();
+export const SKELETON=SK.pts;
+export const SKELETON_END=+SK.total.toFixed(3);
+export const FINISH_U=+(SKELETON_END-STOP_LEN).toFixed(3);
+// 줄(직선) 구간 [u0,u1]과 줄 끝 굽이(sg: +1 오른쪽)
+export const ROW_SPANS=Object.freeze(SK.parts.filter(p=>p.op==='S').map(p=>Object.freeze({u0:Math.max(0,p.u0),u1:p.u1})));
+export const TURN_SPANS=Object.freeze(SK.parts.filter(p=>p.op!=='S').map(p=>Object.freeze({u0:p.u0,u1:p.u1,sg:p.sg})));
+// 뼈대 높이(u): 출발대 START_H → 결승 0(고르게), 결승 뒤 0
+export function heightU(u){if(u<=0)return START_H;if(u>=FINISH_U)return 0;const {len,h}=START_DROP;if(u<len){const t=u/len;return START_H-h*(t*.4+.6*(1-(1-t)*(1-t)));}return (START_H-h)*(1-(u-len)/(FINISH_U-len));}
+function skAt(u){const P=SK.pts,N=P.length;if(u<=P[0].u){const p=P[0],e=u-p.u;return {x:p.x+Math.cos(p.th)*e,z:p.z+Math.sin(p.th)*e,th:p.th};}
+ if(u>=P[N-1].u){const p=P[N-1],e=u-p.u;return {x:p.x+Math.cos(p.th)*e,z:p.z+Math.sin(p.th)*e,th:p.th};}
+ const i=Math.min(N-2,Math.max(0,Math.floor((u-P[0].u)/STEP)));let a=P[i],b=P[i+1];
+ // 점 간격이 조금씩 달라 한두 칸 보정
+ let j=i;while(j>0&&P[j].u>u){j--;}while(j<N-2&&P[j+1].u<u)j++;a=P[j];b=P[j+1];
+ const t=(u-a.u)/(b.u-a.u||1);return {x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,th:a.th+(b.th-a.th)*t};}
+export const skeletonAt=skAt;
 
-// 길 높이(s): 출발대 18m → 결승에서 0m(평균 약 5.4°), 결승 뒤 감속 구역·멈춤 구역은 0
-export function profileH(s){if(s<=0)return START_H;if(s>=FINISH_S)return 0;const u=s/FINISH_S;return START_H*(1-u);}
-// 점프대 발판 높이(오르막: 길 위로 0 → h)
-export function rampH(s){for(const j of JUMPS){const a=j.s-j.len;if(s>a&&s<=j.s){const t=(s-a)/j.len;return j.h*Math.pow(t,1.25);}}return 0;}
-
-// 가운데 선 위 점(s → x,z,방향). 끝을 넘으면 마지막 방향으로 곧게
-const P=COURSE_POINTS,N=P.length;
-export function courseAt(s){
- if(s<=P[0].s){const p=P[0],e=s-p.s;return {x:p.x+Math.cos(p.th)*e,z:p.z+Math.sin(p.th)*e,th:p.th,k:0};}
- if(s>=P[N-1].s){const p=P[N-1],e=s-p.s;return {x:p.x+Math.cos(p.th)*e,z:p.z+Math.sin(p.th)*e,th:p.th,k:0};}
- let lo=0,hi=N-1;while(hi-lo>1){const m=(lo+hi)>>1;if(P[m].s<=s)lo=m;else hi=m;}
- const a=P[lo],b=P[hi],t=(s-a.s)/(b.s-a.s||1);let dth=b.th-a.th;
- return {x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,th:a.th+dth*t,k:b.k};
+// 칸 나누기 가장 가까운 점 찾기(뼈대·코스 공용)
+function makeNearest(P){
+ const CELL=4,grid=new Map(),key=(i,j)=>i*4096+j;
+ for(let i=0;i<P.length;i++){const k=key(Math.floor(P[i].x/CELL),Math.floor(P[i].z/CELL));let a=grid.get(k);if(!a)grid.set(k,a=[]);a.push(i);}
+ const N=P.length;
+ return function nearest(x,z,{maxD=12,skip=null,key:kk='s'}={}){
+  const ci=Math.floor(x/CELL),cj=Math.floor(z/CELL),R=Math.ceil(maxD/CELL);let best=null;
+  for(let i=ci-R;i<=ci+R;i++)for(let j=cj-R;j<=cj+R;j++){const a=grid.get(key(i,j));if(!a)continue;
+   for(const n of a){if(skip&&skip(P[n]))continue;const d=Math.hypot(x-P[n].x,z-P[n].z);if(d<=maxD&&(!best||d<best.d))best={i:n,d};}}
+  if(!best)return null;
+  const p=P[best.i],q=P[Math.min(N-1,best.i+1)],o=P[Math.max(0,best.i-1)];
+  const proj=(a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,l2=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/l2)),px=a.x+dx*t,pz=a.z+dz*t;
+   return {s:a[kk]+(b[kk]-a[kk])*t,d:Math.hypot(x-px,z-pz),px,pz,th:a.th+(b.th-a.th)*t};};
+  const c=[proj(p,q),proj(o,p)].sort((u,v)=>u.d-v.d)[0];
+  const nx=-Math.sin(c.th),nz=Math.cos(c.th),off=(x-c.px)*nx+(z-c.pz)*nz;
+  return {s:c.s,d:c.d,off,i:best.i};
+ };
 }
-// 길 위 자리(s, 옆 off: 진행 방향 오른쪽 +) → 세계 x,z
-export function courseXZ(s,off=0){const c=courseAt(s),nx=-Math.sin(c.th),nz=Math.cos(c.th);return {x:c.x+nx*off,z:c.z+nz*off,th:c.th,k:c.k};}
-// 세계 x,z → 가장 가까운 가운데 선 점 {s,d(거리),off,i}. 칸 나누기로 빠르게
-const CELL=4,grid=new Map(),key=(i,j)=>i*1000+j;
-for(let i=0;i<N;i++){const k=key(Math.floor(P[i].x/CELL),Math.floor(P[i].z/CELL));let a=grid.get(k);if(!a)grid.set(k,a=[]);a.push(i);}
-export function nearestCourse(x,z,{maxD=12,skip=null}={}){
- const ci=Math.floor(x/CELL),cj=Math.floor(z/CELL),R=Math.ceil(maxD/CELL);let best=null;
- for(let i=ci-R;i<=ci+R;i++)for(let j=cj-R;j<=cj+R;j++){const a=grid.get(key(i,j));if(!a)continue;
-  for(const n of a){if(skip&&skip(P[n]))continue;const d=Math.hypot(x-P[n].x,z-P[n].z);if(d<=maxD&&(!best||d<best.d))best={i:n,d};}}
- if(!best)return null;
- // 이웃 선분에 내려 정확한 s·옆 거리
- const p=P[best.i],q=P[Math.min(N-1,best.i+1)],o=P[Math.max(0,best.i-1)];
- const proj=(a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,l2=dx*dx+dz*dz||1,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/l2)),px=a.x+dx*t,pz=a.z+dz*t;return {s:a.s+(b.s-a.s)*t,d:Math.hypot(x-px,z-pz),px,pz,th:a.th+(b.th-a.th)*t};};
- const c=[proj(p,q),proj(o,p)].sort((u,v)=>u.d-v.d)[0];
- const nx=-Math.sin(c.th),nz=Math.cos(c.th),off=(x-c.px)*nx+(z-c.pz)*nz;
- return {s:c.s,d:c.d,off,i:best.i};
-}
-// 코스가 차지하는 네모(산 높이 칸 범위)
-export const COURSE_BOX=Object.freeze((()=>{let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;for(const p of P){x0=Math.min(x0,p.x);x1=Math.max(x1,p.x);z0=Math.min(z0,p.z);z1=Math.max(z1,p.z);}
- const m=COURSE_W/2;return {x0:x0-m,x1:x1+m,z0:z0-m,z1:z1+m};})());
+const skNearest=makeNearest(SK.pts);
+export const nearestSkeleton=(x,z,o={})=>skNearest(x,z,{...o,key:'u'});
 
-// ── 산 높이(길 없는 땅). 길 위는 길 높이(옆으로 평평), 줄 사이는 두 길 높이를 이어 비탈, 바깥은 45°로 내려감. 0.5m 칸에 한 번 계산해 둔다.
-const ROAD=COURSE_W/2+.7;            // 길 + 눈둑 자리(평평)
-const GX0=-36,GX1=36,GZ0=-78,GZ1=-12,GS=.5,GW=Math.round((GX1-GX0)/GS)+1,GH=Math.round((GZ1-GZ0)/GS)+1;
+// ── 산 높이(길 없는 땅). 단 위는 뼈대 높이(옆으로 평평), 줄 사이는 두 단 높이를 이어 비탈, 바깥은 약 58°로 내려감. 0.5m 칸에 한 번 계산(처음 쓸 때, 약 0.2초).
+const GX0=-56,GX1=56,GZ0=-136,GZ1=-14,GS=.5,GW=Math.round((GX1-GX0)/GS)+1,GH=Math.round((GZ1-GZ0)/GS)+1;
+const FALL=1.6;
 let HG=null,DG=null;
 function rawMountain(x,z){
- const a=nearestCourse(x,z,{maxD:6})??nearestCourse(x,z,{maxD:22});if(!a)return 0;
- const ha=profileH(a.s);
- if(a.d<=ROAD)return ha;
- // 사이에 낀 다른 줄(가운데 선으로 12m 넘게 떨어진 곳, 이 점에서 볼 때 가까운 줄과 반대쪽 = 두 줄 사이)
- const ax=courseAt(a.s),pax=ax.x-x,paz=ax.z-z,la=Math.hypot(pax,paz)||1;
- const b=nearestCourse(x,z,{maxD:Math.min(14,a.d+10),skip:p=>{if(Math.abs(p.s-a.s)<12)return true;const bx=p.x-x,bz=p.z-z;return (pax*bx+paz*bz)/(la*(Math.hypot(bx,bz)||1))>-.55;}});
- if(b&&b.d>ROAD){const hb=profileH(b.s),da=a.d-ROAD,db=b.d-ROAD,t=da/(da+db),u=t*t*(3-2*t);return ha+(hb-ha)*u;}
- return Math.max(0,ha-(a.d-ROAD)*1.05);
+ // 꼭대기 승강장(평평) — 출발대 뒤
+ const ds=Math.hypot(x-SUMMIT.x,z-SUMMIT.z);
+ const summit=ds<=SUMMIT.r?START_H:Math.max(0,START_H-(ds-SUMMIT.r)*FALL);
+ const a=skNearest(x,z,{maxD:6,key:'u'})??skNearest(x,z,{maxD:30,key:'u'});if(!a)return summit;
+ const ha=heightU(a.s);
+ if(a.d<=BENCH)return Math.max(ha,a.s<2?summit:0);
+ const ax=skAt(a.s),pax=ax.x-x,paz=ax.z-z,la=Math.hypot(pax,paz)||1;
+ const b=skNearest(x,z,{maxD:Math.min(16,a.d+12),key:'u',skip:p=>{if(Math.abs(p.u-a.s)<14)return true;const bx=p.x-x,bz=p.z-z;return (pax*bx+paz*bz)/(la*(Math.hypot(bx,bz)||1))>-.55;}});
+ if(b&&b.d>BENCH){const hb=heightU(b.s),da=a.d-BENCH,db=b.d-BENCH,t=da/(da+db),w=t*t*(3-2*t);return Math.max(summit,ha+(hb-ha)*w);}
+ return Math.max(summit,ha-(a.d-BENCH)*FALL);
 }
-function grid0(){HG=new Float32Array(GW*GH);DG=new Float32Array(GW*GH);for(let j=0;j<GH;j++)for(let i=0;i<GW;i++){const x=GX0+i*GS,z=GZ0+j*GS;HG[j*GW+i]=rawMountain(x,z);DG[j*GW+i]=nearestCourse(x,z,{maxD:8})?.d??8;}}
-// 가운데 선까지 거리(m, 8 넘으면 8). 땅 색·눈 굴곡 끄기에 쓴다(칸 값)
-export function courseDist(x,z){
- if(x<=GX0||x>=GX1||z<=GZ0||z>=GZ1)return 8;
- if(!DG)grid0();
- const fx=(x-GX0)/GS,fz=(z-GZ0)/GS,i=Math.floor(fx),j=Math.floor(fz),u=fx-i,v=fz-j,k=j*GW+i;
- return DG[k]*(1-u)*(1-v)+DG[k+1]*u*(1-v)+DG[k+GW]*(1-u)*v+DG[k+GW+1]*u*v;
-}
+function grid0(){HG=new Float32Array(GW*GH);DG=new Float32Array(GW*GH);for(let j=0;j<GH;j++)for(let i=0;i<GW;i++){const x=GX0+i*GS,z=GZ0+j*GS;HG[j*GW+i]=rawMountain(x,z);DG[j*GW+i]=skNearest(x,z,{maxD:9,key:'u'})?.d??9;}}
+const bil=(G,x,z)=>{const fx=(x-GX0)/GS,fz=(z-GZ0)/GS,i=Math.floor(fx),j=Math.floor(fz),u=fx-i,v=fz-j,k=j*GW+i;return G[k]*(1-u)*(1-v)+G[k+1]*u*(1-v)+G[k+GW]*(1-u)*v+G[k+GW+1]*u*v;};
+// 뼈대 가운데 선까지 거리(m, 9 넘으면 9) — 단 위인지(땅 색·눈 굴곡 끄기)
+export function courseDist(x,z){if(x<=GX0||x>=GX1||z<=GZ0||z>=GZ1)return 9;if(!DG)grid0();return bil(DG,x,z);}
 // 산 높이(m, 0 이상). 칸 밖은 0
-export function mountainH(x,z){
- if(x<=GX0||x>=GX1||z<=GZ0||z>=GZ1)return 0;
- if(!HG)grid0();
- const fx=(x-GX0)/GS,fz=(z-GZ0)/GS,i=Math.floor(fx),j=Math.floor(fz),u=fx-i,v=fz-j,k=j*GW+i;
- return HG[k]*(1-u)*(1-v)+HG[k+1]*u*(1-v)+HG[k+GW]*(1-u)*v+HG[k+GW+1]*u*v;
+export function mountainH(x,z){if(x<=GX0||x>=GX1||z<=GZ0||z>=GZ1)return 0;if(!HG)grid0();return bil(HG,x,z);}
+export const MOUNTAIN_BOX=Object.freeze({x0:GX0,x1:GX1,z0:GZ0,z1:GZ1});
+
+// ── 시드 → 코스
+// 작은 결정적 난수(mulberry32). 서버·화면 같은 수열
+export function rng(seed){let a=seed>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
+export const normSeed=s=>(Number.isFinite(+s)?(+s>>>0):0)||1;
+// 코스 이름(화면·기록 구분용): 시드 → 「코스 7K2Q」
+export const courseCode=seed=>{let s=normSeed(seed),o='';const A='23456789ABCDEFGHJKLMNPQRSTUVWXYZ';for(let i=0;i<4;i++){o+=A[s%32];s=Math.floor(s/32)^(s*7%13);}return o;};
+// 오늘(서울)의 시드: 방이 처음 생길 때·혼자 모드 처음 코스
+export const dailySeed=(t=Date.now())=>{const d=new Date(t+9*3600e3).toISOString().slice(0,10);let h=2166136261;for(const ch of d){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return normSeed(h);};
+// 블록 종류. len = 뼈대 길이(m)
+export const BLOCKS=Object.freeze({
+ chicane:{len:20,name:'굽이'},jump:{len:23,name:'점프대'},boost:{len:12,name:'부스터'},narrow:{len:14,name:'좁은 길'},
+ forest:{len:18,name:'장애물 숲'},ice:{len:14,name:'얼음 길'},tunnel:{len:14,name:'터널'},
+});
+export const TURN_KINDS=Object.freeze({hairpin:{w:1.5,name:'헤어핀'},normal:{w:0,name:'굽이'},wide:{w:-1.5,name:'큰 굽이'}}); // w: 굽이 안쪽으로 비키는 거리(+ = 안쪽 = 반지름 작아짐)
+const LEAD=5;                         // 줄 끝 굽이로 들어가고 나오는 비킴 구간(m)
+const REQUIRED=['jump','jump','boost','boost','forest','chicane','chicane','narrow','ice','tunnel'];
+const EXTRA=['boost','chicane','forest','jump','ice','narrow','boost'];
+const sm=t=>{t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);};
+
+// 블록 고르기(순수): 줄마다 들어갈 칸 길이 → 블록 목록 [{type,u0,u1,...}] + 굽이 종류
+export function planCourse(seed){
+ const R=rng(normSeed(seed)),pick=a=>a[Math.floor(R()*a.length)];
+ const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(R()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+ const req=shuffle([...REQUIRED]),extra=shuffle([pick(EXTRA),pick(EXTRA),pick(EXTRA)]);
+ // 줄마다 블록 칸: 첫 줄은 출발 가속 18m 뒤, 마지막 줄은 결승 직선 10m 앞까지. 줄마다 최대 2개(마지막 줄 1개)
+ const slots=ROW_SPANS.map((r,i)=>{const a=i===0?18:r.u0+LEAD,b=i===ROWS-1?FINISH_U-10:r.u1-LEAD;return {a,b,len:b-a,n:i===ROWS-1?1:2};});
+ const rows=slots.map(()=>[]);
+ const left=i=>slots[i].len-rows[i].reduce((s,t)=>s+BLOCKS[t].len,0);
+ // 꼭 들어갈 블록 먼저, 그다음 덤 블록: 들어갈 수 있는 줄 중 블록이 적은 줄(같으면 난수)
+ for(const t of [...req,...extra]){
+  const cand=rows.map((r,i)=>i).filter(i=>rows[i].length<slots[i].n&&left(i)>=BLOCKS[t].len&&!rows[i].includes(t));
+  if(!cand.length)continue;const fewest=Math.min(...cand.map(i=>rows[i].length)),pool=cand.filter(i=>rows[i].length===fewest);
+  rows[pool[Math.floor(R()*pool.length)]].push(t);}
+ rows.forEach(r=>shuffle(r));
+ const blocks=[];
+ rows.forEach((list,i)=>{const sl=slots[i],used=list.reduce((s,t)=>s+BLOCKS[t].len,0),slack=Math.max(0,sl.len-used);
+  // 남는 길이를 블록 앞·사이·뒤에 나눠 둔다
+  const cuts=list.map(()=>R()).concat(R());const sum=cuts.reduce((a,b)=>a+b,0)||1;let u=sl.a;
+  list.forEach((t,j)=>{u+=slack*cuts[j]/sum;const b={type:t,u0:+u.toFixed(2),u1:+(u+BLOCKS[t].len).toFixed(2),row:i};
+   if(t==='chicane'){b.amp=(R()<.5?-1:1)*(1.2+R()*.35);}
+   if(t==='jump'){b.big=R()<.5;}
+   if(t==='boost'){b.offs=[pick([-1,0,1]),pick([-1,0,1])];}
+   if(t==='forest'){let sg=R()<.5?-1:1;b.obs=[0,1,2,3].map(k=>{const off=sg*(.55+R()*.65);sg=R()<.8?-sg:sg;return {du:2.5+k*4.8,off:+off.toFixed(2),kind:R()<.35?'fir':'pile'};});}
+   if(t==='tunnel'){b.lights=R()<.5;}
+   blocks.push(b);u=b.u1;});});
+ const turns=TURN_SPANS.map(()=>pick(['hairpin','normal','wide','hairpin','normal']));
+ if(!turns.includes('hairpin'))turns[Math.floor(R()*turns.length)]='hairpin';
+ return {seed:normSeed(seed),blocks,turns};
 }
-// 길 바로 위인지(옆 거리 ≤ 길 폭 절반 + m)
-export function onCourse(x,z,m=0){const a=nearestCourse(x,z,{maxD:COURSE_W});return !!a&&a.d<=COURSE_W/2+m;}
+
+// 옆으로 비키기 w(u)·길 폭·표면(얼음)·터널 여부
+function lateral(plan){
+ const {blocks,turns}=plan;
+ return u=>{
+  let w=0,W=COURSE_W,ice=false,tun=false;
+  // 줄 끝 굽이(안쪽 + 방향 = 굽이 방향 sg)
+  TURN_SPANS.forEach((t,i)=>{const kw=TURN_KINDS[turns[i]].w*t.sg;if(!kw)return;
+   if(u>=t.u0-LEAD&&u<=t.u1+LEAD){const f=u<t.u0?sm((u-(t.u0-LEAD))/LEAD):u>t.u1?1-sm((u-t.u1)/LEAD):1;w+=kw*f;}});
+  for(const b of blocks){if(u<b.u0||u>b.u1)continue;const t=(u-b.u0)/(b.u1-b.u0);
+   if(b.type==='chicane')w+=b.amp*(Math.sin(2*Math.PI*t)-.5*Math.sin(4*Math.PI*t))/1.3;
+   else if(b.type==='narrow'){const L=b.u1-b.u0,e=Math.min(u-b.u0,b.u1-u);W=COURSE_W-(COURSE_W-NARROW_W)*sm(e/3);void L;}
+   else if(b.type==='ice')ice=true;
+   else if(b.type==='tunnel')tun=true;}
+  return {w,W,ice,tun};
+ };
+}
+
+const cache=new Map();
+// makeCourse(seed) → 코스 객체(같은 시드는 같은 객체). 서버는 시드만 쓰고 계산은 화면·시험이 한다.
+export function makeCourse(seed){
+ const sd=normSeed(seed);if(cache.has(sd))return cache.get(sd);
+ const plan=planCourse(sd),lat=lateral(plan);
+ // 가운데 선 점: 뼈대 + 옆으로 w
+ const raw=[];for(let u=-PRE;u<=SKELETON_END+1e-6;u+=STEP){const c=skAt(u),L=lat(u),nx=-Math.sin(c.th),nz=Math.cos(c.th);raw.push({x:c.x+nx*L.w,z:c.z+nz*L.w,u,w:L.w,W:L.W,ice:L.ice,tun:L.tun});}
+ let s=-PRE;raw.forEach((p,i)=>{if(i)s+=Math.hypot(p.x-raw[i-1].x,p.z-raw[i-1].z);p.s=s;});
+ raw.forEach((p,i)=>{const a=raw[Math.max(0,i-1)],b=raw[Math.min(raw.length-1,i+1)];p.th=Math.atan2(b.z-a.z,b.x-a.x);});
+ // 방향은 이어지게(±π 넘김 없이) 풀어 둔다
+ for(let i=1;i<raw.length;i++){let d=raw[i].th-raw[i-1].th;d=Math.atan2(Math.sin(d),Math.cos(d));raw[i].th=raw[i-1].th+d;}
+ raw.forEach((p,i)=>{const a=raw[Math.max(0,i-2)],b=raw[Math.min(raw.length-1,i+2)];p.k=(b.th-a.th)/((b.s-a.s)||1);});
+ const P=raw.map(p=>Object.freeze({x:p.x,z:p.z,th:p.th,s:+p.s.toFixed(4),k:p.k,u:p.u,w:p.w,W:p.W,ice:p.ice,tun:p.tun}));
+ const N=P.length,end=P[N-1].s;
+ // s ↔ u
+ const sOfU=u=>{const i=Math.max(0,Math.min(N-2,Math.round((u+PRE)/STEP)));const a=P[i],b=P[Math.min(N-1,i+1)];if(u<=a.u||b===a)return a.s+(u-a.u);return a.s+(b.s-a.s)*(u-a.u)/((b.u-a.u)||1);};
+ const idx=s=>{if(s<=P[0].s)return 0;if(s>=P[N-1].s)return N-2;let lo=0,hi=N-1;while(hi-lo>1){const m=(lo+hi)>>1;if(P[m].s<=s)lo=m;else hi=m;}return lo;};
+ const uOfS=s=>{if(s<=P[0].s)return P[0].u+(s-P[0].s);if(s>=P[N-1].s)return P[N-1].u+(s-P[N-1].s);const i=idx(s),a=P[i],b=P[i+1];return a.u+(b.u-a.u)*(s-a.s)/((b.s-a.s)||1);};
+ const finish=+sOfU(FINISH_U).toFixed(2);
+ const at=s=>{if(s<=P[0].s){const p=P[0],e=s-p.s;return {x:p.x+Math.cos(p.th)*e,z:p.z+Math.sin(p.th)*e,th:p.th,k:0,W:COURSE_W,ice:false,tun:false,u:p.u+e};}
+  if(s>=P[N-1].s){const p=P[N-1],e=s-p.s;return {x:p.x+Math.cos(p.th)*e,z:p.z+Math.sin(p.th)*e,th:p.th,k:0,W:p.W,ice:false,tun:false,u:p.u+e};}
+  const i=idx(s),a=P[i],b=P[i+1],t=(s-a.s)/((b.s-a.s)||1);
+  return {x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,th:a.th+(b.th-a.th)*t,k:a.k+(b.k-a.k)*t,W:a.W+(b.W-a.W)*t,ice:t<.5?a.ice:b.ice,tun:t<.5?a.tun:b.tun,u:a.u+(b.u-a.u)*t};};
+ const xz=(s,off=0)=>{const c=at(s),nx=-Math.sin(c.th),nz=Math.cos(c.th);return {x:c.x+nx*off,z:c.z+nz*off,th:c.th,k:c.k};};
+ const nearest=makeNearest(P);
+ // 블록 → s 자리
+ const S=b=>({s0:+sOfU(b.u0).toFixed(2),s1:+sOfU(b.u1).toFixed(2)});
+ const jumps=[],boosters=[],obstacles=[],ice=[],tunnels=[],narrows=[],sections=[];
+ for(const b of plan.blocks){const r=S(b);sections.push({type:b.type,name:BLOCKS[b.type].name,...r});
+  if(b.type==='jump'){const len=b.big?3.2:2.6,h=b.big?1.2:.8,end=sOfU(b.u0+3+len);jumps.push(Object.freeze({s:+end.toFixed(2),h,len,air:b.big?.9:.6,big:!!b.big}));
+   if(b.big)boosters.push(Object.freeze({s:+sOfU(b.u0+3+len+10).toFixed(2),off:0,w:1.2,len:2}));}
+  if(b.type==='boost')b.offs.forEach((o,k)=>boosters.push(Object.freeze({s:+sOfU(b.u0+2+k*5.5).toFixed(2),off:o,w:1.2,len:2})));
+  if(b.type==='forest')for(const o of b.obs)obstacles.push(Object.freeze({s:+sOfU(b.u0+o.du).toFixed(2),off:o.off,kind:o.kind,r:o.kind==='fir'?.45:.5}));
+  if(b.type==='ice')ice.push(r);if(b.type==='tunnel')tunnels.push({...r,lights:!!b.lights});if(b.type==='narrow')narrows.push(r);}
+ plan.turns.forEach((k,i)=>{const t=TURN_SPANS[i];sections.push({type:'turn',kind:k,name:TURN_KINDS[k].name,s0:+sOfU(t.u0).toFixed(2),s1:+sOfU(t.u1).toFixed(2)});});
+ sections.sort((a,b)=>a.s0-b.s0);
+ // 구간 기록점: 3번째 줄 끝 굽이 끝 · 5번째 줄 끝 굽이 끝 · 결승
+ const checkpoints=Object.freeze([+sOfU(TURN_SPANS[2].u1).toFixed(2),+sOfU(TURN_SPANS[4].u1).toFixed(2),finish]);
+ // 길 높이: 뼈대 높이(u) — 길이 옆으로 비켜도 단은 옆으로 평평
+ const profileH=s=>heightU(uOfS(s));
+ const rampH=s=>{for(const j of jumps){const a=j.s-j.len;if(s>a&&s<=j.s){const t=(s-a)/j.len;return j.h*Math.pow(t,1.25);}}return 0;};
+ const widthAt=s=>at(s).W;
+ const surfaceAt=s=>{const c=at(s);return c.ice?'ice':c.tun?'tunnel':'snow';};
+ const course=Object.freeze({seed:sd,code:courseCode(sd),plan,points:P,end,finish,checkpoints,
+  jumps:Object.freeze(jumps),boosters:Object.freeze(boosters.sort((a,b)=>a.s-b.s)),obstacles:Object.freeze(obstacles),
+  ice:Object.freeze(ice),tunnels:Object.freeze(tunnels),narrows:Object.freeze(narrows),sections:Object.freeze(sections),
+  at,xz,nearest:(x,z,o={})=>nearest(x,z,{...o,key:'s'}),profileH,rampH,widthAt,surfaceAt,uOfS,sOfU,
+  onCourse:(x,z,m=0)=>{const a=nearest(x,z,{maxD:COURSE_W,key:'s'});return !!a&&a.d<=at(a.s).W/2+m;}});
+ cache.set(sd,course);if(cache.size>24)cache.delete(cache.keys().next().value);
+ return course;
+}

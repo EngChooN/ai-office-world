@@ -36,6 +36,8 @@ import {createCampfire,nearFire,FIRE} from './campfire.js';
 import {createSnowmanPlay} from './snowman-play.js';
 import {createSnowfight} from './snowfight-play.js';
 import {createSledPlay} from './sled-play.js';
+import {createGondolaPlay} from './gondola-play.js';
+import {cabinYAt} from './gondola.js';
 import {createFightUi} from './fight-ui.js';
 import {inYard as inSnowmanYard} from './snowman-state.js';
 import {inFightYard,FIGHT_TEXT} from './snowfight.js';
@@ -94,12 +96,12 @@ const poser=createXmasPoser({avatar:player,world,toon}); // 앉기·손 녹이�
 const cols=village.colliders;
 
 // ── 입력·카메라
-let net=null,gifts=null,campfire=null,snowman=null,snowfight=null,sledPlay=null,fightUi=null; // 놀이 모듈(아래에서 만든다)
+let net=null,gifts=null,campfire=null,snowman=null,snowfight=null,sledPlay=null,fightUi=null,gondola=null; // 놀이 모듈(아래에서 만든다)
 const input=createInput({canvas:renderer.domElement,mobile});
 const cam={yaw:SPAWN.heading,pitch:.3,dist:mobile?4.2:3.6,min:1.8,max:9,target:new THREE.Vector3()};
 // 장식 달기 모드 카메라: 트리를 정면으로 보는 궤도(좌우 끌기·A/D로 둘레, 위아래 끌기·W/S·휠로 높이)
 const deco={on:false,yaw:0,h:2.4,dist:mobile?9.6:8.4};
-input.onLook((dx,dy)=>{if(sledPlay?.camera())return; // 썰매 타는 동안은 시점 고정
+input.onLook((dx,dy)=>{if(sledPlay?.camera()||gondola?.camera())return; // 썰매·케이블카 타는 동안은 시점 고정
  if(snowfight?.aiming&&!mobile)return; // 마우스로 조준하는 동안은 시점을 돌리지 않음
  if(deco.on){deco.yaw-=dx*.006;deco.h=THREE.MathUtils.clamp(deco.h+dy*.012,1,7.6);return;}
  cam.yaw-=dx*.006;cam.pitch=THREE.MathUtils.clamp(cam.pitch+dy*.004,-.1,1.1);});
@@ -114,6 +116,8 @@ function updatePlayer(dt){
   player.update(dt,{moved:0});player.root.position.y+=H(player.x,player.z);return;}
  // 썰매(타는 중·출발대 대기·뒷자리)·모닥불(걸어가 앉기·앉아 있음)이 몸을 맡으면 걷기를 건너뛴다
  const steer=mv.side;
+ // 케이블카: 타는 동안은 객실이 몸을 옮긴다(걷기 없음)
+ if(gondola?.update(dt)){player.root.position.y+=gondola.y;return;}
  // 썰매: A/D 기울이기 · Shift 드리프트 · S/↓ 브레이크 · W/↑ 밀기(출발). 출발대 대기 중 걷기 입력이면 내림
  if(sledPlay.update(dt,{steer,moveInput:moveInput&&!['ride','result','count'].includes(sledPlay.mode),drift:mv.run&&!mobile,brake:mv.forward<0,push:mv.forward>0})){player.root.position.y+=H(player.x,player.z)+sledPlay.lift;return;}
  if(campfire.update(dt,{moveInput})||campfire.sitting){if(campfire.sitting)player.update(dt,{moved:0});player.root.position.y+=H(player.x,player.z);return;}
@@ -138,7 +142,7 @@ function updateCamera(dt){
  // 눈싸움 조준: 0.25초에 걸쳐 어깨 뒤로 살짝 당김
  {const h=snowfight?.camHint;aimK+=((h?1:0)-aimK)*Math.min(1,dt/.25*2.2);}
  // 썰매: 썰매 뒤 낮게, 진행 방향을 따라간다
- const sc=sledPlay.camera();
+ const sc=sledPlay.camera()??gondola?.camera();
  if(sc){let d=sc.yaw-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt/(sc.lag??.2)));cam.pitch+=(sc.pitch-cam.pitch)*(1-Math.exp(-dt*4));cam.dist+=(sc.dist-cam.dist)*(1-Math.exp(-dt*3));}
  // 시야각: 썰매가 빠를수록 60°→70°, 내리면 원래대로
  {const want=sc?.fov??BASE_FOV;if(Math.abs(camera.fov-want)>.05){camera.fov+=(want-camera.fov)*(1-Math.exp(-dt*3));camera.updateProjectionMatrix();}}
@@ -152,7 +156,9 @@ function updateCamera(dt){
   const p=new THREE.Vector3(TREE.x+Math.sin(deco.yaw)*deco.dist,deco.h+1.1,TREE.z+Math.cos(deco.yaw)*deco.dist);
   camera.position.lerp(p,1-Math.exp(-dt*6));lookAt.lerp(new THREE.Vector3(TREE.x,deco.h,TREE.z),1-Math.exp(-dt*6));camera.lookAt(lookAt);return;}
  if(player.moving&&!input.looking()&&!sc){let d=player.root.rotation.y-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*1.2));}
- const gy=H(player.x,player.z)+(sc?sledPlay.lift:0);cam.target.set(player.x,gy+.62+(sc?.0:0),player.z);
+ const gy=sc?.y??(H(player.x,player.z)+(sc?sledPlay.lift:0));cam.target.set(player.x,gy+.62,player.z);
+ // 썰매: 진행 방향 앞·굽이 안쪽을 조금 더 본다(sled-play camera().ahead)
+ if(sc?.ahead){cam.target.x+=sc.ahead.x;cam.target.z+=sc.ahead.z;}
  if(aimK>.001){const rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);cam.target.x+=rx*.35*aimK;cam.target.z+=rz*.35*aimK;}
  const dist=cam.dist*(1-.22*aimK),cp=Math.cos(cam.pitch);camWant.set(cam.target.x+Math.sin(cam.yaw)*dist*cp,cam.target.y+Math.sin(cam.pitch)*dist+.25,cam.target.z+Math.cos(cam.yaw)*dist*cp);
  camWant.y=Math.max(camWant.y,H(camWant.x,camWant.z)+.35);
@@ -166,9 +172,9 @@ function updateCamera(dt){
 await serverReady;
 // 행동 상태: 옷 + 트리 꾸미는 중 + 놀이 칸(모닥불 자리·손 녹이기·코코아·썰매·눈덩이 밀기·눈 뭉치기)
 const myAct=()=>{const l=player.look??profile.look;return {o:l.outfit,hat:l.hat??'',sc:l.scarf==='stripe'?1:0,d:deco.on?1:0,
- ...(campfire?.act()??{}),...(snowman?.actFields()??{}),...(snowfight?.actFields()??{}),...(fightUi?.actFields()??{}),...(sledPlay?.actFields()??{})};};
+ ...(campfire?.act()??{}),...(snowman?.actFields()??{}),...(snowfight?.actFields()??{}),...(fightUi?.actFields()??{}),...(sledPlay?.actFields()??{}),...(gondola?.actFields()??{})};};
 let treePlay=null;
-const multi=createXmasMulti({ctx:{world,player,profile,mobile,heightAt:H,
+const multi=createXmasMulti({ctx:{world,player,profile,mobile,heightAt:H,gondolaY:(x,z)=>cabinYAt(x,z)?.y??H(x,z),
   createAvatar:({look,id,name})=>createXmasAvatar({rigUrl:RIG_URL,toon,look,id,name}),
   createLite:look=>createLiteDongdong({toon,look}),
   attachPoser:a=>createXmasPoser({avatar:a,world,toon})},
@@ -271,12 +277,17 @@ snowfight=createSnowfight({root:hud.root,world,toon,heightAt:H,player,poser,net,
 fightUi=createFightUi({root:hud.root,world,toon,heightAt:H,player,net,multi,hud,audio,snowfight,mobile,onChange:resend});
 sledPlay=createSledPlay({root:hud.root,world,toon,heightAt:H,player,poser,net,multi,hud,audio,input,mobile,onChange:resend});
 if(village.course?.boardCanvas)sledPlay.setBoardCanvas(village.course.boardCanvas,village.course.boardTex);
-addEventListener('xmas:multi-join',()=>{net.resetLocal();campfire.stand();if(sledPlay.mode!=='none')sledPlay.act('sled:off');});
+// 코스가 바뀌면(방 시드·새 코스) 산 위 길 그림도 다시
+sledPlay.onCourse(c=>village.course.setCourse(c));
+gondola=createGondolaPlay({world,toon,player,multi,hud,audio,onChange:resend,busy:()=>sledPlay.mode!=='none'});
+addEventListener('xmas:multi-join',()=>{net.resetLocal();campfire.stand();if(sledPlay.mode!=='none')sledPlay.act('sled:off');sledPlay.resetCourse();});
+addEventListener('xmas:multi-leave',()=>{sledPlay.resetCourse();});
 addEventListener('xmas:multi-leave',()=>{net.resetLocal();});
 
 // 지금 띄울 행동 단추(체험설계 §4-2 표). 첫 줄이 큰 단추(E)
 function currentActions(){
  if(deco.on)return [];
+ if(gondola.riding)return gondola.actions();
  if(sledPlay.mode!=='none')return sledPlay.actions();
  if(campfire.sitting)return [{id:'fire:warm',ic:'x-warm-hands',label:'손 녹이기',key:'E'},...(campfire.cocoaLeft?[{id:'fire:cocoa',ic:'x-cocoa',label:`코코아 ${campfire.cocoaLeft}`,key:'R'}]:[]),{id:'fire:stand',ic:'c-stand-up',label:'일어나기',key:'Q'}];
  if(campfire.walking)return [{id:'fire:stand',ic:'c-leave',label:'그만',key:'Q'}];
@@ -288,6 +299,7 @@ function currentActions(){
  if(nearFire(player.x,player.z))return [{id:'fire:sit',ic:'c-sit',label:'앉기',key:'E'}];
  const fa=snowfight.actions();if(fa.length)return fa;
  const sa=snowman.actions();if(sa.length)return sa;
+ const ga=gondola.actions();if(ga.length)return ga;
  return sledPlay.actions();
 }
 function doAction(id){
@@ -305,12 +317,13 @@ function doAction(id){
  if(id.startsWith('snow:'))return snowman.act(id);
  if(id.startsWith('sb:'))return snowfight.act(id);
  if(id.startsWith('sled:'))return sledPlay.act(id);
+ if(id.startsWith('gd:'))return gondola.act(id);
  return false;
 }
 // 놀이 구역에 들어가면 이름 띠(처음은 규칙 한 줄과 4초)
 const ZONES=Object.freeze({fight:{ic:'x-snowball',title:'눈싸움 마당',rule:FIGHT_TEXT.enter},snowman:{ic:'x-snowman',title:'눈사람 마당',rule:'눈덩이를 만들어 굴리면 커져요. 같이 밀면 더 빨라요'},sled:{ic:'x-sled',title:'썰매 산',rule:'출발대에서 「타기」 · 좌우로 기울이고 드리프트로 굽이를 돌아요'},fire:{ic:'x-campfire',title:'모닥불',rule:'통나무에 앉아 이야기해요'}});
 let zoneNow=null;
-function zoneAt(){if(inFightYard(player.x,player.z,-.3))return 'fight';if(inSnowmanYard(player.x,player.z,-.5))return 'snowman';if(player.z<-24&&Math.abs(player.x)<25)return 'sled';if(Math.hypot(player.x-CAMPFIRE.x,player.z-CAMPFIRE.z)<FIRE.talkR-1)return 'fire';return null;}
+function zoneAt(){if(inFightYard(player.x,player.z,-.3))return 'fight';if(inSnowmanYard(player.x,player.z,-.5))return 'snowman';if(player.z<-24&&Math.abs(player.x)<36)return 'sled';if(Math.hypot(player.x-CAMPFIRE.x,player.z-CAMPFIRE.z)<FIRE.talkR-1)return 'fire';return null;}
 function updateZone(){const z=zoneAt();if(z===zoneNow)return;zoneNow=z;if(!z)return;const Z=ZONES[z],first=!profile.zones.includes(z);
  hud.banner(Z.title,first?Z.rule:'',first?4:1.5,Z.ic);if(first){profile.zones.push(z);saveProfile();}}
 // PC 키: 단추에 적힌 글자(E·R·Q·F) = 그 단추, E는 장식 모드 끄기도, Esc 그만하기
@@ -378,7 +391,7 @@ dispatch('xmas:ready',{});
 
 // 진단·자동 점검용(브라우저 콘솔 window.xmas)
 window.xmas={village,player,multi,treePlay,hud,cam,deco,chat,pick,screenPos,
- poser,net,audio,gifts,campfire,snowman,snowfight,fightUi,sled:sledPlay,doAction,currentActions,
+ poser,net,audio,gifts,campfire,snowman,snowfight,fightUi,sled:sledPlay,gondola,doAction,currentActions,
  get giftOrn(){return giftOrn;},
  get fps(){return fps;},
  teleport(x,z,heading=player.heading){player.place(x,z,heading);cam.yaw=heading;},
@@ -387,5 +400,5 @@ window.xmas={village,player,multi,treePlay,hud,cam,deco,chat,pick,screenPos,
  // 선물 옷 받기(선물 우체통 단계가 붙으면 그쪽이 부른다): 이 기기에 남긴다
  addWardrobe(item){if(!profile.wardrobe.includes(item)){profile.wardrobe.push(item);saveProfile();}},
  status(){return {multi:multi.status(),fps:+fps.toFixed(1),player:{x:+player.x.toFixed(2),z:+player.z.toFixed(2),y:+player.root.position.y.toFixed(3),heading:+player.heading.toFixed(2),look:player.look,sitting:poser.sitting,arms:poser.arms},tree:{count:treePlay.count,stage:treePlay.stage,star:treePlay.star?.n??null},decorating:deco.on,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,
-  actions:hud.actions.map(a=>a.id),act:myAct(),gifts:gifts.status(),fire:campfire.status(),snowman:snowman.status(),fight:{...snowfight.status(),...fightUi.status()},sled:sledPlay.status(),audio:{unlocked:audio.unlocked,muted:audio.muted,...audio.stats,carol:audio.carolNow()},zone:zoneNow};},
+  actions:hud.actions.map(a=>a.id),act:myAct(),gifts:gifts.status(),fire:campfire.status(),snowman:snowman.status(),fight:{...snowfight.status(),...fightUi.status()},sled:sledPlay.status(),gondola:gondola.status(),audio:{unlocked:audio.unlocked,muted:audio.muted,...audio.stats,carol:audio.carolNow()},zone:zoneNow};},
 };
