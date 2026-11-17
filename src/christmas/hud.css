@@ -212,3 +212,61 @@ html.xh-sledding .joy{display:none}
 .xf-dots{position:absolute;inset:0;pointer-events:none}
 .xf-dots>i{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--ink);will-change:transform}
 .xf-dots>i.grey{background:#a9b0b8}
+/* ── 11-17 미니게임 공용 틀(game-ui.js): 카운트다운·위 띠·결과 창 */
+.xg-count{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font:900 120px/1 var(--nb-font);color:#fff;text-shadow:0 6px 0 var(--stamp-d),0 0 30px rgba(0,0,0,.45);pointer-events:none}
+.xg-count.go{font-size:84px;color:#ffe08a}
+@media (prefers-reduced-motion:no-preference){.xg-count.pop{animation:xg-pop .35s ease-out}@keyframes xg-pop{from{transform:translate(-50%,-50%) scale(1.6);opacity:0}}}
+.xg-bar{position:absolute;left:50%;top:calc(var(--st) + 10px);transform:translateX(-50%);display:grid;grid-template-columns:minmax(64px,1fr) auto minmax(64px,1fr);align-items:center;gap:12px;min-width:min(380px,calc(100vw - 150px));padding:6px 14px;border-radius:20px;background:var(--paper);box-shadow:var(--lift),var(--soft);font-weight:900;pointer-events:none}
+.xg-bar .xg-l{font-size:15px;text-align:left;white-space:nowrap}.xg-bar .xg-r{font-size:13px;text-align:right;white-space:nowrap;color:var(--ink2)}
+.xg-bar .xg-c{font:900 26px/1.1 ui-monospace,Menlo,var(--nb-font);font-variant-numeric:tabular-nums;text-align:center;min-width:5.2ch}
+.xg-bar.late .xg-c{color:var(--stamp)}
+.xg-note{position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);padding:5px 12px;border-radius:12px;background:var(--paper);box-shadow:var(--lift),var(--soft);font-size:15px;white-space:nowrap}
+.xg-note em,.xg-splits em{font-style:normal;font-weight:900;margin-left:4px}.xg-note em.up,.xg-splits em.up{color:#c23a32}.xg-note em.down,.xg-splits em.down{color:#2f8a4a}
+.xg-card{pointer-events:auto;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,90vw);max-height:calc(100% - 24px - var(--st) - var(--sb));overflow:auto;padding:0 16px 14px;border-radius:18px;background:var(--paper);box-shadow:var(--lift),var(--soft);text-align:center}
+.xg-ribbon{height:10px;margin:0 -16px 8px;background:var(--rib)}
+.xg-card>header{padding:8px 0 2px;font-size:20px;font-weight:900}
+.xg-body p{margin:6px 0}.xg-rank{display:flex;align-items:center;justify-content:center;gap:6px;font-size:16px}.xg-rank b{font-size:44px;line-height:1}.xg-rank.first{color:#b7841c}.xg-rank .ic{width:36px;height:36px}
+.xg-time{font:900 30px ui-monospace,Menlo,var(--nb-font);font-variant-numeric:tabular-nums}.xg-new{display:block;font:900 14px var(--nb-font);color:var(--stamp)}
+.xg-stars i{font-style:normal;font-size:28px;color:#d8cba8;margin:0 2px}.xg-stars i.on{color:var(--gold);text-shadow:0 1px 0 #a87a1a}
+.xg-splits,.xg-rows{list-style:none;margin:8px 0;padding:0;font-size:14px}.xg-splits li,.xg-rows li{display:flex;gap:8px;justify-content:space-between;padding:4px 6px;border-bottom:1px dashed var(--rule)}
+.xg-rows li.me{background:#fff3c4;border-radius:6px}.xg-rows li b{width:1.6em;text-align:left}.xg-rows li span{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xg-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.xg-btns button{display:flex;align-items:center;gap:6px;min-height:48px;padding:0 16px;border:0;border-radius:24px;font:900 15px var(--nb-font);cursor:pointer}
+.xg-ok{background:var(--stamp);color:#fff;box-shadow:1px 3px 0 var(--stamp-d)}.xg-sub{background:var(--paper2);color:var(--ink);box-shadow:var(--lift)}
+.xg-btns kbd{font:700 11px ui-monospace,Menlo,monospace;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.25)}.xh.touch .xg-btns kbd{display:none}
+/* ── 11-17 눈썰매 탈 때: 위 장소 칩·오른쪽 위 단추 대신 기록 띠·⚙ */
+html.xh-sledding .xh-top,html.xh-sledding .xh-tr,html.xh-sledding .xh-tags{display:none}
+.xl-steer{left:calc(var(--sl) + 16px);right:auto;bottom:calc(var(--sb) + 22px);gap:12px;justify-content:flex-start}
+.xl-pads{position:absolute;right:calc(var(--sr) + 18px);bottom:calc(var(--sb) + 22px);display:flex;flex-direction:column-reverse;align-items:center;gap:12px;pointer-events:none}
+.xl-drift,.xl-brake,.xl-push{pointer-events:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;border:0;border-radius:50%;touch-action:none;font:900 12px var(--nb-font);box-shadow:var(--lift),var(--soft)}
+.xl-drift{width:96px;height:96px;background:var(--pine);color:#fff}.xl-drift .ic{width:34px;height:34px}
+.xl-drift[data-lv="1"]{box-shadow:0 0 0 4px #fff,var(--soft)}.xl-drift[data-lv="2"]{box-shadow:0 0 0 5px #8fd8ff,0 0 18px #8fd8ff,var(--soft)}
+.xl-brake{width:64px;height:64px;background:var(--paper)}.xl-brake span{font-size:10.5px}
+.xl-drift.on,.xl-brake.on{transform:scale(.94);filter:brightness(1.1)}
+.xl-drift kbd,.xl-push kbd{font:700 10px ui-monospace,Menlo,monospace;padding:1px 4px;border-radius:4px;background:rgba(255,255,255,.25);margin-top:2px}
+.xl-push{position:absolute;left:50%;bottom:calc(var(--sb) + 26%);transform:translateX(-50%);width:110px;height:110px;background:var(--gold);color:var(--ink);font-size:15px}
+.xl-push.on{transform:translateX(-50%) scale(.94)}
+.xl-drag{position:absolute;left:0;right:0;bottom:0;height:50%;pointer-events:auto;touch-action:none}
+.xl-drag>i{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;border:3px solid rgba(255,255,255,.7);opacity:0;transform:translateX(var(--dx,0px));transition:opacity .15s}
+.xl-drag.on>i{opacity:1}
+.xl-steer,.xl-pads,.xl-push,.xl-tools,.xl-set,.xl-confirm,.xl-board,.xl-ask,.xg-card{z-index:2}
+.xl-prog{position:absolute;left:calc(var(--sl) + 18px);top:50%;transform:translateY(-50%);width:12px;height:200px;border-radius:6px;background:rgba(251,243,223,.7);box-shadow:var(--lift)}
+.xl-prog b{position:absolute;left:50%;width:16px;height:16px;margin:0 0 -8px -8px;border-radius:50%;border:2px solid var(--ink)}
+.xl-prog b.me{background:var(--stamp);width:20px;height:20px;margin:0 0 -10px -10px;z-index:2}.xl-prog b.other{background:var(--gold)}.xl-prog b.ghost{background:#8fd8ff;opacity:.85}
+.xl-tools{position:absolute;right:calc(var(--sr) + 14px);top:calc(var(--st) + 10px);display:flex;gap:8px}
+.xl-round{pointer-events:auto;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--paper);box-shadow:var(--lift),var(--soft)}
+.xh.touch .xl-round[data-x=restart]{width:56px;height:56px}
+.xl-set,.xl-confirm,.xl-board{pointer-events:auto;position:absolute;right:calc(var(--sr) + 14px);top:calc(var(--st) + 70px);width:min(300px,calc(100vw - 28px));padding:10px 12px;border-radius:14px;background:var(--paper);box-shadow:var(--lift),var(--soft)}
+.xl-set header,.xl-board header{display:flex;align-items:center;justify-content:space-between;font-weight:900}
+.xl-sens{display:flex;gap:6px;margin:6px 0 10px}.xl-sens button{flex:1;min-height:44px;border:0;border-radius:12px;background:var(--paper2);font:900 14px var(--nb-font);box-shadow:var(--lift)}
+.xl-sens button[aria-pressed=true]{background:var(--pine);color:#fff}
+.xl-confirm{left:50%;right:auto;transform:translateX(-50%);top:calc(var(--st) + 90px);text-align:center}.xl-confirm p{margin:4px 0 8px;font-weight:900}.xl-confirm .xh-row>*{flex:1}
+.xl-board{left:50%;right:auto;transform:translateX(-50%);top:calc(var(--st) + 80px);z-index:3}
+.xl-board ol{list-style:none;margin:8px 0 0;padding:0;font-size:15px}.xl-board li{display:flex;gap:8px;padding:6px 4px;border-bottom:1px dashed var(--rule)}.xl-board li b{width:1.4em}.xl-board li span{flex:1}.xl-board li em{font-style:normal;font-weight:900;font-variant-numeric:tabular-nums}.xl-board li.me{background:#fff3c4;border-radius:6px}
+.xh:not(.touch) .xl-drift{width:80px;height:80px}.xh:not(.touch) .xl-brake{width:56px;height:56px}
+@media (orientation:landscape) and (max-height:540px){.xg-count{font-size:88px}.xl-prog{height:150px}.xl-push{bottom:calc(var(--sb) + 18%);width:92px;height:92px}.xl-drift{width:84px;height:84px}}
+.xg-ribbon{display:block;width:auto;height:10px;margin:0 -16px 8px}
+.xh.touch .xg-bar{left:calc(var(--sl) + 12px);right:calc(var(--sr) + 132px);transform:none;min-width:0;grid-template-columns:auto 1fr auto;gap:6px;padding:5px 10px}
+.xh.touch .xg-bar .xg-c{font-size:22px}.xh.touch .xg-bar .xg-l{font-size:13px}.xh.touch .xg-bar .xg-r{font-size:11.5px}
+.xh.touch .xg-note{left:0;transform:none}
+html.xh-sledding .xc-chat,html.xh-sledding .hc-btn{display:none!important}

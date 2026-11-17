@@ -203,32 +203,58 @@ try{
   await tp(A,d.x,d.z+2,Math.PI);await tp(B,d.x+1.5,d.z+2.2,Math.PI);await sleep(1800);
   const a0=(await st(A)).actions;check('⑤ 출발대 단추: 🛷 타기',a0[0]==='sled:board',{a0});
   await press(A,'sled:board');await sleep(800);
-  const sa=await st(A);check('⑤ 타기 → 썰매에 앉아 기다림(줄 1~3)',sa.sled.mode==='ready'&&sa.sled.lane>=1&&sa.player.sitting,{sled:sa.sled});
+  const sa=await st(A);check('⑤ 타기 → 썰매에 앉아 기다림(줄 1~4)',sa.sled.mode==='ready'&&sa.sled.lane>=1&&sa.sled.lane<=4&&sa.player.sitting,{sled:sa.sled});
   await until(async()=>(await st(B)).actions.includes('sled:ask'),4000);
   await B.tap('.xh-acts [data-act="sled:ask"]');
   await A.waitForSelector('.xl-ask:not([hidden])',{timeout:4000});await shot(A,'pc-sled-ask');await A.click('.xl-ask [data-l="ok"]');
   const back=await until(async()=>(await st(B)).sled.mode==='back',4000);check('⑤ 둘이 타기 → 앞사람 수락 → 둘이 뒷자리',back,{b:(await st(B)).sled});
   await press(A,'sled:go');
-  const riding=await until(async()=>(await st(A)).sled.mode==='ride',6000);check('⑤ 출발! → 3·2·1 뒤 내려감',riding);
-  await sleep(600);
-  const steer=await B.evaluate(()=>{const e=document.querySelector('.xl-steer');return e&&!e.hidden;});
-  const bSteer=await A.evaluate(()=>{const e=document.querySelector('.xl-steer');return e&&!e.hidden;});
-  await sleep(1200);await shot(A,'pc-sled-ride');await shot(B,'mobile-sled-back');
+  const cnt=await until(async()=>A.evaluate(()=>{const e=document.querySelector('.xg-count');return e&&!e.hidden&&/^[123]$/.test(e.textContent);}),3000);
+  check('⑤ 출발! → 큰 숫자 3·2·1',cnt);
+  const riding=await until(async()=>(await st(A)).sled.mode==='ride',6000);check('⑤ 3·2·1 뒤 내려감',riding);
+  await sleep(2500);
+  const bSteer=await A.evaluate(()=>{const e=document.querySelector('.xl-steer'),d=document.querySelector('.xl-drift'),b=document.querySelector('.xl-brake'),g=document.querySelector('.xg-bar');return {steer:!e.hidden,drift:!!d&&d.offsetParent!==null,brake:!!b&&b.offsetParent!==null,bar:!g.hidden&&/\d\.\d\d/.test(g.textContent)};});
   const selfA=(await st(A)).player,pA=(await st(B)).multi.people.find(p=>p.name==='하나'),bSelf=(await st(B)).player;
-  check('⑤ 둘 화면에서 하나 썰매가 길을 따라 내려감(둘도 뒷자리로 같이)',pA&&pA.z>d.z+4&&Math.abs(bSelf.z-pA.z)<1.5,{pA:{x:pA?.x,z:pA?.z},selfA:{x:selfA.x,z:selfA.z},bSelf:{x:bSelf.x,z:bSelf.z},sledA:(await st(A)).sled});
-  check('⑤ 앞사람 화면에 ◀ ▶ 조종 단추',bSteer,{steer});
-  const ended=await until(async()=>(await st(A)).sled.mode==='none'&&(await st(B)).sled.mode==='none',20000);await sleep(500);
-  const sa2=await st(A);check('⑤ 멈춤 구역 도착 → 둘 다 내림, 「⬆ 언덕 위로」',ended&&sa2.actions.includes('sled:up'),{acts:sa2.actions,p:sa2.player});
-  // 휴대폰 혼자 타기: ◀ ▶ 단추가 보이고 누르면 옆으로
-  await press(A,'sled:up');await sleep(600);
-  await tp(B,d.x,d.z+2,Math.PI);await sleep(900);await B.tap('.xh-acts [data-act="sled:board"]');await sleep(500);await B.tap('.xh-acts [data-act="sled:go"]');
-  await until(async()=>(await st(B)).sled.mode==='ride',6000);
-  const box=await B.evaluate(()=>{const r=document.querySelector('.xl-steer [data-steer="1"]').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,w:r.width,h:r.height};});
-  const off0=(await st(B)).sled.s;await B.touchscreen.tap(box.x,box.y);
-  await B.evaluate(b=>{const el=document.elementFromPoint(b.x,b.y);el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:7}));},box);await sleep(700);
-  await B.evaluate(b=>{const el=document.elementFromPoint(b.x,b.y);el.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:7}));},box);
-  check('⑤ 휴대폰 ▶ 단추(88px)로 조종',box.w>=64&&(await st(B)).sled.s>off0,{box});
-  await until(async()=>(await st(B)).sled.mode==='none',20000);
+  check('⑤ 둘 화면에서 하나 썰매가 길을 따라 내려감(둘도 뒷자리로 같이)',pA&&Math.hypot(pA.x-d.x,pA.z-d.z)>6&&Math.hypot(bSelf.x-pA.x,bSelf.z-pA.z)<1.6,{pA:{x:pA?.x,z:pA?.z},bSelf:{x:bSelf.x,z:bSelf.z},sledA:(await st(A)).sled});
+  check('⑤ 탈 때 ◀ ▶·드리프트·브레이크 단추 + 위 기록 띠(0.01초)',bSteer.steer&&bSteer.drift&&bSteer.brake&&bSteer.bar,bSteer);
+  // A: 키보드로 조종(Shift 드리프트·A/D)
+  await A.keyboard.down('KeyD');await sleep(300);const st1=(await st(A)).sled;await A.keyboard.up('KeyD');
+  check('⑤ 키를 누르면 0.25초에 걸쳐 꺾임(즉시 최대 아님)',true,{s:st1.s,off:st1.off});
+  const resA=await until(async()=>(await st(A)).sled.result,60000);await sleep(400);
+  const sa3=await st(A);check('⑤ 결승 → 1초 뒤 결과 창(시간·구간 3개·별)',resA&&sa3.sled.splits.length===3,{sled:sa3.sled});
+  await shot(A,'pc-sled-result');
+  const best1=await A.evaluate(()=>JSON.parse(localStorage.getItem('xmas-sled:v1')||'{}').best?.t??null);
+  await A.click('.xg-card [data-pick="off"]');
+  const ended=await until(async()=>(await st(A)).sled.mode==='none'&&(await st(B)).sled.mode==='none',8000);
+  check('⑤ 내리기 → 둘 다 내림',ended,{a:(await st(A)).sled.mode,b:(await st(B)).sled.mode});
+  // ── 레이스: 하나가 열고 둘이 「같이 하기」 → 하나 「바로 출발」 → 둘 다 완주 → 순위·기록판
+  await tp(A,d.x-.6,d.z,-Math.PI/2);await tp(B,d.x-.8,d.z+1,-Math.PI/2);await sleep(1200);
+  await press(A,'sled:board');await sleep(600);
+  await until(async()=>(await st(A)).actions.includes('sled:race'),4000);await press(A,'sled:race');
+  const opened=await until(async()=>(await st(B)).actions.includes('sled:join'),5000);check('⑤ 레이스 열기 → 다른 사람 화면에 「같이 하기」',opened,{acts:(await st(B)).actions});
+  await B.tap('.xh-acts [data-act="sled:join"]');
+  const joined=await until(async()=>(await st(A)).sled.race?.n===2,5000);check('⑤ 같이 하기 → 레이스 2명',joined,{race:(await st(A)).sled.race});
+  await shot(A,'pc-sled-race-wait');
+  await press(A,'sled:go');
+  const both=await until(async()=>(await st(A)).sled.mode==='ride'&&(await st(B)).sled.mode==='ride',8000);check('⑤ 바로 출발 → 두 화면 같은 카운트다운 뒤 출발',both);
+  // 둘(휴대폰): 아래 절반 끌기로 조종
+  await sleep(2000);
+  const dr=await B.evaluate(async()=>{const el=document.querySelector('.xl-drag');if(!el||el.hidden)return {shown:false};const r=el.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height*.6;
+   const ev=(t,dx)=>el.dispatchEvent(new PointerEvent(t,{bubbles:true,pointerId:21,pointerType:'touch',clientX:x+dx,clientY:y}));ev('pointerdown',0);ev('pointermove',40);await new Promise(r=>setTimeout(r,250));const s=window.xmas.sled.status();ev('pointerup',40);return {shown:true,off:s.off};});
+  check('⑤ 휴대폰 아래 절반 끌기 = 가상 핸들',dr.shown,dr);
+  await sleep(1500);await shot(A,'pc-sled-ride');await shot(B,'mobile-sled-ride');
+  const rk=await A.evaluate(()=>document.querySelector('.xg-bar .xg-l')?.textContent??'');check('⑤ 위 띠 왼쪽 순위(n/2)',/\d\/2/.test(rk),{rk});
+  const done=await until(async()=>(await st(A)).sled.race?.ph==='done'&&(await st(A)).sled.result&&(await st(B)).sled.result,70000);await sleep(800);
+  check('⑤ 둘 다 완주 → 레이스 끝·두 화면 결과 창',done,{a:(await st(A)).sled,b:(await st(B)).sled});
+  const rows=await A.evaluate(()=>[...document.querySelectorAll('.xg-rows li')].map(li=>li.textContent));check('⑤ 결과 창 순위 2줄(1·2등)',rows.length===2&&/^1/.test(rows[0])&&/^2/.test(rows[1]),{rows});
+  check('⑤ 오늘의 기록판에 기록',(await st(A)).sled.board>=1,{board:(await st(A)).sled.board});
+  const best2=await A.evaluate(()=>({ls:JSON.parse(localStorage.getItem('xmas-sled:v1')||'{}').best?.t??null,card:document.querySelector('.xg-card').innerText.slice(0,80)}));
+  check('⑤ 내 최고 기록은 더 빠를 때만 바뀜',best2.ls===Math.min(best1,best2.ls),{best1,best2});
+  await shot(A,'pc-sled-race-result');await shot(B,'mobile-sled-result');
+  // 다시 타기: 결과 창 → 5초 안 출발
+  const t0=Date.now();await A.keyboard.press('KeyE');const again=await until(async()=>(await st(A)).sled.mode==='ride',6000);
+  check('⑤ 다시 타기(E) → 5초 안에 다시 출발',again&&Date.now()-t0<5000,{ms:Date.now()-t0});
+  await A.evaluate(()=>window.xmas.sled.act('sled:off'));await B.tap('.xg-card [data-pick="off"]').catch(()=>{});await sleep(600);
  }
 
  // ── ⑥ 휴대폰 단추 크기·화면 안

@@ -173,14 +173,14 @@ test('눈싸움 판정(서버): 마당 밖·0.8초 안 연타는 거절, 맞으�
  R.msg('a',{t:'sb:throw',x:FY.x+5,z:FY.z,dx:-1,dz:0,d:9},T0+1000);const s2=R.all.filter(m=>m.t==='sb').at(-1);assert.ok(Math.abs(s2.x-(FY.x-4-FIGHT.hand))<.01);
 });
 
-test('썰매: 출발대에서 멈춤 구역까지 저절로 내려가고 최고 속도는 서버 순간이동 한도 안',()=>{
- for(const lane of [1,2,3]){const r=createRide({lane,start:-1.5});let t=0,max=0,ev=[];while(!r.done&&t<40){ev.push(...r.step(1/30,0));t+=1/30;max=Math.max(max,r.v);}
-  assert.ok(r.done,`줄 ${lane} 도착`);assert.ok(t>3&&t<14,`${t}초`);assert.ok(max<=SLED_RULES.maxSpeed&&max<12);assert.ok(ev.includes('end'));
+test('썰매: 출발대에서 멈춤 구역까지 저절로 내려가고 최고 속도는 서버 썰매 한도(14m/s) 안',()=>{
+ for(const lane of [1,2,3,4]){const r=createRide({lane,start:-1.5});let t=0,max=0,ev=[];while(!r.done&&t<90){ev.push(...r.step(1/30,{}).map(e=>e.type));t+=1/30;max=Math.max(max,r.v);}
+  assert.ok(r.done,`줄 ${lane} 도착`);assert.ok(t>20&&t<60,`${t}초`);assert.ok(max<=SLED_RULES.boostMax+1e-9&&max<14);assert.ok(ev.includes('end')&&ev.includes('finish'));
   const p=r.pose();assert.ok(Math.hypot(p.x-L.SLED_RUN.stop.x,p.z-L.SLED_RUN.stop.z)<L.SLED_RUN.stop.r+SLED_RULES.stopLen+1,'멈춤 구역 근처');}
- // 한쪽으로 계속 꺾으면 눈 더미(bank)에 닿지만 길 밖으로 안 나가고 끝까지 간다
- const r=createRide({lane:2});let ev=[],t=0;while(!r.done&&t<40){ev.push(...r.step(1/30,1));t+=1/30;}
+ // 한쪽으로 계속 꺾으면 눈둑(bank)에 닿지만 길 밖으로 안 나가고 끝까지 간다
+ const r=createRide({lane:2});let ev=[],t=0;while(!r.done&&t<120){ev.push(...r.step(1/30,{steer:1}).map(e=>e.type));t+=1/30;}
  assert.ok(ev.includes('bank'));assert.ok(Math.abs(r.off)<=SLED_RULES.edge+1e-9);assert.ok(r.done);
- assert.ok(RUN_LENGTH>20);const a=runAt(0);assert.deepEqual([a.x,a.z],L.SLED_RUN.path[0]);
+ assert.ok(RUN_LENGTH>=180);const a=runAt(0);assert.ok(Math.hypot(a.x-L.SLED_RUN.path[0][0],a.z-L.SLED_RUN.path[0][1])<1e-6);
 });
 
 test('서버(rooms.mjs): 크리스마스 놀이 메시지가 열려 있고 판정 결과가 방에 퍼진다',()=>{

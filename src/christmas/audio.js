@@ -10,7 +10,7 @@
 import {createDeck} from '../radio-audio.js';
 import {CAROLS,CAROL_DIR,carolAt} from './carols.js';
 export const CAROL_LEVEL=.24,CAROL_FIRE=.12; // 캐럴 버스 크기(평소·모닥불에 앉았을 때)
-export const XMAS_SOUNDS=Object.freeze(['jingle','mail','open','throw','hit','roll','done','bank','pop','warm']);
+export const XMAS_SOUNDS=Object.freeze(['jingle','mail','open','throw','hit','roll','done','bank','pop','warm','beep','go','boost','tick']);
 export const FIRE_HEAR=12; // 모닥불이 들리는 거리(m)
 // 거리 → 크기(0~1): 1m 안 그대로, radius 밖 0, 사이는 제곱
 export function hearGain(d,radius=FIRE_HEAR){if(!Number.isFinite(d))return 1;if(d<=1)return 1;if(d>=radius)return 0;const k=1-(d-1)/(radius-1);return k*k;}
@@ -86,6 +86,11 @@ export function createXmasAudio({muted=false,carol:carolOn=true,win=globalThis.w
    case 'bank':burst(t,.35,{f:700,type:'lowpass',v:.6*k,to:200});break;
    case 'pop':tone(t,880,.12,{v:.08*k,to:1320});break;
    case 'warm':burst(t,.6,{f:3000,q:.5,v:.05*k,to:1500});break;
+   // 11-17 미니게임: 카운트다운 삑·출발 뿡·부스터 휙·마지막 10초 째깍
+   case 'beep':tone(t,880,.16,{type:'square',v:.06*k});break;
+   case 'go':tone(t,1320,.1,{type:'square',v:.07*k});tone(t+.08,220,.32,{type:'sawtooth',v:.08*k,to:160});break;
+   case 'boost':burst(t,.4,{f:900,q:1.4,v:.18*k,to:3200});break;
+   case 'tick':tone(t,1800,.04,{type:'square',v:.04*k});break;
    default:stats.played--;return false;
   }
   return true;

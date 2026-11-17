@@ -1,162 +1,246 @@
 {
- "at": "2026-11-17T02:03:54.778Z",
+ "at": "2026-11-17T02:30:25.952Z",
  "checks": {
-  "④ 눈싸움 마당 단추: ❄️ 던지기·🤲 눈 뭉치기·웅크리기": {
+  "⑤ 출발대 단추: 🛷 타기": {
    "ok": true,
    "a0": [
-    "sb:throw",
-    "sb:pack",
-    "sb:crouch"
+    "sled:board",
+    "sled:records"
    ]
   },
-  "④ F 누름 0.1초 안 점선 포물선·착탄 고리·힘 게이지": {
+  "⑤ 타기 → 썰매에 앉아 기다림(줄 1~4)": {
    "ok": true,
-   "aim": {
-    "src": "key",
-    "t": 0.17,
-    "dots": true,
-    "ring": true,
-    "tx": -25,
-    "tz": 6.5,
-    "hit": "j37v9jln",
-    "target": null
+   "sled": {
+    "mode": "ready",
+    "lane": 4,
+    "s": null,
+    "v": null,
+    "off": null,
+    "t": null,
+    "splits": [],
+    "finished": false,
+    "front": null,
+    "partner": null,
+    "remote": 0,
+    "race": null,
+    "board": 0,
+    "result": false,
+    "ghost": false,
+    "sens": "normal",
+    "best": null
    }
   },
-  "④ 떼면 실제 착탄 = 미리보기 고리 안(0.3m)": {
+  "⑤ 둘이 타기 → 앞사람 수락 → 둘이 뒷자리": {
    "ok": true,
-   "pv2": {
-    "src": "key",
-    "t": 0.42,
-    "dots": true,
-    "ring": true,
-    "tx": -25,
-    "tz": 6.5,
-    "hit": "j37v9jln",
-    "target": null
-   },
-   "sb": {
-    "t": "sb",
-    "id": "9arao416",
-    "x": -29.65,
-    "z": 6.5,
-    "tx": -25,
-    "tz": 6.5,
-    "d0": 11.05,
-    "ms": 478,
-    "hit": "j37v9jln",
-    "head": 1
-   },
-   "aId": "9arao416",
-   "after": {
-    "inYard": true,
-    "ammo": 2,
-    "packing": false,
-    "crouch": false,
-    "stun": 0,
-    "flying": 1,
-    "covers": {},
-    "aim": null
+   "b": {
+    "mode": "back",
+    "lane": 0,
+    "s": null,
+    "v": null,
+    "off": null,
+    "t": null,
+    "splits": [],
+    "finished": false,
+    "front": "dlnqewdt",
+    "partner": null,
+    "remote": 1,
+    "race": null,
+    "board": 0,
+    "result": false,
+    "ghost": false,
+    "sens": "normal",
+    "best": null
    }
   },
-  "④ 고리가 사람 위면 빨강·과녁(조준 대상 = 둘)": {
-   "ok": true,
-   "pv2": {
-    "src": "key",
-    "t": 0.42,
-    "dots": true,
-    "ring": true,
-    "tx": -25,
-    "tz": 6.5,
-    "hit": "j37v9jln",
-    "target": null
-   }
-  },
-  "④ 하나 F → 둘이 맞음(두 화면 모두 눈투성이)": {
-   "ok": true,
-   "covA": {
-    "j37v9jln": 1
-   },
-   "covB": {
-    "j37v9jln": 1
-   }
-  },
-  "④ 손 눈덩이 3 → 2": {
+  "⑤ 출발! → 큰 숫자 3·2·1": {
    "ok": true
   },
-  "④ 둘(휴대폰) ❄️ 짧게 = 자동 조준으로 하나를 맞힘": {
-   "ok": true,
-   "cov": {
-    "j37v9jln": 1,
-    "9arao416": 1
-   }
-  },
-  "④ 휴대폰 ❄️ 길게 누르고 끌기 → 조준 뒤 던짐": {
-   "ok": true,
-   "aim": {
-    "aiming": true,
-    "ring": {
-     "inYard": true,
-     "ammo": 2,
-     "packing": false,
-     "crouch": false,
-     "stun": 0,
-     "flying": 0,
-     "covers": {
-      "j37v9jln": 1,
-      "9arao416": 1
-     },
-     "aim": {
-      "src": "touch",
-      "t": 0.65,
-      "dots": true,
-      "ring": true,
-      "tx": -30,
-      "tz": 6.5,
-      "hit": "9arao416",
-      "target": null
-     }
-    }
-   },
-   "ammo": 1,
-   "thrown0": 2
-  },
-  "④ 휴대폰 ❄️ 누른 채 끌기 → 점선·고리(캐릭터 앞 월드에)": {
-   "ok": true,
-   "mv": {
-    "src": "touch",
-    "t": 0.72,
-    "dots": true,
-    "ring": true,
-    "tx": -34.33,
-    "tz": 7.57,
-    "hit": null,
-    "target": null
-   }
-  },
-  "④ 웅크리기 단추(누르는 동안) → act.cr 1·자세 웅크림": {
-   "ok": true,
-   "act": {
-    "o": "elf",
-    "hat": "elf",
-    "sc": 0,
-    "d": 0,
-    "st": 0,
-    "wm": 0,
-    "cc": 0,
-    "pu": 0,
-    "pk": 0,
-    "cr": 1,
-    "sl": 0,
-    "sp": ""
-   },
-   "arms": "crouch"
-  },
-  "④ 눈 뭉치기(1초) → 손 눈덩이 +1": {
-   "ok": true,
-   "ammo": 3
-  },
-  "④ 마당 밖에서는 F를 눌러도 안 던져짐(모닥불 쪽 안전)": {
+  "⑤ 3·2·1 뒤 내려감": {
    "ok": true
+  },
+  "⑤ 둘 화면에서 하나 썰매가 길을 따라 내려감(둘도 뒷자리로 같이)": {
+   "ok": true,
+   "pA": {
+    "x": 4.03,
+    "z": -53.9
+   },
+   "bSelf": {
+    "x": 3.45,
+    "z": -53.9
+   },
+   "sledA": {
+    "mode": "ride",
+    "lane": 4,
+    "s": 6.86,
+    "v": 4.09,
+    "off": 1.5,
+    "t": 2.6,
+    "splits": [],
+    "finished": false,
+    "front": null,
+    "partner": "u2pny8gg",
+    "remote": 0,
+    "race": null,
+    "board": 0,
+    "result": false,
+    "ghost": false,
+    "sens": "normal",
+    "best": null
+   }
+  },
+  "⑤ 탈 때 ◀ ▶·드리프트·브레이크 단추 + 위 기록 띠(0.01초)": {
+   "ok": true,
+   "steer": true,
+   "drift": true,
+   "brake": true,
+   "bar": true
+  },
+  "⑤ 키를 누르면 0.25초에 걸쳐 꺾임(즉시 최대 아님)": {
+   "ok": true,
+   "s": 8.12,
+   "off": 1.62
+  },
+  "⑤ 결승 → 1초 뒤 결과 창(시간·구간 3개·별)": {
+   "ok": true,
+   "sled": {
+    "mode": "result",
+    "lane": 4,
+    "s": 202.38,
+    "v": 4.73,
+    "off": 1.48,
+    "t": 27.62,
+    "splits": [
+     13.73,
+     19.17,
+     26.135
+    ],
+    "finished": true,
+    "front": null,
+    "partner": "u2pny8gg",
+    "remote": 0,
+    "race": null,
+    "board": 1,
+    "result": true,
+    "ghost": false,
+    "sens": "normal",
+    "best": 26.135
+   }
+  },
+  "⑤ 내리기 → 둘 다 내림": {
+   "ok": true,
+   "a": "none",
+   "b": "none"
+  },
+  "⑤ 레이스 열기 → 다른 사람 화면에 「같이 하기」": {
+   "ok": true,
+   "acts": [
+    "sled:join",
+    "sled:board",
+    "sled:records"
+   ]
+  },
+  "⑤ 같이 하기 → 레이스 2명": {
+   "ok": true,
+   "race": {
+    "ph": "wait",
+    "n": 2,
+    "host": "dlnqewdt",
+    "mine": true
+   }
+  },
+  "⑤ 바로 출발 → 두 화면 같은 카운트다운 뒤 출발": {
+   "ok": true
+  },
+  "⑤ 휴대폰 아래 절반 끌기 = 가상 핸들": {
+   "ok": true,
+   "shown": true,
+   "off": 0.56
+  },
+  "⑤ 위 띠 왼쪽 순위(n/2)": {
+   "ok": true,
+   "rk": "1/2"
+  },
+  "⑤ 둘 다 완주 → 레이스 끝·두 화면 결과 창": {
+   "ok": true,
+   "a": {
+    "mode": "result",
+    "lane": 2,
+    "s": 203.49,
+    "v": 3.75,
+    "off": -0.34,
+    "t": 30.55,
+    "splits": [
+     14.06,
+     19.354,
+     28.702
+    ],
+    "finished": true,
+    "front": null,
+    "partner": null,
+    "remote": 1,
+    "race": {
+     "ph": "done",
+     "n": 2,
+     "host": "dlnqewdt",
+     "mine": false
+    },
+    "board": 2,
+    "result": true,
+    "ghost": false,
+    "sens": "normal",
+    "best": 26.135
+   },
+   "b": {
+    "mode": "result",
+    "lane": 3,
+    "s": 206.94,
+    "v": 0.24,
+    "off": 1.5,
+    "t": 30,
+    "splits": [
+     13.279,
+     19.068,
+     26.033
+    ],
+    "finished": true,
+    "front": null,
+    "partner": null,
+    "remote": 1,
+    "race": {
+     "ph": "done",
+     "n": 2,
+     "host": "dlnqewdt",
+     "mine": false
+    },
+    "board": 2,
+    "result": true,
+    "ghost": false,
+    "sens": "normal",
+    "best": 26.033
+   }
+  },
+  "⑤ 결과 창 순위 2줄(1·2등)": {
+   "ok": true,
+   "rows": [
+    "1둘26.03",
+    "2하나28.70"
+   ]
+  },
+  "⑤ 오늘의 기록판에 기록": {
+   "ok": true,
+   "board": 2
+  },
+  "⑤ 내 최고 기록은 더 빠를 때만 바뀜": {
+   "ok": true,
+   "best1": 26.135,
+   "best2": {
+    "ls": 26.135,
+    "card": "2등\n\n2\n/ 2등\n\n28.70\n\n★★★\n\n구간 1\n14.06\n+0.33\n구간 2\n5.29\n−0.15\n구간 3\n9.35\n+2.38\n1\n둘\n26."
+   }
+  },
+  "⑤ 다시 타기(E) → 5초 안에 다시 출발": {
+   "ok": true,
+   "ms": 3088
   },
   "⑥ 휴대폰 단추가 모두 44px 이상·화면 안": {
    "ok": true,

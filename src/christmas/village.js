@@ -8,6 +8,7 @@ import {XMAS,XMAS_SKY} from './palette.js';
 import * as L from './layout.js';
 import * as P from './props.js';
 import {createSnowfall} from './snowfall.js';
+import {buildSledCourse} from './sled-course-art.js';
 
 const lin=hex=>new THREE.Color(hex);
 const smooth=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
@@ -41,8 +42,8 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false}){
   for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),y=H(x,z);p.setY(i,y);
    const n=Math.sin(x*.37+z*.21)*Math.sin(z*.43-x*.17);c.copy(snow).lerp(shade,.08+.06*n);
    let k=0;for(const [a,b] of PATHS)k=Math.max(k,1-smooth(.9,2,segDist(x,z,a,b)));
-   const run=L.nearestRun(x,z);if(H(x,z)>.05||Math.hypot(x,z)>L.PLAZA.radius){k=Math.max(k,(1-smooth(L.SLED_RUN.width*.35,L.SLED_RUN.width*.55,run.d))*.9);}
-   c.lerp(k>.5&&run.d<2?packed:path,k*.6);col.set([c.r,c.g,c.b],i*3);}
+   const run=L.nearestRun(x,z);if(Math.hypot(x,z)>L.PLAZA.radius){k=Math.max(k,(1-smooth(L.SLED_RUN.width*.5,L.SLED_RUN.width*.5+1,run.d))*.9);}
+   c.lerp(k>.5&&run.d<2.5?packed:path,k*.6);col.set([c.r,c.g,c.b],i*3);}
   g.setAttribute('color',new THREE.BufferAttribute(col,3));g.computeVertexNormals();
   noEdge(toonMesh(g,'눈 땅'));
   // 바깥 눈벌판(먼 곳까지 이어지는 평평한 눈, 안개에 녹는다)
@@ -94,36 +95,10 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false}){
  yardFlags(Y,5);putS(P.buildSign(tz,['❄️ 눈싸움 마당','안에서만 던져요']),Y.x+Y.w/2+.6,Y.z+Y.d/2-1.2,Math.PI/2);
  // ── 눈사람 마당: 경계 깃발 + 팻말 + 눈 더미
  const SM=L.SNOWMAN_YARD;yardFlags(SM,9);putS(P.buildSign(tz,['⛄ 눈사람 마당','굴려서 키워요']),SM.x-SM.w/2-.6,SM.z+SM.d/2-1.2,-Math.PI/2);
- // ── 썰매 언덕: 출발대·계단길·길가 눈둑·멈춤 구역
+ // ── 썰매 산(11-17 긴 코스): 길·눈둑·출발대·기록판·점프대·부스터·장애물·결승 아치·멈춤 구역(sled-course-art.js)
  const R=L.SLED_RUN;
- {const d=R.deck,y=H(d.x,d.z);const deck=P.buildSledDeck(tz,{w:d.w,d:d.d,lanes:d.lanes});putS(deck,d.x,d.z,0,y+.02);}
- {const pts=R.stairs,geos=[],posts=[];let acc=0;
-  for(let i=0;i<pts.length-1;i++){const [ax,az]=pts[i],[bx,bz]=pts[i+1],len=Math.hypot(bx-ax,bz-az),ry=Math.atan2(bx-ax,bz-az);
-   for(let s=0;s<len;s+=.5){const x=ax+(bx-ax)*s/len,z=az+(bz-az)*s/len,y=H(x,z),b=new THREE.BoxGeometry(1.3,.22,.34);b.rotateY(ry);b.translate(x,y-.07,z);geos.push(b);
-    if((acc+=.5)%2<.5){const px=x+Math.cos(ry)*.8,pz=z-Math.sin(ry)*.8,pb=new THREE.BoxGeometry(.09,.8,.09);pb.translate(px,H(px,pz)+.36,pz);posts.push(pb);}}}
-  const sm=new THREE.Mesh(mergeGeometries(geos),f.basic(lin(XMAS.wood),{name:'xmas-steps'}));sm.name='언덕 계단길';sm.receiveShadow=sm.castShadow=true;group.add(sm);
-  const pm=new THREE.Mesh(mergeGeometries(posts),f.basic(lin(XMAS.woodDark),{name:'xmas-step-posts'}));pm.castShadow=true;group.add(pm);
-  // 손잡이 줄(말뚝 위를 잇는 빨간 줄)
-  const top=posts.map(b=>{b.computeBoundingBox();const c=new THREE.Vector3();b.boundingBox.getCenter(c);c.y=b.boundingBox.max.y-.04;return c;});
-  if(top.length>1){const rope=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(top),top.length*6,.022,5,false),f.basic(lin(XMAS.santaRed),{name:'xmas-rope'}));group.add(rope);}}
- // 썰매 길 양옆 눈둑: 길을 따라 이어진 납작한 눈 관(끊긴 덩어리 줄은 애벌레처럼 보인다) + 굽은 곳 바깥 깃발
- {const P0=R.path,curve=new THREE.CatmullRomCurve3(P0.map(([x,z])=>new THREE.Vector3(x,0,z))),n=80,flags=[],r=rng(31);
-  for(const s of [-1,1]){const pts=[];for(let i=0;i<=n;i++){const u=i/n;if(u>.9)break;const p=curve.getPointAt(u),t=curve.getTangentAt(u),nx=t.z,nz=-t.x,off=R.width/2+.45+.12*Math.sin(u*31+s);
-    const x=p.x+nx*s*off,z=p.z+nz*s*off;pts.push(new THREE.Vector3(x,H(x,z)+.02,z));
-    if(i%9===4){const fx=p.x+nx*s*(off+.7),fz=p.z+nz*s*(off+.7);flags.push([fx,fz,Math.floor(r()*4)]);}}
-   const g=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),pts.length*3,.42,10,false),pp=g.attributes.position;
-   // 납작하게: 관 가운데 선 높이 기준으로 위아래를 눌러 둑 모양
-   for(let k=0;k<pp.count;k++){const x=pp.getX(k),z=pp.getZ(k),y=pp.getY(k),gy=H(x,z);pp.setY(k,Math.max(gy-.1,gy+(y-gy)*.55));}
-   g.computeVertexNormals();const m=noEdge(new THREE.Mesh(g,f.basic(lin(XMAS.snow),{name:'xmas-bank'})));m.name='썰매 길 눈둑';m.receiveShadow=true;group.add(m);}
-  const fg=flags.map(([x,z,c])=>{const g=P.flagPostGeometry(XMAS.flag[c]);g.scale(1.3,1.3,1.3);g.translate(x,H(x,z)-.05,z);return g;});
-  const fm=new THREE.Mesh(mergeGeometries(fg),vcMat());fm.name='썰매 길 깃발';tz(fm,{kind:'prop'});fm.castShadow=true;group.add(fm);}
- // 멈춤 구역: 끝을 감싸는 둥근 눈 둔덕(푹신한 벽)
- {const s=R.stop,pts=[],end=R.path.at(-1),prev=R.path.at(-2),dir=Math.atan2(end[0]-prev[0],end[1]-prev[1]);
-  for(let i=0;i<=24;i++){const a=dir-1.35+i/24*2.7,x=s.x+Math.sin(a)*(s.r+.5),z=s.z+Math.cos(a)*(s.r+.5);pts.push(new THREE.Vector3(x,H(x,z),z));}
-  const g=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),48,.55,10,false),pp=g.attributes.position;for(let k=0;k<pp.count;k++){const x=pp.getX(k),z=pp.getZ(k),gy=H(x,z);pp.setY(k,Math.max(gy-.1,gy+(pp.getY(k)-gy)*.7));}
-  g.computeVertexNormals();const m=noEdge(new THREE.Mesh(g,f.basic(lin(XMAS.snow),{name:'xmas-stop-pile'})));m.name='멈춤 구역 눈 둔덕';m.receiveShadow=true;group.add(m);}
- putS(P.buildSign(tz,['🛷 썰매 언덕','계단으로 올라가요']),R.stairs[0][0]+1.4,R.stairs[0][1]+1,Math.PI*.1);
- const sleds=samples?Array.from({length:R.deck.lanes},(_,i)=>{const s=P.buildSled(tz),d=R.deck,x=d.x+(i-(d.lanes-1)/2)*(d.w/d.lanes);put(s,x,d.z+.1,Math.PI*.9+.1,H(d.x,d.z)+.11);return s;}):[];
+ const course=buildSledCourse({group,tz,f,H,vcMat,noEdge,putS,mobile});
+ const sleds=samples?Array.from({length:R.deck.lanes},(_,i)=>{const s=P.buildSled(tz),d=R.deck;put(s,d.x,d.z+(i-1.5),Math.PI/2,H(d.x,d.z)+.11);return s;}):[];
  // ── 마을 입구 아치(남쪽, 처음 들어올 때 지나는 문)
  {const arch=P.buildArch(tz);putS(arch.group,L.ENTRANCE.x,L.ENTRANCE.z,0,0);for(const sx of [-1,1])circleC(L.ENTRANCE.x+sx*L.ENTRANCE.w/2,L.ENTRANCE.z,.35);}
  // ── 가로등(바닥 빛 + 가까운 4개만 점광원, 휴대폰은 점광원 없음)
@@ -167,10 +142,10 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false}){
  world.add(group);
  let time=0;
  return {
-  group,heightAt:H,layout:L,colliders,tree,mailbox,cardBoard:board,campfire:fire,seats,display,houses,sleds,snowfall,
+  group,heightAt:H,layout:L,colliders,course,tree,mailbox,cardBoard:board,campfire:fire,seats,display,houses,sleds,snowfall,
   // 매 프레임. camera = 눈 내림 기준, viewHeight = 캔버스 높이(px)
   update(dt,{camera=null,viewHeight=900,snow=1}={}){
-   time+=dt;tree.update(dt,time);fire.update(dt,time,{power:mobile?4:6});
+   time+=dt;tree.update(dt,time);course.update(dt);fire.update(dt,time,{power:mobile?4:6});
    for(const {l,base} of lights)l.intensity=base();
    for(const m of smoke){const u=(time*.12+m.userData.ph)%1;m.position.copy(m.userData.base).add(new THREE.Vector3(Math.sin(time*.5+m.userData.ph*9)*.3*u+u*.8,u*3.2,u*.3));m.scale.setScalar(.4+u*1.6);m.material.opacity=.5*(1-u);}
    if(camera)snowfall.update(time,camera,{amount:snow,viewHeight});

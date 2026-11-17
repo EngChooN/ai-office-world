@@ -29,6 +29,7 @@ export const ROOM_DEFAULTS=Object.freeze({
  stateRate:15,            // 위치 메시지 초당 상한
  otherRate:20,            // 위치 말고 다른 메시지 초당 상한
  maxSpeed:12,             // m/s. 동동이 달리기·초콜릿보다 넉넉한 값(걷기 1.2, 달리기 약 3)
+ sledMaxSpeed:14,         // m/s. 크리스마스 썰매 타는 중(act.sl 5·6, 부스터 포함 최고 12m/s)에만(11-17)
  slack:2,                 // m. 지연으로 몰려 들어온 메시지 여유
  jumpCooldownMs:1000,     // 구간 이동 표시를 붙인 순간이동 허용 간격
  resyncMs:3000,           // 표시 없는 순간이동을 이만큼 계속 고집하면(정상 클라이언트가 놓친 경우) 받아 준다
@@ -238,7 +239,7 @@ export function createRooms(opts={}){
   const flags=(m.f|0)&0xff,s={t:'s',id:c.id,q:(m.q|0)&0xffff,z:m.z,x:m.x,y:m.y,h:m.h,v:finite(m.v)?Math.max(0,Math.min(20,m.v)):0,f:flags};
   const L=c.last;
   if(L){
-   const dt=Math.max(0,(t-L.at)/1000),d=Math.hypot(s.x-L.x,s.y-L.y),limit=o.slack+o.maxSpeed*dt+(s.z!==L.z?10:0);
+   const dt=Math.max(0,(t-L.at)/1000),d=Math.hypot(s.x-L.x,s.y-L.y),limit=o.slack+(c.act?.sl>=5?o.sledMaxSpeed:o.maxSpeed)*dt+(s.z!==L.z?10:0);
    if(d>limit){
     if(flags&FLAG.jump&&t-c.lastJumpAt>=o.jumpCooldownMs){c.lastJumpAt=t;stats.jumps++;}
     else{c.rejectSince??=t;
@@ -294,6 +295,7 @@ export function createRooms(opts={}){
     stats.tree++;
     toRoom(room,m.t==='tree:put'?{t:'tree:set',slot:r.slot,k:r.kind,n:r.name,id:c.id,...(free?{g:1}:{})}:m.t==='tree:undo'?{t:'tree:del',slot:r.slot}:{t:'tree:star',n:r.name,id:c.id});return;}
    case 'gift:send':case 'snow:make':case 'snow:push':case 'snow:stack':case 'snow:deco':case 'snow:finish':case 'sb:throw':case 'sled:ask':case 'sled:ok':case 'sled:no':
+   case 'sr:open':case 'sr:join':case 'sr:go':case 'sr:quit':case 'sr:fin':case 'sr:rec':case 'sbm:join':case 'sbm:leave':case 'sbm:go':
     stats.play++;xmasOf(room).play.handle(member(c),m,t,playCtx(room));return;
    case 'g':if(GESTURES[m.k]){stats.relayed++;toRoom(room,{t:'g',id:c.id,k:m.k},c);}return;
    case 'a':{ // 동물 놀람 {zone,slot,i,kind,at,x?,z?}

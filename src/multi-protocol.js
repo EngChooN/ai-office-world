@@ -256,7 +256,8 @@ export const EXPERIENCE_MESSAGES=Object.freeze({
  smoking:Object.freeze([...COMMON_MESSAGES,'s','lounge:smoke']),
  // 크리스마스(11-16): 위치 s + 트리 장식(달기·되돌리기·꼭대기 별). 트리 규칙은 src/christmas/tree-state.js(서버·화면 공용)
  //  + 놀이(11-16 2차): 선물·눈사람·눈싸움·썰매 같이 타기 요청. 판정은 src/christmas/room-play.js(XMAS_PLAY_MESSAGES와 같은 목록, 테스트가 맞춰 봄)
- christmas:Object.freeze([...COMMON_MESSAGES,'s','tree:put','tree:undo','tree:star','gift:send','snow:make','snow:push','snow:stack','snow:deco','snow:finish','sb:throw','sled:ask','sled:ok','sled:no'])
+ christmas:Object.freeze([...COMMON_MESSAGES,'s','tree:put','tree:undo','tree:star','gift:send','snow:make','snow:push','snow:stack','snow:deco','snow:finish','sb:throw','sled:ask','sled:ok','sled:no',
+  'sr:open','sr:join','sr:go','sr:quit','sr:fin','sr:rec','sbm:join','sbm:leave','sbm:go'])
 });
 export const messageAllowed=(exp,type)=>EXPERIENCE_MESSAGES[exp]?.includes(type)??false;
 // 서버 목록(2026-11-08 서버 고르기, 11-13 대표 지시로 체험마다 3서버·정원 30). 줄 하나 = 서버 하나 = 서버 쪽 방 하나. 줄을 더하면 서버 고르기 창에 서버가 늘어난다.

@@ -14,7 +14,7 @@ import {sanitizeTreeMsg} from './tree-state.js';
 import {applyXmasAct} from './poses.js';
 
 // 놀이 메시지(서버 → 화면). room-play.js 규격
-export const PLAY_TYPES=Object.freeze(['gift','gift:ok','gift:no','gift:post','board','snow','snow:ball','snow:gone','snow:done','snow:no','sb','sb:no','sled:ask','sled:ok','sled:no','seat:no','sled:busy']);
+export const PLAY_TYPES=Object.freeze(['gift','gift:ok','gift:no','gift:post','board','snow','snow:ball','snow:gone','snow:done','snow:no','sb','sb:no','sled:ask','sled:ok','sled:no','seat:no','sled:busy','sr','sr:board','sr:no','sbm','sbm:no']);
 
 export const DEFAULT_ROOM='눈마을-1';
 export const EXPERIENCE='christmas';
@@ -128,6 +128,7 @@ export function createXmasMulti({ctx,search=globalThis.location?.search??'',envU
     dispatch('xmas:chat',{id:m.id,name:me?myName:nameOf(r??{id:m.id}),text:m.text,me,remote:true});return;}
    case 'gift':case 'gift:ok':case 'gift:no':case 'gift:post':case 'board':case 'snow':case 'snow:ball':case 'snow:gone':case 'snow:done':case 'snow:no':
    case 'sb':case 'sb:no':case 'sled:ask':case 'sled:ok':case 'sled:no':case 'seat:no':case 'sled:busy':
+   case 'sr':case 'sr:board':case 'sr:no':case 'sbm':case 'sbm:no': // 11-17 썰매 레이스·눈싸움 한 판
     // 내 컴퓨터 모드(BroadcastChannel)는 다른 창이 판정한 결과를 그대로 받는다. to가 있으면 그 사람에게만
     if(!viaServer&&m.to&&m.to!==myId)return;
     stats.play++;onPlay(m);return;

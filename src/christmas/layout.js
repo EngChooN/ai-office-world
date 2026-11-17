@@ -1,6 +1,7 @@
 // 온라인 크리스마스 「눈마을 광장」 배치(월드아트, 2026-11-16). three를 쓰지 않는 순수 자료·계산이라 서버·테스트도 같이 쓴다.
 // 근거: 체험설계 v1 §2-1(월드디자인 추천 배치) — 가운데 트리, 서쪽 모닥불·눈싸움 마당, 동쪽 우체통·눈사람 마당, 북쪽 썰매 언덕, 남쪽 입구.
 // 좌표: 1m = 1, x 오른쪽(동), -Z 북쪽(처음 카메라가 보는 쪽 = 트리), 광장 바닥 y=0. heading 0 = -Z를 봄(흡연장 아바타와 같은 규칙).
+import {COURSE_POINTS,COURSE_W,START_H,mountainH,courseDist} from './sled-course.js';
 // 크기는 동동이 키 1.0m 기준이다. 숫자는 월드아트가 화면으로 맞춘 값이고, 놀이 판정 값(반경·제한)은 월드개발이 정한다.
 
 // 광장 돌바닥 반지름 17m: 트리 둘레 길·전시 줄·모닥불(서)·우체통(동)이 모두 돌바닥 안에 든다.
@@ -62,19 +63,20 @@ export const DIVIDER=Object.freeze({x:-19.2,z0:-4.5,z1:5.5,h:1.15});
 // 집: 광장 둘레(장식, 들어가지 않음). [x, z, 색 번호, 크기 배율]. 앞문은 늘 광장 가운데(트리) 쪽을 본다(houseHeading).
 export const HOUSES=Object.freeze([
  [-19.5,-11,0,1],[-19.5,13,1,1],[19.5,-11,2,1],[19.5,13,3,1],
- [-8.5,-21,1,.9],[10,23,0,.9],[-10,23.5,2,.95],
+ [-29,-22,1,.9],[10,23,0,.9],[-10,23.5,2,.95],
  [-33,-15,3,1.05],[33,-15,1,1.05],[-35,19,2,1],[35,20,0,1],
 ]);
 export const houseHeading=(x,z)=>Math.atan2(-x,-z);
-// 썰매 언덕(북쪽): 출발대(언덕 꼭대기) → 굽은 길 1번·둔덕 2개 → 멈춤 구역(평지). 길은 폭 넓게(3줄이 같은 길을 쓴다).
-export const HILL=Object.freeze({x:0,z:-41,top:6.4,rx:21,rz:15});
+// 썰매 산(북쪽, 11-17 긴 코스): 출발대 높이 18m → 지그재그 5줄(가운데 선 약 207m) → 멈춤 구역(지금 자리 그대로). 코스 자료는 sled-course.js(월드개발).
+// HILL = 산이 차지하는 대략 타원(숲·울타리 빼기용)
+export const HILL=Object.freeze({x:0,z:-38,top:START_H,rx:27,rz:21});
 export const SLED_RUN=Object.freeze({
- // 길 가운데 선(x, z). 높이는 heightAt이 정한다. 출발대 → 멈춤 구역.
- path:Object.freeze([[-3,-40.4],[-2.2,-36.5],[.6,-32.5],[4.6,-29],[7.4,-25.5],[8.4,-22.6],[8.6,-20.8]]),
- width:3.4,trench:.22,bumps:Object.freeze([.42,.66]),bumpH:.32,
- deck:Object.freeze({x:-3,z:-42,w:5.2,d:2.6,lanes:3}),stop:Object.freeze({x:8.6,z:-20.4,r:3}),
- // 걸어 올라가는 계단길(언덕 서쪽 비탈)
- stairs:Object.freeze([[-11.5,-24],[-12.8,-30.5],[-11.2,-36.5],[-6.4,-41.8]]),
+ // 길 가운데 선(x, z) 2m 간격(출발선 → 멈춤 구역). 높이는 heightAt이 정한다.
+ path:Object.freeze(COURSE_POINTS.filter((p,i)=>p.s>=0&&(i%4===0)).map(p=>Object.freeze([+p.x.toFixed(3),+p.z.toFixed(3)]))),
+ width:COURSE_W,
+ // 출발대: 출발선 뒤 평평한 4m(가로 = 진행 방향 x, 세로 = 길 폭). 4줄
+ deck:Object.freeze({x:COURSE_POINTS[0].x+2,z:COURSE_POINTS[0].z,w:3.6,d:4.4,lanes:4,heading:-Math.PI/2}),stop:Object.freeze({x:8.6,z:-20.4,r:3}),
+ stairs:Object.freeze([]),
 });
 // 가로등: 광장 둘레 8개 + 마당 입구 4개
 export const LAMPS=Object.freeze([...Array.from({length:8},(_,i)=>{const a=(i+.5)*Math.PI/4;return [Math.sin(a)*17.7,Math.cos(a)*17.7];}),[-19.5,-6.8],[-19.5,7.8],[19.5,-6.2],[19.5,8.8]]);
@@ -83,35 +85,18 @@ const smooth=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3
 const hash=(x,z)=>{const s=Math.sin(x*127.1+z*311.7)*43758.5453;return s-Math.floor(s);};
 function noise(x,z){const ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz,u=fx*fx*(3-2*fx),w=fz*fz*(3-2*fz);
  const a=hash(ix,iz),b=hash(ix+1,iz),c=hash(ix,iz+1),d=hash(ix+1,iz+1);return a+(b-a)*u+(c-a)*w+(a-b-c+d)*u*w;}
-// 썰매 길 가운데 선을 따라 u(0~1) 자리와 그 점까지 가장 가까운 거리
-function runPoint(u){const P=SLED_RUN.path,f=Math.min(P.length-1.0001,Math.max(0,u*(P.length-1))),i=Math.floor(f),t=f-i;
- return [P[i][0]+(P[i+1][0]-P[i][0])*t,P[i][1]+(P[i+1][1]-P[i][1])*t];}
-export function nearestRun(x,z){let best={d:1e9,u:0};const P=SLED_RUN.path,n=P.length-1;
- for(let i=0;i<n;i++){const [ax,az]=P[i],[bx,bz]=P[i+1],dx=bx-ax,dz=bz-az,l2=dx*dx+dz*dz,t=Math.min(1,Math.max(0,((x-ax)*dx+(z-az)*dz)/l2)),px=ax+dx*t,pz=az+dz*t,d=Math.hypot(x-px,z-pz);
-  if(d<best.d)best={d,u:(i+t)/n};}
- return best;}
-// 언덕 몸체 높이(길 파임 제외). 위가 둥근 둔덕, 출발대 자리는 평평.
-function hillBody(x,z){const dx=(x-HILL.x)/HILL.rx,dz=(z-HILL.z)/HILL.rz,r=Math.hypot(dx,dz);if(r>=1)return 0;
- const h=HILL.top*Math.pow(Math.cos(r*Math.PI/2),1.6);return h;}
-// 땅 높이(m). 광장 안은 0. 밖은 쌓인 눈의 얕은 굴곡, 북쪽은 언덕, 썰매 길은 살짝 파이고 둔덕 둘.
+// 썰매 길까지 거리(땅 색칠용, 옛 이름 유지). u는 쓰지 않음
+export function nearestRun(x,z){return {d:courseDist(x,z),u:0};}
+// 땅 높이(m). 광장 안은 0. 밖은 쌓인 눈의 얕은 굴곡, 북쪽은 썰매 산(길 위는 옆으로 평평, 출발대 18m).
 export function heightAt(x,z){
  const r=Math.hypot(x,z);
- let h=hillBody(x,z);
- // 썰매 길: 언덕 몸체를 길 방향으로 매끄럽게(옆으로 기울지 않게) + 얕은 파임 + 둔덕
- if(h>0||r>PLAZA.radius){const {d,u}=nearestRun(x,z),w=SLED_RUN.width/2;
-  if(d<w+2.2){const [cx,cz]=runPoint(u),along=hillBody(cx,cz),k=1-smooth(w,w+2.2,d);
-   let bump=0;for(const b of SLED_RUN.bumps)bump+=SLED_RUN.bumpH*Math.exp(-Math.pow((u-b)/.035,2));
-   // 파임·둔덕은 언덕 위에서만(평지 끝에 웅덩이가 생기지 않게)
-   const onHill=smooth(.05,.8,along),trench=SLED_RUN.trench*(1-smooth(w*.55,w,d))*onHill;h=h+(along+(bump-trench)*onHill-h)*k;}}
- // 출발대: 언덕 위를 평평하게 깎는다(썰매 길 다듬기 뒤에 — 길 시작점도 출발대 높이에 맞춘다)
- {const d=SLED_RUN.deck,k=1-smooth(3,5.2,Math.hypot((x-d.x)/1.4,z-d.z));if(k>0)h=h+(hillBody(d.x,d.z)-h)*k;}
- // 광장 밖 눈 굴곡(트리·마당 바닥은 평평하게 둔다)
+ const h=r<PLAZA.radius?0:mountainH(x,z);
+ // 광장 밖 눈 굴곡(트리·마당 바닥·썰매 길은 평평하게 둔다)
  const drift=(noise(x*.18,z*.18)-.5)*.5+(noise(x*.5+7,z*.5+3)-.5)*.12;
  let flat=smooth(PLAZA.radius+1,PLAZA.radius+5,r);
  for(const y of [SNOWMAN_YARD,SNOWBALL_YARD]){const dx=Math.abs(x-y.x)-y.w/2,dz=Math.abs(z-y.z)-y.d/2;flat*=smooth(0,2.5,Math.max(dx,dz));}
  {const s=SLED_RUN.stop;flat*=smooth(s.r,s.r+2,Math.hypot(x-s.x,z-s.z));}
- // 출발대·썰매 길 위는 굴곡 없이(출발대가 기울지 않고 썰매가 덜컹거리지 않게)
- {const d=SLED_RUN.deck;flat*=smooth(3,5.2,Math.hypot((x-d.x)/1.4,z-d.z));flat*=smooth(SLED_RUN.width/2,SLED_RUN.width/2+1.5,nearestRun(x,z).d);}
+ if(flat>0)flat*=smooth(COURSE_W/2+.7,COURSE_W/2+2.2,courseDist(x,z));
  return h+Math.max(0,drift+.12)*flat;
 }
 // 광장 밖 경계(보이지 않는 벽 대신 울타리·눈 더미): 반지름 PLAZA.fence 원. 언덕 쪽은 언덕 끝까지 열려 있다.
