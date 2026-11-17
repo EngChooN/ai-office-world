@@ -13,6 +13,7 @@
 import {GIFT_RULES,parseGiftSend,createGiftLimiter,cleanCardText,GIFT_INFO} from './gift-state.js';
 import {createSnowmanState} from './snowman-state.js';
 import {FIGHT,inFightYard,resolveThrow,createHarassGuard} from './snowfight.js';
+import {createFightMatch} from './fight-match.js';
 
 export const XMAS_PLAY_MESSAGES=Object.freeze(['gift:send','snow:make','snow:push','snow:stack','snow:deco','snow:finish','sb:throw','sled:ask','sled:ok','sled:no']);
 export const SEAT_COUNT=8,SLED_LANES=3;
@@ -24,7 +25,8 @@ export function createRoomPlay({cleanText=t=>t,rules=GIFT_RULES}={}){
  const snow=createSnowmanState();
  const board=[];                    // 모두의 카드 최근 5장 {g,id,n,item,card,text}
  const limiters=new Map(),bonus=new Map(),cards=new Map(),lastThrow=new Map(),held=new Map();
- const harass=createHarassGuard();
+ const harass=createHarassGuard(),lastHitAt=new Map();
+ const match=createFightMatch();
  const dirty=new Set();let gseq=0;
  const limiter=id=>{let l=limiters.get(id);if(!l){l=createGiftLimiter(rules);limiters.set(id,l);}return l;};
  const note=(id,text)=>{const a=cards.get(id)??[];a.push(text);if(a.length>3)a.shift();cards.set(id,a);};
@@ -67,15 +69,19 @@ export function createRoomPlay({cleanText=t=>t,rules=GIFT_RULES}={}){
  function throwBall(c,m,t,ctx){
   const p=posOf(c);if(!p||!inFightYard(p.x,p.z,-.3))return ctx.send(c.id,{t:'sb:no',reason:'outside'});
   if(t-(lastThrow.get(c.id)??-Infinity)<FIGHT.gapMs)return ctx.send(c.id,{t:'sb:no',reason:'gap'});
+  if(t-(lastHitAt.get(c.id)??-Infinity)<FIGHT.stunMs)return ctx.send(c.id,{t:'sb:no',reason:'stun'}); // 맞은 뒤 0.6초는 못 던짐
   if(!num(m.dx)||!num(m.dz)||Math.hypot(m.dx,m.dz)<1e-3)return ctx.send(c.id,{t:'sb:no',reason:'bad'});
   lastThrow.set(c.id,t);
   // 시작점은 서버가 아는 자리 근처만 믿는다(2m 넘게 다르면 서버 자리)
   const from=num(m.x)&&num(m.z)&&Math.hypot(m.x-p.x,m.z-p.z)<=2?{x:m.x,z:m.z}:p;
-  const people=[];for(const o of ctx.members.values()){if(o.id===c.id)continue;const q=posOf(o);if(q)people.push({id:o.id,...q});}
+  // 웅크림(act.cr)·맞은 뒤 1초 무적(통과)
+  const people=[];for(const o of ctx.members.values()){if(o.id===c.id)continue;const q=posOf(o);if(q)people.push({id:o.id,...q,crouch:o.act?.cr===1,safe:t-(lastHitAt.get(o.id)??-Infinity)<FIGHT.invulnMs});}
   const r=resolveThrow({...from,dx:m.dx,dz:m.dz,dist:num(m.d)?m.d:FIGHT.forward},people);
   const soft=r.hit?harass.hit(c.id,r.hit,t):false;
+  if(r.hit)lastHitAt.set(r.hit,t);
+  const pts=r.hit?match.scoreHit(c.id,r.hit,{head:r.head,soft,d:r.d,t},ctx):null;
   const r2=v=>Math.round(v*100)/100;
-  ctx.all({t:'sb',id:c.id,x:r2(r.x),z:r2(r.z),tx:r2(r.tx),tz:r2(r.tz),ms:r.ms,hit:r.hit,...(soft?{soft:1}:{}),...(r.wall?{wall:1}:{})});
+  ctx.all({t:'sb',id:c.id,x:r2(r.x),z:r2(r.z),tx:r2(r.tx),tz:r2(r.tz),d0:r2(r.d0),ms:r.ms,hit:r.hit,...(r.head?{head:1}:{}),...(soft?{soft:1}:{}),...(r.wall?{wall:1}:{}),...(pts?pts:{})});
  }
  return {
   snow,board,
@@ -113,7 +119,7 @@ export function createRoomPlay({cleanText=t=>t,rules=GIFT_RULES}={}){
    for(const [id,a] of held){const k=a.filter(x=>t-x.at<=rules.holdMs);if(k.length)held.set(id,k);else held.delete(id);}
   },
   // 사람이 완전히 나감(유예 끝): 그 사람 몫 정리
-  forget(id){limiters.delete(id);bonus.delete(id);lastThrow.delete(id);},
+  forget(id){limiters.delete(id);bonus.delete(id);lastThrow.delete(id);lastHitAt.delete(id);},
   reset(){snow.reset();board.length=0;held.clear();dirty.clear();},
  };
 }

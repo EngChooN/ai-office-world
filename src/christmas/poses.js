@@ -10,7 +10,7 @@ import {createPoser,newPoseState,POSE_TOOLS} from '../lounge/spots.js';
 const {blend,turnWorld,limb,wpos}=POSE_TOOLS;
 const V3=THREE.Vector3,UP=new V3(0,1,0),_q=new THREE.Quaternion();
 export const THROW_SECS=.45;
-export const ARM_KINDS=Object.freeze(['none','warm','push','cheer','pack','cocoa']);
+export const ARM_KINDS=Object.freeze(['none','warm','push','cheer','pack','cocoa','crouch']);
 
 export function createXmasPoser({avatar,world,toon}){
  const S=newPoseState();
@@ -32,11 +32,14 @@ export function createXmasPoser({avatar,world,toon}){
   if(w>.002){
    if(kind==='pack'){root.position.y-=.1*w;root.updateMatrixWorld(true);blend(rig.spine,w,()=>turnWorld(rig.spine[0],L,.35));}
    if(kind==='push')blend(rig.spine,w,()=>turnWorld(rig.spine[0],L,.18));
+   // 웅크리기(눈싸움, 키 약 0.6m): 몸을 낮추고 크게 숙인다
+   if(kind==='crouch'){root.position.y-=.24*w;root.updateMatrixWorld(true);blend(rig.spine,w,()=>turnWorld(rig.spine[0],L,.62));}
    for(const [s,x] of [['Left',1],['Right',-1]]){
     const arm=rig[s].arm;if(!arm[0])continue;const sh=wpos(arm[0]);let t=null,bend=dirM(x*.6,-.6,-.3);
     if(kind==='warm')t=sh.clone().addScaledVector(F,.23).addScaledVector(UP,-.09).addScaledVector(L,-x*.05+Math.sin(X.t*7+x)*.015);
     else if(kind==='push')t=sh.clone().addScaledVector(F,.25).addScaledVector(UP,-.05).addScaledVector(L,-x*.02);
     else if(kind==='cheer'){t=sh.clone().addScaledVector(UP,.26+Math.sin(X.t*6+x)*.02).addScaledVector(L,x*.08).addScaledVector(F,.03);bend=dirM(x*.8,.2,-.4);}
+    else if(kind==='crouch')t=sh.clone().addScaledVector(F,.2).addScaledVector(UP,-.18).addScaledVector(L,-x*.06);
     else if(kind==='pack')t=sh.clone().addScaledVector(F,.17).addScaledVector(UP,-.27).addScaledVector(L,-x*.04+Math.sin(X.t*10)*x*.01);
     else if(kind==='cocoa'&&s==='Left'){const h=wpos(rig.head??model);t=h.addScaledVector(F,.14).addScaledVector(UP,-.12).addScaledVector(L,.02);}
     if(t)blend(arm,w,()=>limb(arm,t,bend));
@@ -63,12 +66,12 @@ export function createXmasPoser({avatar,world,toon}){
   dispose(){poser.dispose();const i=avatar.extra.indexOf(arms);if(i>=0)avatar.extra.splice(i,1);const j=avatar.extra.indexOf(poser.pose);if(j>=0)avatar.extra.splice(j,1);if(mug){world.remove(mug);}},
  };
 }
-// 받은 행동 상태 act → 자세(다른 사람). 앉기: 모닥불 자리(st) 또는 썰매(sl 1~5)
+// 받은 행동 상태 act → 자세(다른 사람). 앉기: 모닥불 자리(st) 또는 썰매(sl 1~6)
 export const SLED_SEAT_Y=.33;
 export function applyXmasAct(poser,a,seatY=.34){
  if(!poser)return;
  const sled=a?.sl>=1;
  poser.setSit(!!a?.st||sled,sled?SLED_SEAT_Y:seatY);
  // 썰매 위에서 wm = 🙌 만세, 모닥불에서 wm = 손 녹이기
- poser.setArms(a?.pk?'pack':a?.pu?'push':a?.wm&&sled?'cheer':a?.wm?'warm':a?.cc?'cocoa':'none');
+ poser.setArms(a?.cr?'crouch':a?.pk?'pack':a?.pu?'push':a?.wm&&sled?'cheer':a?.wm?'warm':a?.cc?'cocoa':'none');
 }

@@ -954,6 +954,78 @@
   "color": false
  },
  {
+  "name": "x-drift",
+  "group": "christmas",
+  "file": "icons/christmas/x-drift.svg",
+  "symbol": "ic-x-drift",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-brake",
+  "group": "christmas",
+  "file": "icons/christmas/x-brake.svg",
+  "symbol": "ic-x-brake",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-boost",
+  "group": "christmas",
+  "file": "icons/christmas/x-boost.svg",
+  "symbol": "ic-x-boost",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-crouch",
+  "group": "christmas",
+  "file": "icons/christmas/x-crouch.svg",
+  "symbol": "ic-x-crouch",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-crown",
+  "group": "christmas",
+  "file": "icons/christmas/x-crown.svg",
+  "symbol": "ic-x-crown",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-target",
+  "group": "christmas",
+  "file": "icons/christmas/x-target.svg",
+  "symbol": "ic-x-target",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-race",
+  "group": "christmas",
+  "file": "icons/christmas/x-race.svg",
+  "symbol": "ic-x-race",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-trophy",
+  "group": "christmas",
+  "file": "icons/christmas/x-trophy.svg",
+  "symbol": "ic-x-trophy",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
   "name": "x-part-eyes",
   "group": "christmas",
   "file": "icons/christmas/x-part-eyes.svg",

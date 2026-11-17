@@ -85,17 +85,18 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  let status={state:'off'},toastT=0,zoneT=0,kind=ORNAMENTS[0],cardId=null,sheet=null,decorating=false,pending=null,actSig='',actList=[];
  // ── 행동 단추 줄(첫 줄 = 큰 단추)
  function setActions(list=[]){
-  const sig=JSON.stringify(list.map(a=>[a.id,a.ic,a.label,a.tailIc??'',a.tail??'',a.key,a.badge??0,a.dim?1:0]));if(sig===actSig)return;actSig=sig;actList=list;
-  acts.innerHTML=list.slice(0,3).map((a,i)=>`<button type="button" class="${i?'xh-sub-act':'xh-act'}" data-act="${esc(a.id)}"${a.aim?' data-aim="1"':''}${a.dim?' data-dim="1"':''}><em aria-hidden="true">${icon(a.ic,{size:i?'m':'l'})}</em><span>${esc(a.label)}${a.tailIc?` · ${iconText(a.tailIc,String(a.tail??''),{size:'xs'})}`:''}</span>${a.key?`<kbd>${esc(a.key)}</kbd>`:''}${a.badge?`<b class="xh-badge">${a.badge}</b>`:''}</button>`).join('');
+  const sig=JSON.stringify(list.map(a=>[a.id,a.ic,a.label,a.tailIc??'',a.tail??'',a.key,a.badge??0,a.dim?1:0,a.hold?1:0]));if(sig===actSig)return;actSig=sig;actList=list;
+  acts.innerHTML=list.slice(0,3).map((a,i)=>`<button type="button" class="${i?'xh-sub-act':'xh-act'}" data-act="${esc(a.id)}"${a.aim?' data-aim="1"':''}${a.hold?' data-hold="1"':''}${a.dim?' data-dim="1"':''}><em aria-hidden="true">${icon(a.ic,{size:i?'m':'l'})}</em><span>${esc(a.label)}${a.tailIc?` · ${iconText(a.tailIc,String(a.tail??''),{size:'xs'})}`:''}</span>${a.key?`<kbd>${esc(a.key)}</kbd>`:''}${a.badge?`<b class="xh-badge">${a.badge}</b>`:''}</button>`).join('');
  }
- // 휴대폰 조준 단추(❄️): 짧게 누르면 act.do, 길게 누르고 끌면 act.aim(dx,dy,끝?)
+ // 조준 단추(❄️, data-aim): 누르는 동안 조준, 끌면 방향·거리(휴대폰), 떼면 던짐 → act.aimButton(phase,dx,dy). PC 단추도 같음(누름 = F 누름)
+ //  누르고 있는 단추(data-hold, 웅크리기 등): 누름·뗌 → act.hold(id,on)
  {let hold=null;
-  acts.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-aim]');if(!b||!mobile)return;e.preventDefault();try{b.setPointerCapture?.(e.pointerId);}catch{}
-   hold={id:b.dataset.act,x:e.clientX,y:e.clientY,t:performance.now(),pid:e.pointerId,aiming:false,b};
-   hold.timer=setTimeout(()=>{if(hold){hold.aiming=true;b.classList.add('aiming');act.aim?.(0,0,false);}},260);});
-  acts.addEventListener('pointermove',e=>{if(!hold||e.pointerId!==hold.pid)return;const dx=e.clientX-hold.x,dy=e.clientY-hold.y;if(!hold.aiming&&Math.hypot(dx,dy)>12){hold.aiming=true;hold.b.classList.add('aiming');}if(hold.aiming)act.aim?.(dx,dy,false);});
-  const end=e=>{if(!hold||e.pointerId!==hold.pid)return;clearTimeout(hold.timer);const h=hold;hold=null;h.b.classList.remove('aiming');
-   if(h.aiming)act.aim?.(e.clientX-h.x,e.clientY-h.y,true);else act.do?.(h.id);h.done=performance.now();lastAim=h.done;};
+  acts.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-aim],[data-hold]');if(!b)return;e.preventDefault();try{b.setPointerCapture?.(e.pointerId);}catch{}
+   hold={id:b.dataset.act,x:e.clientX,y:e.clientY,pid:e.pointerId,b,aim:!!b.dataset.aim};b.classList.add(hold.aim?'aiming':'on');
+   if(hold.aim)act.aimButton?.('down');else act.hold?.(hold.id,true);});
+  acts.addEventListener('pointermove',e=>{if(!hold||e.pointerId!==hold.pid||!hold.aim)return;act.aimButton?.('move',e.clientX-hold.x,e.clientY-hold.y);});
+  const end=e=>{if(!hold||e.pointerId!==hold.pid)return;const h=hold;hold=null;h.b.classList.remove('aiming','on');
+   if(h.aim)act.aimButton?.(e.type==='pointercancel'?'cancel':'up',e.clientX-h.x,e.clientY-h.y);else act.hold?.(h.id,false);lastAim=performance.now();};
   acts.addEventListener('pointerup',end);acts.addEventListener('pointercancel',end);}
  let lastAim=0;
  // ── 구역 이름 띠
@@ -167,7 +168,7 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  root.addEventListener('click',e=>{
   const b=e.target.closest('button,[data-tag]');if(!b)return;
   if(b.dataset.tag){openCard(b.dataset.tag);return;}
-  if(b.dataset.act){if(b.dataset.aim&&mobile)return;act.do?.(b.dataset.act);return;}
+  if(b.dataset.act){if(b.dataset.aim||b.dataset.hold)return;act.do?.(b.dataset.act);return;}
   if(b.dataset.kind){kind=b.dataset.kind;act.kind?.(kind);renderDeco();return;}
   if(b.dataset.outfit){look.set({outfit:b.dataset.outfit});renderOutfit();return;}
   if('hat' in b.dataset){look.set({hat:b.dataset.hat||null});renderOutfit();return;}

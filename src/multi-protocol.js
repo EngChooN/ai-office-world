@@ -96,8 +96,10 @@ export const ACT_SCHEMA=Object.freeze({
  //  크리스마스(11-16): o 옷(산타·니트·엘프) · hat 머리(''=옷 기본 모자) · sc 줄무늬 목도리(0·1) · d 트리 꾸미는 중(0·1, 머리 위 🎄 표시)
  //   + 놀이(11-16 2차): st 모닥불 자리(0 없음·1~8) · wm 손 녹이기(0·1) · cc 코코아 들기(0·1) · sl 썰매(0 없음·1~3 출발대 줄에서 기다림·4 타는 중·5 뒷자리) · sp 같이 타는 앞사람 id
  //     · pu 눈덩이 미는 중(0·1) · pk 눈 뭉치는 중(0·1)
+ //   + 11-17: sl 썰매가 0 없음·1~4 출발대 줄(4줄)·5 타는 중·6 뒷자리로 바뀜 · cr 웅크림(0·1, 눈벽 뒤면 안 맞음) · tm 눈싸움 한 판 팀(0 없음·1 빨강·2 초록, 장갑·목도리 색)
  christmas:Object.freeze({o:Object.freeze(['santa','sweater','elf']),hat:Object.freeze(['','santa','antlers','beanie','elf','none']),sc:Object.freeze([0,1]),d:Object.freeze([0,1]),
-  st:Object.freeze([0,1,2,3,4,5,6,7,8]),wm:Object.freeze([0,1]),cc:Object.freeze([0,1]),sl:Object.freeze([0,1,2,3,4,5]),sp:'id',pu:Object.freeze([0,1]),pk:Object.freeze([0,1])})
+  st:Object.freeze([0,1,2,3,4,5,6,7,8]),wm:Object.freeze([0,1]),cc:Object.freeze([0,1]),sl:Object.freeze([0,1,2,3,4,5,6]),sp:'id',pu:Object.freeze([0,1]),pk:Object.freeze([0,1]),
+  cr:Object.freeze([0,1]),tm:Object.freeze([0,1,2])})
 });
 export function sanitizeAct(exp,a){
  const sc=ACT_SCHEMA[exp];if(!sc||!a||typeof a!=='object'||Array.isArray(a))return null;

@@ -157,9 +157,16 @@ try{
  if(PARTS.has('fight')){
   const Y=L.SNOWBALL_YARD;
   await tp(A,Y.x-2,Y.z+4.5,-Math.PI/2);await tp(B,Y.x+3,Y.z+4.5,Math.PI/2);await sleep(1800);
-  const a0=(await st(A)).actions;check('④ 눈싸움 마당 단추: ❄️ 던지기·🤲 눈 뭉치기',a0[0]==='sb:throw'&&a0.includes('sb:pack'),{a0});
+  const a0=(await st(A)).actions;check('④ 눈싸움 마당 단추: ❄️ 던지기·🤲 눈 뭉치기·웅크리기',a0[0]==='sb:throw'&&a0.includes('sb:pack')&&a0.includes('sb:crouch'),{a0});
   const ammo0=(await st(A)).fight.ammo;
-  await A.keyboard.press('KeyF');
+  // 11-17 조준: F를 누르는 동안 점선·고리·게이지(0.1초 안), 떼면 던짐. 착탄 = 미리보기 고리(0.3m 안)
+  await A.keyboard.down('KeyF');await sleep(100);const pv=await st(A);
+  check('④ F 누름 0.1초 안 점선 포물선·착탄 고리·힘 게이지',pv.fight.aim?.dots&&pv.fight.aim?.ring&&await A.evaluate(()=>!document.querySelector('.xf-gauge').hidden),{aim:pv.fight.aim});
+  await sleep(150);const pv2=(await st(A)).fight.aim;await shot(A,'pc-snowball-aim');
+  const sbWait=A.evaluate(()=>new Promise(r=>{const f=window.xmas.net;f.on(m=>{if(m.t==='sb')r(m);});}));
+  await A.keyboard.up('KeyF');const sbm=await Promise.race([sbWait,sleep(3000).then(()=>null)]);
+  check('④ 떼면 실제 착탄 = 미리보기 고리 안(0.3m)',sbm&&pv2&&Math.hypot(sbm.tx-pv2.tx,sbm.tz-pv2.tz)<=.3+.42,{pv2,sb:sbm,aId,after:(await st(A)).fight});
+  check('④ 고리가 사람 위면 빨강·과녁(조준 대상 = 둘)',pv2?.hit===bId||pv2?.target===bId,{pv2});
   const hitB=await until(async()=>(await st(B)).fight.covers[bId]>=1&&(await st(A)).fight.covers[bId]>=1,4000);
   check('④ 하나 F → 둘이 맞음(두 화면 모두 눈투성이)',hitB,{covA:(await st(A)).fight.covers,covB:(await st(B)).fight.covers});
   check('④ 손 눈덩이 3 → 2',ammo0===3&&(await st(A)).fight.ammo===2);
@@ -173,6 +180,16 @@ try{
    ev('pointerdown',0,0);await new Promise(r=>setTimeout(r,320));ev('pointermove',0,-60);await new Promise(r=>setTimeout(r,120));ev('pointermove',0,-110);await new Promise(r=>setTimeout(r,200));
    const ring=window.xmas.snowfight.status();const aiming=b.classList.contains('aiming');ev('pointerup',0,-110);return {aiming,ring};});
   await sleep(300);check('④ 휴대폰 ❄️ 길게 누르고 끌기 → 조준 뒤 던짐',aim.aiming&&(await st(B)).fight.ammo===thrown0-1,{aim,ammo:(await st(B)).fight.ammo,thrown0});
+  // 휴대폰 조준 중 화면(❄️ 누른 채 끌기)
+  await B.evaluate(()=>{const b=document.querySelector('.xh-acts [data-act="sb:throw"]'),r=b.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2;b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:11,pointerType:'touch',clientX:x,clientY:y}));b.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:11,pointerType:'touch',clientX:x-8,clientY:y-70}));});
+  await sleep(700);const mv=(await st(B)).fight.aim;await shot(B,'mobile-snowball-aim');
+  check('④ 휴대폰 ❄️ 누른 채 끌기 → 점선·고리(캐릭터 앞 월드에)',mv?.dots&&mv?.ring,{mv});
+  await B.evaluate(()=>{const b=document.querySelector('.xh-acts [data-act="sb:throw"]');b.dispatchEvent(new PointerEvent('pointercancel',{bubbles:true,pointerId:11,pointerType:'touch'}));});
+  // 웅크리기: 단추를 누르는 동안 act.cr=1
+  await A.evaluate(()=>{const b=document.querySelector('.xh-acts [data-act="sb:crouch"]');b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:3,pointerType:'mouse',button:0}));});
+  await sleep(500);const cr=await st(A);
+  await A.evaluate(()=>{const b=document.querySelector('.xh-acts [data-act="sb:crouch"]');b.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,pointerId:3,pointerType:'mouse',button:0}));});
+  check('④ 웅크리기 단추(누르는 동안) → act.cr 1·자세 웅크림',cr.act.cr===1&&cr.player.arms==='crouch',{act:cr.act,arms:cr.player.arms});
   // 눈 뭉치기
   await press(A,'sb:pack');await sleep(1300);check('④ 눈 뭉치기(1초) → 손 눈덩이 +1',(await st(A)).fight.ammo===3,{ammo:(await st(A)).fight.ammo});
   // 마당 밖은 못 던짐

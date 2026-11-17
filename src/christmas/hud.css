@@ -189,3 +189,26 @@ html.xh-sledding .joy{display:none}
 .xf-ammo{display:flex;align-items:center;gap:4px;letter-spacing:0}
 .xf-empty{display:inline-block;width:16px;height:16px;border:1.5px dashed var(--ink2,#7a6440);border-radius:50%;box-sizing:border-box}
 .xh-tag .ic-row{gap:4px}
+/* ── 11-17 눈싸움 조준(눈썰매-눈싸움-개선-v1 §2-1·§2-2) */
+.xf-gauge{position:absolute;left:0;top:0;width:48px;height:48px;border-radius:50%;background:conic-gradient(var(--gold) calc(var(--g,0)*360deg),rgba(251,243,223,.55) 0);box-shadow:0 0 0 3px var(--ink),var(--soft);pointer-events:none}
+.xf-gauge>i{position:absolute;inset:9px;border-radius:50%;background:var(--paper)}
+.xf-gauge.full{animation:xf-blink .45s steps(2,end) infinite}@keyframes xf-blink{50%{box-shadow:0 0 0 3px var(--stamp),0 0 14px var(--gold)}}
+.xf-target{position:absolute;left:0;top:0;color:var(--stamp);pointer-events:none;filter:drop-shadow(0 1px 0 #fff)}
+.xf-target .ic{width:28px;height:28px}
+.xf-float{position:absolute;left:0;top:0;pointer-events:none;font:900 22px var(--nb-font);color:#fff;text-shadow:0 2px 0 var(--stamp-d),0 0 10px rgba(0,0,0,.45);white-space:nowrap}
+.xf-float.head{font-size:26px;color:#ffe08a}.xf-float.pts{font-size:20px;color:#bff0c8;margin-top:-26px}.xf-float.ff{font-size:15px;opacity:.8}
+.xf-splat{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 70% 70% at 50% 50%,transparent 62%,rgba(255,255,255,.55) 78%,rgba(255,255,255,.95) 100%),
+ radial-gradient(circle at 6% 12%,#fff 0 7%,transparent 7.5%),radial-gradient(circle at 94% 82%,#fff 0 8%,transparent 8.5%),radial-gradient(circle at 90% 8%,rgba(255,255,255,.95) 0 5%,transparent 5.5%),radial-gradient(circle at 8% 90%,rgba(255,255,255,.95) 0 6%,transparent 6.5%)}
+/* 눈싸움 휴대폰 단추: ❄️ 96px(엄지 자리) → 위로 🤲 72px, 웅크리기 72px. 단추 사이 12px */
+.xh.touch .xh-act[data-act="sb:throw"]{width:96px;height:96px;min-height:96px;padding:0;border-radius:50%;justify-content:center;touch-action:none}
+.xh.touch .xh-act[data-act="sb:throw"] span{display:none}.xh.touch .xh-act[data-act="sb:throw"] em .ic{width:40px;height:40px}
+.xh.touch .xh-sub-act[data-act="sb:pack"],.xh.touch .xh-sub-act[data-act="sb:crouch"]{width:72px;height:72px;min-height:72px;padding:0;border-radius:50%;justify-content:center;flex-direction:column;gap:0;font-size:11px;touch-action:none}
+.xh.touch .xh-sub-act[data-act="sb:pack"] em .ic,.xh.touch .xh-sub-act[data-act="sb:crouch"] em .ic{width:28px;height:28px}
+.xh-sub-act[data-hold].on{background:#fff;box-shadow:inset 0 0 0 4px var(--pine),var(--soft)}
+.xh.touch.xh-fight .xh-acts{gap:12px}
+.xh.touch .xh-sub-act[data-act="sb:crouch"]{position:absolute;right:108px;bottom:0}
+.xf-ammo{bottom:calc(var(--sb) + 226px)!important}
+.xh.touch .xf-ammo{bottom:calc(var(--sb) + 210px)!important}
+.xf-dots{position:absolute;inset:0;pointer-events:none}
+.xf-dots>i{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--ink);will-change:transform}
+.xf-dots>i.grey{background:#a9b0b8}

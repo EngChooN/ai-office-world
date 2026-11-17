@@ -96,6 +96,7 @@ const cam={yaw:SPAWN.heading,pitch:.3,dist:mobile?4.2:3.6,min:1.8,max:9,target:n
 // 장식 달기 모드 카메라: 트리를 정면으로 보는 궤도(좌우 끌기·A/D로 둘레, 위아래 끌기·W/S·휠로 높이)
 const deco={on:false,yaw:0,h:2.4,dist:mobile?9.6:8.4};
 input.onLook((dx,dy)=>{if(sledPlay?.camera())return; // 썰매 타는 동안은 시점 고정
+ if(snowfight?.aiming&&!mobile)return; // 마우스로 조준하는 동안은 시점을 돌리지 않음
  if(deco.on){deco.yaw-=dx*.006;deco.h=THREE.MathUtils.clamp(deco.h+dy*.012,1,7.6);return;}
  cam.yaw-=dx*.006;cam.pitch=THREE.MathUtils.clamp(cam.pitch+dy*.004,-.1,1.1);});
 input.onZoom(k=>{if(deco.on){deco.dist=THREE.MathUtils.clamp(deco.dist*k,6,13);return;}cam.dist=THREE.MathUtils.clamp(cam.dist*k,cam.min,cam.max);});
@@ -113,7 +114,7 @@ function updatePlayer(dt){
  if(campfire.update(dt,{moveInput})||campfire.sitting){if(campfire.sitting)player.update(dt,{moved:0});player.root.position.y+=H(player.x,player.z);return;}
  if(moveInput){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);dirX=fx*mv.forward+rx*mv.side;dirZ=fz*mv.forward+rz*mv.side;}
  const len=Math.hypot(dirX,dirZ);
- if(len>0&&!snowfight.packing){dirX/=len;dirZ/=len;const running=mv.run,speed=WALK_SPEED*(running?RUN_MUL:1);
+ if(len>0&&!snowfight.packing){dirX/=len;dirZ/=len;const running=mv.run&&snowfight.moveMul===1,speed=WALK_SPEED*(running?RUN_MUL:1)*snowfight.moveMul; // 조준 50%·웅크림 40%
   // 눈사람 마당: 눈덩이를 밀거나 눈덩이 몸에 막힘(큼을 혼자 밀면 절반 속도)
   let tx=player.x+dirX*speed*dt,tz=player.z+dirZ*speed*dt;
   if(snowman.balls.size){const w=snowman.walk(player.x,player.z,tx,tz,dt);tx=w.x;tz=w.z;}
@@ -121,12 +122,16 @@ function updatePlayer(dt){
   moved=Math.hypot(got.x-player.x,got.z-player.z);player.x=got.x;player.z=got.z;player.heading=Math.atan2(-dirX,-dirZ);player.running=running;
   player.update(dt,{moved,running});}
  else player.update(dt,{moved:0});
+ // 눈싸움 조준 중이면 몸이 겨눈 쪽을 본다
+ {const ah=snowfight.aimHeading;if(ah!==null){let d=ah-player.heading;d=Math.atan2(Math.sin(d),Math.cos(d));player.heading+=d*Math.min(1,dt*14);player.root.rotation.y=player.heading;}}
  // 땅 높이는 더한다(앉기·웅크림 자세가 root y를 바닥 0 기준으로 바꿔 둔다, poses.js)
  player.root.position.y+=H(player.x,player.z);
 }
 const camWant=new THREE.Vector3(),lookAt=new THREE.Vector3();
-let seatTurn=null;
+let seatTurn=null,aimK=0;
 function updateCamera(dt){
+ // 눈싸움 조준: 0.25초에 걸쳐 어깨 뒤로 살짝 당김
+ {const h=snowfight?.camHint;aimK+=((h?1:0)-aimK)*Math.min(1,dt/.25*2.2);}
  // 썰매: 썰매 뒤 낮게, 진행 방향을 따라간다
  const sc=sledPlay.camera();
  if(sc){let d=sc.yaw-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*5));cam.pitch+=(sc.pitch-cam.pitch)*(1-Math.exp(-dt*4));cam.dist+=(sc.dist-cam.dist)*(1-Math.exp(-dt*3));}
@@ -141,7 +146,8 @@ function updateCamera(dt){
   camera.position.lerp(p,1-Math.exp(-dt*6));lookAt.lerp(new THREE.Vector3(TREE.x,deco.h,TREE.z),1-Math.exp(-dt*6));camera.lookAt(lookAt);return;}
  if(player.moving&&!input.looking()&&!sc){let d=player.root.rotation.y-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*1.2));}
  const gy=H(player.x,player.z)+(sc?sledPlay.lift:0);cam.target.set(player.x,gy+.62+(sc?.0:0),player.z);
- const cp=Math.cos(cam.pitch);camWant.set(cam.target.x+Math.sin(cam.yaw)*cam.dist*cp,cam.target.y+Math.sin(cam.pitch)*cam.dist+.25,cam.target.z+Math.cos(cam.yaw)*cam.dist*cp);
+ if(aimK>.001){const rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);cam.target.x+=rx*.35*aimK;cam.target.z+=rz*.35*aimK;}
+ const dist=cam.dist*(1-.22*aimK),cp=Math.cos(cam.pitch);camWant.set(cam.target.x+Math.sin(cam.yaw)*dist*cp,cam.target.y+Math.sin(cam.pitch)*dist+.25,cam.target.z+Math.cos(cam.yaw)*dist*cp);
  camWant.y=Math.max(camWant.y,H(camWant.x,camWant.z)+.35);
  camera.position.lerp(camWant,1-Math.exp(-dt*10));lookAt.copy(cam.target);camera.lookAt(lookAt);
 }
@@ -217,6 +223,8 @@ function placeOrnament(slot,kind){const free=giftOrn>0;const r=treePlay.put(slot
 hud=createXmasHud({multi,treePlay,mobile,look,wardrobe:()=>profile.wardrobe,project:screenPos,act:{
  do:id=>doAction(id),
  aim:(dx,dy,done)=>snowfight.aimDrag(dx,dy,done),
+ aimButton:(ph,dx,dy)=>snowfight.aimButton(ph,dx,dy),
+ hold:(id,on)=>{if(id.startsWith('sb:'))snowfight.hold(id,on);else sledPlay.hold?.(id,on);},
  inbox:()=>gifts.openInbox(),
  sound(){profile.sound=!profile.sound;saveProfile();audio.setMuted(!profile.sound);hud.setSound(!profile.sound);showCarol();hud.say(profile.sound?'소리를 켰어요':'소리를 껐어요',1.4,profile.sound?'c-sound':'c-sound-off');},
  carol(){profile.carol=!profile.carol;saveProfile();audio.setCarol(profile.carol);showCarol();hud.say(profile.carol?(profile.sound?'캐럴을 켰어요':'캐럴을 켰어요. 소리도 켜야 들려요'):'캐럴을 껐어요',1.6,profile.carol?(profile.sound?'c-music':'c-sound-off'):'c-music-off');},
@@ -247,7 +255,7 @@ gifts=createGifts({root:hud.root,net,multi,player,mobile,hud,audio,village,
  treeBonus(){giftOrn++;},cocoa(n){campfire.addCocoa(n);}});
 campfire=createCampfire({player,poser,multi,net,hud,audio,onChange:resend});
 snowman=createSnowmanPlay({root:hud.root,world,toon,heightAt:H,village,player,net,multi,hud,audio,camera,mobile,onChange:resend});
-snowfight=createSnowfight({root:hud.root,world,toon,heightAt:H,player,poser,net,multi,hud,audio,camera,canvas:renderer.domElement,mobile,onChange:resend});
+snowfight=createSnowfight({root:hud.root,world,toon,heightAt:H,player,poser,net,multi,hud,audio,camera,canvas:renderer.domElement,renderer,yaw:()=>cam.yaw,mobile,onChange:resend});
 sledPlay=createSledPlay({root:hud.root,world,toon,heightAt:H,player,poser,net,multi,hud,audio,input,mobile,onChange:resend});
 addEventListener('xmas:multi-join',()=>{net.resetLocal();campfire.stand();if(sledPlay.mode!=='none')sledPlay.act('sled:off');});
 addEventListener('xmas:multi-leave',()=>{net.resetLocal();});
@@ -297,9 +305,10 @@ addEventListener('keydown',e=>{const a=document.activeElement;if(a&&(a.tagName==
  if(KEYS[e.code]&&!e.repeat){
   if(e.code==='KeyE'&&deco.on){setDecorate(false);return;}
   if(gifts.open)return;
+  if(e.code==='KeyF'&&snowfight.inYard)return; // 눈싸움 F = 누르는 동안 조준(snowfight-play.js가 받음)
   const k=KEYS[e.code],list=currentActions(),hit=list.find(x=>x.key===k);
   if(hit){doAction(hit.id);return;}
-  if(e.code==='KeyF'&&snowfight.inYard){snowfight.forward();return;}}
+  }
  else if(e.code==='Escape'){if(deco.on){if(hud.pending!==null)pendingMark(null);else setDecorate(false);}else if(gifts.open)gifts.closeAll();else if(snowman.decoOpen)snowman.closeDeco();else if(campfire.sitting)campfire.stand();else hud.closeSheet();}});
 
 // 채팅(공용 창, 크리스마스 자리·문구)

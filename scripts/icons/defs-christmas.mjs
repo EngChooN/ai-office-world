@@ -55,6 +55,15 @@ export const ICONS = {
   'x-roll': { f: `<circle cx="10" cy="14" r="6" ${WHITE}/>`, s: '<circle cx="10" cy="14" r="6"/><path d="M3 20.5h18M14.5 4.5a6.5 6.5 0 0 1 6 5.5M20.5 6.5V10H17"/>', color: true },
   'x-stack': { f: `<circle cx="9" cy="15.5" r="5" ${WHITE}/><circle cx="9" cy="7" r="3.5" ${WHITE}/>`, s: '<circle cx="9" cy="15.5" r="5"/><circle cx="9" cy="7" r="3.5"/><path d="M18.5 20V5M15.5 8l3-3 3 3"/>', color: true },
   'x-decorate': { f: '<path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.5 0 2-1.2 1.4-2.2-.7-1.2 0-2.6 1.4-2.6h2.2a3.5 3.5 0 0 0 3.5-3.5C20.5 7.3 16.7 3.5 12 3.5z"/>', s: '<path d="M12 3.5a8.5 8.5 0 0 0 0 17c1.5 0 2-1.2 1.4-2.2-.7-1.2 0-2.6 1.4-2.6h2.2a3.5 3.5 0 0 0 3.5-3.5C20.5 7.3 16.7 3.5 12 3.5z"/><circle cx="8" cy="10" r="1.3" ' + RED + '/><circle cx="12" cy="7.5" r="1.3" ' + GOLD + '/><circle cx="16" cy="10" r="1.3" style="fill:#3e72b5"/>' },
+  // 눈썰매 레이스·눈싸움 한 판(11-17, 월드개발 — 눈썰매-눈싸움-개선-v1 §3 새 아이콘)
+  'x-drift': { f: '<path d="M4 15h11l-1.2 2.5H5.2z"/>', s: '<path d="M4 15h11l-1.2 2.5H5.2zM3 20h13a2 2 0 0 0 1.8-1.5"/><path d="M15 9.5c2.5-.3 4.3-1.6 5.5-3.8M13.5 6c1.6-.3 2.8-1.2 3.6-2.6M17.5 12.5c1.6.1 2.8-.4 3.8-1.5"/>' },
+  'x-brake': { f: '<circle cx="12" cy="12" r="8.5" style="fill:#c23a32"/>', s: '<circle cx="12" cy="12" r="8.5"/><path d="M7.5 12h9" style="stroke:#fffaf0;stroke-width:3"/>', color: true },
+  'x-boost': { f: `<path d="M13 2.5 5.5 13.5H11l-1.5 8 8-11.5H12z" ${GOLD}/>`, s: '<path d="M13 2.5 5.5 13.5H11l-1.5 8 8-11.5H12z"/>', color: true },
+  'x-crouch': { f: head(12, 9.5, 3.8), s: head(12, 9.5, 3.8) + '<path d="M6.5 20.5c0-3.5 2.5-6 5.5-6s5.5 2.5 5.5 6M4 20.5h16M12 2.5v2.2M9.8 4 12 2.3 14.2 4"/>' },
+  'x-crown': { f: `<path d="M3.5 18 2.5 7.5l5 4L12 4l4.5 7.5 5-4-1 10.5z" ${GOLD}/>`, s: '<path d="M3.5 18 2.5 7.5l5 4L12 4l4.5 7.5 5-4-1 10.5zM4 21h16"/>', color: true },
+  'x-target': { f: '<circle cx="12" cy="12" r="5" style="fill:#c23a32"/>', s: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>', color: true },
+  'x-race': { f: '<path d="M6 3.5h12v7H6z"/>', s: '<path d="M6 21V3.5h12v7H6"/><path d="M9 3.5v7M12 3.5v7M15 3.5v7M6 7h12" style="stroke-width:1.2"/>' },
+  'x-trophy': { f: `<path d="M7 3.5h10v5a5 5 0 0 1-10 0z" ${GOLD}/>`, s: '<path d="M7 3.5h10v5a5 5 0 0 1-10 0zM7 5.5H4.5a3 3 0 0 0 3 4.2M17 5.5h2.5a3 3 0 0 1-3 4.2M12 13.5v4M8 20.5h8M9.5 17.5h5v3h-5z"/>', color: true },
   // 눈사람 부품
   'x-part-eyes': { f: '<circle cx="8" cy="12" r="3" style="fill:#2a2420"/><circle cx="16" cy="12" r="3" style="fill:#2a2420"/>', s: '<circle cx="8" cy="12" r="3"/><circle cx="16" cy="12" r="3"/>', color: true },
   'x-part-nose': { f: '<path d="M4 9.5c4-1 9.5 0 16.5 2.5-7 2.5-12.5 3.5-16.5 2.5z" style="fill:#e07b2e"/>', s: '<path d="M4 9.5c4-1 9.5 0 16.5 2.5-7 2.5-12.5 3.5-16.5 2.5zM8 9.5l.6 1.8M12 10.2l.6 1.6M7.5 14.4l1-1.3"/>', color: true },
