@@ -3,10 +3,14 @@
 // 좌표: 1m = 1, x 오른쪽(동), -Z 북쪽(처음 카메라가 보는 쪽 = 트리), 광장 바닥 y=0. heading 0 = -Z를 봄(흡연장 아바타와 같은 규칙).
 import {COURSE_W,START_H,mountainH,courseDist,makeCourse,dailySeed,skeletonAt,SKELETON_END,BENCH,MOUNTAIN_BOX} from './sled-course.js';
 import {GONDOLA} from './gondola.js';
+// 시안 B(?look=festive-b)는 넓힌 광장 값(festive-layout.js PLAZA_B)으로 바꿔 쓴다. 주소가 없으면(지금 화면·서버·시험) 아래 원래 값 그대로.
+import {PLAZA_B,festiveB} from './festive-layout.js';
+const B=festiveB()?PLAZA_B:null;
+export const BIG_PLAZA=B;
 // 크기는 동동이 키 1.0m 기준이다. 숫자는 월드아트가 화면으로 맞춘 값이고, 놀이 판정 값(반경·제한)은 월드개발이 정한다.
 
 // 광장 돌바닥 반지름 17m: 트리 둘레 길·전시 줄·모닥불(서)·우체통(동)이 모두 돌바닥 안에 든다.
-export const PLAZA=Object.freeze({radius:17,ringPath:3,fence:43});
+export const PLAZA=Object.freeze({radius:B?.radius??17,ringPath:3,fence:43});
 // 트리: 동동이 키의 약 9배(체험설계 「8~10배」). 층층 원뿔 6단, 둘레 길 폭 3m.
 export const TREE=Object.freeze({x:0,z:0,height:9,trunkH:.75,trunkR:.36,starY:9.05,
  // 단마다 [아랫단 높이, 윗단(뾰족) 높이, 아래 반지름]. 위로 갈수록 좁고 서로 겹친다.
@@ -34,11 +38,11 @@ export function treeSlots(){
 }
 
 // 입구(첫 등장 자리): 남쪽, 트리를 정면으로 본다. 반지름 3m 안에 흩어져 선다.
-export const SPAWN=Object.freeze({x:0,z:14.5,heading:0,spread:3});
+export const SPAWN=Object.freeze({x:0,z:14.5,heading:0,spread:3,...B?.spawn});
 // 마을 입구 아치(광장 남쪽 끝, 입구 길 위). w = 기둥 사이 폭.
-export const ENTRANCE=Object.freeze({x:0,z:18.2,w:4.6,h:3.4});
+export const ENTRANCE=Object.freeze({x:0,z:18.2,w:4.6,h:3.4,...B?.entrance});
 // 모닥불(서쪽): 통나무 의자 4개 × 2자리 = 8자리. 자리는 엉덩이 자리(seat)와 바라보는 방향(불 쪽).
-export const CAMPFIRE=Object.freeze({x:-13,z:1,stoneR:.82,logR:2.35,logLen:1.35,seatY:.34,seats:8,glowR:4.2});
+export const CAMPFIRE=Object.freeze({x:-13,z:1,stoneR:.82,logR:2.35,logLen:1.35,seatY:.34,seats:8,glowR:4.2,...B?.campfire});
 export function campfireSeats(){
  const out=[];
  for(let k=0;k<4;k++){const a=Math.PI/4+k*Math.PI/2; // 통나무 4개: 대각선 자리(북동·남동·남서·북서)
@@ -47,11 +51,11 @@ export function campfireSeats(){
  return Object.freeze(out);
 }
 // 선물 우체통(동쪽) + 「모두의 카드」 판(카드 5장).
-export const MAILBOX=Object.freeze({x:12,z:-.6,heading:-Math.PI/2,stand:Object.freeze({x:10.8,z:-.6})});
-export const CARD_BOARD=Object.freeze({x:13.4,z:-2.8,heading:-Math.PI/2-.35,cards:5});
+export const MAILBOX=Object.freeze({x:12,z:-.6,heading:-Math.PI/2,stand:Object.freeze({x:10.8,z:-.6}),...B?.mailbox});
+export const CARD_BOARD=Object.freeze({x:13.4,z:-2.8,heading:-Math.PI/2-.35,cards:5,...B?.cardBoard});
 // 완성 눈사람 전시 줄: 트리 남쪽 반원 8자리. 입구→트리 길(가운데 폭 4m)과 트리→모닥불·우체통 길(동서 축)을 비워 양쪽 4자리씩.
 export function displaySlots(){
- const out=[],r=8.6;for(const s of [-1,1])for(const deg of [22,37,52,67]){const a=deg*Math.PI/180;out.push(Object.freeze({id:out.length,x:s*Math.sin(a)*r,z:Math.cos(a)*r,heading:Math.PI+s*a}));}
+ const out=[],r=B?.displayR??8.6;for(const s of [-1,1])for(const deg of [22,37,52,67]){const a=deg*Math.PI/180;out.push(Object.freeze({id:out.length,x:s*Math.sin(a)*r,z:Math.cos(a)*r,heading:Math.PI+s*a}));}
  return Object.freeze(out);
 }
 // 놀이 마당. 눈사람 마당(동쪽 바깥)·눈싸움 마당(서쪽 바깥). rect = 바닥 경계(월드개발 판정 기준점).
@@ -60,9 +64,9 @@ export const SNOWBALL_YARD=Object.freeze({x:-28,z:2,w:13,d:15,
  // 낮은 눈벽 4개 [가운데 x, z, 길이, 돌림(라디안)]. 높이 0.7m(동동이가 웅크리면 숨는다).
  walls:Object.freeze([[-31,-2.5,3.2,.35],[-25.5,5,3,-.5],[-29.5,6.2,2.4,.15],[-24.5,-3.4,2.6,.9]])});
 // 모닥불과 눈싸움 마당 사이 가림 눈벽(체험설계 §2-2: 집 한 채와 눈벽으로 눈덩이가 모닥불까지 못 날아오게).
-export const DIVIDER=Object.freeze({x:-19.2,z0:-4.5,z1:5.5,h:1.15});
+export const DIVIDER=Object.freeze({x:-19.2,z0:-4.5,z1:5.5,h:1.15,...B?.divider});
 // 집: 광장 둘레(장식, 들어가지 않음). [x, z, 색 번호, 크기 배율]. 앞문은 늘 광장 가운데(트리) 쪽을 본다(houseHeading).
-export const HOUSES=Object.freeze([
+export const HOUSES=B?B.houses:Object.freeze([
  [-19.5,-11,0,1],[-19.5,13,1,1],[19.5,-11,2,1],[19.5,13,3,1],
  [-29,-22,1,.9],[10,23,0,.9],[-10,23.5,2,.95],
  [-33,-15,3,1.05],[33,-15,1,1.05],[-35,19,2,1],[35,20,0,1],
@@ -83,7 +87,7 @@ export const SLED_RUN=Object.freeze({
 });
 export {GONDOLA};
 // 가로등: 광장 둘레 8개 + 마당 입구 4개
-export const LAMPS=Object.freeze([...Array.from({length:8},(_,i)=>{const a=(i+.5)*Math.PI/4;return [Math.sin(a)*17.7,Math.cos(a)*17.7];}),[-19.5,-6.8],[-19.5,7.8],[19.5,-6.2],[19.5,8.8]]);
+export const LAMPS=B?B.lamps:Object.freeze([...Array.from({length:8},(_,i)=>{const a=(i+.5)*Math.PI/4;return [Math.sin(a)*17.7,Math.cos(a)*17.7];}),[-19.5,-6.8],[-19.5,7.8],[19.5,-6.2],[19.5,8.8]]);
 
 const smooth=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
 const hash=(x,z)=>{const s=Math.sin(x*127.1+z*311.7)*43758.5453;return s-Math.floor(s);};

@@ -10,7 +10,16 @@
 //  - 맞은 사람은 머리·몸에 눈이 쌓이는 겉모습(최대 3단계, 5초 안 맞으면 털어냄). 집중 공격(soft)이면 연출을 작게. 음소거한 사람의 눈덩이는 아예 안 보인다.
 import * as THREE from 'three';
 import * as P from './props.js';
-import {FIGHT,FIGHT_TEXT,inFightYard,autoAim,createAmmo,planThrow,arcDots,arcHeight,ringDiameter,gaugeOf,gaugeDist,dragDist,DRAG} from './snowfight.js';
+import {FIGHT,FIGHT_TEXT,inFightYard,autoAim,createAmmo,planThrow,arcDots,arcHeight,ringDiameter,gaugeOf,gaugeDist,dragDist,DRAG,resolveThrow} from './snowfight.js';
+// 11-17 5차 손맛(월드개발): ① 누르면 서버 답을 기다리지 않고 내 화면에 바로 눈덩이(같은 식으로 미리 계산) → 답이 오면 끝점을 0.15초에 걸쳐 서버 값으로
+//  ② 맞은 눈덩이는 날아가는 동안 맞은 사람의 지금 몸 쪽으로 휘어 들어감(서버는 던진 순간 자리로 판정 — 걷는 사람 옆에 떨어지던 「맞았는데 빗나가 보임」)
+//  ③ 맞은 사람은 0.35m 밀림(0.18초) ④ PC F 톡(0.2초 안) = 자동 조준(전에는 4m 앞에 떨어짐)
+export const FEEL=Object.freeze({blendSecs:.15,homing:9,knock:.35,knockSecs:.18,pendSecs:3});
+// 동시에 그리는 수 상한(30명이 한꺼번에 던져도 휴대폰이 멈추지 않게, 5차): 눈덩이·눈 터짐·땅 자국은 미리 만든 것을 돌려 쓰고, 넘치면 그림만 건너뜀(판정·맞음 연출은 그대로).
+// far = 내게서 이보다 먼 눈덩이·터짐은 그리지 않음(m)
+export const SNOW_FX=Object.freeze({mobile:Object.freeze({balls:10,bursts:4,marks:6,far:28}),desktop:Object.freeze({balls:32,bursts:12,marks:20,far:45})});
+import {SNOWBALL_YARD} from './layout.js';
+const SNOWBALL_YARD_IN=(m=.35)=>({x0:SNOWBALL_YARD.x-SNOWBALL_YARD.w/2+m,x1:SNOWBALL_YARD.x+SNOWBALL_YARD.w/2-m,z0:SNOWBALL_YARD.z-SNOWBALL_YARD.d/2+m,z1:SNOWBALL_YARD.z+SNOWBALL_YARD.d/2-m});
 import {icon} from '../icons/icon.js';
 
 const PACK_SECS=FIGHT.packMs/1000;
@@ -18,7 +27,17 @@ const PACK_SECS=FIGHT.packMs/1000;
 export function createSnowfight({doc=document,root,world,toon,heightAt,player,poser,net,multi,hud,audio,camera,canvas,renderer=null,yaw=null,mobile=false,onChange=()=>{}}){
  const tz=toon.toonify,ammo=createAmmo();
  const flying=[],bursts=[],marks=[],covers=new Map();
- const S={pack:0,aim:null,inYard:false,crouch:false,crouchKey:false,crouchBtn:false,stun:0,splat:0,flinch:0,lastPlan:null};
+ const FX=mobile?SNOW_FX.mobile:SNOW_FX.desktop;
+ const farFromMe=(x,z)=>Math.hypot(x-player.x,z-player.z)>FX.far;
+ // 돌려 쓰는 그림: 눈덩이(+ 흰 꼬리 4개, 모양·재질 공용)·눈 터짐·땅 자국
+ const trailGeo=[0,1,2,3].map(i=>new THREE.SphereGeometry(.05-i*.008,8,6)),trailMat=[0,1,2,3].map(i=>new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.6-i*.12,depthWrite:false}));
+ const pool={balls:[],bursts:[],marks:[]},used={balls:0,bursts:0,marks:0};
+ function takeBall(){if(used.balls>=FX.balls)return null;let v=pool.balls.pop();
+  if(!v){v={g:P.thrownSnowball(tz),trail:trailGeo.map((g,i)=>new THREE.Mesh(g,trailMat[i]))};world.add(v.g);v.trail.forEach(t=>world.add(t));}
+  v.g.visible=true;v.trail.forEach(t=>t.visible=true);used.balls++;return v;}
+ function dropBall(v){if(!v)return;v.g.visible=false;v.trail.forEach(t=>t.visible=false);pool.balls.push(v);used.balls--;}
+ const S={pack:0,aim:null,inYard:false,crouch:false,crouchKey:false,crouchBtn:false,stun:0,splat:0,flinch:0,lastPlan:null,knock:null};
+ const pending=[]; // 내가 던져 미리 그린 눈덩이(서버 답 기다림, 보낸 순서)
  // ── 조준 그림: 고리·점선·과녁
  const ringMat=new THREE.MeshBasicMaterial({color:'#fff3b0',transparent:true,opacity:.9,depthWrite:false,depthTest:false});
  const ring=new THREE.Mesh(new THREE.RingGeometry(.3,.4,32).rotateX(-Math.PI/2),ringMat);ring.visible=false;ring.renderOrder=6;world.add(ring);
@@ -50,6 +69,8 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
   const m={t:'sb:throw',x:+player.x.toFixed(2),z:+player.z.toFixed(2),dx:+dx.toFixed(3),dz:+dz.toFixed(3),d:+dist.toFixed(2),...(power?{p:+power.toFixed(2)}:{})};
   if(localThrow){localThrow(m);}
   else if(!net.send(m)){hud?.say(FIGHT_TEXT.offline,2);return false;}
+  else{const me=multi.id??'me',r=resolveThrow({x:m.x,z:m.z,dx:m.dx,dz:m.dz,dist:m.d},allTargets().filter(p=>p.id!==me));
+   const f=spawn({id:me,x:r.x,z:r.z,tx:r.tx,tz:r.tz,d0:r.d0,ms:r.ms,hit:null},{pred:true});f.at=performance.now()/1000;pending.push(f);}
   ammo.take();player.heading=Math.atan2(-dx,-dz);poser.throw();audio?.play('throw');return true;
  }
  const forward=()=>{const y=camYaw();return throwDir(-Math.sin(y),-Math.cos(y),FIGHT.forward);};
@@ -75,6 +96,7 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
  function aimEnd(cancel=false){const a=S.aim;if(!a)return false;S.aim=null;onChange();if(cancel)return false;
   // 휴대폰 톡(0.2초 안·거의 안 끔) = 자동 조준
   if(a.src==='touch'&&a.t<DRAG.tapMs/1000&&Math.hypot(a.dx,a.dy)<12)return auto();
+  if(a.src==='key'&&a.t<DRAG.tapMs/1000)return auto(); // PC F·던지기 단추 톡 = 자동 조준(5차)
   const p=aimPoint.call(null,S.aim=a);S.aim=null;if(!p)return false;
   const pl=planThrow(player,p.x,p.z,allTargets());
   return throwDir(pl.dx,pl.dz,pl.dist,{power:a.src==='mouse'?gaugeOf(a.t):0});
@@ -91,9 +113,11 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
  function aimDrag(dx,dy,done){if(!S.aim)aimStart('touch');if(!S.aim)return false;S.aim.dx=dx;S.aim.dy=dy;S.aim.t=Math.max(S.aim.t,.25);if(done)return aimEnd();return true;}
  function pack(){if(!inFightYard(player.x,player.z,-.3)||S.pack>0)return false;if(ammo.n>=FIGHT.ammo){hud?.say('손에 눈덩이가 가득해요',1.4,'x-snowball');return false;}S.aim=null;S.pack=PACK_SECS;onChange();audio?.play('roll');return true;}
  // ── 눈투성이(사람마다 머리 위 눈 덩어리 + 몸 얼룩): 겉모습 그룹 하나를 머리 자리에 붙인다
+ let coverGeo=null,coverMat=null;
  function coverMesh(){const g=new THREE.Group();g.name='눈투성이';// 0~2 머리 위 눈 더미, 3~4 어깨·가슴 얼룩, 5~6 셋째 단계(더 쌓임)
   const r=[[0,.02,0,.13],[-.1,-.03,.03,.08],[.1,-.04,.02,.09],[-.07,-.46,.15,.07],[.09,-.52,.14,.06],[.02,.09,-.05,.09],[-.11,-.6,.12,.05]];
-  r.forEach(([x,y,z,s],i)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(s,10,8),new THREE.MeshStandardMaterial({color:'#f7fbff',roughness:1}));m.position.set(x,y,z);m.userData.i=i;g.add(m);});
+  coverGeo??=r.map(([,,,s])=>new THREE.SphereGeometry(s,10,8));coverMat??=new THREE.MeshStandardMaterial({color:'#f7fbff',roughness:1}); // 모양·재질은 모두 같이 씀(5차)
+  r.forEach(([x,y,z],i)=>{const m=new THREE.Mesh(coverGeo[i],coverMat);m.position.set(x,y,z);m.userData.i=i;g.add(m);});
   toon?.toonify?.(g,{kind:'prop'});world.add(g);return g;}
  function coverHit(id,soft){const t=performance.now()/1000;let c=covers.get(id);if(!c){c={level:0,last:0,g:coverMesh()};covers.set(id,c);}
   c.level=soft?Math.max(1,c.level):Math.min(FIGHT.maxCover,c.level+1);c.last=t;}
@@ -109,31 +133,69 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
  function toScreen(v){scr.copy(v).project(camera);return {x:(scr.x*.5+.5)*innerWidth,y:(-scr.y*.5+.5)*innerHeight,ok:scr.z<1&&Math.abs(scr.x)<1.2&&Math.abs(scr.y)<1.2};}
  // 머리 위로 떠오르는 글(명중!·헤드샷!·+1)
  function floatText(id,text,cls=''){const h=headOf(id);if(!h)return;const el=doc.createElement('div');el.className=`xf-float ${cls}`;el.textContent=text;root.appendChild(el);floats.push({el,p:h.p.clone(),t:0,dur:1});}
- function burst(x,y,z,{small=false}={}){const g=P.snowBurst(tz);g.position.set(x,y,z);g.scale.setScalar(small?.6:1.1);world.add(g);bursts.push({g,t:0});}
+ function burst(x,y,z,{small=false}={}){if(used.bursts>=FX.bursts||farFromMe(x,z))return;let g=pool.bursts.pop();
+  if(!g){g=P.snowBurst(tz);for(const c of g.children)c.userData.p0=c.position.clone();world.add(g);}
+  for(const c of g.children)if(c.userData.p0)c.position.copy(c.userData.p0);
+  g.visible=true;g.position.set(x,y,z);g.scale.setScalar(small?.6:1.1);used.bursts++;bursts.push({g,t:0});}
  // 땅에 남는 흰 자국(3초)
  const markGeo=new THREE.CircleGeometry(.22,14).rotateX(-Math.PI/2);
- function mark(x,z){const m=new THREE.Mesh(markGeo,new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.85,depthWrite:false}));m.position.set(x,heightAt(x,z)+.03,z);m.renderOrder=3;world.add(m);marks.push({m,t:0});}
+ function mark(x,z){if(farFromMe(x,z))return;
+  // 상한이면 가장 오래된 자국을 옮겨 씀
+  let m;if(used.marks>=FX.marks){const o=marks.shift();m=o.m;}else{m=pool.marks.pop();if(!m){m=new THREE.Mesh(markGeo,new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.85,depthWrite:false}));m.renderOrder=3;world.add(m);}used.marks++;}
+  m.visible=true;m.material.opacity=.85;m.position.set(x,heightAt(x,z)+.03,z);marks.push({m,t:0});}
  // ── 받기
  net.on(m=>{
-  if(m.t==='sb:no'){if(m.reason==='outside')hud?.say(FIGHT_TEXT.outside,2);return;}
-  if(m.t!=='sb'||typeof m.id!=='string')return;
+  if(m.t==='sb:no'){pending.shift();if(m.reason==='outside')hud?.say(FIGHT_TEXT.outside,2);return;} // 미리 그린 것은 빗나간 채로 떨어짐
+  if((m.t!=='sb'&&m.t!=='sbh')||typeof m.id!=='string')return;
   if(multi.isMuted?.(m.id))return; // 음소거한 사람 눈덩이는 아예 그리지 않음
+  if(m.t==='sbh')return hitBall(m);
   receiveBall(m);
  });
+ // 6차: 서버는 던질 때 길만(sb fly:1), 맞으면 나중에 sbh {k,hit,tx,tz,…}. 아직 날아가는 중이면 그 자리에서 멈춰 맞은 사람 쪽으로, 이미 떨어졌으면 맞은 사람 머리에서 터짐
+ const byK=new Map(); // k → 그린 눈덩이(떨어진 뒤 3초까지)
+ function remember(f){if(f.m?.k==null)return;byK.set(f.m.k,f);f.seen=performance.now()/1000;if(byK.size>80)for(const [k,g] of byK){if(performance.now()/1000-g.seen>3)byK.delete(k);if(byK.size<=60)break;}}
+ function hitBall(m){
+  const me=multi.id??'me',f=byK.get(m.k);byK.delete(m.k);
+  if(!f||f.landed||!flying.includes(f)){
+   const g=f??{x:m.x,z:m.z,tx:m.tx,tz:m.tz,me:m.id===me};g.m={...(f?.m??{}),...m,t:'sb'};g.hitMe=m.hit===me;g.landed=true;
+   if(!multi.isMuted?.(m.hit)){const h=headOf(m.hit);const t=h?{x:h.p.x,z:h.p.z,y:h.p.y-.1}:{x:m.tx,z:m.tz,y:heightAt(m.tx,m.tz)+.8};burst(t.x,t.y,t.z,{small:!!m.soft});}
+   hitEffects(g);return;}
+  // 날아가는 중: 같은 빠르기로 맞은 자리까지(남은 거리만큼 시간을 다시 잡음)
+  const k=Math.min(1,f.t/f.dur),s=f.d*k,v=f.d/Math.max(.05,f.dur);
+  f.m={...f.m,...m,t:'sb'};f.hitMe=m.hit===me;f.from=null;f.blend=1;f.tx=m.tx;f.tz=m.tz;
+  const d=Math.hypot(m.tx-f.x,m.tz-f.z);f.dur=s>=d-.05?f.t:f.t+(d-s)/v;
+ }
  function receiveBall(m){
   const me=m.id===(multi.id??'me');
+  // 내가 던져 미리 그린 눈덩이가 있으면 새로 그리지 않고 서버 값으로 맞춘다
+  const now=performance.now()/1000;while(pending.length&&now-pending[0].at>FEEL.pendSecs)pending.shift();
+  if(me&&pending.length){confirm(pending.shift(),m);return;}
   if(!me){multi.poserOf(m.id)?.throw();audio?.play('throw',{at:{x:m.x,z:m.z},gain:.7});}
-  const g=P.thrownSnowball(tz);world.add(g);
-  const trail=[0,1,2,3].map(i=>{const t=new THREE.Mesh(new THREE.SphereGeometry(.05-i*.008,8,6),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.6-i*.12,depthWrite:false}));world.add(t);return t;});
+  spawn(m);
+ }
+ function confirm(f,m){
+  f.m=m;f.pred=false;remember(f);
+  if(m.fly)return; // 6차: 맞음은 sbh로 따로 온다
+  if(f.landed){if(m.hit&&!multi.isMuted?.(m.hit)){const h=headOf(m.hit);const t=h?{x:h.p.x,z:h.p.z,y:h.p.y-.1}:{x:m.tx,z:m.tz,y:heightAt(m.tx,m.tz)+.8};burst(t.x,t.y,t.z,{small:!!m.soft});hitEffects(f);}return;}
+  f.from={tx:f.tx,tz:f.tz};f.blend=0;
+ }
+ function spawn(m,{pred=false}={}){
+  const vis=farFromMe((m.x+m.tx)/2,(m.z+m.tz)/2)?null:takeBall(),g=vis?.g??null,trail=vis?.trail??[];
   const hitMe=m.hit&&(m.hit===(multi.id??'me'));
   const d=Math.hypot(m.tx-m.x,m.tz-m.z),d0=Number.isFinite(m.d0)&&m.d0>0?m.d0:d;
-  flying.push({g,trail,hist:[],x:m.x,z:m.z,tx:m.tx,tz:m.tz,d,d0,t:0,dur:Math.max(.12,(m.ms??500)/1000),m,me,hitMe});
+  const f={vis,g,trail,hist:[],x:m.x,z:m.z,tx:m.tx,tz:m.tz,d,d0,t:0,dur:Math.max(.12,(m.ms??500)/1000),m,me:m.id===(multi.id??'me'),hitMe,pred};flying.push(f);if(!pred)remember(f);return f;
  }
  function land(f){
   const m=f.m,soft=!!m.soft;let y=heightAt(f.tx,f.tz)+arcHeight(Math.min(1,f.d/f.d0));
+  S.lastLand={x:+f.tx.toFixed(2),z:+f.tz.toFixed(2),me:f.me};
+  if(f.pred){f.landed=true;burst(f.tx,y,f.tz);mark(f.tx,f.tz);audio?.play('hit',{at:{x:f.tx,z:f.tz},gain:.7});return;}
   if(m.hit&&!multi.isMuted?.(m.hit)){const h=headOf(m.hit);if(h)y=Math.min(y,h.p.y-.1);coverHit(m.hit,soft);}
   burst(f.tx,y,f.tz,{small:soft});if(!m.hit)mark(f.tx,f.tz);audio?.play('hit',{at:{x:f.tx,z:f.tz},gain:soft?.5:1});
-  if(f.hitMe){S.stun=FIGHT.stunMs/1000;if(!soft){S.splat=1.5;S.flinch=.15;S.flinchDir={x:f.tx-f.x,z:f.tz-f.z};}
+  hitEffects(f);
+ }
+ function hitEffects(f){
+  const m=f.m,soft=!!m.soft;if(f.landed&&m.hit)coverHit(m.hit,soft);
+  if(f.hitMe){if(!soft){const dx=f.tx-f.x,dz=f.tz-f.z,l=Math.hypot(dx,dz)||1;S.knock={x:dx/l,z:dz/l,t:FEEL.knockSecs};}S.stun=FIGHT.stunMs/1000;if(!soft){S.splat=1.5;S.flinch=.15;S.flinchDir={x:f.tx-f.x,z:f.tz-f.z};}
    hud?.say(soft?'눈덩이를 맞았어요':`${multi.nameOf(m.id)}의 눈덩이!`,soft?.8:1.2,soft?null:'x-snowball');}
   else if(f.me&&m.hit){
    if(m.ff){floatText(m.hit,'같은 편!','ff');}
@@ -196,28 +258,38 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
    // 맞은 쪽 화면 가장자리 눈 얼룩(1.5초, 가운데 70%는 비움)
    if(S.splat>0){S.splat=Math.max(0,S.splat-dt);splatEl.hidden=false;splatEl.style.opacity=String(Math.min(1,S.splat/.5));}else splatEl.hidden=true;
    // 날아가는 눈덩이(포물선 = 판정과 같은 식) + 흰 꼬리
-   for(let i=flying.length-1;i>=0;i--){const f=flying[i];f.t+=dt;const k=Math.min(1,f.t/f.dur),s=f.d*k;
+   // 맞은 쪽 밀림(맞은 방향으로 0.35m, 마당 밖으로는 안 나감)
+   if(S.knock){const K=S.knock,st=Math.min(dt,K.t);K.t-=dt;const v=FEEL.knock/FEEL.knockSecs*st;const Y=SNOWBALL_YARD_IN();
+    player.x=Math.max(Y.x0,Math.min(Y.x1,player.x+K.x*v));player.z=Math.max(Y.z0,Math.min(Y.z1,player.z+K.z*v));if(K.t<=0)S.knock=null;}
+   for(let i=flying.length-1;i>=0;i--){const f=flying[i];f.t+=dt;
+    // 서버 답이 오면 끝점을 0.15초에 걸쳐 서버 값으로
+    if(f.from&&f.blend<1){f.blend=Math.min(1,f.blend+dt/FEEL.blendSecs);const b=f.blend;f.tx=f.from.tx+(f.m.tx-f.from.tx)*b;f.tz=f.from.tz+(f.m.tz-f.from.tz)*b;}
+    // 맞은 눈덩이: 맞은 사람의 지금 몸 쪽으로 휘어 들어감
+    if(!f.pred&&f.m.hit&&(!f.from||f.blend>=1)){const q=f.m.hit===(multi.id??'me')?{x:player.x,z:player.z}:headOf(f.m.hit)?.p;if(q){const a=Math.min(1,dt*FEEL.homing);f.tx+=(q.x-f.tx)*a;f.tz+=(q.z-f.tz)*a;}}
+    f.d=Math.hypot(f.tx-f.x,f.tz-f.z);
+    const k=Math.min(1,f.t/f.dur),s=f.d*k;
     const x=f.x+(f.tx-f.x)*k,z=f.z+(f.tz-f.z)*k,y=heightAt(x,z)+arcHeight(Math.min(1,s/f.d0));
-    f.g.position.set(x,y,z);f.hist.unshift([x,y,z]);if(f.hist.length>12)f.hist.length=12;
-    f.trail.forEach((t,j)=>{const h=f.hist[Math.min(f.hist.length-1,(j+1)*2)];if(h)t.position.set(...h);});
-    if(k>=1){world.remove(f.g);for(const t of f.trail)world.remove(t);flying.splice(i,1);land(f);}}
+    if(f.g){f.g.position.set(x,y,z);f.hist.unshift([x,y,z]);if(f.hist.length>12)f.hist.length=12;
+     f.trail.forEach((t,j)=>{const h=f.hist[Math.min(f.hist.length-1,(j+1)*2)];if(h)t.position.set(...h);});}
+    if(k>=1){dropBall(f.vis);f.vis=f.g=null;f.trail=[];flying.splice(i,1);land(f);}}
    for(let i=bursts.length-1;i>=0;i--){const b=bursts[i];b.t+=dt;for(const c of b.g.children){const d=c.userData.dir;if(d)c.position.addScaledVector(d,dt*1.4);c.position.y-=dt*b.t*2.5;}b.g.scale.multiplyScalar(1-dt*.6);
-    if(b.t>.4){world.remove(b.g);bursts.splice(i,1);}}
-   for(let i=marks.length-1;i>=0;i--){const m=marks[i];m.t+=dt;m.m.material.opacity=.85*Math.min(1,(3-m.t)/.8);if(m.t>3){world.remove(m.m);m.m.material.dispose();marks.splice(i,1);}}
+    if(b.t>.4){b.g.visible=false;pool.bursts.push(b.g);used.bursts--;bursts.splice(i,1);}}
+   for(let i=marks.length-1;i>=0;i--){const m=marks[i];m.t+=dt;m.m.material.opacity=.85*Math.min(1,(3-m.t)/.8);if(m.t>3){m.m.visible=false;pool.marks.push(m.m);used.marks--;marks.splice(i,1);}}
    // 떠오르는 글
    for(let i=floats.length-1;i>=0;i--){const f=floats[i];f.t+=dt;const q=toScreen(f.p.clone().add({x:0,y:.35+f.t*.5,z:0}));
     f.el.style.transform=`translate(${Math.round(q.x)}px,${Math.round(q.y)}px) translate(-50%,-100%)`;f.el.style.opacity=String(q.ok?Math.min(1,(f.dur-f.t)/.3):0);
     if(f.t>=f.dur){f.el.remove();floats.splice(i,1);}}
    // 눈투성이: 5초 안 맞으면 털어냄
    const t=performance.now()/1000;
-   for(const [id,c] of covers){const age=t-c.last,show=age<FIGHT.stackMs/1000&&!multi.isMuted?.(id);const h=show?headOf(id):null;
+   const fullIds=mobile?new Set(multi.people().filter(p=>p.full).map(p=>p.id)):null;
+   for(const [id,c] of covers){const age=t-c.last,mine=id===multi.id||id==='me',show=age<FIGHT.stackMs/1000&&!multi.isMuted?.(id)&&(mine||!fullIds||fullIds.has(id));const h0=show?headOf(id):null,h=h0&&(mine||!farFromMe(h0.p.x,h0.p.z))?h0:null;
     if(!h||extraTargets().some(x=>x.id===id)){c.g.visible=false;if(age>=FIGHT.stackMs/1000)c.level=0;if(age>10){world.remove(c.g);covers.delete(id);}continue;}
     c.g.visible=true;c.g.position.copy(h.p).add({x:0,y:-.06,z:0});c.g.rotation.y=h.h; // headTop = 머리 꼭대기 근처(말풍선 자리)
     const shake=age>FIGHT.stackMs/1000-.5?Math.sin(age*40)*.03:0;c.g.position.x+=shake;
     for(const m of c.g.children){const i=m.userData.i;m.visible=c.level>=3||(c.level>=2?i<5:i<3);}}
   },
   coverOf:id=>covers.get(id)?.level??0,
-  status(){const p=S.lastPlan;return {inYard:S.inYard,ammo:ammo.n,packing:S.pack>0,crouch:S.crouch,stun:+S.stun.toFixed(2),flying:flying.length,covers:Object.fromEntries([...covers].map(([k,v])=>[k,v.level])),
+  status(){const p=S.lastPlan;return {lastLand:S.lastLand??null,knock:!!S.knock,inYard:S.inYard,ammo:ammo.n,packing:S.pack>0,crouch:S.crouch,stun:+S.stun.toFixed(2),flying:flying.length,covers:Object.fromEntries([...covers].map(([k,v])=>[k,v.level])),
    aim:S.aim?{src:S.aim.src,t:+S.aim.t.toFixed(2),dots:dots.visible,ring:ring.visible,tx:p?+p.r.tx.toFixed(2):null,tz:p?+p.r.tz.toFixed(2):null,hit:p?.r.hit??null,target:p?.target??null}:null};},
  };
 }

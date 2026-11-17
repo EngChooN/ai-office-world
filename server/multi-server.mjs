@@ -4,7 +4,7 @@
 //  PORT             기다릴 포트(기본 8787)          HOST            기다릴 주소(기본 0.0.0.0)
 //  DATA_DIR         신고 기록(reports.jsonl) 폴더(기본 ./data-multi). 90일 지난 줄은 시작할 때·하루마다 지운다
 //  ALLOWED_ORIGINS  허용할 페이지 주소(쉼표). 비우면 모두 허용(경고 출력). Origin 머리말이 없는 접속(앱·시험 도구)은 허용
-//  MAX_PER_ROOM_CHRISTMAS(20, 크리스마스 광장 정원) TREE_RESET_MS(300000, 빈 크리스마스 방의 트리를 버리기까지)
+//  MAX_PER_ROOM_CHRISTMAS(30, 크리스마스 광장 정원 — 값을 주면 코드의 EXPERIENCE_MAX보다 우선) TREE_RESET_MS(300000, 빈 크리스마스 방의 트리를 버리기까지)
 //  MAX_PER_ROOM(30, 크리스마스 밖 체험) MAX_CLIENTS(400) MAX_PER_IP(32) BANNED_WORDS(쉼표, 이름 금칙어) TRUST_PROXY(1이면 X-Forwarded-For·CF-Connecting-IP를 접속 수 제한에 씀)
 //  BANNED_CHAT_WORDS(쉼표, 채팅 금칙어 — 기본 목록 파일 server/chat-banned-words.txt에 더함. 파일이 없으면 빈 목록)  CHAT_BANNED_FILE(기본 목록 파일 경로를 바꿀 때)
 // 주소: GET /health → 200 {ok,rooms,clients,total(=clients, 전체 접속),uptime,experiences:{hiking:{rooms,clients},smoking:{…}},servers:{hiking:[{id,name,count,max}],smoking:[…]}}

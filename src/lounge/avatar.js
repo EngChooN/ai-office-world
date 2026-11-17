@@ -22,6 +22,7 @@ export async function createAvatar({rigUrl,toon,outfit='shirt',name='동동이',
  // 등산 스틱은 흡연장에 들고 오지 않는다.
  const hidePoles=()=>{for(const p of hiker.props?.poles??[])p.group.visible=false;};hidePoles();
  const root=hiker.scene;root.name=`avatar-${id}`;
+ let headBone=null;
  const a={
   id,name,hiker,root,outfit:outfitKey(outfit),
   x:0,z:0,heading:0,          // 바라볼 방향(라디안, 0 = -Z). 몸은 hiker.turnTo로 부드럽게 따라 돈다.
@@ -44,7 +45,8 @@ export async function createAvatar({rigUrl,toon,outfit='shirt',name='동동이',
    void steps;
   },
   // 말풍선 자리(머리 위, 월드)
-  headTop(target=new THREE.Vector3()){const h=hiker.model?.getObjectByName('mixamorigHead');if(h){h.getWorldPosition(target);target.y+=.42;}else target.set(a.x,1.25,a.z);return target;},
+  // 머리 꼭대기(말풍선·이름표 자리). 11-17: 뼈는 한 번만 찾고, 위치는 마지막 그리기 때 계산된 matrixWorld를 그대로 씀(사람 수만큼 매 프레임 부모 행렬을 다시 계산하던 것 — 30명 광장 휴대폰 부담)
+  headTop(target=new THREE.Vector3()){const h=headBone??=hiker.model?.getObjectByName('mixamorigHead')??null;if(h){target.setFromMatrixPosition(h.matrixWorld);if(target.lengthSq()===0)h.getWorldPosition(target);target.y+=.42;}else target.set(a.x,1.25,a.z);return target;},
  };
  return a;
 }

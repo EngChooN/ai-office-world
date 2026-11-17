@@ -2,7 +2,8 @@
 // 체험설계 v1 §7-2 추천안:
 //  - 눈싸움 마당 안에서만 던지고, 마당 안 사람만 맞는다(지나가는 사람·모닥불은 절대 안 맞음). 피해·점수 없음.
 //  - 손에 3개, 「눈 뭉치기」 1초에 1개, 가만히 있어도 3초마다 1개. 던지기 간격 0.8초(서버도 같은 값으로 거름).
-//  - 판정은 서버: 던진 자리·방향·거리로 날아가는 선을 만들고, 마당 안 사람(마지막 자리) 중 선에 가장 먼저 닿는 사람 또는 눈벽에서 멈춘다.
+//  - 판정은 서버: 던진 자리·방향·거리로 날아가는 선을 만들고, 마당 안 사람 중 선에 가장 먼저 닿는 사람 또는 눈벽에서 멈춘다.
+//    11-17 6차부터 사람 자리는 「눈덩이가 그 사람 자리를 지나가는 순간」(startFlight·sweepFlight, 비켜서면 피함). resolveThrow는 과녁 연습·미리보기용.
 //  - 같은 사람이 같은 사람에게 10초에 5번 넘게 맞히면 그 뒤 10초는 맞아도 연출을 작게(soft).
 import {SNOWBALL_YARD} from './layout.js';
 
@@ -46,6 +47,27 @@ export function resolveThrow({x,z,dx,dz,dist},people=[],{walls=SNOWBALL_YARD.wal
  if(hit)end=Math.max(.3,Math.min(end,best));
  const tx=sx+dx*end,tz=sz+dz*end,head=!!hit&&!hitP.crouch&&arcHeight(Math.min(1,end/d0))>=FIGHT.headH;
  return {x:sx,z:sz,tx,tz,d:end,d0,hit,head,wall:!hit&&wall,ms:Math.round(end/FIGHT.speed*1000)+120};
+}
+// ── 11-17 6차(대표 결정 「피할 수 있게」): 맞음은 눈덩이가 지나가는 순간의 자리로 정한다.
+// 던질 때는 길(손 → 눈벽 또는 겨눈 거리)만 정하고(startFlight), 날아가는 동안 서버가 0.1초마다 지난 구간 [s0,s1]에 지금 있는 사람을 본다(sweepFlight).
+// 옆으로 비켜서면 안 맞고, 웅크리기·눈벽·무적 규칙은 resolveThrow와 같다. 날아간 거리 s(t) = d × (지난 시간 / ms) — 화면 눈덩이와 같은 빠르기.
+export function startFlight({x,z,dx,dz,dist},{walls=SNOWBALL_YARD.walls}={}){
+ const l=Math.hypot(dx,dz)||1,r=resolveThrow({x,z,dx,dz,dist},[],{walls});
+ return {...r,ux:dx/l,uz:dz/l,s:0};
+}
+export function sweepFlight(f,s0,s1,people=[],{walls=SNOWBALL_YARD.walls}={}){
+ const {x:sx,z:sz,ux:dx,uz:dz,d0}=f,R=FIGHT.hitR;
+ const hidden=t=>{for(let s=Math.max(.1,t-1.5);s<t-.15;s+=.1)if(inWall(sx+dx*s,sz+dz*s,walls))return true;return false;};
+ let best=null;
+ for(const p of people){if(p.safe||!inFightYard(p.x,p.z,-.3))continue;const px=p.x-sx,pz=p.z-sz,t=px*dx+pz*dz;
+  // 이번 구간 앞뒤로 hitR씩 겹쳐 본다(사람이 눈덩이 쪽으로 걸어와도 0.1초 사이에 빠져나가지 않게)
+  if(t<0||t>f.d+R||t<s0-R||t>s1+R)continue;
+  if(Math.hypot(px-dx*t,pz-dz*t)>R||(best&&t>=best.t))continue;
+  if(p.crouch&&(arcHeight(Math.min(1,t/d0))>FIGHT.crouchH+.15||hidden(t)))continue;
+  best={t,p};}
+ if(!best)return null;
+ const end=Math.max(.3,Math.min(f.d,best.t));
+ return {id:best.p.id,d:end,tx:sx+dx*end,tz:sz+dz*end,head:!best.p.crouch&&arcHeight(Math.min(1,end/d0))>=FIGHT.headH};
 }
 // ── 조준(화면·시험 공용)
 // 힘 게이지(누른 시간 초 → 0~1). 가득 찬 뒤 0.5초 넘으면 full(깜빡임)이지만 값은 1 그대로(손해 없음)

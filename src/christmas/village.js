@@ -11,15 +11,19 @@ import {createSnowfall} from './snowfall.js';
 import {buildSledCourse} from './sled-course-art.js';
 import {buildGondolaArt} from './gondola-art.js';
 import {BENCH} from './sled-course.js';
+import {buildFestive,skyFor} from './festive.js';
 
 const lin=hex=>new THREE.Color(hex);
 const smooth=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t);};
 const rng=seed=>{let s=seed>>>0;return ()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);};
+// 두 놀이 마당 바닥 안(m만큼 바깥까지 포함)
+const inYard=(x,z,m=0)=>[L.SNOWMAN_YARD,L.SNOWBALL_YARD].some(y=>Math.abs(x-y.x)<=y.w/2+m&&Math.abs(z-y.z)<=y.d/2+m);
 const segDist=(x,z,[ax,az],[bx,bz])=>{const dx=bx-ax,dz=bz-az,t=Math.min(1,Math.max(0,((x-ax)*dx+(z-az)*dz)/(dx*dx+dz*dz)));return Math.hypot(x-ax-dx*t,z-az-dz*t);};
 // 밟아 다져진 눈길(입구→트리, 트리 둘레→모닥불·우체통·마당·썰매 멈춤·계단). 땅 꼭짓점 색에만 쓴다.
-const PATHS=[[[0,32],[0,16]],[[-17,-6.5],[-23,-3]],[[-17,7.5],[-23,6]],[[16.5,1],[21.5,1.5]],[[6,-16],[8.4,-19]],[[-6,-16],[-11.5,-24]]];
+const PATHS=L.BIG_PLAZA?.paths??[[[0,32],[0,16]],[[-17,-6.5],[-23,-3]],[[-17,7.5],[-23,6]],[[16.5,1],[21.5,1.5]],[[6,-16],[8.4,-19]],[[-6,-16],[-11.5,-24]]];
 
-export function buildVillage({toon,scene,world,mobile=false,samples=false}){
+// look: 0 = 지금 화면, 1·2 = 「밝고 화려하게」 시안 A·B(festive.js, 대표 검토용 — ?look=festive|festive-b)
+export function buildVillage({toon,scene,world,mobile=false,samples=false,look=0}){
  const group=new THREE.Group();group.name='눈마을 광장';
  const tz=toon.toonify,f=toon.materialFactory,colliders=[],lights=[],glows=[];
  const H=L.heightAt;
@@ -62,10 +66,12 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false}){
    // 눈 덮임: 가장자리·트리 밑은 많이, 사람이 다니는 길은 적게
    const cover=.55+.3*Math.sin(x*.7)*Math.sin(z*.6)+.25*smooth(R-2.5,R,r)-.35*(1-smooth(3.4,6.4,r))*smooth(3.3,3.6,r);
    c.lerp(snow,Math.min(1,Math.max(0,cover)));if(r<3.4)c.copy(white);
+   // 넓힌 광장(시안 B)은 돌바닥이 두 마당 안쪽 끝에 걸친다 → 마당 안은 눈으로 덮어 마당이 광장에 붙은 눈밭으로 보이게
+   if(inYard(x,z,.6))c.copy(white).lerp(snow,.25);
    col.set([c.r,c.g,c.b],i*3);}
   g.setAttribute('color',new THREE.BufferAttribute(col,3));noEdge(toonMesh(g,'광장 돌바닥'));
   // 트리 둘레 경계석·광장 테두리 돌
-  const curbs=[];for(const [rr,n,h] of [[3.5,30,.14],[R+.15,80,.2]])for(let i=0;i<n;i++){const a=i/n*Math.PI*2,b=new THREE.BoxGeometry(2*Math.PI*rr/n*.92,h,.32);b.rotateY(a);b.translate(Math.sin(a)*rr,h/2,Math.cos(a)*rr);curbs.push(b);}
+  const curbs=[];for(const [rr,n,h] of [[3.5,30,.14],[R+.15,80,.2]])for(let i=0;i<n;i++){const a=i/n*Math.PI*2;if(inYard(Math.sin(a)*rr,Math.cos(a)*rr,.4))continue;const b=new THREE.BoxGeometry(2*Math.PI*rr/n*.92,h,.32);b.rotateY(a);b.translate(Math.sin(a)*rr,h/2,Math.cos(a)*rr);curbs.push(b);}
   const cm=new THREE.Mesh(mergeGeometries(curbs),f.basic(lin(XMAS.stoneDark),{name:'xmas-curb'}));cm.name='경계석';cm.receiveShadow=true;group.add(cm);
  }
 
@@ -139,7 +145,10 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false}){
  if(samples){[[0,{}],[3,{sizes:[.55,.4],parts:['eyes','nose','mouth','scarf'],scarfColor:XMAS.ornBlue}],[5,{sizes:[.6,.45,.3],parts:['eyes','nose','arms','hat'],seed:4}]].forEach(([i,o])=>{const s=display[i],sm=P.buildSnowman(tz,o);put(sm,s.x,s.z,s.heading,.12);s.snowman=sm;sampleSnowmen.push(sm);});
   [[SM.x-2,SM.z+1,P.SNOWBALL_SIZES.large],[SM.x+2.5,SM.z-2,P.SNOWBALL_SIZES.medium],[SM.x+.5,SM.z+3.5,P.SNOWBALL_SIZES.small]].forEach(([x,z,r],i)=>put(P.snowball(tz,r,i+2),x,z,i));}
  // ── 따뜻한 마을 빛(palette XMAS_SKY.light.warmFill): 불빛 많은 마을의 반사광. 장면 전체에 하나.
- {const w=XMAS_SKY.light.warmFill,l=new THREE.HemisphereLight(w.sky,w.ground,w.intensity);l.name='마을 빛';group.add(l);}
+ {const w=skyFor(look).light.warmFill,l=new THREE.HemisphereLight(w.sky,w.ground,w.intensity);l.name='마을 빛';group.add(l);}
+ // ── 「밝고 화려하게」 시안(주소 옵션으로만)
+ const baseColliders=colliders.length; // 시안이 더한 충돌은 이 번호부터(점검 스크립트가 시안 전후 길을 비교)
+ const festive=look?buildFestive({group,tz,H,mobile,level:look,colliders,houses,tree}):null;
  // ── 눈 내림
  const snowfall=createSnowfall({mobile});scene?.add(snowfall.group);
 
@@ -147,12 +156,13 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false}){
  world.add(group);
  let time=0;
  return {
-  group,heightAt:H,layout:L,colliders,course,gondola,tree,mailbox,cardBoard:board,campfire:fire,seats,display,houses,sleds,snowfall,
+  group,heightAt:H,layout:L,colliders,baseColliders,course,gondola,tree,mailbox,cardBoard:board,campfire:fire,seats,display,houses,sleds,snowfall,festive,
   // 매 프레임. camera = 눈 내림 기준, viewHeight = 캔버스 높이(px)
   update(dt,{camera=null,viewHeight=900,snow=1}={}){
    time+=dt;tree.update(dt,time);course.update(dt);gondola.update(dt);fire.update(dt,time,{power:mobile?4:6});
    for(const {l,base} of lights)l.intensity=base();
    for(const m of smoke){const u=(time*.12+m.userData.ph)%1;m.position.copy(m.userData.base).add(new THREE.Vector3(Math.sin(time*.5+m.userData.ph*9)*.3*u+u*.8,u*3.2,u*.3));m.scale.setScalar(.4+u*1.6);m.material.opacity=.5*(1-u);}
+   festive?.update(dt,time);
    if(camera)snowfall.update(time,camera,{amount:snow,viewHeight});
   },
   dispose(){snowfall.dispose();scene?.remove(snowfall.group);world.remove(group);},

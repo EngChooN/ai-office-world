@@ -56,7 +56,8 @@ test('광장 안에 모닥불·우체통·카드 판, 집·마당·썰매 멈춤
  const R=L.PLAZA.radius;
  for(const p of [L.CAMPFIRE,L.MAILBOX,L.CARD_BOARD])assert.ok(Math.hypot(p.x,p.z)+(p===L.CAMPFIRE?L.CAMPFIRE.logR+.7:1)<R,'광장 돌바닥 밖으로 나감');
  for(const [x,z,,s] of L.HOUSES)assert.ok(Math.hypot(x,z)-3*s>R,`집 (${x},${z})이 광장에 걸침`);
- for(const y of [L.SNOWMAN_YARD,L.SNOWBALL_YARD])assert.ok(Math.abs(y.x)-y.w/2>R,'마당이 광장에 걸침');
+ // 넓힌 광장(11-17부터 기본)은 돌바닥이 두 마당 안쪽에 1m쯤 걸치는 설계(festive-layout.js, 그곳은 눈 바닥으로 칠함). 예전 배치는 걸치지 않음
+ for(const y of [L.SNOWMAN_YARD,L.SNOWBALL_YARD])assert.ok(Math.abs(y.x)-y.w/2>R-(L.BIG_PLAZA?1.2:0),'마당이 광장에 걸침');
  assert.ok(Math.hypot(L.SLED_RUN.stop.x,L.SLED_RUN.stop.z)-L.SLED_RUN.stop.r>R,'썰매가 광장으로 들어옴');
  // 집끼리 겹치지 않음(지붕 처마 포함 반지름 약 3m)
  for(let i=0;i<L.HOUSES.length;i++)for(let j=i+1;j<L.HOUSES.length;j++){const a=L.HOUSES[i],b=L.HOUSES[j];assert.ok(Math.hypot(a[0]-b[0],a[1]-b[1])>3*(a[3]+b[3]),`집 ${i}·${j} 겹침`);}

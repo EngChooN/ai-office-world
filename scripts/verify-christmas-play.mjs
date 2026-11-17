@@ -14,10 +14,12 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {startServer} from '../server/multi-server.mjs';
 import * as L from '../src/christmas/layout.js';
 
-const dir='artifacts/christmas-play',multiPort=Number(process.env.MULTI_PORT??8792),room='눈마을-2';mkdirSync(dir,{recursive:true});
+// EXTRA_Q='&look=festive-b' 처럼 주소 옵션을 더하면 그 화면으로(결과는 OUT_DIR, 기본 artifacts/christmas-play)
+const EXTRA_Q=process.env.EXTRA_Q??'';
+const dir=process.env.OUT_DIR??'artifacts/christmas-play',multiPort=Number(process.env.MULTI_PORT??8792),room='눈마을-2';mkdirSync(dir,{recursive:true});
 const PARTS=new Set((process.env.PART??'gift,fire,snowman,fight,match,sled,gondola,carol,offline').split(','));
 const {createServer}=await import('vite');const port=Number(process.env.PORT??5198);
-const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true},logLevel:'warn'});await vite.listen();
+const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true,hmr:false,watch:null},logLevel:'warn'});await vite.listen();
 const pageUrl=`http://127.0.0.1:${port}`,wsUrl=`ws://127.0.0.1:${multiPort}`;
 let srv=startServer({PORT:String(multiPort),HOST:'127.0.0.1',DATA_DIR:`${dir}/data`},{quiet:true});await srv.ready;
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--use-angle=metal']});
@@ -43,7 +45,7 @@ async function open(name,vp,{look=null,wardrobe=[]}={}){
  const p=await ctx.newPage();p.label=name;p.mobile=mobile;
  p.on('pageerror',e=>out.errors.push(`${name}: ${e.message}`));
  p.on('console',m=>{if(m.type()==='error'&&!/WebSocket connection|favicon|ERR_CONNECTION_REFUSED|Failed to load resource/.test(m.text()))out.errors.push(`${name}: ${m.text()}`);});
- await p.goto(`${pageUrl}/christmas/?capture=1&multi=${encodeURIComponent(room)}&server=${encodeURIComponent(wsUrl)}&name=${encodeURIComponent(name)}`);
+ await p.goto(`${pageUrl}/christmas/?capture=1&multi=${encodeURIComponent(room)}&server=${encodeURIComponent(wsUrl)}&name=${encodeURIComponent(name)}${EXTRA_Q}`);
  await p.waitForFunction(()=>window.xmas?.multi?.state==='online',null,{timeout:120000});
  return p;
 }
@@ -164,7 +166,8 @@ try{
   await A.keyboard.down('KeyF');await sleep(100);const pv=await st(A);
   check('④ F 누름 0.1초 안 점선 포물선·착탄 고리·힘 게이지',pv.fight.aim?.dots&&pv.fight.aim?.ring&&await A.evaluate(()=>!document.querySelector('.xf-gauge').hidden),{aim:pv.fight.aim});
   await sleep(150);const pv2=(await st(A)).fight.aim;await shot(A,'pc-snowball-aim');
-  const sbWait=A.evaluate(()=>new Promise(r=>{const f=window.xmas.net;f.on(m=>{if(m.t==='sb')r(m);});}));
+  // 11-17 6차: 서버는 길(sb)을 먼저, 맞음(sbh)은 눈덩이가 지나갈 때. 고리가 사람 위면 맞은 자리(sbh), 아니면 길 끝(sb)과 비교
+  const sbWait=A.evaluate(hit=>new Promise(r=>{const f=window.xmas.net;f.on(m=>{if(hit?m.t==='sbh':m.t==='sb')r(m);});}),!!pv2?.hit);
   await A.keyboard.up('KeyF');const sbm=await Promise.race([sbWait,sleep(3000).then(()=>null)]);
   check('④ 떼면 실제 착탄 = 미리보기 고리 안(0.3m)',sbm&&pv2&&Math.hypot(sbm.tx-pv2.tx,sbm.tz-pv2.tz)<=.3+.42,{pv2,sb:sbm,aId,after:(await st(A)).fight});
   check('④ 고리가 사람 위면 빨강·과녁(조준 대상 = 둘)',pv2?.hit===bId||pv2?.target===bId,{pv2});
@@ -177,10 +180,12 @@ try{
   await sleep(300);await shot(A,'pc-snowball-hit');
   // 휴대폰 ❄️ 길게 누르고 위로 끌기 = 카메라가 보는 쪽으로 조준해 던짐(바닥 조준 고리)
   await sleep(900);const thrown0=(await st(B)).fight.ammo;
+  await B.evaluate(()=>{window.__mySb=0;window.xmas.net.on(m=>{if(m.t==='sb'&&m.id===window.xmas.multi.id)window.__mySb++;});});
   const aim=await B.evaluate(async()=>{const b=document.querySelector('.xh-acts [data-act="sb:throw"]'),r=b.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2,ev=(t,dx,dy)=>b.dispatchEvent(new PointerEvent(t,{bubbles:true,pointerId:9,pointerType:'touch',clientX:x+dx,clientY:y+dy}));
    ev('pointerdown',0,0);await new Promise(r=>setTimeout(r,320));ev('pointermove',0,-60);await new Promise(r=>setTimeout(r,120));ev('pointermove',0,-110);await new Promise(r=>setTimeout(r,200));
    const ring=window.xmas.snowfight.status();const aiming=b.classList.contains('aiming');ev('pointerup',0,-110);return {aiming,ring};});
-  await sleep(300);check('④ 휴대폰 ❄️ 길게 누르고 끌기 → 조준 뒤 던짐',aim.aiming&&(await st(B)).fight.ammo===thrown0-1,{aim,ammo:(await st(B)).fight.ammo,thrown0});
+  await sleep(300);{const f=(await st(B)).fight;// 손 눈덩이는 3초마다 저절로 차서 수만으로는 흔들림 → 서버가 받은 내 던지기(sb)로 확인
+   const sent=await until(()=>B.evaluate(()=>window.__mySb>=1),2000);check('④ 휴대폰 ❄️ 길게 누르고 끌기 → 조준 뒤 던짐',aim.aiming&&sent,{ammo:f.ammo,thrown0,stun:f.stun,aiming:aim.aiming,aimStun:aim.ring.stun,aimAmmo:aim.ring.ammo});}
   // 휴대폰 조준 중 화면(❄️ 누른 채 끌기)
   await B.evaluate(()=>{const b=document.querySelector('.xh-acts [data-act="sb:throw"]'),r=b.getBoundingClientRect(),x=r.x+r.width/2,y=r.y+r.height/2;b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,pointerId:11,pointerType:'touch',clientX:x,clientY:y}));b.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,pointerId:11,pointerType:'touch',clientX:x-8,clientY:y-70}));});
   await sleep(700);const mv=(await st(B)).fight.aim;await shot(B,'mobile-snowball-aim');

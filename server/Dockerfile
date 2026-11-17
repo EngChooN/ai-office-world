@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json ./
 COPY src/multi-protocol.js ./src/multi-protocol.js
 # 크리스마스 트리·놀이 규칙(서버·화면 공용, three 없음). layout.js는 마당 경계·눈벽 자리(순수 자료)
-COPY src/christmas/tree-state.js src/christmas/room-play.js src/christmas/gift-state.js src/christmas/snowman-state.js src/christmas/snowfight.js src/christmas/layout.js src/christmas/fight-match.js src/christmas/sled-race.js src/christmas/sled-course.js src/christmas/gondola.js ./src/christmas/
+COPY src/christmas/tree-state.js src/christmas/room-play.js src/christmas/gift-state.js src/christmas/snowman-state.js src/christmas/snowfight.js src/christmas/layout.js src/christmas/festive-layout.js src/christmas/fight-match.js src/christmas/sled-race.js src/christmas/sled-course.js src/christmas/gondola.js ./src/christmas/
 # 흡연장 자리 판정(서버·화면 공용, three 없음, 11-17)
 COPY src/lounge/room-rules.js ./src/lounge/
 # 채팅 금칙어 기본 목록(산리서치). 끝 글자를 [t]로 적어 파일이 아직 없어도 빌드가 깨지지 않게 한다(없으면 빈 목록으로 뜸)

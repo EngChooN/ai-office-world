@@ -1,5 +1,5 @@
 // 온라인 크리스마스 — 광장 실시간 멀티(월드개발, 2026-11-16). 흡연장 같이 피우기(src/lounge/multi.js)와 같은 전송·규격을 쓴다.
-//  - 서버 주소가 있으면 WebSocket {experience:'christmas'}(방 `christmas:눈마을`, 정원 20), 없으면 BroadcastChannel(같은 브라우저 창끼리).
+//  - 서버 주소가 있으면 WebSocket {experience:'christmas'}(방 `christmas:눈마을`, 정원 30), 없으면 BroadcastChannel(같은 브라우저 창끼리).
 //  - 위치 s: 움직이면 10Hz, 서 있으면 1초에 한 번. 행동 상태 act {o 옷, hat 모자, sc 목도리, d 트리 꾸미는 중}은 바뀔 때만(서버가 기억해 나중에 온 사람에게도 줌).
 //  - 채팅: 공용 채팅 창(src/hiking-chat-ui.js, ns 'xmas')과 'xmas:chat-send' → {t:'c'}, 받은 c → 'xmas:chat'. 제한은 'xmas:chat-limit' {reason,wait}.
 //  - 트리: tree·tree:set·tree:del·tree:star·tree:no를 onTree(m)로 넘긴다(판정은 서버, 화면 쪽은 tree-play.js).
@@ -14,13 +14,14 @@ import {sanitizeTreeMsg} from './tree-state.js';
 import {applyXmasAct} from './poses.js';
 
 // 놀이 메시지(서버 → 화면). room-play.js 규격
-export const PLAY_TYPES=Object.freeze(['gift','gift:ok','gift:no','gift:post','board','snow','snow:ball','snow:gone','snow:done','snow:no','sb','sb:no','sled:ask','sled:ok','sled:no','seat:no','sled:busy','sr','sr:board','sr:no','sc','sc:no','sbm','sbm:no']);
+export const PLAY_TYPES=Object.freeze(['gift','gift:ok','gift:no','gift:post','board','snow','snow:ball','snow:gone','snow:done','snow:no','sb','sbh','sb:no','sled:ask','sled:ok','sled:no','seat:no','sled:busy','ride:no','sr','sr:board','sr:no','sc','sc:no','sbm','sbm:no']);
 
 export const DEFAULT_ROOM='눈마을-1';
 export const EXPERIENCE='christmas';
 export const XMAS_MULTI=Object.freeze({
  sendHz:NET.sendHz,idleSend:1,announce:3,timeout:6,jumpDist:1.2,
- cap:Object.freeze({desktop:19,mobile:6}), // 동동이 몸으로 그리는 다른 사람 수(나머지는 가벼운 동동이). 광장 정원 20 = 나 + 19
+ cap:Object.freeze({desktop:29,mobile:6}), // 동동이 몸으로 그리는 다른 사람 수(나머지는 가벼운 동동이). 광장 정원 30(11-17 대표 결정) = 나 + 29
+ keep:2,spare:2, // 5차: 동동이였던 사람은 순위 cap+keep 안이면 그대로 · 만들어 두는 몸은 cap+spare개까지(넘으면 먼 사람 몸을 넘겨받음)
 });
 const hash=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const OUTFIT_IDS=['santa','sweater','elf'];
@@ -60,7 +61,7 @@ export function createXmasMulti({ctx,search=globalThis.location?.search??'',envU
  let transport=null,viaServer=false,joined=false,netState='offline',room=params.room,myId=null,myName='',maxHere=serverMax(EXPERIENCE);
  let presence=createPresence({timeout:XMAS_MULTI.timeout}),beat=null,lastAnnounceAt=-Infinity,lastGreet=-Infinity;
  let lastAct='',seq=0,sendT=0,lastSent=null,lastSentAt=-Infinity,announceT=0,assignT=0,jumpNext=false,statusSig='',offMsg=null,offStatus=null;
- const stats={sent:0,received:0,chatsSent:0,chatsReceived:0,chatsMuted:0,actsSent:0,actsReceived:0,tree:0,play:0,spawned:0,lite:0};
+ const stats={sent:0,received:0,chatsSent:0,chatsReceived:0,chatsMuted:0,actsSent:0,actsReceived:0,tree:0,play:0,spawned:0,reused:0,lite:0};
  const dispatch=(type,detail)=>win?.dispatchEvent?.(new CustomEvent(type,{detail}));
  const send=m=>{if(!transport)return;stats.sent++;transport.send(m);};
  const online=()=>joined&&(!viaServer||netState==='online');
@@ -127,7 +128,7 @@ export function createXmasMulti({ctx,search=globalThis.location?.search??'',envU
     const me=m.id===myId,r=roster.get(m.id);stats.chatsReceived++;
     dispatch('xmas:chat',{id:m.id,name:me?myName:nameOf(r??{id:m.id}),text:m.text,me,remote:true});return;}
    case 'gift':case 'gift:ok':case 'gift:no':case 'gift:post':case 'board':case 'snow':case 'snow:ball':case 'snow:gone':case 'snow:done':case 'snow:no':
-   case 'sb':case 'sb:no':case 'sled:ask':case 'sled:ok':case 'sled:no':case 'seat:no':case 'sled:busy':
+   case 'sb':case 'sbh':case 'sb:no':case 'sled:ask':case 'sled:ok':case 'sled:no':case 'seat:no':case 'sled:busy':case 'ride:no':
    case 'sr':case 'sr:board':case 'sr:no':case 'sbm':case 'sbm:no': // 11-17 썰매 레이스·눈싸움 한 판
     // 내 컴퓨터 모드(BroadcastChannel)는 다른 창이 판정한 결과를 그대로 받는다. to가 있으면 그 사람에게만
     if(!viaServer&&m.to&&m.to!==myId)return;
@@ -200,31 +201,50 @@ export function createXmasMulti({ctx,search=globalThis.location?.search??'',envU
   if(r.avatar&&sig!==r.lookSig){r.avatar.setLook(look);r.lookSig=sig;}
   r.lite?.setLook(look);
  }
+ // 동동이 몸 배정(0.5초마다). 11-17 5차: 사람이 몰려 움직이면 「가까운 cap명」이 계속 바뀌어 몸을 새로 만들고(무거움) 쌓아 두던 것을
+ //  ① 이미 동동이인 사람은 순위가 cap+keep 안이면 그대로 둠(조금 바뀌는 순위로 바꾸지 않음) ② 만들어 둔 몸은 budget개까지, 넘으면 먼 사람의 몸을 넘겨받아 씀
  function assign(){
-  const p=ctx.player,list=[...roster.values()].filter(r=>r.sample&&visible(r)).sort((a,b)=>Math.hypot(a.sample.x-p.x,a.sample.z-p.z)-Math.hypot(b.sample.x-p.x,b.sample.z-p.z));
-  list.forEach((r,i)=>{r.full=i<cap;if(r.full&&!r.avatar&&!r.loading)spawn(r);});
+  const p=ctx.player,dist=r=>Math.hypot(r.sample.x-p.x,r.sample.z-p.z);
+  const list=[...roster.values()].filter(r=>r.sample&&visible(r)).sort((a,b)=>dist(a)-dist(b));
+  const keep=list.filter((r,i)=>r.full&&i<cap+XMAS_MULTI.keep).slice(0,cap),full=new Set(keep);
+  for(const r of list){if(full.size>=cap)break;full.add(r);}
+  for(const r of roster.values())r.full=full.has(r);
+  const budget=cap+XMAS_MULTI.spare,built=()=>[...roster.values()].filter(o=>o.avatar||o.loading).length;
+  for(const r of full){if(r.avatar||r.loading)continue;if(built()<budget||!steal(r,dist))spawn(r);}
+ }
+ // 먼(동동이가 아닌) 사람의 몸을 r에게 넘김(옷·자세만 바꿈). 넘길 몸이 없으면 false
+ function steal(r,dist){
+  const donor=[...roster.values()].filter(o=>o!==r&&o.avatar&&!o.full&&!o.loading).sort((a,b)=>(b.sample?dist(b):1e9)-(a.sample?dist(a):1e9))[0];
+  if(!donor)return false;
+  const a=donor.avatar;donor.poser?.dispose?.();donor.avatar=null;donor.poser=null;donor.lookSig=null;
+  a.root.visible=false;r.avatar=a;r.snap=true;r.lookSig=null;r.poser=ctx.attachPoser?.(a)??null;applyXmasAct(r.poser,r.act);applyLook(r);stats.reused++;
+  return true;
  }
  function drive(r,dt){
   let s=r.sample;const show=visible(r)&&!!s;
   // 썰매 뒷자리(act.sl 5): 이 화면에 그려진 앞사람 바로 뒤(0.54m)에 붙여 그린다. 각자 받은 위치를 쓰면 지연만큼 뒤쪽 언덕 위에 떠 보인다
   if(show&&r.act?.sl===5&&r.act.sp){const f=r.act.sp===myId?ctx.player:roster.get(r.act.sp)?.sample;
    if(f)s={...s,x:f.x+Math.sin(f.heading)*.54,z:f.z+Math.cos(f.heading)*.54,heading:f.heading,moving:false};}
+  // 회전목마(act.mg): 받은 위치 대신 이 화면의 같은 번호 루돌프 위(ctx.rideAt, 시안 B에서만). 회전 시각이 화면마다 달라도 루돌프에서 떨어져 보이지 않게
+  const ride=show&&r.act?.mg?ctx.rideAt?.(r.act)??null:null;
+  if(ride)s={...s,x:ride.x,z:ride.z,heading:ride.heading,moving:false};
   // 몸이 아직 없거나(읽는 중) 먼 사람이면 가벼운 동동이
   const useFull=show&&r.full&&!!r.avatar,useLite=show&&!useFull;
   // 케이블카(act.gd): 높이는 케이블 선에서(ctx.gondolaY), 아니면 땅
-  const gy=show?(r.act?.gd&&ctx.gondolaY?ctx.gondolaY(s.x,s.z):ctx.heightAt(s.x,s.z)):0;
+  const gy=show?(ride?ride.y:r.act?.gd&&ctx.gondolaY?ctx.gondolaY(s.x,s.z):ctx.heightAt(s.x,s.z)):0;
   r.shown=show;
   if(r.avatar)r.avatar.root.visible=useFull;
-  if(useLite){const l=liteOf(r);if(l){l.root.visible=true;l.root.position.set(s.x,gy+(r.act?.sl>=1?.18:r.act?.st?.12:0),s.z);l.root.rotation.y=s.heading;l.update?.(dt,s.moving&&!(r.act?.sl>=1));}}
+  if(useLite){const l=liteOf(r);if(l){l.root.visible=true;l.root.position.set(s.x,gy+(r.act?.sl>=1?.18:r.act?.st||ride?.12:0),s.z);l.root.rotation.y=s.heading;l.update?.(dt,s.moving&&!(r.act?.sl>=1));}}
   else if(r.lite)r.lite.root.visible=false;
   if(!useFull)return;
   const a=r.avatar;
   // 땅 높이는 더한다(앉기 자세가 root y를 바닥 0 기준으로 올려 둔다, poses.js)
   if(r.snap){a.place(s.x,s.z,s.heading);r.snap=false;a.update(0,{moved:0});a.root.position.y+=gy;return;}
-  const moved=Math.hypot(s.x-a.x,s.z-a.z),seated=!!(r.act?.st||r.act?.sl>=1||r.act?.gd);
+  const moved=Math.hypot(s.x-a.x,s.z-a.z),seated=!!(r.act?.st||r.act?.sl>=1||r.act?.gd||ride);
   a.x=s.x;a.z=s.z;if(moved>1e-3||!s.moving||seated)a.heading=s.heading;
   // 썰매·자리에 앉아 움직이면 걷는 다리 동작 없이 미끄러진다
-  a.update(dt,{moved:seated?0:moved,running:!!(r.flags&FLAG.run)});a.root.position.y+=gy;
+  // 아이스링크 위(시안 B, ctx.strideAt)는 보폭을 줄여 미끄러지듯
+  a.update(dt,{moved:seated?0:moved*(ctx.strideAt?.(s.x,s.z)??1),running:!!(r.flags&FLAG.run)});a.root.position.y+=gy;
  }
 
  return {

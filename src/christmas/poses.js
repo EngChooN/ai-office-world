@@ -66,12 +66,12 @@ export function createXmasPoser({avatar,world,toon}){
   dispose(){poser.dispose();const i=avatar.extra.indexOf(arms);if(i>=0)avatar.extra.splice(i,1);const j=avatar.extra.indexOf(poser.pose);if(j>=0)avatar.extra.splice(j,1);if(mug){world.remove(mug);}},
  };
 }
-// 받은 행동 상태 act → 자세(다른 사람). 앉기: 모닥불 자리(st) 또는 썰매(sl 1~6)
+// 받은 행동 상태 act → 자세(다른 사람). 앉기: 모닥불 자리(st)·썰매(sl 1~6)·회전목마(mg 1~4)
 export const SLED_SEAT_Y=.33;
 export function applyXmasAct(poser,a,seatY=.34){
  if(!poser)return;
  const sled=a?.sl>=1;
- poser.setSit(!!a?.st||sled,sled?SLED_SEAT_Y:seatY);
- // 썰매 위에서 wm = 🙌 만세, 모닥불에서 wm = 손 녹이기
- poser.setArms(a?.cr?'crouch':a?.pk?'pack':a?.pu?'push':a?.wm&&sled?'cheer':a?.wm?'warm':a?.cc?'cocoa':'none');
+ poser.setSit(!!a?.st||sled||!!a?.mg,sled?SLED_SEAT_Y:seatY);
+ // 썰매·회전목마 위에서 wm = 🙌 만세, 모닥불에서 wm = 손 녹이기
+ poser.setArms(a?.cr?'crouch':a?.pk?'pack':a?.pu?'push':a?.wm&&(sled||a?.mg)?'cheer':a?.wm?'warm':a?.cc?'cocoa':'none');
 }

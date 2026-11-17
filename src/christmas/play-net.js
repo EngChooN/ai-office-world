@@ -6,7 +6,7 @@
 import {createRoomPlay} from './room-play.js';
 import {sanitizeName} from '../multi-protocol.js';
 
-const SHARE_LOCAL=new Set(['sb','gift','gift:post','board']);
+const SHARE_LOCAL=new Set(['sb','sbh','gift','gift:post','board']);
 export function createPlayNet({multi,player,myName=()=>'나',myAct=()=>null,now=()=>Date.now()}){
  const subs=[];let local=createRoomPlay();
  const meId=()=>multi.id??'me';

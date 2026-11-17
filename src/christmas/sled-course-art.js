@@ -48,8 +48,8 @@ export function buildSledCourse({group,tz,f,H,vcMat,noEdge,putS,mobile=false,cou
 
  // ── 코스마다 바뀌는 것
  const dyn=new THREE.Group();dyn.name='썰매 코스(시드)';group.add(dyn);
- const mats={road:vcMat(),bank:f.basic(lin(XMAS.snow),{name:'xmas-bank'}),ice:f.basic(lin('#a8dcff'),{name:'xmas-ice'}),jump:f.basic(lin(XMAS.snowPacked),{name:'xmas-jump'}),
-  lip:f.basic(lin(XMAS.santaRed),{name:'xmas-jump-lip'}),tunnel:f.basic(lin('#dfe8f4'),{name:'xmas-tunnel'}),tunnelIn:f.basic(lin('#9fb3cf'),{name:'xmas-tunnel-in'}),rim:f.basic(lin(XMAS.woodDark),{name:'xmas-tunnel-rim'})};
+ const mats={road:vcMat(),bank:f.basic(lin(XMAS.snow),{name:'xmas-bank'}),ice:f.basic(lin('#a8dcff'),{name:'xmas-ice'}),
+  lip:f.basic(lin(XMAS.gold),{name:'xmas-jump-lip'}),tunnel:f.basic(lin('#dfe8f4'),{name:'xmas-tunnel'}),tunnelIn:f.basic(lin('#9fb3cf'),{name:'xmas-tunnel-in'}),rim:f.basic(lin(XMAS.woodDark),{name:'xmas-tunnel-rim'})};
  mats.tunnel.side=THREE.DoubleSide;mats.tunnelIn.side=THREE.BackSide;
  const pine=P.pineGeometry(7);
  function clear(){for(const o of [...dyn.children]){dyn.remove(o);o.traverse(m=>{if(m.isMesh&&m.geometry!==pine)m.geometry?.dispose?.();});}out.boosters.length=0;out.cpGlows=[];}
@@ -82,16 +82,32 @@ export function buildSledCourse({group,tz,f,H,vcMat,noEdge,putS,mobile=false,cou
   // 구간 기록점 빛 띠(구간 1·2)
   for(const s of C.checkpoints.slice(0,2)){const c=C.xz(s),Wd=C.widthAt(s),gl=new THREE.Mesh(new THREE.PlaneGeometry(.45,Wd).rotateX(-Math.PI/2),P.groundGlowMaterial('#8fe3ff',.9));gl.position.set(c.x,C.profileH(s)+.06,c.z);gl.rotation.y=-c.th;gl.renderOrder=2;dyn.add(gl);out.cpGlows.push(gl);
    for(const sd of [-1,1]){const q=C.xz(s,sd*(Wd/2+.5)),post=new THREE.Mesh(new THREE.CylinderGeometry(.06,.07,1.4,8).translate(0,.7,0),P.glow('#8fe3ff',1.6));post.position.set(q.x,C.profileH(s),q.z);dyn.add(post);}}
-  // 점프대(발판 위로 오르막, 앞은 수직)
-  for(const j of C.jumps){const n=10,pos=[],idx=[],Wd=C.widthAt(j.s);
-   for(let i=0;i<=n;i++){const s=j.s-j.len+j.len*i/n,yb=C.profileH(s)+.02,yt=yb+C.rampH(s)+.03;
-    for(const o of [-Wd/2+.15,Wd/2-.15]){const q=C.xz(s,o);pos.push(q.x,yt,q.z);}
-    for(const o of [-Wd/2+.15,Wd/2-.15]){const q=C.xz(s,o);pos.push(q.x,yb,q.z);}}
-   for(let i=0;i<n;i++){const a=i*4,b=(i+1)*4;idx.push(a,b,a+1,a+1,b,b+1,a,a+2,b,b,a+2,b+2,a+1,b+1,a+3,a+3,b+1,b+3);}
-   const e=n*4;idx.push(e,e+2,e+1,e+1,e+2,e+3);
-   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();
-   const m=new THREE.Mesh(g,mats.jump);m.name='점프대';m.castShadow=m.receiveShadow=true;dyn.add(m);
-   const q=C.xz(j.s),lip=new THREE.Mesh(new THREE.BoxGeometry(.12,.1,Wd-.3),mats.lip);lip.position.set(q.x,C.profileH(j.s)+j.h+.05,q.z);lip.rotation.y=-q.th;dyn.add(lip);}
+  // 점프대(발판 위로 오르막, 앞은 수직) — 월드아트 11-17: 윗면이 아래를 보고 있어(삼각형 감기 방향) 위에서 보면 안 그려져 투명해 보이던 것을 고침.
+  // 모양·높이는 그대로(윗면 = profileH + 0.02 + rampH + 0.03, 폭 = 길 폭 − 0.3: 착지·충돌 값 C.rampH와 같음). 면마다 바깥을 보게 감고 색을 칠했다:
+  // 윗면 = 나무 판(밝고 어두운 판 번갈아, 눈 위에서 또렷함) · 옆면 = 빨강·흰 표시 줄무늬 · 앞(수직) = 짙은 나무 · 끝 = 금빛 턱 + 전구 줄 · 양옆 전구 기둥(멀리서도 보임).
+  {const cP=lin('#c48a55'),cL=lin('#e2b27a'),cD=lin(XMAS.woodDark),cR=lin(XMAS.santaRed),cW=lin(XMAS.candy),bulbs=[],posts=[];
+   for(const j of C.jumps){const n=12,Wd=C.widthAt(j.s),pos=[],col=[],L=[],R=[];
+    for(let i=0;i<=n;i++){const s=j.s-j.len+j.len*i/n,yb=C.profileH(s)+.02,yt=yb+C.rampH(s)+.03,l=C.xz(s,-Wd/2+.15),r=C.xz(s,Wd/2-.15);
+     L.push({t:[l.x,yt,l.z],b:[l.x,yb,l.z]});R.push({t:[r.x,yt,r.z],b:[r.x,yb,r.z]});}
+    // 사각형 하나 = 삼각형 둘. out(바깥 방향)과 법선이 반대면 감기를 뒤집는다(어느 방향으로 놓여도 바깥을 봄)
+    const quad=(a,b,c,d,colr,out)=>{const u=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],v=[d[0]-a[0],d[1]-a[1],d[2]-a[2]],nn=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+     const flip=nn[0]*out[0]+nn[1]*out[1]+nn[2]*out[2]<0,tri=flip?[a,d,c,a,c,b]:[a,b,c,a,c,d];for(const p of tri){pos.push(...p);col.push(colr.r,colr.g,colr.b);}};
+    const q0=C.xz(j.s-j.len),q1=C.xz(j.s),fx=q1.x-q0.x,fz=q1.z-q0.z,fl=Math.hypot(fx,fz)||1,F=[fx/fl,0,fz/fl],N=[-F[2],0,F[0]];
+    for(let i=0;i<n;i++){
+     quad(L[i].t,R[i].t,R[i+1].t,L[i+1].t,i%2?cL:cP,[0,1,0]);
+     quad(L[i].t,L[i+1].t,L[i+1].b,L[i].b,i%2?cW:cR,[-N[0],0,-N[2]]);
+     quad(R[i].t,R[i+1].t,R[i+1].b,R[i].b,i%2?cW:cR,N);}
+    quad(L[n].t,R[n].t,R[n].b,L[n].b,cD,F);
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeVertexNormals();
+    const m=new THREE.Mesh(g,vcMat());m.name='점프대';tz(m,{kind:'prop'});m.castShadow=m.receiveShadow=true;dyn.add(m);
+    // 끝 턱(금빛) + 턱 위 전구 줄
+    const q=C.xz(j.s),top=C.profileH(j.s)+.05+j.h,lip=new THREE.Mesh(new THREE.BoxGeometry(.16,.12,Wd-.2),mats.lip);lip.position.set(q.x,top+.03,q.z);lip.rotation.y=-q.th;dyn.add(lip);
+    const nb=Math.max(4,Math.round((Wd-.4)/(mobile?.6:.4)));for(let k=0;k<=nb;k++){const o=-(Wd-.4)/2+(Wd-.4)*k/nb,b=C.xz(j.s,o);bulbs.push(new THREE.SphereGeometry(.055,8,6).translate(b.x,top+.13,b.z));}
+    // 양옆 기둥(사탕 줄무늬) + 위 전구: 길 밖 눈둑 위, 턱과 같은 자리
+    for(const sd of [-1,1]){const b=C.xz(j.s,sd*(Wd/2+.45)),gy=C.profileH(j.s);posts.push(new THREE.CylinderGeometry(.06,.07,j.h+1.1,8,6).translate(b.x,gy+(j.h+1.1)/2,b.z));bulbs.push(new THREE.SphereGeometry(.12,10,8).translate(b.x,gy+j.h+1.2,b.z));}}
+   if(posts.length){const pg=mergeGeometries(posts),pp=pg.attributes.position,pc=[];for(let k=0;k<pp.count;k++){const c=Math.floor(pp.getY(k)*4)%2?cR:cW;pc.push(c.r,c.g,c.b);}pg.setAttribute('color',new THREE.Float32BufferAttribute(pc,3));
+    const m=new THREE.Mesh(pg,vcMat());m.name='점프대 기둥';tz(m,{kind:'prop'});m.castShadow=!mobile;dyn.add(m);}
+   if(bulbs.length){const m=new THREE.Mesh(mergeGeometries(bulbs),P.glow('#ffd27a',2.6));m.name='점프대 전구';dyn.add(m);}}
   // 부스터 판(금빛 판 + 화살표 셋, 빛이 앞으로 흐른다)
   for(const b of C.boosters){const c=C.xz(b.s+b.len/2,b.off),y=C.profileH(b.s+b.len/2)+.07;
    const pad=new THREE.Mesh(new THREE.PlaneGeometry(b.len,b.w).rotateX(-Math.PI/2),P.groundGlowMaterial('#ffb84a',1.4));pad.position.set(c.x,y,c.z);pad.rotation.y=-c.th;pad.renderOrder=2;dyn.add(pad);

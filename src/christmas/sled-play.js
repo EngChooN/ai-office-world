@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import * as P from './props.js';
 import {TARGETS} from './layout.js';
-import {createRide,SLED_RULES,SLED_SENS,laneOffset,headingOf,createGhostRecorder,ghostAt,starsOf,starTimes} from './sled.js';
+import {createRide,SLED_RULES,SLED_SENS,laneOffset,headingOf,createGhostRecorder,ghostAt,starsOf,starTimes,sledFeel} from './sled.js';
 import {makeCourse,dailySeed,normSeed,courseCode,skeletonAt} from './sled-course.js';
 import {RACE} from './sled-race.js';
 import {SLED_SEAT_Y} from './poses.js';
@@ -173,8 +173,8 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
   const splits=S.ride.splits,prevBest=bestOf(),newBest=!prevBest||t<prevBest.t;
   if(newBest){cfg.bests[course.seed]={t:+t.toFixed(3),splits,pts:S.rec.points.slice(0,1100),at:Date.now()};save();}
   S.result={t,splits,newBest,prevBest,race:inRace()?S.race:null};S.resT=1;
-  if(inRace())net.send({t:'sr:fin',ms:Math.round(t*1000),seed:course.seed,sp:splits.slice(0,2).map(x=>Math.round(x*1000))});
-  else if(net.serverMode)net.send({t:'sr:rec',ms:Math.round(t*1000),seed:course.seed});
+  if(inRace())net.send({t:'sr:fin',ms:Math.round(t*1000),seed:course.seed,fv:sledFeel(),sp:splits.slice(0,2).map(x=>Math.round(x*1000))});
+  else if(net.serverMode)net.send({t:'sr:rec',ms:Math.round(t*1000),seed:course.seed,fv:sledFeel()});
   audio?.play('jingle');
  }
  net.on(m=>{
@@ -269,7 +269,7 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
      const st=Math.max(-1,Math.min(1,steer+S.steerBtn+S.dragSteer));
      const pushNowIn=!!(S.pushQueued||push);S.pushQueued=false;
      const ev=r.step(dt,{steer:S.mode==='result'?0:st,drift:(drift||S.driftBtn)&&S.mode==='ride',brake:brake||S.brakeBtn,push:pushNowIn});
-     const p=r.pose();
+     const p=r.pose();sprayFrom(r,dt);
      player.x=p.x;player.z=p.z;player.heading=p.heading;player.speed=p.speed;S.lift=p.y-heightAt(p.x,p.z);placeSled();player.update(dt,{moved:0});
      if(S.mode==='ride')S.rec.add(dt,p);
      for(const e of ev)event(e);
@@ -299,7 +299,7 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
    const ground=C.profileH(r.s)+(p.air?0:C.rampH(r.s)),y=p.y;S.camY=S.camY==null?y:S.camY+(y-S.camY)*(1-Math.exp(-(p.air?2.2:9)*(1/60)));
    void ground;
    const fx=-Math.sin(p.travel),fz=-Math.cos(p.travel),lat=Math.max(-1,Math.min(1,ahead.k*4))*.6;
-   return {yaw,pitch:tunnel?.2:two?.4:.33,dist:tunnel?3.4:two?4.9:4.6,lift:.2,fov:62+12*Math.max(0,Math.min(1,(v-4)/8))+(r.boosting?4:0),lag:.22,
+   return {yaw,pitch:tunnel?.2:two?.4:.33,dist:tunnel?3.4:two?4.9:4.6,lift:.2,fov:sledFeel()===2?62+18*Math.max(0,Math.min(1,(v-3)/8.5))+(r.boosting?5:0):62+12*Math.max(0,Math.min(1,(v-4)/8))+(r.boosting?4:0),lag:.22,
     y:S.camY,ahead:{x:fx*1.2+(-fz)*lat,z:fz*1.2+fx*lat}};},
   // 썰매가 내 몸 높이에 더할 값(점프대·공중)
   get lift(){return S.mode==='ride'||S.mode==='result'?S.lift??0:0;},
@@ -317,7 +317,7 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
    case 'start':audio?.play('boost');bar.note(iconText('x-boost',SLED_TEXT.start,{size:'xs'}),1.2);break;
    case 'mini':audio?.play('boost');bar.note(iconText('x-drift',SLED_TEXT.mini,{size:'xs'}),1);break;
    case 'air':hud?.say(SLED_TEXT.air,.6);break;
-   case 'land':bar.note(e.good?SLED_TEXT.landOk:SLED_TEXT.landBad,1);if(e.good)audio?.play('pop');break;
+   case 'land':bar.note(e.good?SLED_TEXT.landOk:SLED_TEXT.landBad,1);if(e.good)audio?.play('pop');if(sledFeel()===2){landPuff(S.ride);shake(e.good?.08:.16);audio?.play('bank',{gain:.5});}break;
    case 'drift':padsEl.querySelector('.xl-drift').dataset.lv=String(e.lv);break;
    case 'cp':{const CP=S.ride.course.checkpoints,B=bestOf();if(e.i<CP.length-1){const prev=e.i?S.ride.splits[e.i-1]:0,seg=e.t-prev,b=B?.splits?.[e.i],bseg=b!=null?b-(e.i?B.splits[e.i-1]:0):null;
      bar.note(`구간 ${e.i+1} ${fmtTime(seg)}${bseg!=null?` <em class="${seg-bseg>0?'up':'down'}">${fmtDiff(seg-bseg)}</em>`:''}`,1.5);audio?.play('pop');}break;}
@@ -327,6 +327,22 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
   if(e.type!=='drift')padsEl.querySelector('.xl-drift').dataset.lv=String(S.ride?.driftLv??0);
  }
  let shakeT=0;function shake(t){shakeT=t;}
+ // 눈가루(조작감 2, 5차): 달리는 썰매 뒤 양옆으로 튀는 흰 가루(빠를수록·드리프트면 많이) + 착지 때 한 번 퍼짐. 모양·재질 하나를 돌려 씀, 휴대폰 10개·PC 24개까지
+ const sprayGeo=new THREE.SphereGeometry(.07,6,5),sprayMat=new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.8,depthWrite:false});
+ const SPRAY_N=mobile?10:24,spray=[],sprayPool=[];let sprayAcc=0;
+ function puff(x,y,z,vx,vy,vz,sc=1){let m=sprayPool.pop();if(!m){if(spray.length>=SPRAY_N)return;m=new THREE.Mesh(sprayGeo,sprayMat);m.renderOrder=3;world.add(m);}
+  m.visible=true;m.position.set(x,y,z);m.scale.setScalar(sc);spray.push({m,vx,vy,vz,t:0,sc});}
+ function sprayFrom(r,dt){
+  for(let i=spray.length-1;i>=0;i--){const q=spray[i];q.t+=dt;q.vy-=5*dt;q.m.position.x+=q.vx*dt;q.m.position.y+=q.vy*dt;q.m.position.z+=q.vz*dt;q.m.scale.setScalar(q.sc*(1+q.t*2.4));
+   if(q.t>.42){q.m.visible=false;sprayPool.push(q.m);spray.splice(i,1);}}
+  if(!r||sledFeel()!==2||r.air||r.done)return;
+  const p=r.pose(),v=r.v,drifting=r.driftT>0;if(v<5&&!drifting)return;
+  sprayAcc+=dt*(v/11*14+(drifting?10:0));
+  const f={x:-Math.sin(p.heading),z:-Math.cos(p.heading)},side={x:-f.z,z:f.x};
+  while(sprayAcc>=1){sprayAcc-=1;const sd=Math.random()<.5?-1:1,back=.55,w=.28;
+   puff(p.x-f.x*back+side.x*sd*w,p.y+.05,p.z-f.z*back+side.z*sd*w,(side.x*sd*1.2-f.x*v*.15)+(Math.random()-.5)*.6,1.2+Math.random()*.8,(side.z*sd*1.2-f.z*v*.15)+(Math.random()-.5)*.6,.8+Math.random()*.5);}
+ }
+ function landPuff(r){if(!r||sledFeel()!==2)return;const p=r.pose();for(let i=0;i<10;i++){const a=i/10*Math.PI*2;puff(p.x,p.y+.05,p.z,Math.cos(a)*2,1+Math.random(),Math.sin(a)*2,1.1);}}
  api.shake=()=>{if(shakeT<=0)return 0;shakeT=Math.max(0,shakeT-1/60);return shakeT;};
  // 타는 동안 위 기록 띠·진행 막대·고스트
  function hudRide(dt){

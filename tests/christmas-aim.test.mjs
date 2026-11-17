@@ -54,18 +54,41 @@ test('머리 맞힘: 사람 뒤를 겨눠 눈덩이가 0.75m 넘게 지나가며
  const head=resolveThrow({...me,dx:1,dz:0,dist:7},[b]),body=resolveThrow({...me,dx:1,dz:0,dist:3.7},[b]);
  assert.equal(head.hit,'b');assert.ok(head.head);assert.equal(body.hit,'b');assert.ok(!body.head);
 });
-test('서버: 맞은 뒤 1초 무적(통과)·0.6초 못 던짐, sb에 d0·head',()=>{
+test('서버: 맞은 뒤 1초 무적(통과)·0.6초 못 던짐, sb에 d0, 맞음은 sbh(지나가는 순간)·head',()=>{
  const play=createRoomPlay(),out=[];
  const mem=(id,x,z,act={})=>({id,name:id,state:{x,y:z},act});
  const a=mem('a',FY.x-5,FY.z+6),b=mem('b',FY.x-1,FY.z+6),c=mem('c',FY.x-3,FY.z+3);
  const ctx={members:new Map([['a',a],['b',b],['c',c]]),send:(id,m)=>{out.push({to:id,...m});return true;},all:m=>out.push({to:'*',...m})};
+ const fly=(t0,ms=1500)=>{for(let t=t0;t<=t0+ms;t+=100)play.tick(t,ctx);};
  play.handle(a,{t:'sb:throw',x:a.state.x,z:a.state.y,dx:1,dz:0,d:7},T0,ctx);
- let sb=out.find(m=>m.t==='sb');assert.equal(sb.hit,'b');assert.ok(sb.d0>6);assert.equal(sb.head,1);
- // 0.5초 뒤 c가 b를 또 던짐 → 무적이라 통과
- out.length=0;play.handle(c,{t:'sb:throw',x:c.state.x,z:c.state.y,dx:2,dz:3,d:3.6},T0+500,ctx);sb=out.find(m=>m.t==='sb');assert.equal(sb.hit,null);
+ let sb=out.find(m=>m.t==='sb');assert.equal(sb.fly,1);assert.equal(sb.hit,undefined,'던질 때는 길만');assert.ok(sb.d0>6);
+ fly(T0);let h=out.find(m=>m.t==='sbh');assert.equal(h.hit,'b');assert.equal(h.k,sb.k);assert.equal(h.head,1);
+ const hitAt=T0+Math.ceil((3.65/FIGHT.speed*1000+120*3.65/sb.d0)/100)*100; // b 자리를 지나가는 tick
+ // 맞은 뒤 1초 안에 c가 b를 또 던짐 → 무적이라 통과
+ out.length=0;play.handle(c,{t:'sb:throw',x:c.state.x,z:c.state.y,dx:2,dz:3,d:3.6},hitAt+100,ctx);fly(hitAt+100,500);assert.ok(!out.some(m=>m.t==='sbh'));
  // b는 맞은 뒤 0.6초 안에는 못 던짐
- out.length=0;play.handle(b,{t:'sb:throw',x:b.state.x,z:b.state.y,dx:-1,dz:0,d:4},T0+300,ctx);assert.equal(out[0].reason,'stun');
- out.length=0;play.handle(b,{t:'sb:throw',x:b.state.x,z:b.state.y,dx:-1,dz:0,d:4},T0+700,ctx);assert.equal(out[0].t,'sb');
+ out.length=0;play.handle(b,{t:'sb:throw',x:b.state.x,z:b.state.y,dx:-1,dz:0,d:4},hitAt+300,ctx);assert.equal(out[0].reason,'stun');
+ out.length=0;play.handle(b,{t:'sb:throw',x:b.state.x,z:b.state.y,dx:-1,dz:0,d:4},hitAt+700,ctx);assert.equal(out[0].t,'sb');
  // 웅크림(act.cr)은 서버도 안다
- out.length=0;a.act={cr:1};play.handle(c,{t:'sb:throw',x:c.state.x,z:c.state.y,dx:-2,dz:3,d:3.6},T0+2000,ctx);assert.ok(out.find(m=>m.t==='sb'));
+ out.length=0;a.act={cr:1};play.handle(c,{t:'sb:throw',x:c.state.x,z:c.state.y,dx:-2,dz:3,d:3.6},hitAt+3000,ctx);assert.ok(out.find(m=>m.t==='sb'));
+});
+// 11-17 6차(대표 결정): 맞음은 눈덩이가 지나가는 순간의 자리. 두 사람(a 던짐, b 과녁) 시나리오
+test('피하기: 날아가는 동안 옆으로 비켜서면 안 맞고, 가만히 있으면 맞고, 끝점으로 걸어 들어오면 맞음',()=>{
+ const run=(move)=>{
+  const play=createRoomPlay(),out=[];
+  const a={id:'a',name:'a',state:{x:FY.x-4,y:FY.z},act:{}},b={id:'b',name:'b',state:{x:FY.x+4,y:FY.z},act:{}};
+  const ctx={members:new Map([['a',a],['b',b]]),send:()=>true,all:m=>out.push(m)};
+  play.handle(a,{t:'sb:throw',x:a.state.x,z:a.state.y,dx:1,dz:0,d:8},T0,ctx);
+  for(let t=T0+100;t<=T0+1200;t+=100){move(b,t-T0);play.tick(t,ctx);}
+  return out.find(m=>m.t==='sbh')??null;};
+ // 가만히: 맞음
+ assert.equal(run(()=>{})?.hit,'b');
+ // 0.2초 뒤부터 옆으로 걷기(초당 3m, 0.3초에 0.6m 비킴 > hitR 0.42) → 피함
+ assert.equal(run((p,ms)=>{if(ms>=200)p.state={x:FY.x+4,y:FY.z+Math.min(1.5,(ms-200)/1000*3)};}),null);
+ // 처음엔 옆에 있다가 눈덩이가 오기 전에 길로 들어오면 맞음(던진 순간 자리로는 빗나갈 공)
+ const r=run((p,ms)=>{p.state={x:FY.x+4,y:ms<300?FY.z+1.2:FY.z};});assert.equal(r?.hit,'b');
+ // 눈덩이가 지나간 뒤에 길로 들어오면 안 맞음
+ assert.equal(run((p,ms)=>{p.state={x:FY.x-1,y:ms<500?FY.z+1.2:FY.z};}),null);
+ // 던진 사람 쪽으로 빨리 걸어와도(초당 5m) 0.1초 사이에 빠져나가지 않음
+ assert.equal(run((p,ms)=>{p.state={x:FY.x+4-ms/1000*5,y:FY.z};})?.hit,'b');
 });

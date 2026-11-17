@@ -167,7 +167,8 @@ test('눈싸움: 자동 조준(앞 60°·12m)·손에 3개·3초마다 1개·0.8
 test('눈싸움 판정(서버): 마당 밖·0.8초 안 연타는 거절, 맞으면 모두에게 hit',()=>{
  const R=room();R.add('a','하나',FY.x-4,FY.z);R.add('b','둘',FY.x,FY.z);R.add('c','셋',L.CAMPFIRE.x,L.CAMPFIRE.z);
  R.msg('c',{t:'sb:throw',x:L.CAMPFIRE.x,z:L.CAMPFIRE.z,dx:1,dz:0,d:9});assert.equal(R.inbox.get('c').at(-1).reason,'outside');
- R.msg('a',{t:'sb:throw',x:FY.x-4,z:FY.z,dx:1,dz:0,d:9},T0);const sb=R.all.find(m=>m.t==='sb');assert.equal(sb.hit,'b');assert.equal(sb.id,'a');
+ R.msg('a',{t:'sb:throw',x:FY.x-4,z:FY.z,dx:1,dz:0,d:9},T0);const sb=R.all.find(m=>m.t==='sb');assert.equal(sb.id,'a');assert.equal(sb.fly,1);
+ for(let t=T0+100;t<=T0+800;t+=100)R.play.tick(t,R.ctx);const sh=R.all.find(m=>m.t==='sbh');assert.equal(sh.hit,'b');assert.equal(sh.id,'a');assert.equal(sh.k,sb.k);
  R.msg('a',{t:'sb:throw',x:FY.x-4,z:FY.z,dx:1,dz:0,d:9},T0+300);assert.equal(R.inbox.get('a').at(-1).reason,'gap');
  // 시작점을 멀리 속이면 서버가 아는 자리에서
  R.msg('a',{t:'sb:throw',x:FY.x+5,z:FY.z,dx:-1,dz:0,d:9},T0+1000);const s2=R.all.filter(m=>m.t==='sb').at(-1);assert.ok(Math.abs(s2.x-(FY.x-4-FIGHT.hand))<.01);
@@ -200,15 +201,19 @@ test('서버(rooms.mjs): 크리스마스 놀이 메시지가 열려 있고 판�
  assert.ok(out.get('둘').some(m=>m.t==='seat:no'));assert.equal(rooms.clients.get(b.id).act.st,0);
  // 눈싸움: 위치를 마당에 두고 던지기
  for(const [c,x] of [[a,FY.x-4],[b,FY.x]]){now+=200;rooms.message(c,{t:'s',q:1,z:0,x,y:FY.z,h:0,v:0,f:4});}
- now+=200;rooms.message(a,{t:'sb:throw',x:FY.x-4,z:FY.z,dx:1,dz:0,d:9});
- assert.equal(out.get('둘').find(m=>m.t==='sb')?.hit,b.id);
+   now+=200;rooms.message(a,{t:'sb:throw',x:FY.x-4,z:FY.z,dx:1,dz:0,d:9});
+ assert.equal(out.get('둘').find(m=>m.t==='sb')?.fly,1);
+ for(let i=0;i<8;i++){now+=100;rooms.tick();}
+ assert.equal(out.get('둘').find(m=>m.t==='sbh')?.hit,b.id);
  // 신고에 대상이 보낸 카드 글
  rooms.message(b,{t:'report',to:a.id,reason:'기타'});assert.deepEqual(rooms.reportLog.at(-1).cards,['*** 메리']);
  // 나중에 온 사람은 마당·모두의 카드 상태를 받음
  const c=join('셋');assert.ok(out.get('셋').some(m=>m.t==='snow'));void c;
 });
 test('서버 이미지(Dockerfile·.dockerignore)에 놀이 판정 파일이 들어간다',()=>{
- const need=['room-play.js','gift-state.js','snowman-state.js','snowfight.js','layout.js','tree-state.js'];
+ // 서버가 불러오는 판정 파일(room-play·tree-state)에서 import를 따라가 모은다(layout.js → festive-layout.js처럼 새로 붙은 파일도 빠지지 않게, 11-17 4차)
+ const need=[],walk=f=>{if(need.includes(f))return;need.push(f);for(const [,g] of readFileSync(`src/christmas/${f}`,'utf8').matchAll(/from '\.\/([\w-]+\.js)'/g))walk(g);};
+ walk('room-play.js');walk('tree-state.js');assert.ok(need.includes('festive-layout.js')&&need.includes('layout.js'));
  const df=readFileSync('server/Dockerfile','utf8');for(const f of need)assert.ok(df.includes(`src/christmas/${f}`),f);
  for(const p of ['server/Dockerfile.dockerignore','.dockerignore']){const t=readFileSync(p,'utf8');for(const f of need)assert.ok(t.includes(`!src/christmas/${f}`),`${p} ${f}`);}
  // 판정 파일은 three를 쓰지 않는다(서버에 three가 없음)

@@ -226,7 +226,7 @@ test('서버 고르기: /health에 서버별 인원·정원과 total, 정원 2(M
  try{
   let h=await health();
   const rows=(n,c1=0)=>['1','2','3'].map(id=>({id,name:`${n} ${id}서버`,count:id==='1'?c1:0,max:2}));
-  assert.deepEqual(h.servers,{hiking:rows('관악산'),smoking:rows('옥상'),christmas:rows('눈마을 광장').map(r=>({...r,max:20}))});assert.equal(h.total,0);
+  assert.deepEqual(h.servers,{hiking:rows('관악산'),smoking:rows('옥상'),christmas:rows('눈마을 광장').map(r=>({...r,max:30}))});assert.equal(h.total,0);
   const a=await client(url,{room:'관악산-1',name:'하나',exp:'hiking'}),b=await client(url,{room:'관악산-1',name:'둘',exp:'hiking'});
   assert.equal(a.welcome.server,'1');assert.equal(b.welcome.room,'관악산');
   const c=await client(url,{room:'관악산-1',name:'셋',exp:'hiking'});

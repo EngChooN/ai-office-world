@@ -21,8 +21,12 @@ import {installHikingChat} from '../hiking-chat-ui.js';
 import {buildVillage} from './village.js';
 import {createXmasAvatar} from './avatar.js';
 import {createLiteDongdong} from './lite.js';
-import {XMAS_SKY} from './palette.js';
-import {SPAWN,TREE,TARGETS,CAMPFIRE,MAILBOX,CARD_BOARD,SNOWMAN_YARD,SNOWBALL_YARD,SLED_RUN} from './layout.js';
+import {festiveLevel,skyFor,tuneEnv,tunePipeline} from './festive.js'; // 「밝고 화려하게」 시안 B = 기본(11-17 대표 결정), ?look=festive = 시안 A, ?look=classic = 예전 화면
+import {SPAWN,TREE,TARGETS,CAMPFIRE,MAILBOX,CARD_BOARD,SNOWMAN_YARD,SNOWBALL_YARD,SLED_RUN,BIG_PLAZA} from './layout.js';
+import {TRAVEL,travelSpots,mapShapes,runBlocked} from './travel.js'; // 넓힌 광장 달리기·바로가기 지도(시안 B, 11-17 5차)
+import {createTravelUi} from './travel-ui.js';
+import {setSledFeel,sledFeelFrom} from './sled.js';
+setSledFeel(sledFeelFrom()); // 썰매 조작감 2: 11-17 대표 결정으로 모든 화면 기본(주소로 바꾸는 길 없음)
 import {XMAS_OUTFITS,XMAS_HATS} from './outfits.js';
 import {createXmasMulti,cleanName} from './multi.js';
 import {createTreePlay} from './tree-play.js';
@@ -38,11 +42,14 @@ import {createSnowfight} from './snowfight-play.js';
 import {createSledPlay} from './sled-play.js';
 import {createGondolaPlay} from './gondola-play.js';
 import {cabinYAt} from './gondola.js';
+import {createCarouselPlay,findCarousel} from './carousel-play.js'; // 회전목마 타기(시안 B ?look=festive-b에서만, 11-17 3차)
+import {createRinkPlay,heightWithRink,strideAt} from './rink-play.js'; // 아이스링크 들어가기·얼음 위 걷기(시안 B에서만)
 import {createFightUi} from './fight-ui.js';
 import {inYard as inSnowmanYard} from './snowman-state.js';
 import {inFightYard,FIGHT_TEXT} from './snowfight.js';
 
 const q=new URLSearchParams(location.search);
+const festiveLook=festiveLevel(location.search),XMAS_SKY=skyFor(festiveLook);
 const mobile=q.get('mobile')==='1'||matchMedia('(pointer:coarse)').matches||/iPhone|iPad|Android/i.test(navigator.userAgent);
 if(mobile)document.body.classList.add('touch');
 const RIG_URL=`${import.meta.env.BASE_URL}assets/toon/models/hiker/HikerRig.glb`;
@@ -60,20 +67,20 @@ const ownLook=l=>({...l,hat:l.hat&&XMAS_HATS[l.hat]?.gift&&!profile.wardrobe.inc
 profile.nickname=(()=>{try{return cleanName(localStorage.getItem(NAME_KEY)??'');}catch{return '';}})();
 
 // ── 렌더러(흡연장 main.js·크리스마스 preview.js와 같은 설정)
-const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',preserveDrawingBuffer:q.has('capture')});
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance',preserveDrawingBuffer:q.has('capture')});renderer.info.autoReset=false;
 renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.NeutralToneMapping;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.domElement.id='scene';document.body.prepend(renderer.domElement);
 const scene=new THREE.Scene();scene.background=new THREE.Color('#172432');scene.fog=new THREE.Fog('#2a3550',45,520);
 const BASE_FOV=mobile?62:55;
 const camera=new THREE.PerspectiveCamera(BASE_FOV,innerWidth/innerHeight,.05,3000);
 setLoad('눈 내리는 밤하늘 칠하는 중…');
-const toon=await createToonStyle({renderer,scene,camera,mobile});toon.createSky();
+const toon=await createToonStyle({renderer,scene,camera,mobile});toon.createSky();tunePipeline(festiveLook,toon.pipeline);
 const world=new THREE.Group();world.name='world';scene.add(world);
 // 빛: 달(그림자)·반구광 — 밤 공식에 XMAS_SKY.light 배수(월드아트 그림-에셋 §3)
 const moon=new THREE.DirectionalLight(0xffffff,3);moon.castShadow=true;moon.shadow.mapSize.set(mobile?1024:2048,mobile?1024:2048);
 Object.assign(moon.shadow.camera,{left:-22,right:22,top:22,bottom:-22,near:1,far:120});moon.shadow.bias=-.0006;moon.shadow.normalBias=mobile?.08:.05;
 const hemi=new THREE.HemisphereLight(0xbfdcff,0x7a8b5a,1);scene.add(moon,moon.target,hemi);
-const env=composeEnvironment({sun:XMAS_SKY.sun,moon:XMAS_SKY.moon});
+const env=tuneEnv(festiveLook,composeEnvironment({sun:XMAS_SKY.sun,moon:XMAS_SKY.moon}));
 const sunVec=new THREE.Vector3().fromArray(sunDirection(env.elevation,env.azimuth)),moonVec=new THREE.Vector3().fromArray(sunDirection(env.moon.elevation,env.moon.azimuth));
 const Ldir=new THREE.Vector3().fromArray(sunDirection(env.light.elevation,env.light.azimuth));
 {const k=toon.lightScale(env),X=XMAS_SKY.light;moon.color.setRGB(...env.light.color,THREE.SRGBColorSpace);moon.intensity=env.light.intensity*3.4*k*X.moon;moon.castShadow=env.light.castShadow;
@@ -82,8 +89,8 @@ const Ldir=new THREE.Vector3().fromArray(sunDirection(env.light.elevation,env.li
 document.documentElement.dataset.hudTime='night';
 
 setLoad('눈마을 광장 세우는 중…');
-const village=buildVillage({toon,scene,world,mobile});
-const H=village.heightAt;
+const village=buildVillage({toon,scene,world,mobile,look:festiveLook});
+const H=festiveLook>=2?heightWithRink(village.heightAt):village.heightAt; // 시안 B: 아이스링크 안은 얼음 윗면 높이
 
 // ── 내 동동이(첫 등장 자리: 남쪽 입구, 트리를 정면으로 봄. 반지름 3m 안에 흩어져 선다)
 setLoad('동동이 크리스마스 옷 입는 중…');
@@ -96,7 +103,7 @@ const poser=createXmasPoser({avatar:player,world,toon}); // 앉기·손 녹이�
 const cols=village.colliders;
 
 // ── 입력·카메라
-let net=null,gifts=null,campfire=null,snowman=null,snowfight=null,sledPlay=null,fightUi=null,gondola=null; // 놀이 모듈(아래에서 만든다)
+let net=null,gifts=null,campfire=null,snowman=null,snowfight=null,sledPlay=null,fightUi=null,gondola=null,carousel=null,rink=null,travel=null; // 놀이 모듈(아래에서 만든다)
 const input=createInput({canvas:renderer.domElement,mobile});
 const cam={yaw:SPAWN.heading,pitch:.3,dist:mobile?4.2:3.6,min:1.8,max:9,target:new THREE.Vector3()};
 // 장식 달기 모드 카메라: 트리를 정면으로 보는 궤도(좌우 끌기·A/D로 둘레, 위아래 끌기·W/S·휠로 높이)
@@ -118,12 +125,16 @@ function updatePlayer(dt){
  const steer=mv.side;
  // 케이블카: 타는 동안은 객실이 몸을 옮긴다(걷기 없음)
  if(gondola?.update(dt)){player.root.position.y+=gondola.y;return;}
+ // 회전목마: 타는 동안 루돌프가 몸을 옮긴다(걷기 입력이면 내림)
+ if(carousel?.update(dt,{moveInput})){player.root.position.y+=carousel.y;return;}
  // 썰매: A/D 기울이기 · Shift 드리프트 · S/↓ 브레이크 · W/↑ 밀기(출발). 출발대 대기 중 걷기 입력이면 내림
  if(sledPlay.update(dt,{steer,moveInput:moveInput&&!['ride','result','count'].includes(sledPlay.mode),drift:mv.run&&!mobile,brake:mv.forward<0,push:mv.forward>0})){player.root.position.y+=H(player.x,player.z)+sledPlay.lift;return;}
  if(campfire.update(dt,{moveInput})||campfire.sitting){if(campfire.sitting)player.update(dt,{moved:0});player.root.position.y+=H(player.x,player.z);return;}
  if(moveInput){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);dirX=fx*mv.forward+rx*mv.side;dirZ=fz*mv.forward+rz*mv.side;}
  const len=Math.hypot(dirX,dirZ);
- if(len>0&&!snowfight.packing){dirX/=len;dirZ/=len;const running=mv.run&&snowfight.moveMul===1,speed=WALK_SPEED*(running?RUN_MUL:1)*snowfight.moveMul; // 조준 50%·웅크림 40%
+ // 아이스링크 안: 미끄러지듯 걷기(관성·짧은 보폭, rink-play.js ICE)
+ if(rink?.inside){const k=len>0?1/len:0,r=rink.step(dt,{dx:dirX*k,dz:dirZ*k,speed:WALK_SPEED});player.running=false;player.update(dt,{moved:r.stride});player.root.position.y+=H(player.x,player.z);return;}
+ if(len>0&&!snowfight.packing){dirX/=len;dirZ/=len;const running=mv.run&&snowfight.moveMul===1,speed=WALK_SPEED*(running?(travel?TRAVEL.runMul:RUN_MUL):1)*snowfight.moveMul; // 조준 50%·웅크림 40%
   // 눈사람 마당: 눈덩이를 밀거나 눈덩이 몸에 막힘(큼을 혼자 밀면 절반 속도)
   let tx=player.x+dirX*speed*dt,tz=player.z+dirZ*speed*dt;
   if(snowman.balls.size){const w=snowman.walk(player.x,player.z,tx,tz,dt);tx=w.x;tz=w.z;}
@@ -156,7 +167,8 @@ function updateCamera(dt){
   const p=new THREE.Vector3(TREE.x+Math.sin(deco.yaw)*deco.dist,deco.h+1.1,TREE.z+Math.cos(deco.yaw)*deco.dist);
   camera.position.lerp(p,1-Math.exp(-dt*6));lookAt.lerp(new THREE.Vector3(TREE.x,deco.h,TREE.z),1-Math.exp(-dt*6));camera.lookAt(lookAt);return;}
  if(player.moving&&!input.looking()&&!sc){let d=player.root.rotation.y-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*1.2));}
- const gy=sc?.y??(H(player.x,player.z)+(sc?sledPlay.lift:0));cam.target.set(player.x,gy+.62,player.z);
+ // 회전목마: 앉은 몸 높이(루돌프 위 약 1m)를 본다 — 땅을 보면 몸이 화면 위로 잘림
+ const gy=sc?.y??(carousel?.riding?carousel.y:H(player.x,player.z)+(sc?sledPlay.lift:0));cam.target.set(player.x,gy+.62,player.z);
  // 썰매: 진행 방향 앞·굽이 안쪽을 조금 더 본다(sled-play camera().ahead)
  if(sc?.ahead){cam.target.x+=sc.ahead.x;cam.target.z+=sc.ahead.z;}
  if(aimK>.001){const rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);cam.target.x+=rx*.35*aimK;cam.target.z+=rz*.35*aimK;}
@@ -172,13 +184,13 @@ function updateCamera(dt){
 await serverReady;
 // 행동 상태: 옷 + 트리 꾸미는 중 + 놀이 칸(모닥불 자리·손 녹이기·코코아·썰매·눈덩이 밀기·눈 뭉치기)
 const myAct=()=>{const l=player.look??profile.look;return {o:l.outfit,hat:l.hat??'',sc:l.scarf==='stripe'?1:0,d:deco.on?1:0,
- ...(campfire?.act()??{}),...(snowman?.actFields()??{}),...(snowfight?.actFields()??{}),...(fightUi?.actFields()??{}),...(sledPlay?.actFields()??{}),...(gondola?.actFields()??{})};};
+ ...(campfire?.act()??{}),...(snowman?.actFields()??{}),...(snowfight?.actFields()??{}),...(fightUi?.actFields()??{}),...(sledPlay?.actFields()??{}),...(gondola?.actFields()??{}),...(carousel?.actFields()??{})};};
 let treePlay=null;
 const multi=createXmasMulti({ctx:{world,player,profile,mobile,heightAt:H,gondolaY:(x,z)=>cabinYAt(x,z)?.y??H(x,z),
   createAvatar:({look,id,name})=>createXmasAvatar({rigUrl:RIG_URL,toon,look,id,name}),
   createLite:look=>createLiteDongdong({toon,look}),
-  attachPoser:a=>createXmasPoser({avatar:a,world,toon})},
- envUrl:import.meta.env.VITE_MULTI_SERVER_URL,myAct,onTree:m=>treePlay?.receive(m),onPlay:m=>{if(m.t==='seat:no'){campfire?.denied();return;}net?.receive(m);}});
+  attachPoser:a=>createXmasPoser({avatar:a,world,toon}),rideAt:a=>carousel?.rideAt(a)??null,strideAt:festiveLook>=2?strideAt:null},
+ envUrl:import.meta.env.VITE_MULTI_SERVER_URL,myAct,onTree:m=>treePlay?.receive(m),onPlay:m=>{if(m.t==='seat:no'){campfire?.denied();return;}if(m.t==='ride:no'){carousel?.denied();return;}net?.receive(m);}});
 // 머리 위 화면 자리(말풍선·이름표). 화면 밖·카메라 뒤면 visible false
 const headV=new THREE.Vector3();
 function screenPos(id){
@@ -280,7 +292,32 @@ if(village.course?.boardCanvas)sledPlay.setBoardCanvas(village.course.boardCanva
 // 코스가 바뀌면(방 시드·새 코스) 산 위 길 그림도 다시
 sledPlay.onCourse(c=>village.course.setCourse(c));
 gondola=createGondolaPlay({world,toon,player,multi,hud,audio,onChange:resend,busy:()=>sledPlay.mode!=='none'});
-addEventListener('xmas:multi-join',()=>{net.resetLocal();campfire.stand();if(sledPlay.mode!=='none')sledPlay.act('sled:off');sledPlay.resetCourse();});
+carousel=createCarouselPlay({carousel:findCarousel(village.festive),player,poser,multi,hud,audio,onChange:resend});
+rink=createRinkPlay({enabled:festiveLook>=2&&!!village.festive,player,hud,audio});
+// 넓힌 광장 이동 돕기(시안 B만): 「달리기」 켜고 끄기(PC Shift와 같음)·바로가기 지도 → 놀이를 먼저 그만두고 화면 어두워짐 뒤 그 자리 앞으로
+const busyNow=()=>({rink:rink.inside,carousel:carousel.riding,sitting:campfire.sitting||campfire.walking,sled:sledPlay.mode!=='none',gondola:gondola.mode!=='none',deco:deco.on,aiming:snowfight.aiming});
+let travelAt=-Infinity;
+async function travelTo(id){
+ const spot=travel?.spots.find(s=>s.id===id);if(!spot)return false;
+ const t=performance.now();if(t-travelAt<TRAVEL.gapMs)return false;
+ if(gondola.riding){hud.say('케이블카에서 내린 뒤에 갈 수 있어요',1.8,'x-gondola');return false;}
+ if(document.documentElement.classList.contains('xf-match')){hud.say('눈싸움 한 판이 끝나면 갈 수 있어요',1.8,'x-snowball');return false;}
+ travelAt=t;
+ // 놀이 그만두기: 장식·모닥불·회전목마·링크·썰매(내리기·그만)
+ if(deco.on)setDecorate(false);campfire.stand();carousel.act('mg:off');if(rink.inside)rink.act('rk:out');
+ if(sledPlay.mode!=='none'){sledPlay.act('sled:off');if(sledPlay.mode!=='none')sledPlay.act('sled:cancel');}
+ if(sledPlay.mode!=='none'||gondola.mode!=='none'){hud.say('타는 중에는 갈 수 없어요',1.6);return false;}
+ await travel.ui.fade(()=>{const p=collideXmas(spot.x,spot.z,cols);player.place(p.x,p.z,spot.heading);cam.yaw=spot.heading;resend();});
+ hud.say(`${spot.label} 앞이에요`,1.4);return true;
+}
+if(BIG_PLAZA&&village.festive){
+ const spots=travelSpots({carousel:carousel.enabled,rink:rink.enabled});
+ travel={spots,ui:createTravelUi({spots,shapes:mapShapes({carousel:carousel.enabled,rink:rink.enabled}),mobile,
+  onRun:on=>input.setRun(on),onGo:id=>{travelTo(id);},onOpen:()=>audio.play('pop',{gain:.3}),
+  where:()=>({x:player.x,z:player.z,heading:player.heading}),
+  others:()=>multi.people().filter(p=>!p.muted&&p.sample).map(p=>({x:p.sample.x,z:p.sample.z}))})};
+}
+addEventListener('xmas:multi-join',()=>{net.resetLocal();campfire.stand();carousel.act('mg:off');if(sledPlay.mode!=='none')sledPlay.act('sled:off');sledPlay.resetCourse();});
 addEventListener('xmas:multi-leave',()=>{sledPlay.resetCourse();});
 addEventListener('xmas:multi-leave',()=>{net.resetLocal();});
 
@@ -288,6 +325,7 @@ addEventListener('xmas:multi-leave',()=>{net.resetLocal();});
 function currentActions(){
  if(deco.on)return [];
  if(gondola.riding)return gondola.actions();
+ if(carousel.riding)return carousel.actions();
  if(sledPlay.mode!=='none')return sledPlay.actions();
  if(campfire.sitting)return [{id:'fire:warm',ic:'x-warm-hands',label:'손 녹이기',key:'E'},...(campfire.cocoaLeft?[{id:'fire:cocoa',ic:'x-cocoa',label:`코코아 ${campfire.cocoaLeft}`,key:'R'}]:[]),{id:'fire:stand',ic:'c-stand-up',label:'일어나기',key:'Q'}];
  if(campfire.walking)return [{id:'fire:stand',ic:'c-leave',label:'그만',key:'Q'}];
@@ -300,6 +338,8 @@ function currentActions(){
  const fa=snowfight.actions();if(fa.length)return fa;
  const sa=snowman.actions();if(sa.length)return sa;
  const ga=gondola.actions();if(ga.length)return ga;
+ const ca=carousel.actions();if(ca.length)return ca;
+ const ra=rink.actions();if(ra.length)return ra;
  return sledPlay.actions();
 }
 function doAction(id){
@@ -318,6 +358,8 @@ function doAction(id){
  if(id.startsWith('sb:'))return snowfight.act(id);
  if(id.startsWith('sled:'))return sledPlay.act(id);
  if(id.startsWith('gd:'))return gondola.act(id);
+ if(id.startsWith('mg:'))return carousel.act(id);
+ if(id.startsWith('rk:'))return rink.act(id);
  return false;
 }
 // 놀이 구역에 들어가면 이름 띠(처음은 규칙 한 줄과 4초)
@@ -367,7 +409,8 @@ const clock=new THREE.Clock();let frames=0,last=performance.now(),fps=60,actT=0;
 updateCamera(1);
 renderer.setAnimationLoop(()=>{
  const dt=Math.min(.05,clock.getDelta());
- updatePlayer(dt);multi.update(dt);net.update(dt);
+ updatePlayer(dt);rink.update();multi.update(dt);net.update(dt);
+ if(travel){travel.ui.syncRun({on:input.run,blocked:runBlocked(busyNow())});travel.ui.update(dt);}
  // 그림자는 내 주변에 맞춘다(광장이 넓어 22m 상자 하나로는 다 못 덮음)
  const focus=deco.on?lookAt:player.root.position;moon.target.position.set(focus.x,0,focus.z);moon.position.copy(moon.target.position).addScaledVector(Ldir,60);
  village.update(dt,{camera,viewHeight:renderer.domElement.height,snow:1});
@@ -381,7 +424,7 @@ renderer.setAnimationLoop(()=>{
   if(hud.sheet==='music')showCarol();}
  audio.update(dt,{x:player.x,z:player.z,fireDist:Math.hypot(player.x-CAMPFIRE.x,player.z-CAMPFIRE.z),sitting:campfire.sitting,sled:sledPlay.mode==='ride'?sledPlay.ride?.v??0:sledPlay.riding?6:0});
  hud.update(dt,{hasBubble:id=>chat?.hasBubble?.(id)});
- toon.pipeline.render(dt);
+ renderer.info.reset();toon.pipeline.render(dt); // 그림자·외곽선 패스까지 한 프레임 전체 그리기 횟수(status().calls)
  frames++;const now=performance.now();if(now-last>1000){fps=frames*1000/(now-last);frames=0;last=now;}
 });
 loading?.classList.add('done');setTimeout(()=>loading?.remove(),700);
@@ -391,7 +434,7 @@ dispatch('xmas:ready',{});
 
 // 진단·자동 점검용(브라우저 콘솔 window.xmas)
 window.xmas={village,player,multi,treePlay,hud,cam,deco,chat,pick,screenPos,
- poser,net,audio,gifts,campfire,snowman,snowfight,fightUi,sled:sledPlay,gondola,doAction,currentActions,
+ poser,net,audio,gifts,campfire,snowman,snowfight,fightUi,sled:sledPlay,gondola,carousel,rink,doAction,currentActions,get travel(){return travel;},travelTo,
  get giftOrn(){return giftOrn;},
  get fps(){return fps;},
  teleport(x,z,heading=player.heading){player.place(x,z,heading);cam.yaw=heading;},
@@ -400,5 +443,5 @@ window.xmas={village,player,multi,treePlay,hud,cam,deco,chat,pick,screenPos,
  // 선물 옷 받기(선물 우체통 단계가 붙으면 그쪽이 부른다): 이 기기에 남긴다
  addWardrobe(item){if(!profile.wardrobe.includes(item)){profile.wardrobe.push(item);saveProfile();}},
  status(){return {multi:multi.status(),fps:+fps.toFixed(1),player:{x:+player.x.toFixed(2),z:+player.z.toFixed(2),y:+player.root.position.y.toFixed(3),heading:+player.heading.toFixed(2),look:player.look,sitting:poser.sitting,arms:poser.arms},tree:{count:treePlay.count,stage:treePlay.stage,star:treePlay.star?.n??null},decorating:deco.on,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,
-  actions:hud.actions.map(a=>a.id),act:myAct(),gifts:gifts.status(),fire:campfire.status(),snowman:snowman.status(),fight:{...snowfight.status(),...fightUi.status()},sled:sledPlay.status(),gondola:gondola.status(),audio:{unlocked:audio.unlocked,muted:audio.muted,...audio.stats,carol:audio.carolNow()},zone:zoneNow};},
+  actions:hud.actions.map(a=>a.id),act:myAct(),gifts:gifts.status(),fire:campfire.status(),snowman:snowman.status(),fight:{...snowfight.status(),...fightUi.status()},sled:sledPlay.status(),gondola:gondola.status(),carousel:carousel.status(),rink:rink.status(),travel:travel?.ui.status()??null,audio:{unlocked:audio.unlocked,muted:audio.muted,...audio.stats,carol:audio.carolNow()},zone:zoneNow};},
 };

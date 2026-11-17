@@ -186,8 +186,8 @@ export const ICON_FALLBACK = Object.freeze({
 export const ICON_NAMES = Object.freeze(Object.keys(ICON_FALLBACK));
 
 // 같은 뜻의 모양 변형(월드아트가 따로 그림, §8 둘이 타기). 꺼짐 `이름-off`는 따로 적지 않음
-// 11-17 눈썰매 레이스·눈싸움 한 판에 새로 그린 아이콘(이모지에서 바꾼 자리가 아니라 새 단추라 대응 이모지 없음)
-export const ICON_VARIANTS = Object.freeze(['x-sled-pair','x-drift','x-brake','x-boost','x-crouch','x-crown','x-target','x-race','x-trophy','x-gondola','x-downhill','x-skip','x-new-course']);
+// 11-17 눈썰매 레이스·눈싸움 한 판(+5차 이동 돕기 x-run·x-map·x-carousel·x-skate)에 새로 그린 아이콘(이모지에서 바꾼 자리가 아니라 새 단추라 대응 이모지 없음)
+export const ICON_VARIANTS = Object.freeze(['x-sled-pair','x-drift','x-brake','x-boost','x-crouch','x-crown','x-target','x-race','x-trophy','x-gondola','x-downhill','x-skip','x-new-course','x-run','x-map','x-carousel','x-skate']);
 
 // 화면 UI 130종: 이모지 하나가 체험·자리마다 다른 뜻이면 아이콘 후보가 여럿입니다(§8). 교체할 때 자리에 맞는 이름을 고릅니다.
 export const EMOJI_ICONS = Object.freeze({

@@ -68,16 +68,17 @@ test('혼자 「한 판 하기」 뒤 나가면 판이 없어지고, 연 사람�
  M.handle(mem.get('a'),{t:'sbm:join'},T0+20,ctx);M.handle(mem.get('b'),{t:'sbm:join'},T0+30,ctx);M.handle(mem.get('b'),{t:'sbm:go'},T0+40,ctx);assert.equal(M.state.ph,'wait','연 사람만');
  M.handle(mem.get('a'),{t:'sbm:go'},T0+50,ctx);assert.equal(M.state.ph,'round');
 });
-test('서버 판정(room-play): 한 판 라운드 중 맞히면 sb에 점수(pts), 같은 편이면 ff',()=>{
+test('서버 판정(room-play): 한 판 라운드 중 맞히면 sbh에 점수(pts), 같은 편이면 ff',()=>{
  const play=createRoomPlay(),out=[],mem=new Map();
  const add=(id,x)=>mem.set(id,{id,name:id,state:{x,y:FY.z},act:{}});add('a',FY.x-4);add('b',FY.x);add('c',FY.x-1);
  const ctx={members:mem,send:(id,m)=>{out.push(m);return true;},all:m=>out.push(m)};
  for(const id of ['a','b','c'])play.handle(mem.get(id),{t:'sbm:join'},T0,ctx);
  for(let t=T0;t<T0+MATCH.waitMs+300;t+=100)play.tick(t,ctx);
  const t=T0+MATCH.waitMs+400;
- play.handle(mem.get('a'),{t:'sb:throw',x:FY.x-4,z:FY.z,dx:1,dz:0,d:3.6},t,ctx);let sb=out.filter(m=>m.t==='sb').at(-1);assert.equal(sb.hit,'c');assert.equal(sb.ff,1,'a·c 같은 빨강');
+ const fly=t0=>{for(let x=t0;x<=t0+800;x+=100)play.tick(x,ctx);};
+ play.handle(mem.get('a'),{t:'sb:throw',x:FY.x-4,z:FY.z,dx:1,dz:0,d:3.6},t,ctx);fly(t);let sb=out.filter(m=>m.t==='sbh').at(-1);assert.equal(sb.hit,'c');assert.equal(sb.ff,1,'a·c 같은 빨강');
  mem.get('c').state={x:FY.x-1,y:FY.z+3};
- play.handle(mem.get('a'),{t:'sb:throw',x:FY.x-4,z:FY.z,dx:1,dz:0,d:3.6},t+1000,ctx);sb=out.filter(m=>m.t==='sb').at(-1);assert.equal(sb.hit,'b');assert.equal(sb.pts,1);
+ play.handle(mem.get('a'),{t:'sb:throw',x:FY.x-4,z:FY.z,dx:1,dz:0,d:3.6},t+1000,ctx);fly(t+1000);sb=out.filter(m=>m.t==='sbh').at(-1);assert.equal(sb.hit,'b');assert.equal(sb.pts,1);
 });
 test('진영: 라운드마다 바뀌고 마당 가장자리 1m 안·마당 안',()=>{
  const a=sideSpot(1,1),b=sideSpot(2,1),c=sideSpot(1,2);

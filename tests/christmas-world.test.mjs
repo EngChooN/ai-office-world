@@ -65,14 +65,14 @@ function setup(opts={}){
  const join=(name,room='눈마을-1',extra={})=>{const inbox=[];const r=rooms.join({experience:'christmas',room,name,send:s=>inbox.push(JSON.parse(s)),...extra});if(r.ok)r.client.inbox=inbox;return r.ok?r.client:r;};
  return {rooms,join,advance:ms=>{t+=ms;},get now(){return t;}};
 }
-test('서버: 크리스마스 광장은 정원 20(다른 체험 30은 그대로), 서버 목록 3개',()=>{
+test('서버: 크리스마스 광장은 정원 30(11-17 대표 결정, 다른 체험 30은 그대로), 서버 목록 3개',()=>{
  const {rooms,join}=setup();
- const cs=Array.from({length:20},(_,i)=>join(`사람${i}`));
- assert.ok(cs.every(c=>c.room?.key==='christmas:눈마을'));assert.equal(cs[0].inbox[0].max,20);
- assert.deepEqual(join('스물하나'),{ok:false,reason:'full'});
- assert.deepEqual(rooms.serverCounts().christmas.map(s=>[s.name,s.count,s.max]),[['눈마을 광장 1서버',20,20],['눈마을 광장 2서버',0,20],['눈마을 광장 3서버',0,20]]);
+ const cs=Array.from({length:30},(_,i)=>join(`사람${i}`));
+ assert.ok(cs.every(c=>c.room?.key==='christmas:눈마을'));assert.equal(cs[0].inbox[0].max,30);
+ assert.deepEqual(join('서른하나'),{ok:false,reason:'full'});
+ assert.deepEqual(rooms.serverCounts().christmas.map(s=>[s.name,s.count,s.max]),[['눈마을 광장 1서버',30,30],['눈마을 광장 2서버',0,30],['눈마을 광장 3서버',0,30]]);
  assert.equal(rooms.serverCounts().hiking[0].max,30);
- assert.equal(serverMax('christmas'),20);assert.equal(serverMax('hiking'),30);assert.equal(EXPERIENCE_MAX.christmas,20);
+ assert.equal(serverMax('christmas'),30);assert.equal(serverMax('hiking'),30);assert.equal(EXPERIENCE_MAX.christmas,30);
  assert.deepEqual(SERVERS.christmas.map(s=>s.room),['눈마을-1','눈마을-2','눈마을-3']);
  assert.equal(anonymousName('ab12cd','christmas'),'눈송이12CD');
 });
@@ -142,10 +142,10 @@ test('채팅 제한 문구: 반복·쉬기(남은 초)',()=>{
  assert.equal(limitText('rate'),'잠깐만요, 조금 천천히');
 });
 
-test('입장: 허브 카드·서버 고르기 문구·정원 20·Vite 페이지',()=>{
+test('입장: 허브 카드·서버 고르기 문구·정원 30·Vite 페이지',()=>{
  const card=HUB.find(e=>e.id==='christmas');assert.equal(card.path,'christmas/');assert.ok(ART[card.art]);
  assert.equal(PICK_LABELS.christmas.solo,'혼자 둘러보기');assert.equal(PICK_LABELS.christmas.title,'눈마을 광장 서버');
- assert.deepEqual(pickRows('christmas').map(r=>[r.name,r.max]),[['눈마을 광장 1서버',20],['눈마을 광장 2서버',20],['눈마을 광장 3서버',20]]);
+ assert.deepEqual(pickRows('christmas').map(r=>[r.name,r.max]),[['눈마을 광장 1서버',30],['눈마을 광장 2서버',30],['눈마을 광장 3서버',30]]);
  assert.match(readFileSync(new URL('../vite.config.js',import.meta.url),'utf8'),/christmas:'christmas\/index\.html'/);
  assert.match(readFileSync(new URL('../christmas/index.html',import.meta.url),'utf8'),/src\/christmas\/main\.js/);
  // 서버 이미지에 트리 규칙 파일도 들어간다

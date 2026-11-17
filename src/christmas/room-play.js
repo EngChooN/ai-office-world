@@ -5,15 +5,16 @@
 //                                                 '*'면 방 모두에게 gift(all:1) + 「모두의 카드」 판 {t:'board',c:[…최근 5장]}. 못 하면 {t:'gift:no',reason,wait?}
 //  snow:make {x,z} · snow:push {b,x,z} · snow:stack {b,u} · snow:deco {b,p,on} · snow:finish {b}
 //                                               → {t:'snow:ball',b:[줄…]}(바뀐 눈덩이; 밀기는 10Hz 묶음), {t:'snow:gone',b,why}, {t:'snow:done',d:전시,by:id}, 못 하면 {t:'snow:no',reason}
-//  sb:throw {x,z,dx,dz,d}                      → 방 모두 {t:'sb',id,x,z,tx,tz,ms,hit,soft?,wall?}, 못 하면 보낸 사람 {t:'sb:no',reason}
+//  sb:throw {x,z,dx,dz,d}                      → 방 모두 {t:'sb',k,id,x,z,tx,tz,d0,ms,fly:1,wall?}(날아가는 길), 못 하면 보낸 사람 {t:'sb:no',reason}
+//                                                 맞으면(11-17 6차, 눈덩이가 지나가는 순간 그 자리에 있던 사람) 방 모두 {t:'sbh',k,id,x,z,tx,tz,hit,head?,soft?,pts?,ff?}. 빗나가면 따로 보내지 않음
 //  sled:ask|sled:ok|sled:no {to}               → 받는 사람에게 {t,id}(같은 방 안에서만 중계)
 //  sr:* 눈썰매 레이스·오늘의 기록판·sc:new 새 코스(sled-race.js) · sbm:* 눈싸움 한 판(fight-match.js)
-//  act {st 모닥불 자리 1~8, sl 썰매 줄 1~4 …}   → 다른 사람이 이미 쓰는 자리·줄이면 그 칸을 빼고 보낸 사람에게 {t:'seat:no'}·{t:'sled:busy'}
+//  act {st 모닥불 자리 1~8, sl 썰매 줄 1~4, mg 회전목마 1~8 …} → 다른 사람이 이미 쓰는 자리·줄이면 그 칸을 빼고 보낸 사람에게 {t:'seat:no'}·{t:'sled:busy'}·{t:'ride:no'}
 // 들어올 때: {t:'snow',…} 전체 마당·전시, {t:'board',c}, 끊긴 동안 온 선물(재접속 유예 안).
 // member = {id, name(숨김이면 익명 이름), state:{x,y}|null(서버 위치 규격: y가 z), act}
 import {GIFT_RULES,parseGiftSend,createGiftLimiter,cleanCardText,GIFT_INFO} from './gift-state.js';
 import {createSnowmanState} from './snowman-state.js';
-import {FIGHT,inFightYard,resolveThrow,createHarassGuard} from './snowfight.js';
+import {FIGHT,inFightYard,startFlight,sweepFlight,createHarassGuard} from './snowfight.js';
 import {createFightMatch} from './fight-match.js';
 import {createSledRace} from './sled-race.js';
 
@@ -31,6 +32,8 @@ export function createRoomPlay({cleanText=t=>t,rules=GIFT_RULES}={}){
  const harass=createHarassGuard(),lastHitAt=new Map();
  const match=createFightMatch(),race=createSledRace();
  const dirty=new Set();let gseq=0;
+ const flights=[];let fseq=0; // 날아가는 눈덩이(11-17 6차)
+ const r2=v=>Math.round(v*100)/100;
  const limiter=id=>{let l=limiters.get(id);if(!l){l=createGiftLimiter(rules);limiters.set(id,l);}return l;};
  const note=(id,text)=>{const a=cards.get(id)??[];a.push(text);if(a.length>3)a.shift();cards.set(id,a);};
  const ballMsg=(list,t)=>({t:'snow:ball',b:list.map(b=>snow.row(b,t))});
@@ -77,14 +80,26 @@ export function createRoomPlay({cleanText=t=>t,rules=GIFT_RULES}={}){
   lastThrow.set(c.id,t);
   // 시작점은 서버가 아는 자리 근처만 믿는다(2m 넘게 다르면 서버 자리)
   const from=num(m.x)&&num(m.z)&&Math.hypot(m.x-p.x,m.z-p.z)<=2?{x:m.x,z:m.z}:p;
-  // 웅크림(act.cr)·맞은 뒤 1초 무적(통과)
-  const people=[];for(const o of ctx.members.values()){if(o.id===c.id)continue;const q=posOf(o);if(q)people.push({id:o.id,...q,crouch:o.act?.cr===1,safe:t-(lastHitAt.get(o.id)??-Infinity)<FIGHT.invulnMs});}
-  const r=resolveThrow({...from,dx:m.dx,dz:m.dz,dist:num(m.d)?m.d:FIGHT.forward},people);
-  const soft=r.hit?harass.hit(c.id,r.hit,t):false;
-  if(r.hit)lastHitAt.set(r.hit,t);
-  const pts=r.hit?match.scoreHit(c.id,r.hit,{head:r.head,soft,d:r.d,t},ctx):null;
-  const r2=v=>Math.round(v*100)/100;
-  ctx.all({t:'sb',id:c.id,x:r2(r.x),z:r2(r.z),tx:r2(r.tx),tz:r2(r.tz),d0:r2(r.d0),ms:r.ms,hit:r.hit,...(r.head?{head:1}:{}),...(soft?{soft:1}:{}),...(r.wall?{wall:1}:{}),...(pts?pts:{})});
+  // 11-17 6차: 던질 때는 길만 정하고, 맞음은 날아가는 동안(tick) 지나가는 순간의 자리로 정한다(비켜서면 피함)
+  const f=startFlight({...from,dx:m.dx,dz:m.dz,dist:num(m.d)?m.d:FIGHT.forward});
+  f.k=(++fseq).toString(36);f.id=c.id;f.t0=t;flights.push(f);
+  ctx.all({t:'sb',k:f.k,id:c.id,x:r2(f.x),z:r2(f.z),tx:r2(f.tx),tz:r2(f.tz),d0:r2(f.d0),ms:f.ms,fly:1,...(f.wall?{wall:1}:{})});
+  stepFlights(t,ctx); // 바로 앞(손 앞 0m)에 있는 사람
+ }
+ // 날아가는 눈덩이: 지난 구간에 지금 있는 사람(웅크림 act.cr·맞은 뒤 1초 무적은 통과). 던진 사람이 나가도 끝까지 간다
+ function stepFlights(t,ctx){
+  if(!flights.length)return;
+  const all=[];for(const o of ctx.members.values()){const q=posOf(o);if(q)all.push({id:o.id,...q,crouch:o.act?.cr===1});}
+  for(let i=0;i<flights.length;i++){const f=flights[i];
+   const s1=f.d*Math.min(1,Math.max(0,(t-f.t0)/f.ms));
+   const people=all.filter(q=>q.id!==f.id).map(q=>({...q,safe:t-(lastHitAt.get(q.id)??-Infinity)<FIGHT.invulnMs}));
+   const h=sweepFlight(f,f.s,s1,people);f.s=s1;
+   if(h){f.done=true;
+    const soft=harass.hit(f.id,h.id,t);lastHitAt.set(h.id,t);
+    const pts=match.scoreHit(f.id,h.id,{head:h.head,soft,d:h.d,t},ctx);
+    ctx.all({t:'sbh',k:f.k,id:f.id,x:r2(f.x),z:r2(f.z),tx:r2(h.tx),tz:r2(h.tz),hit:h.id,...(h.head?{head:1}:{}),...(soft?{soft:1}:{}),...(pts?pts:{})});}
+   else if(s1>=f.d)f.done=true;}
+  for(let i=flights.length-1;i>=0;i--)if(flights[i].done)flights.splice(i,1);
  }
  return {
   snow,board,
@@ -100,6 +115,7 @@ export function createRoomPlay({cleanText=t=>t,rules=GIFT_RULES}={}){
    const taken=(k,v)=>[...ctx.members.values()].some(o=>o.id!==c.id&&o.act?.[k]===v);
    if(a.st&&taken('st',a.st)){a={...a,st:0};deny.push({t:'seat:no'});}
    if(a.sl>=1&&a.sl<=SLED_LANES&&taken('sl',a.sl)){a={...a,sl:0};deny.push({t:'sled:busy'});}
+   if(a.mg&&taken('mg',a.mg)){a={...a,mg:0};deny.push({t:'ride:no'});} // 회전목마 같은 루돌프(11-17 3차)
    return {a,deny};
   },
   handle(c,m,t,ctx){
@@ -117,16 +133,16 @@ export function createRoomPlay({cleanText=t=>t,rules=GIFT_RULES}={}){
   giveBonus(id){bonus.set(id,Math.min(rules.bonusMax,(bonus.get(id)??0)+1));},
   bonusOf:id=>bonus.get(id)??0,
   recentCards:id=>(cards.get(id)??[]).slice(),
-  // 10Hz: 밀린 눈덩이 묶어 보내기·녹기·오래 들고 있던 선물 버리기
+  // 10Hz: 날아가는 눈덩이 맞음 판정·밀린 눈덩이 묶어 보내기·녹기·오래 들고 있던 선물 버리기
   tick(t,ctx){
    if(dirty.size){const list=[...dirty].map(id=>snow.get(id)).filter(Boolean);dirty.clear();if(list.length)ctx.all(ballMsg(list,t));}
    for(const id of snow.melt(t))ctx.all({t:'snow:gone',b:id,why:'melt'});
    for(const [id,a] of held){const k=a.filter(x=>t-x.at<=rules.holdMs);if(k.length)held.set(id,k);else held.delete(id);}
-   race.tick(t,ctx);match.tick(t,ctx);
+   stepFlights(t,ctx);race.tick(t,ctx);match.tick(t,ctx);
   },
   // 사람이 완전히 나감(유예 끝): 그 사람 몫 정리
   forget(id){limiters.delete(id);bonus.delete(id);lastThrow.delete(id);lastHitAt.delete(id);},
-  reset(){snow.reset();board.length=0;held.clear();dirty.clear();race.reset();match.reset();},
+  reset(){snow.reset();board.length=0;held.clear();dirty.clear();flights.length=0;race.reset();match.reset();},
   race,match,
  };
 }

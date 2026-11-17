@@ -1026,6 +1026,42 @@
   "color": true
  },
  {
+  "name": "x-run",
+  "group": "christmas",
+  "file": "icons/christmas/x-run.svg",
+  "symbol": "ic-x-run",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-map",
+  "group": "christmas",
+  "file": "icons/christmas/x-map.svg",
+  "symbol": "ic-x-map",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-carousel",
+  "group": "christmas",
+  "file": "icons/christmas/x-carousel.svg",
+  "symbol": "ic-x-carousel",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-skate",
+  "group": "christmas",
+  "file": "icons/christmas/x-skate.svg",
+  "symbol": "ic-x-skate",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
   "name": "x-gondola",
   "group": "christmas",
   "file": "icons/christmas/x-gondola.svg",

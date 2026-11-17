@@ -2,13 +2,17 @@
 //  - 출발대에서 「레이스 열기」 → 10초 동안 다른 사람이 「같이 하기」(최대 4명, 줄 1~4) → (연 사람이 「바로 출발」하면 바로) 3·2·1 → 출발.
 //  - 같이 탄 썰매끼리 부딪힘 없음, 순위만. 결승 기록은 각 화면이 보고(sr:fin), 처음 들어온 뒤 15초 안에 못 들어오면 「완주 못 함」.
 //  - 오늘의 기록판: 이 방 오늘(서울 날짜) 최고 5명(이름·시간). 혼자 타기 기록(sr:rec)도 들어간다. 빈 방 초기화는 트리와 같음(방 상태째 지움).
-// 규격(클라이언트 → 판정): sr:open {lane} · sr:join {lane} · sr:go · sr:quit · sr:fin {ms, sp:[구간1,구간2]} · sr:rec {ms}
+// 규격(클라이언트 → 판정): sr:open {lane} · sr:join {lane} · sr:go · sr:quit · sr:fin {ms, seed, fv, sp:[구간1,구간2]} · sr:rec {ms, seed, fv}(fv = 조작감, 2만 기록판)
 //  판정 → 방 모두: {t:'sr', id, ph:'wait'|'count'|'run'|'done', host, left(ms, 대기 남은), go(ms, 출발까지), r:[{id,n,lane,ms?,dnf?,rank?}]}, {t:'sr:board', b:[{n,ms}]}
 //  못 하면 보낸 사람 {t:'sr:no', reason}
 // 코스 시드(11-17 2차): 방마다 지금 코스 하나 {t:'sc', seed}(들어올 때·바뀔 때 모두에게). 같은 방 = 같은 코스.
 //  - 처음은 오늘(서울)의 시드. 「새 코스」 sc:new → 아무도 타고 있지 않을 때만(act.sl 5·6이 없고 레이스가 달리는 중이 아님) 새 시드, 아니면 {t:'sc:no',reason:'riding'}.
 //  - 레이스를 열면(sr:open) 타는 사람이 없을 때 새 코스를 뽑는다(판마다 다른 코스). 레이스 view에도 seed가 들어가 참가자는 그 코스로 탄다.
 //  - 기록판은 코스마다 따로(sr:board {seed, b}). sr:fin·sr:rec에 seed를 함께 보내고, 지금 코스와 다르면 기록하지 않는다.
+// 11-17 대표 결정: 썰매 조작감 2(sled.js SLED_RULES_2)가 모든 화면 기본. 기록판에는 조작감 2(fv:2)로 탄 기록만 올린다
+//  (예전 화면을 열어 둔 사람·옛 캐시는 fv가 없어 레이스 순위에는 들지만 오늘의 기록판에는 안 남음 — 조작감이 다른 기록이 섞이지 않게)
+export const BOARD_FEEL=2;
+const feelOk=m=>m?.fv===BOARD_FEEL;
 export const RACE=Object.freeze({waitMs:10000,countMs:3000,max:4,lateMs:15000,keepMs:20000,board:5,minMs:30000,maxMs:300000,seeds:12});
 const seoulDay=t=>new Date(t+9*3600e3).toISOString().slice(0,10);
 const num=v=>typeof v==='number'&&Number.isFinite(v);
@@ -65,8 +69,8 @@ export function createSledRace({now=()=>Date.now(),rand=Math.random}={}){
      const ms=num(m.ms)?Math.round(m.ms):NaN;if(!(ms>=RACE.minMs&&ms<=RACE.maxMs))return no('bad');
      // 화면 시계와 서버 시계가 크게 어긋나면(출발 뒤 지난 시간보다 2초 넘게 빠름) 서버 시간
      x.ms=Math.max(ms,t-race.goAt-2000);if(Array.isArray(m.sp))x.sp=m.sp.slice(0,3).filter(num).map(Math.round);
-     if(!race.firstAt)race.firstAt=t;if(normSeed(m.seed)===race.seed&&race.seed===seedNow(t))record(c.id,c.name,x.ms,t,ctx,race.seed);ctx.all(view(t));this.tick(t,ctx,true);return;}
-    case 'sr:rec':if(normSeed(m.seed)!==seedNow(t))return;return void record(c.id,c.name,m.ms,t,ctx);
+     if(!race.firstAt)race.firstAt=t;if(feelOk(m)&&normSeed(m.seed)===race.seed&&race.seed===seedNow(t))record(c.id,c.name,x.ms,t,ctx,race.seed);ctx.all(view(t));this.tick(t,ctx,true);return;}
+    case 'sr:rec':if(!feelOk(m)||normSeed(m.seed)!==seedNow(t))return;return void record(c.id,c.name,m.ms,t,ctx);
    }
   },
   // 10Hz(서버 tick): 대기 끝 → 카운트다운 → 출발, 늦은 사람 정리, 끝난 레이스 지우기. 나간 사람은 빠짐

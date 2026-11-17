@@ -1,6 +1,7 @@
 // 함께 걷기(멀티) 순수 로직: 메시지 규격, 이름 정리, 위치 보간, 거리별 표시 단계, 인사·손 흔들기·같이 셀카 규칙.
 // 네트워크·렌더링 코드는 없다(전송은 multi-transport.js, 화면은 multi-client.js). 서버를 붙여도 이 파일은 그대로 쓴다.
 // 위치 입력은 movement.playerPosition(state)의 {zone,x,z,heading,s,lateral}이다.
+import {CAROUSEL_SEATS} from './christmas/festive-layout.js'; // 회전목마 자리 수(act.mg 상한). 순수 자료라 서버 이미지에도 들어감
 export const NET=Object.freeze({
  sendHz:10,            // 위치 전송 횟수/초
  interpDelay:.15,      // 받은 위치를 이만큼 늦게 그려 부드럽게 잇는다(초)
@@ -109,7 +110,9 @@ export const ACT_SCHEMA=Object.freeze({
   st:Object.freeze([0,1,2,3,4,5,6,7,8]),wm:Object.freeze([0,1]),cc:Object.freeze([0,1]),sl:Object.freeze([0,1,2,3,4,5,6]),sp:'id',pu:Object.freeze([0,1]),pk:Object.freeze([0,1]),
   cr:Object.freeze([0,1]),tm:Object.freeze([0,1,2]),
   //   + 11-17 2차: gd 케이블카(0 없음·1 올라가는 중·2 내려가는 중, 서버 위치 검사 한도가 넓어짐)
-  gd:Object.freeze([0,1,2])})
+  gd:Object.freeze([0,1,2]),
+  //   + 11-17 3차: mg 회전목마 자리(0 없음·1~4 루돌프·5~8 썰매 의자, festive-layout.js CAROUSEL_SEATS 번호+1. 시안 B ?look=festive-b에서만 보냄 — 받는 쪽은 자기 화면의 같은 번호 자리 위에 그림)
+  mg:Object.freeze(Array.from({length:CAROUSEL_SEATS.length+1},(_,i)=>i))}) // 자리 수는 레이아웃을 따름(월드아트가 자리를 늘리면 같이 늘어남)
 });
 export function sanitizeAct(exp,a){
  const sc=ACT_SCHEMA[exp];if(!sc||!a||typeof a!=='object'||Array.isArray(a))return null;
@@ -274,8 +277,8 @@ export const messageAllowed=(exp,type)=>EXPERIENCE_MESSAGES[exp]?.includes(type)
 // room은 주소 ?multi=와 같은 모양. 서버 쪽 방 이름은 기존 방 키 규칙대로 끝 '-1'을 뗀다(관악산-1 → hiking:관악산). 2서버부터는 그대로(관악산-2).
 // 서버 방은 꽉 차도 -2로 넘기지 않고 full로 거절한다(server/rooms.mjs). 정원은 SERVER_MAX(서버는 MAX_PER_ROOM으로 바꿀 수 있음).
 export const SERVER_MAX=30;
-// 체험별 정원(11-16): 크리스마스 광장은 기획서대로 20명. 표에 없는 체험은 SERVER_MAX(서버는 MAX_PER_ROOM).
-export const EXPERIENCE_MAX=Object.freeze({christmas:20});
+// 체험별 정원(11-16): 크리스마스 광장은 기획서대로 20명 → 11-17 대표 결정으로 30명(넓힌 광장). 표에 없는 체험은 SERVER_MAX(서버는 MAX_PER_ROOM).
+export const EXPERIENCE_MAX=Object.freeze({christmas:30});
 export const serverMax=(experience,base=SERVER_MAX)=>EXPERIENCE_MAX[experience]??base;
 export const SERVERS=Object.freeze({
  hiking:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`관악산 ${id}서버`,room:`관악산-${id}`}))),

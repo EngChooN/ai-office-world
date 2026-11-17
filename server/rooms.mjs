@@ -43,7 +43,7 @@ export const ROOM_DEFAULTS=Object.freeze({
  namesEvery:30,           // 스냅샷 30번(3초)마다 이름 목록도 싣는다
  banned:[],               // 이름 금칙어(운영 결정, 환경 변수 BANNED_WORDS)
  chatBanned:[],           // 채팅 금칙어(BANNED_CHAT_WORDS + server/chat-banned-words.txt). 맞으면 ***로 가림
- maxByExperience:EXPERIENCE_MAX, // 체험별 정원(없으면 maxPerRoom). 크리스마스 20
+ maxByExperience:EXPERIENCE_MAX, // 체험별 정원(없으면 maxPerRoom). 크리스마스 30(11-17)
  treeResetMs:TREE_RULES.resetMs,  // 크리스마스 트리: 빈 방이 이만큼 지나면 초기화
  pairOfferMs:PAIR.offerMs,pairBlockMs:PAIR.declineBlockMs,pairGapMs:PAIR.offerGapMs,pairGraceMs:PAIR.graceMs // 동행 제한 시간(시험에서 줄일 수 있음)
 });

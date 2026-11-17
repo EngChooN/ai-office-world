@@ -1,6 +1,6 @@
 // 온라인 크리스마스 광장 점검(월드개발, 2026-11-16): 서버(MULTI_PORT 8791)·vite(PORT 5199)를 이 스크립트가 띄우고 끝나면 닫는다(5173·8787은 건드리지 않음).
-// 브라우저 2개(PC 1920×1080 '하나', 휴대폰 390×844 '둘') + 봇 18명(Node WebSocket) = 광장 20명.
-//  ① 20명이 서로 보임(PC는 모두 동동이, 휴대폰은 가까운 6명 동동이 + 나머지 가벼운 동동이) ② 21번째는 full ③ 말풍선·채팅
+// 브라우저 2개(PC 1920×1080 '하나', 휴대폰 390×844 '둘') + 봇 28명(Node WebSocket) = 광장 30명(11-17 대표 결정 정원 30).
+//  ① 30명이 서로 보임(PC는 모두 동동이, 휴대폰은 가까운 6명 동동이 + 나머지 가벼운 동동이) ② 31번째는 full ③ 말풍선·채팅
 //  ④ 같은 말 세 번째는 막힘(repeat)·입력칸에 글이 남음 ⑤ 음소거하면 모습·말이 사라짐 ⑥ 트리 장식이 모두에게 보임·별 40개 열림
 //  ⑦ 나중에 온 사람(세 번째 브라우저)도 같은 트리 ⑧ 모두 나가고 TREE_RESET_MS 뒤 다시 들어오면 빈 트리 ⑨ 서버가 꺼지면 화면이 깨지지 않고 트리 유지
 //  ⑩ 서버 주소가 죽었을 때 서버 고르기 창은 '서버에 연결할 수 없어요' + 혼자 둘러보기 → 혼자 장식 달기
@@ -12,7 +12,7 @@ import {TREE_RULES} from '../src/christmas/tree-state.js';
 
 const dir='artifacts/christmas-world',multiPort=Number(process.env.MULTI_PORT??8791),room='눈마을-1',RESET_MS=4000;mkdirSync(dir,{recursive:true});
 const {createServer}=await import('vite');const port=Number(process.env.PORT??5199);
-const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true},logLevel:'warn'});await vite.listen();
+const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true,hmr:false,watch:null},logLevel:'warn'});await vite.listen();
 const pageUrl=`http://127.0.0.1:${port}`,wsUrl=`ws://127.0.0.1:${multiPort}`;
 let srv=startServer({PORT:String(multiPort),HOST:'127.0.0.1',DATA_DIR:`${dir}/data`,TREE_RESET_MS:String(RESET_MS)},{quiet:true});await srv.ready;
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--use-angle=metal']});
@@ -56,32 +56,34 @@ async function open(name,vp,{query=`multi=${encodeURIComponent(room)}&server=${e
 const st=p=>p.evaluate(()=>window.xmas.status());
 
 try{
- // ── ① 20명
+ // ── ① 30명
  const A=await open('하나',{width:1920,height:1080},{look:{outfit:'elf',hat:'antlers'}});
  const B=await open('둘',{width:390,height:844},{look:{outfit:'sweater',scarf:'stripe'}});
- const bots=[];for(let i=0;i<18;i++){bots.push(bot(i));await sleep(40);}
+ const bots=[];for(let i=0;i<28;i++){bots.push(bot(i));await sleep(40);}
  await until(()=>bots.every(b=>b.id),15000);
  await A.evaluate(()=>window.xmas.teleport(.6,10.6,Math.PI));await B.evaluate(()=>window.xmas.teleport(.2,13.4,0));
- await until(async()=>(await st(A)).multi.people.filter(p=>p.shown).length===19&&(await st(B)).multi.people.filter(p=>p.shown).length===19,30000);
+ await until(async()=>(await st(A)).multi.people.filter(p=>p.shown).length===29&&(await st(B)).multi.people.filter(p=>p.shown).length===29,30000);
  await sleep(2500);
  const sa=await st(A),sb=await st(B);
  const bodies=s=>s.multi.people.reduce((o,p)=>(o[p.body]=(o[p.body]??0)+1,o),{});
- check('① PC: 다른 사람 19명이 모두 동동이로 보임',sa.multi.people.filter(p=>p.shown).length===19&&bodies(sa).dongdong===19,{bodies:bodies(sa),count:sa.multi.people.length});
- check('① 휴대폰: 19명 보임(가까운 6명 동동이 + 나머지 가벼운 동동이)',sb.multi.people.filter(p=>p.shown).length===19&&bodies(sb).dongdong===6&&bodies(sb).lite===13,{bodies:bodies(sb)});
+ check('① PC: 다른 사람 29명이 모두 동동이로 보임',sa.multi.people.filter(p=>p.shown).length===29&&bodies(sa).dongdong===29,{bodies:bodies(sa),count:sa.multi.people.length});
+ check('① 휴대폰: 29명 보임(가까운 6명 동동이 + 나머지 가벼운 동동이)',sb.multi.people.filter(p=>p.shown).length===29&&bodies(sb).dongdong===6&&bodies(sb).lite===23,{bodies:bodies(sb)});
  const chip=await A.evaluate(()=>document.querySelector('.xh-place')?.textContent);
- check('① 연결 칩 20/20',/눈마을 광장 1서버 ·\s*20\/20/.test(chip),{chip});
+ check('① 연결 칩 30/30',/눈마을 광장 1서버 ·\s*30\/30/.test(chip),{chip});
  const lookB=sa.multi.people.find(p=>p.name==='둘')?.look;
  check('① 상대 옷이 그 사람이 고른 옷(act)',lookB?.outfit==='sweater'&&lookB?.scarf==='stripe',{lookB});
  // 움직임: 봇 위치가 바뀌는지
  const p0=(await st(A)).multi.people.find(p=>p.name==='눈송이봇3');await sleep(1200);const p1=(await st(A)).multi.people.find(p=>p.name==='눈송이봇3');
  check('① 다른 사람 움직임이 보임',p0&&p1&&Math.hypot(p1.x-p0.x,p1.z-p0.z)>.3,{p0,p1});
- // ── ② 21번째
+ // ── ② 31번째
  const extra=bot(99,{name:'늦은봇'});await until(()=>extra.full||extra.id,5000);
- check('② 21번째 접속은 꽉 참(full)',extra.full&&!extra.id,{full:extra.full});extra.close();
+ check('② 31번째 접속은 꽉 참(full)',extra.full&&!extra.id,{full:extra.full});extra.close();
 
  // ── ③ 말풍선·채팅
  await A.evaluate(()=>{const f=document.querySelector('.hc-panel form');window.xmas.chat.open();f.elements.text.value='메리 크리스마스! 🎄';f.requestSubmit();});
- bots[2].say('트리 예뻐요');
+ // 봇은 광장을 돌아다니므로(30명) 휴대폰 화면 안에 보이는 봇이 말하게 한다(화면 밖 말풍선은 원래 숨김)
+ const ids=bots.map(b=>b.id),vis=await B.evaluate(ids=>ids.findIndex(id=>{const p=window.xmas.screenPos(id);return p?.visible&&p.y>120&&p.y<innerHeight-200&&p.x>40&&p.x<innerWidth-40;}),ids);
+ bots[vis>=0?vis:2].say('트리 예뻐요');
  await until(()=>B.evaluate(()=>window.__ev.filter(e=>e.type==='xmas:chat').length>=2),8000);
  await sleep(300);
  const bub=await B.evaluate(()=>[...document.querySelectorAll('.hc-bub')].filter(b=>b.style.display!=='none').map(b=>b.textContent));
@@ -204,7 +206,7 @@ try{
  await F.waitForSelector('.sp-wrap:not([hidden]) .sp-row[data-state=open]',{timeout:15000});
  const rows=await F.evaluate(()=>[...document.querySelectorAll('.sp-row')].map(r=>r.getAttribute('aria-label')));
  await F.screenshot({path:`${dir}/mobile-server-pick.png`});
- check('서버 고르기: 눈마을 광장 1~3서버·정원 20',rows.length===3&&rows.every(t=>/눈마을 광장 \d서버 0 \/ 20명/.test(t)),{rows});
+ check('서버 고르기: 눈마을 광장 1~3서버·정원 30',rows.length===3&&rows.every(t=>/눈마을 광장 \d서버 0 \/ 30명/.test(t)),{rows});
  await F.click('.sp-row[data-sp-server="2"]');
  await F.waitForFunction(()=>window.xmas.multi.state==='online',null,{timeout:15000});
  check('서버 고르기 → 2서버 입장',(await F.evaluate(()=>window.xmas.multi.room))==='눈마을-2',{});
