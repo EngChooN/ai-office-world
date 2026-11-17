@@ -10,7 +10,7 @@ export const REPO_URL='https://github.com/EngChooN/ai-office-world';
 export const MAX_BODY=6000; // 주소 길이가 넘치지 않게(GitHub·브라우저 주소 한도 안)
 export const MAX_TEXT=500;
 export const TITLE_LEN=40;
-export const EXPS=Object.freeze({hiking:'등산',smoking:'흡연장'});
+export const EXPS=Object.freeze({hiking:'등산',smoking:'흡연장',hub:'허브'}); // hub: 허브 설정 창·「다음 체험 준비 중」(11-17)
 // icon = 깃허브 글 제목·본문에 들어가는 글자(화면 밖이라 이모지 그대로), ic = 카드 고르기 칸에 그리는 제작 아이콘(아이콘-규칙-v1 §1)
 export const KINDS=Object.freeze({
  bug:{icon:'🐞',ic:'c-fb-bug',label:'고장·이상해요',sub:'안 돼요·멈춰요',labels:['bug']},

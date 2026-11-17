@@ -10,7 +10,7 @@
 // 게임 화면을 가리는 불투명 전체 화면(data-mode=entry), 게임 안에서 서버를 바꿀 때는 같은 카드의 창(data-mode=switch).
 // 체험 코드(main.js·lounge)와는 콜백으로만 만난다. 모양은 server-pick.css(등산 수첩 종이 톤, 단추 44px 이상, 안전 영역 안).
 import {SERVERS,SERVER_MAX,EXPERIENCES,NET,serverMax} from './multi-protocol.js';
-import {ART,hubTime} from './hub/hub.js';
+import {ART,hubTime} from './hub/art.js';
 import {sunPosition} from './daytime.js';
 import {icon,iconText} from './icons/icon.js';
 

@@ -14,7 +14,7 @@ import {summitOf} from './summit-records.js';
 import {SAVE_KEY} from './movement.js';
 import {seoulClock,sunPosition} from './daytime.js';
 import {START_EVENT} from './loading.js';
-import {hikingServerPick,hikingPickMode} from './hiking-server-pick.js';
+import {hikingPickMode,openFirstHikingPick,hubPicked} from './hiking-server-pick.js';
 import {loadPickName,savePickName,PICK_LABELS} from './server-pick.js';
 import {NET} from './multi-protocol.js';
 
@@ -103,7 +103,7 @@ export function mountMountainPick(doc=document,win=window){
   if(root.classList.contains('leaving'))return;
   root.classList.add('leaving');doc.documentElement.classList.remove('pk-open');
   nick.value=savePickName(nick.value); // '혼자 걷기'를 골라도 이름은 남는다(나중에 👋 함께 걷기에서 씀)
-  if(hikingPickMode()==='show')serverReady.then(()=>hikingServerPick().open({closable:false}));
+  if(hikingPickMode()==='show'||hubPicked())serverReady.then(openFirstHikingPick); // 허브에서 서버를 골라 왔으면 창 없이 바로(11-17)
   else{window.__hikingStartRequested=true;win.dispatchEvent(new CustomEvent(START_EVENT));}
   setTimeout(()=>root.remove(),450);
  }
@@ -126,6 +126,6 @@ if(typeof document!=='undefined'){
  mountFreeSettingsHud();
  if(pickEnabled()){document.documentElement.dataset.startMode='manual';mountMountainPick();}
  // 산 고르기를 건너뛰어도(?pick=off, 점검 스크립트 + ?serverpick=on) 서버 고르기 창이 출발 문이 된다
- else if(hikingPickMode()==='show'){document.documentElement.dataset.startMode='manual';serverReady.then(()=>hikingServerPick().open({closable:false}));}
+ else if(hikingPickMode()==='show'||hubPicked()){document.documentElement.dataset.startMode='manual';serverReady.then(openFirstHikingPick);}
  applyHudTime();
 }

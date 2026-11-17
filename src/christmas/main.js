@@ -12,6 +12,8 @@ import {sunDirection} from '../look-profile.js';
 import {createInput} from '../lounge/input.js';
 import {WALK_SPEED,RUN_MUL} from '../lounge/avatar.js';
 import {serverPickMode,createServerPick,NAME_KEY} from '../server-pick.js';
+import {takeHubPick,applyHubPick} from '../hub/handoff.js';
+import {loadShared,saveShared,volumeGain} from '../shared-settings.js';
 import '../server-pick.css';
 import {currentChoice} from '../server-link.js';
 import {findServer} from '../multi-protocol.js';
@@ -234,8 +236,8 @@ hud=createXmasHud({multi,treePlay,mobile,look,wardrobe:()=>profile.wardrobe,proj
  aimButton:(ph,dx,dy)=>snowfight.aimButton(ph,dx,dy),
  hold:(id,on)=>{if(id.startsWith('sb:'))snowfight.hold(id,on);else sledPlay.hold?.(id,on);},
  inbox:()=>gifts.openInbox(),
- sound(){profile.sound=!profile.sound;saveProfile();audio.setMuted(!profile.sound);hud.setSound(!profile.sound);showCarol();hud.say(profile.sound?'소리를 켰어요':'소리를 껐어요',1.4,profile.sound?'c-sound':'c-sound-off');},
- carol(){profile.carol=!profile.carol;saveProfile();audio.setCarol(profile.carol);showCarol();hud.say(profile.carol?(profile.sound?'캐럴을 켰어요':'캐럴을 켰어요. 소리도 켜야 들려요'):'캐럴을 껐어요',1.6,profile.carol?(profile.sound?'c-music':'c-sound-off'):'c-music-off');},
+ sound(){profile.sound=!profile.sound;saveProfile();saveShared({sound:profile.sound});audio.setMuted(!profile.sound);hud.setSound(!profile.sound);showCarol();hud.say(profile.sound?'소리를 켰어요':'소리를 껐어요',1.4,profile.sound?'c-sound':'c-sound-off');},
+ carol(){profile.carol=!profile.carol;saveProfile();saveShared({music:profile.carol});audio.setCarol(profile.carol);showCarol();hud.say(profile.carol?(profile.sound?'캐럴을 켰어요':'캐럴을 켰어요. 소리도 켜야 들려요'):'캐럴을 껐어요',1.6,profile.carol?(profile.sound?'c-music':'c-sound-off'):'c-music-off');},
  musicOpen(){showCarol();},
  gift:id=>gifts.startSend(id),
  decorate:setDecorate,
@@ -252,7 +254,9 @@ const nearTree=()=>Math.hypot(player.x-TARGETS.tree.x,player.z-TARGETS.tree.z)<T
 const near=(t,r)=>Math.hypot(player.x-t.x,player.z-t.z)<r;
 
 // ── 놀이: 소리·요청 길·선물·모닥불·눈사람·눈싸움·썰매
-const audio=createXmasAudio({muted:!profile.sound,carol:profile.carol});hud.setSound(!profile.sound);
+// 세 체험 공용 소리 설정(11-17, shared-settings.js): 저장된 적이 있으면 소리·배경 음악(캐럴)·크기를 그 값으로
+const sharedSound=loadShared();if(sharedSound.has){profile.sound=sharedSound.sound;profile.carol=sharedSound.music;}
+const audio=createXmasAudio({muted:!profile.sound,carol:profile.carol,volume:sharedSound.has?volumeGain(sharedSound.volume):1});hud.setSound(!profile.sound);
 // 🎵 창의 지금 곡 줄
 function showCarol(){const c=audio.carolNow();hud.setCarol(profile.carol,!profile.sound?'소리가 꺼져 있어요':!profile.carol?'캐럴이 꺼져 있어요':!audio.unlocked?'♪ 화면을 한 번 누르면 캐럴이 나와요':c.state==='error'?'캐럴을 받지 못했어요':c.title?`♪ 지금: ${c.title}`:'♪ 캐럴을 받는 중이에요',!profile.sound?'c-sound-off':null);}
 showCarol();
@@ -338,7 +342,8 @@ const serverIdOf=room=>room?findServer('christmas',room)?.id??null:null;
 function openPick(note=null){pick.open({current:multi.joined&&multi.state!=='full'?serverIdOf(multi.room):null,note,closable:note!=='full'||multi.joined});}
 const pickMode=serverPickMode(location.search,!!navigator.webdriver);
 if(multi.params.auto)multi.join({room:multi.params.room,name:multi.params.name??profile.nickname});
-else if(pickMode==='show')pick.open({closable:false});
+else{const hubChoice=pickMode!=='legacy'?takeHubPick('christmas'):null; // 허브에서 서버를 골라 왔으면 창 없이 바로(11-17)
+ if((pickMode==='show'||hubChoice)&&!applyHubPick(pick,hubChoice))pick.open({closable:false});}
 
 // ── 크기·화질
 function resize(){const w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio,mobile?1.5:2);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setPixelRatio(dpr);renderer.setSize(w,h);toon.pipeline.resize(mobile?1:2,w,h,dpr);}

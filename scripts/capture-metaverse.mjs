@@ -19,13 +19,13 @@ for(const [name,w,h,m] of [['hub-pc',1280,800,false],['hub-portrait',390,844,tru
 {const {page}=await open(1280,800);await page.goto(`${BASE}/?multi=room1&server=ws%3A%2F%2F127.0.0.1%3A8787&start=summit`);
  await page.waitForURL(/\/hiking\//,{timeout:30000}).catch(()=>{});report.legacy={url:page.url()};await page.close();}
 // 허브 카드 → 등산
-{const {page,errors}=await open(1280,800);await page.goto(`${BASE}/`);await page.click('#hub-hiking');await page.waitForURL(/\/hiking\//);
+{const {page,errors}=await open(1280,800);await page.goto(`${BASE}/`);await page.click('#hub-hiking');await page.click('.hb-panel [data-enter="solo"]');await page.waitForURL(/\/hiking\//); // 11-17: 장소를 고른 뒤 판의 「혼자 하기」
  await page.goto(`${BASE}/hiking/?start=entrance&time=12:00&weather=clear&quality=high`);
  await page.waitForFunction(()=>window.hiking?.started===true||window.hiking?.loading?.().phase==='error',null,{timeout:300000});
  await page.waitForTimeout(3000);await page.screenshot({path:`${OUT}/hiking-pc.png`});
  report.hiking={started:await page.evaluate(()=>window.hiking.started),errors};await page.close();}
 // 허브 카드 → 흡연장: 입장 → 담배 꺼내기·불·한 모금 → 채팅 → NPC
-{const {page,errors}=await open(1280,800);await page.goto(`${BASE}/`);await page.click('#hub-smoking');await page.waitForURL(/\/smoking\//);
+{const {page,errors}=await open(1280,800);await page.goto(`${BASE}/`);await page.click('#hub-smoking');await page.click('.hb-panel [data-enter="solo"]');await page.waitForURL(/\/smoking\//); // 11-17: 장소를 고른 뒤 판의 「혼자 하기」
  await page.waitForFunction(()=>window.lounge,null,{timeout:60000});await page.waitForTimeout(1500);
  const enter=page.locator('[data-a="enter"]');if(await enter.count())await enter.first().click();
  await page.waitForTimeout(800);

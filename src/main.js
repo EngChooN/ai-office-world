@@ -32,6 +32,7 @@ import {loadOptionalModels} from './realistic-models.js';
 import {FootstepAudio,SOUND_SAVE_KEY} from './footstep-audio.js';
 import {AmbientAudio} from './ambient-audio.js';
 import {VOLUME_SAVE_KEY} from './ambient-config.js';
+import {loadShared,saveShared} from './shared-settings.js';
 import {mountInteractionUI,drawPhotoFrame} from './interaction-ui.js';
 import {createInteraction} from './interaction-controller.js';
 import {createTrailWorld} from './trail-world.js';
@@ -77,10 +78,13 @@ const multiMode=new URLSearchParams(location.search).has('multi');
 function save(){if(multiMode)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify(state.gadgetPrevView?{...state,view:state.gadgetPrevView}:state)); // 기구로 강제한 1인칭은 저장하지 않는다
 storageOK=true;}catch{storageOK=false;$('resume-note').textContent='저장 공간을 사용할 수 없습니다. 이 세션의 진행만 유지됩니다.';}}
 let soundEnabled=true;try{soundEnabled=localStorage.getItem(SOUND_SAVE_KEY)!=='false';}catch{}
+// 세 체험 공용 소리 설정(11-17, shared-settings.js): 저장된 적이 있으면 그 값을 따른다(허브 설정 창·흡연장·크리스마스에서 바꾼 값)
+const sharedSound=loadShared();if(sharedSound.has)soundEnabled=sharedSound.sound;
 const audioDebug=new URLSearchParams(location.search).has('audioDebug');
 function updateAudioUI(){const a=audio.snapshot();$('sound-toggle').setAttribute('aria-pressed',String(a.enabled));$('sound-toggle').querySelector('span').textContent=a.enabled?'소리 켜짐':'소리 꺼짐';for(const el of document.querySelectorAll('[data-sound-ic]'))el.innerHTML=icon('c-sound',{size:el.dataset.iconSize||'m',off:!a.enabled});$('sound-toggle').title=a.errors.length?'일부 소리 재생 오류 · 조작 안내의 소리 출처 참고':a.context==='입력 대기'?'클릭하거나 키를 누르면 소리를 시작합니다':a.decoded<a.total?'발소리 준비 중':'발소리 켜기/끄기';if(audioDebug){$('sound-debug').hidden=false;$('sound-debug').textContent='발소리 확인 · '+a.context+' · '+a.decoded+'/'+a.total+'개\n'+a.logs.slice(-8).map(r=>`${r.step}걸음 ${r.material} #${String(r.variant).padStart(2,'0')} ${r.pan<0?'왼':'오른'}\n  ${r.eventElapsed.toFixed(3)}s · ${r.rate.toFixed(3)}배 · ${r.variationDb.toFixed(2)}dB`).join('\n');}}
 const audio=new FootstepAudio({base:`${import.meta.env.BASE_URL}sounds/`,enabled:soundEnabled,onChange:updateAudioUI,style}); // 카툰은 가벼운 '톡톡' 소리를 두 걸음에 한 번
 let userVolume=.7;try{const stored=localStorage.getItem(VOLUME_SAVE_KEY);if(stored!==null&&Number.isFinite(Number(stored)))userVolume=Math.max(0,Math.min(1,Number(stored)));}catch{}
+if(sharedSound.has)userVolume=sharedSound.volume;
 audio.setVolume(userVolume);
 const ambient=new AmbientAudio({base:`${import.meta.env.BASE_URL}sounds/ambient/`,enabled:soundEnabled,volume:userVolume});
 const ambientCredits=document.createElement('p');ambientCredits.textContent='환경음은 실제 관악산 녹음이 아닌 CC0 임시음입니다. 구간·거리·고도·음량은 추정이며 현장·귀 검수 전입니다. 물·숲 바람·능선 바람·새: Thimras (Park Ambiences), 까마귀: fvcalderan (Crow)·zeroisnotnull (Crow Caw), 정상 웅성임: StarNinjas (Crowd Shouting/Speaking Ambience), 먼 도시: IgnasD (High Traffic Road Sounds). 목탁: 산디자인 자체 합성 임시음. 모노 32kHz 변환·크로스페이드·음량 정규화.';
@@ -88,7 +92,7 @@ const sourceLink=document.createElement('a');sourceLink.href=`${import.meta.env.
 // 라디오가 켜져 있으면 환경음을 ×0.7(아래 hiking:radio). 소리 이벤트보다 먼저 선언해 둔다
 let radioOn=false;const ambientVolume=()=>audio.volume*(radioOn?.7:1);
 const unlockSound=()=>{void audio.unlock();if(audio.context)ambient.attach(audio.context,audio.master);};window.addEventListener('pointerdown',unlockSound,{capture:true,passive:true});window.addEventListener('keydown',unlockSound,{capture:true});
-window.addEventListener('hiking:sound',e=>{const {enabled,volume}=e.detail||{};if(typeof enabled==='boolean'){audio.setEnabled(enabled);ambient.setEnabled(enabled);if(enabled)unlockSound();try{localStorage.setItem(SOUND_SAVE_KEY,String(enabled));}catch{}}if(Number.isFinite(volume)){audio.setVolume(volume);ambient.setVolume(ambientVolume());try{localStorage.setItem(VOLUME_SAVE_KEY,String(audio.volume));}catch{}}});
+window.addEventListener('hiking:sound',e=>{const {enabled,volume}=e.detail||{};if(typeof enabled==='boolean'){audio.setEnabled(enabled);ambient.setEnabled(enabled);if(enabled)unlockSound();try{localStorage.setItem(SOUND_SAVE_KEY,String(enabled));}catch{}saveShared({sound:enabled});}if(Number.isFinite(volume)){audio.setVolume(volume);ambient.setVolume(ambientVolume());try{localStorage.setItem(VOLUME_SAVE_KEY,String(audio.volume));}catch{}saveShared({volume:audio.volume});}});
 const QUALITY_SAVE_KEY='gwanak-quality-mode';let qualityMode=(()=>{const q=new URLSearchParams(location.search).get('quality');const m={auto:'auto',high:'2',balanced:'1',low:'0'}[q];if(m)return m;try{return localStorage.getItem(QUALITY_SAVE_KEY)||'auto';}catch{return'auto';}})();function setQualityMode(mode){qualityMode=mode;try{localStorage.setItem(QUALITY_SAVE_KEY,qualityMode);}catch{}$('quality').textContent=`화질 ${{auto:'자동','2':'높음','1':'균형','0':'낮음'}[qualityMode]}`;try{quality=qualityMode==='auto'?(mobile?0:2):Number(qualityMode);goodWindows=0;resize();updateUI();}catch{}}
 $('quality').onclick=()=>{const order=['auto','2','1','0'];setQualityMode(order[(order.indexOf(qualityMode)+1)%order.length]);$('quality').blur();};
 // 설정 탭의 화질 분절 단추(등산 수첩 HUD)는 모드를 바로 고른다.

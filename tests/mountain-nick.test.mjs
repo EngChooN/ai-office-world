@@ -47,7 +47,7 @@ test('산 고르기 소스: 닉네임 칸·저장·단축키 막기·키보드 �
  assert.match(s,/addEventListener\('input',\(\)=>\{savePickName\(input\.value,storage\)/,'치는 대로 저장');
  assert.match(s,/visualViewport/);assert.match(s,/scrollIntoView\(\{block:'center'/);assert.match(s,/classList\.add\('pk-typing'\)/);
  const go=s.slice(s.indexOf('function go(){'),s.indexOf('root.addEventListener(\'click\''));
- assert.ok(go.indexOf('savePickName(nick.value)')>=0&&go.indexOf('savePickName(nick.value)')<go.indexOf('hikingServerPick()'),'서버 창을 열기 전에 저장');
+ assert.ok(go.indexOf('savePickName(nick.value)')>=0&&go.indexOf('savePickName(nick.value)')<go.indexOf('openFirstHikingPick'),'서버 창을 열기 전에 저장(허브 선택으로 바로 들어갈 때도)');
 });
 test('산 고르기 모양: 수첩 토큰, 칸 44px 이상·16px(iOS 확대 방지), 키보드 동안 스크롤',()=>{
  const css=read('../src/free-settings.css');

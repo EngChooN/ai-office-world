@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>허브 시안 C — 큰 무대 넘기기</title>
+<style>/*ICONS_CSS*/</style>
+<style>/*COMMON_CSS*/</style>
+<style>
+/* 시안 C: 한 번에 한 체험을 화면 가득 크게 보여 주고 아래 탭(휴대폰은 넘기기)으로 바꾼다 */
+html,body{height:100%;overflow:hidden}
+#app{position:fixed;inset:0;display:grid;grid-template-rows:minmax(0,1fr) auto;background:var(--c);transition:background .35s;--ic-point:var(--c)}
+.stage{position:relative;overflow:hidden}
+.bg{position:absolute;inset:0;line-height:0}
+.bg svg{width:100%;height:100%;display:block}
+.bg:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(251,243,223,.97) 0 36%,rgba(251,243,223,.55) 50%,rgba(251,243,223,0) 64%)}
+.top{position:absolute;left:0;right:0;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:max(16px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) 0 max(24px,env(safe-area-inset-left))}
+.brand{margin:0;font-size:20px;font-weight:800;letter-spacing:-.03em}
+.online{margin-left:auto;display:flex;align-items:center;min-height:44px;padding:0 14px;border:2px solid var(--ink);border-radius:99px;background:var(--paper);box-shadow:0 2px 0 var(--ink)}
+.copy{position:absolute;z-index:3;left:max(6vw,24px);top:50%;transform:translateY(-50%);width:min(560px,40vw);animation:rise .4s ease-out}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:var(--c);color:#fff8e8;font-size:14px;font-weight:800;--ic-point:rgba(255,255,255,.3)}.chip .ic{color:#fff8e8}
+.copy h2{margin:14px 0 10px;font-size:clamp(40px,4.6vw,76px);line-height:1.05;letter-spacing:-.04em}
+.copy p{margin:0 0 16px;font-size:clamp(16px,1.3vw,21px);line-height:1.5;color:var(--ink2)}
+.feats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px;padding:0;list-style:none}
+.feats li{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:2px solid var(--ink);border-radius:12px;background:var(--paper);font-size:14px;font-weight:700}
+.live{display:flex;align-items:center;gap:10px;margin:0 0 18px}.live .st{font-size:15px}
+.acts{display:flex;flex-wrap:wrap;gap:10px}
+.go{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:60px;padding:0 28px;border:3px solid var(--ink);border-radius:16px;background:var(--c);color:#fff8e8;font-size:20px;font-weight:800;text-decoration:none;box-shadow:0 4px 0 var(--ink);--ic-point:rgba(255,255,255,.3)}.go .ic{color:#fff8e8}
+.go:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.solo{display:inline-flex;align-items:center;gap:6px;min-height:60px;padding:0 18px;border:2px dashed var(--ink2);border-radius:16px;background:rgba(251,243,223,.8);font-weight:700;text-decoration:none}
+.hero-dd{position:absolute;z-index:2;right:14vw;bottom:1%;width:min(26vw,52vh);height:auto;animation:pop .45s ease-out}
+.hero-dd .dd{width:100%;height:auto}
+.record{position:absolute;z-index:3;right:max(4vw,20px);top:92px;padding:8px 12px;border:3px solid var(--accent);border-radius:10px;color:var(--accent);background:rgba(251,243,223,.92);font-weight:800;transform:rotate(7deg)}
+.arrow{position:absolute;z-index:4;top:50%;transform:translateY(-50%);width:56px;height:56px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);box-shadow:0 3px 0 var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.arrow.prev{left:14px}.arrow.next{right:14px}
+.dots{display:none}
+@keyframes rise{from{opacity:0;transform:translateY(calc(-50% + 16px))}}
+@keyframes pop{from{opacity:0;transform:translateY(24px) scale(.96)}}
+/* 아래 탭 */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px max(24px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));background:var(--paper);border-top:3px solid var(--ink)}
+.tab{display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 14px;border:2px solid var(--rule);border-radius:14px;background:var(--paper2);cursor:pointer;text-align:left;--ic-point:var(--tc)}
+.tab .t{display:flex;flex-direction:column;gap:2px;min-width:0}.tab b{font-size:16px}.tab .st{font-size:12px}
+.tab .thumb{flex:none;width:76px;height:44px;border-radius:9px;overflow:hidden;border:2px solid var(--ink);line-height:0}.tab .thumb svg{width:100%;height:100%}
+.tab[aria-selected=true]{border-color:var(--ink);background:var(--paper);box-shadow:inset 0 -5px 0 var(--tc),0 2px 0 var(--ink)}
+.tab.next{border-style:dashed}
+/* 휴대폰 세로: 그림 위 · 글 아래 · 탭은 아래 고정 */
+@media (max-width:760px){
+ .bg{bottom:250px}.bg:after{background:linear-gradient(180deg,rgba(0,0,0,0) 60%,var(--paper) 100%)}
+ .stage{background:var(--paper)}
+ .top{padding:max(10px,env(safe-area-inset-top)) 12px 0;gap:6px}.brand{font-size:16px;padding:6px 10px;border-radius:12px;background:rgba(251,243,223,.92);border:2px solid var(--ink)}
+ .online{min-height:40px;padding:0 10px}.online .st i{display:none}.top .btn-ic .lbl{display:none}
+ .hero-dd{right:50%;transform:translateX(50%);bottom:246px;width:min(200px,30dvh);animation:none}
+ .record{top:auto;bottom:270px;right:14px;font-size:13px}
+ .copy{left:0;right:0;top:auto;bottom:0;transform:none;width:auto;padding:4px 18px 16px;animation:none;background:var(--paper)}
+ .copy h2{font-size:30px;margin:8px 0 4px}.copy p{font-size:14px;margin-bottom:10px}
+ .feats{gap:6px;margin-bottom:10px}.feats li{font-size:12px;padding:4px 8px;border-width:1.5px}
+ .live{margin-bottom:12px}.live .st{font-size:13px}
+ .acts{display:grid;grid-template-columns:1fr auto}.go{min-height:54px;font-size:18px;padding:0 16px}.solo{min-height:54px;padding:0 12px;font-size:14px}
+ .arrow{display:none}
+ .dots{display:none;position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:calc(46% + 10px);gap:6px}.dots i{width:8px;height:8px;border-radius:50%;background:rgba(74,54,24,.3)}.dots i.on{width:22px;border-radius:9px;background:var(--ink)}
+ .tabs{gap:4px;padding:6px 8px max(8px,env(safe-area-inset-bottom))}
+ .tab{flex-direction:column;justify-content:center;gap:2px;min-height:58px;padding:4px;text-align:center;border:0;background:transparent}
+ .tab .thumb{display:none}.tab .t{align-items:center}.tab b{font-size:12px}.tab .st{display:none}
+ .tab .tab-ic{display:flex}
+ .tab[aria-selected=true]{box-shadow:inset 0 -4px 0 var(--tc);background:var(--paper2);border-radius:12px}
+ .demo{bottom:auto;top:calc(64px + env(safe-area-inset-top))}
+}
+.tab-ic{display:none}
+@media (max-height:480px) and (orientation:landscape){
+ .tab .thumb,.tab .st{display:none}.tab{min-height:44px}.tabs{padding-top:6px;padding-bottom:6px}
+ .copy{width:46vw;left:84px}.copy h2{font-size:30px;margin:6px 0}.copy p,.feats{display:none}.live{margin-bottom:8px}.go,.solo{min-height:46px;font-size:15px}
+ .hero-dd{width:30vh;right:9vw}.record{display:none}.arrow{width:44px;height:44px}.top .btn-ic .lbl{display:none}.online .st i{display:none}
+}
+</style>
+</head>
+<body>
+<!--SPRITE-->
+<div id="app"></div>
+<div class="toast" role="status"></div>
+<div class="about-back" hidden><section class="about" role="dialog" aria-modal="true" aria-labelledby="ab-t">
+<button type="button" class="x js-about-close" aria-label="닫기">닫기</button>
+<h2 id="ab-t">시안 C · 큰 무대 넘기기</h2>
+<p><b>한 줄 콘셉트:</b> 한 번에 한 체험을 화면 가득 크게 보여 주고, 그 체험 옷을 입은 큰 동동이가 맞이합니다. 아래 탭(휴대폰은 좌우로 넘기기)으로 바꿉니다.</p>
+<h3>바뀌는 점</h3><ul>
+<li>체험마다 배경 색 · 그림 · 동동이 옷이 통째로 바뀌어 분위기가 가장 크게 살아납니다.</li>
+<li>즐길거리 3개 · 함께하는 인원 · 들어가기 · 혼자 하기를 큰 글씨로 보여 줍니다.</li>
+<li>휴대폰은 앱처럼 아래 탭 4칸(등산 · 흡연장 · 크리스마스 · 준비 중)과 좌우 넘기기를 씁니다.</li></ul>
+<h3>장점</h3><ul><li>첫인상이 가장 강하고 광고·릴스 화면으로 쓰기 좋습니다.</li><li>휴대폰 한 손 조작이 편합니다.</li></ul>
+<h3>단점</h3><ul><li>한 번에 한 체험만 보여 다른 체험이 덜 눈에 띕니다. 탭이 5개를 넘으면 휴대폰 탭이 비좁아집니다.</li><li>체험마다 큰 배경 그림과 큰 동동이 그림이 필요해 그림 작업이 늘어납니다.</li></ul>
+<p class="lv">구현 난이도: 중간 (화면 전환 · 넘기기 · 큰 그림 준비, 약 3~4일 · 추정)</p>
+</section></div>
+<script>/*COMMON_JS*/</script>
+<script>
+const LIST=[...EXPS,NEXT];let cur=0;
+const tabIc=e=>`<span class="tab-ic">${ic(e.icon,'m')}</span>`;
+const short=e=>e.id==='next'?'준비 중':e.title.replace('온라인 ','');
+function render(dir=0){
+ const e=LIST[cur],next=e.id==='next';
+ const app=document.getElementById('app');
+ app.style.setProperty('--c',e.color);
+ app.innerHTML=`<section class="stage" aria-roledescription="carousel"><div class="bg">${ART[e.art].replace('<svg ','<svg preserveAspectRatio="xMidYMid slice" ')}</div>
+<header class="top"><h1 class="brand">온라인 메타버스</h1><span class="online">${SERVER_MODE==='on'?`<span class="st st-on">${ic('c-people','xs')}<b>${allTotal()}명</b><i>지금 접속 중</i></span>`:statusHTML(EXPS[0])}</span>${soundBtnHTML()}<button type="button" class="btn-ic js-settings" aria-label="설정">${ic('c-settings','m')}<span class="lbl">설정</span></button></header>
+${e.record?`<span class="record">${esc(e.record)}</span>`:''}
+<div class="hero-dd">${dongdong({outfit:e.outfit??'hike',wave:!next})}</div>
+<div class="copy" aria-live="polite"><span class="chip">${ic(e.icon,'s')}${esc(next?'곧 열려요':e.place)}</span><h2>${esc(e.title)}</h2><p>${esc(e.desc)}</p>
+${e.sub?`<ul class="feats">${e.sub.map(([n,l])=>`<li>${ic(n,'s')}${esc(l)}</li>`).join('')}</ul>`:''}
+${next?'':`<div class="live">${statusHTML(e,{long:true})}</div>`}
+<div class="acts">${next?`<a class="go" href="#" data-go="의견 보내기">${ic('c-fb-idea','m')}가 보고 싶은 곳 알려 주기</a>`:`<a class="go" href="#" data-go="${esc(e.title)}">${SERVER_MODE==='off'?'혼자 하기로 들어가기':'들어가기'}${ic('c-enter','m')}</a>${SERVER_MODE==='off'?'':`<a class="solo" href="#" data-go="${esc(e.title)} 혼자 하기">${ic('c-person','s')}혼자</a>`}`}</div></div>
+<button type="button" class="arrow prev" aria-label="이전 체험">${ic('c-left','m')}</button><button type="button" class="arrow next" aria-label="다음 체험">${ic('c-right','m')}</button>
+<div class="dots" aria-hidden="true">${LIST.map((_,i)=>`<i class="${i===cur?'on':''}"></i>`).join('')}</div></section>
+<nav class="tabs" role="tablist" aria-label="체험 고르기">${LIST.map((o,i)=>`<button type="button" role="tab" class="tab${o.id==='next'?' next':''}" aria-selected="${i===cur}" data-i="${i}" style="--tc:${o.color}">${tabIc(o)}<span class="thumb">${ART[o.art]}</span><span class="t"><b>${esc(short(o))}</b>${o.id==='next'?`<span class="st">${ic('c-lock','xs')}준비 중</span>`:statusHTML(o)}</span></button>`).join('')}</nav>`;
+ const go=i=>{cur=(i+LIST.length)%LIST.length;tick(640+cur*60);render();};
+ app.querySelectorAll('.tab').forEach(b=>b.onclick=()=>go(+b.dataset.i));
+ app.querySelector('.prev').onclick=()=>go(cur-1);app.querySelector('.next').onclick=()=>go(cur+1);
+ const st=app.querySelector('.stage');let sx=null;
+ st.addEventListener('touchstart',ev=>{sx=ev.touches[0].clientX;},{passive:true});
+ st.addEventListener('touchend',ev=>{if(sx==null)return;const dx=ev.changedTouches[0].clientX-sx;sx=null;if(Math.abs(dx)>50)go(cur+(dx<0?1:-1));});
+ bindSound();bindSettings();
+}
+addEventListener('keydown',ev=>{if(document.querySelector('.sheet-back:not([hidden])'))return;if(ev.key==='ArrowRight'){cur=(cur+1)%LIST.length;render();}if(ev.key==='ArrowLeft'){cur=(cur-1+LIST.length)%LIST.length;render();}});
+document.body.insertAdjacentHTML('beforeend',settingsHTML()+demoBarHTML());
+const q=new URLSearchParams(location.search).get('exp');if(q)cur=Math.max(0,LIST.findIndex(e=>e.id===q));
+render();bindDemo(render);
+</script>
+</body>
+</html>

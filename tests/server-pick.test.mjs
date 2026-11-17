@@ -122,7 +122,8 @@ test('모양: 줄·단추·닫기 44px 이상, 입력 16px(iOS 확대 방지), �
 });
 test('연결: 등산은 산 고르기 다음·HUD 👋, 흡연장은 👥 단추·로딩 뒤, 옛 주소는 건너뜀',()=>{
  const pick=read('../src/mountain-pick.js'),hp=read('../src/hiking-server-pick.js'),lui=read('../src/lounge/multi-ui.js'),lmain=read('../src/lounge/main.js');
- assert.match(pick,/hikingPickMode\(\)==='show'\)serverReady\.then\(\(\)=>hikingServerPick\(\)\.open\(\{closable:false\}\)\)/); // 서버 주소(공개 파일)를 고른 뒤 연다
+ assert.match(pick,/hikingPickMode\(\)==='show'\|\|hubPicked\(\)\)serverReady\.then\(openFirstHikingPick\)/); // 서버 주소(공개 파일)를 고른 뒤 연다(허브 선택이 있으면 창 없이, 11-17)
+ assert.match(hp,/function openFirstHikingPick\(\)\{const p=hikingServerPick\(\);if\(!applyHubPick\(p,hubChoice\)\)p\.open\(\{closable:false\}\);\}/);
  assert.match(lmain,/await serverReady;\nconst multi=createLoungeMulti/);
  assert.match(hp,/experience:'hiking'/);assert.match(hp,/__hikingMultiJoin=detail/);
  assert.match(lui,/createServerPick\(\{experience:'smoking'/);assert.ok(!/name="room"/.test(lui),'흡연장 방 이름 칸 없음');

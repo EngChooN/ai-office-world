@@ -94,7 +94,7 @@ npm run deploy         # gh-pages 브랜치에 강제 push (대표 지시가 있
 
 | 영역 | 파일 |
 |---|---|
-| 허브(체험 고르기) | `index.html` → `src/hub/main.js`, 화면 `src/hub/hub.js/.css`·`experiences.js`, 옛 주소 넘기기 `src/hub/legacy-redirect.js`. 검사 `tests/hub.test.mjs`·`tests/metaverse-hub.test.mjs`·`scripts/capture-hub.mjs` |
+| 허브(체험 고르기, 11-17 개선) | `index.html` → `src/hub/main.js`, 화면 `src/hub/hub.js/.css`(PC 마을 지도·휴대폰 카드 목록·판·설정 창)·`experiences.js`(체험 목록 + `NEXT_SLOT`), 그림 `art.js`·동동이 평면 그림 `dongdong.js`(임시), 서버 인원 `hub-servers.js`, 허브 → 체험 서버 넘기기 `handoff.js`(sessionStorage `aoworld:hub-pick`, 체험은 `takeHubPick`·`applyHubPick`), 세 체험 공용 소리·설정 `src/shared-settings.js`(`aoworld:settings:v1`), 옛 주소 넘기기 `src/hub/legacy-redirect.js`. 검사 `tests/hub.test.mjs`·`hub-improve.test.mjs`·`metaverse-hub.test.mjs`·`scripts/verify-hub.mjs` |
 | 온라인 흡연장 | `smoking/index.html` → `src/lounge/**` (§10) |
 | 시작·메인 루프 | `hiking/index.html` → `src/mountain-pick.js`(산 고르기, 수동 시작을 건다) → `src/main.js` (`<html data-style="toon">` 고정) |
 | 산 목록·완등·자유 설정 | `src/mountains.js`(산 배열), `src/summit-records.js`(localStorage `gwanak-summits`), `src/free-settings.js`(개발 버전 `DEV_BUILD`·값·시각 계산), `src/free-settings-ui.js`(판·도장·HUD 연결), `src/free-settings.css` |
@@ -138,6 +138,7 @@ npm run deploy         # gh-pages 브랜치에 강제 push (대표 지시가 있
 
 | 날짜 | 결정 | 근거 문서 |
 |---|---|---|
+| 11-17 | 허브 개선(대표 확정: PC 시안 B 마을 지도·휴대폰 시안 A 카드 목록·서버는 허브에서·소리 설정 하나로): 허브에서 고른 서버는 sessionStorage로 한 번만 넘기고 주소창에 안 붙임(직접 들어오면 예전 서버 창), 공용 설정 `aoworld:settings:v1`(sound·volume·music=캐럴·hubTime, 처음엔 체험별 옛 값을 이어 받음, 옛 키는 그대로 같이 씀), 흡연장·크리스마스 크기는 0.7 = 예전 크기. 동동이 평면 그림은 시안 그림 임시. 목록형 기준 폭 ≤760·높이 ≤500, 화질 칸 없음(개발 결정·대표 미확인) | 변경기록-2026-11-17-허브-개선.md |
 | 11-17 | 크리스마스 눈썰매·눈싸움 개선(월드개발, 설계 v1 추천안 그대로·대표 미확인): 썰매 산은 마을 경계(북쪽 통로 \|x\|<25)에 맞춰 5줄 지그재그(결승 192m·출발 18m), 집 (-8.5,-21)→(-29,-22), 썰매 타는 사람(act.sl 5·6)만 서버 순간이동 한도 14m/s, act.sl 1~4 출발대·5 타는 중·6 뒷자리·cr 웅크림·tm 팀, 별 ★★★ 25초, 팀 색은 발밑 빛(옷 색은 월드아트 후속) | 변경기록-2026-11-17-눈썰매-눈싸움-개선.md |
 | 11-16 | 크리스마스 캐럴(월드개발): 소리-출처-v1 1순위 미 공군 군악대 8곡을 원본 그대로 `public/sounds/christmas/carol/`, `<audio>` 흘려 재생(공용 `createDeck`에 `start`·`gain`·`prime` 추가, 관악산 FM 동작 같음), 모두 같은 시계로 같은 곡, 🔊·캐럴 끄기면 받기도 멈춤, 버스 0.24·모닥불 앉으면 0.12(개발 결정·대표 미확인), 🎵 창에 곡마다 출처 | 변경기록-2026-11-16-크리스마스-캐럴.md |
 | 11-16 | 크리스마스 놀이(월드개발, 숫자는 개발 결정·대표 미확인): 선물 우체통(5분 3개·같은 사람 5분 1개·모두에게 30분 1번, 끊긴 사람 몫 60초 보관, 오너먼트 선물 = 트리 몫과 따로), 모닥불 8자리(겹치면 서버가 seat:no), 눈사람(1m에 반지름 4.5cm·협동 1.5/2배·3분 녹기·전시 8), 눈싸움(판정은 서버·마당 안만·0.8초), 썰매(최고 9m/s·3줄·둘이 타기는 앞사람 수락). 소리는 모두 Web Audio 합성(외부 음원 없음), 캐럴은 다음 단계. 공용 `hiking-chat-ui` `bubbleFor` 옵션·`spots.js` `POSE_TOOLS` 내보내기(등산·흡연장 동작 같음) | 변경기록-2026-11-16-크리스마스-놀이.md |

@@ -16,14 +16,15 @@ export const FIRE_HEAR=12; // 모닥불이 들리는 거리(m)
 export function hearGain(d,radius=FIRE_HEAR){if(!Number.isFinite(d))return 1;if(d<=1)return 1;if(d>=radius)return 0;const k=1-(d-1)/(radius-1);return k*k;}
 const baseUrl=()=>{try{return import.meta.env?.BASE_URL??'/';}catch{return '/';}};
 
-export function createXmasAudio({muted=false,carol:carolOn=true,win=globalThis.window,doc=globalThis.document,windUrl=`${baseUrl()}sounds/ambient/wind-forest-loop.flac`,carolBase=`${baseUrl()}${CAROL_DIR}`,carols=CAROLS,now=()=>Date.now(),random=Math.random}={}){
+export function createXmasAudio({muted=false,volume=1,carol:carolOn=true,win=globalThis.window,doc=globalThis.document,windUrl=`${baseUrl()}sounds/ambient/wind-forest-loop.flac`,carolBase=`${baseUrl()}${CAROL_DIR}`,carols=CAROLS,now=()=>Date.now(),random=Math.random}={}){
  let ctx=null,master=null,noiseBuf=null,fire=null,sled=null,wind=null,unlocked=false,off=!!muted,carol=null,carolDeck=null,carolState='off',tapM=null,tapC=null;
  const listener={x:0,z:0};
+ let vol=Number.isFinite(+volume)?Math.max(0,+volume):1;
  const stats={played:0,byName:{},fireGain:0,unlocked:false,carol:{on:!!carolOn,state:'off',index:-1,title:null,level:0}};
  function unlock(){
   if(unlocked)return;unlocked=true;stats.unlocked=true;
   try{const AC=win.AudioContext||win.webkitAudioContext;if(!AC)return;ctx=new AC();}catch{return;}
-  master=ctx.createGain();master.gain.value=off?0:.9;master.connect(ctx.destination);
+  master=ctx.createGain();master.gain.value=off?0:.9*vol;master.connect(ctx.destination);
   // 측정용 탭(시험·진단, 출력 없음): 마스터 뒤 전체 / 캐럴 버스
   tapM=ctx.createAnalyser();tapM.fftSize=2048;master.connect(tapM);
   carol=ctx.createGain();carol.gain.value=CAROL_LEVEL;carol.connect(master);tapC=ctx.createAnalyser();tapC.fftSize=2048;carol.connect(tapC);
@@ -98,7 +99,9 @@ export function createXmasAudio({muted=false,carol:carolOn=true,win=globalThis.w
  return {
   play,stats,
   get unlocked(){return unlocked;},get muted(){return off;},
-  setMuted(v){off=!!v;if(master)master.gain.setTargetAtTime(off?0:.9,ctx.currentTime,.05);syncCarol();},
+  setMuted(v){off=!!v;if(master)master.gain.setTargetAtTime(off?0:.9*vol,ctx.currentTime,.05);syncCarol();},
+  // 마스터 배수(세 체험 공용 소리 크기 → volumeGain, 기본 1 = 예전 크기, 11-17)
+  setVolume(v){vol=Number.isFinite(+v)?Math.max(0,+v):1;if(master)master.gain.setTargetAtTime(off?0:.9*vol,ctx.currentTime,.05);},get volume(){return vol;},
   get carolOn(){return !!carolOn;},
   setCarol(v){carolOn=!!v;syncCarol();},
   // 지금 캐럴 곡(「소리 출처」·시험용)

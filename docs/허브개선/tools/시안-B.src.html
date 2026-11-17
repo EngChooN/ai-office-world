@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>허브 시안 B — 동동이 마을 지도</title>
+<style>/*ICONS_CSS*/</style>
+<style>/*COMMON_CSS*/</style>
+<style>
+/* 시안 B: 체험을 한 장의 손그림 지도 위 장소로 놓고, 동동이가 가운데서 기다린다. 장소를 누르면 옆(휴대폰은 아래) 판에 자세한 내용과 서버 */
+html,body{height:100%;overflow:hidden}
+#app{position:fixed;inset:0;display:grid;grid-template-columns:1fr 420px}
+.map{position:relative;overflow:hidden;background:#efe2bf;background-image:linear-gradient(rgba(180,149,99,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(180,149,99,.16) 1px,transparent 1px);background-size:48px 48px}
+.map>svg.paths{position:absolute;inset:0;width:100%;height:100%}
+.top{position:absolute;left:0;right:0;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:max(14px,env(safe-area-inset-top)) 18px 0 max(18px,env(safe-area-inset-left))}
+.brand{display:flex;align-items:center;gap:10px;margin:0;padding:6px 14px 6px 8px;border:2px solid var(--ink);border-radius:14px;background:var(--paper);box-shadow:0 2px 0 var(--ink);font-size:18px;font-weight:800;letter-spacing:-.03em}
+.brand small{display:block;font-size:12px;font-weight:600;color:var(--ink2)}
+.brand .compass{width:34px;height:34px}
+.online{margin-left:auto;display:flex;align-items:center;min-height:44px;padding:0 14px;border:2px solid var(--ink);border-radius:99px;background:var(--paper);box-shadow:0 2px 0 var(--ink)}
+.place{position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);width:clamp(150px,23vw,380px);padding:0;border:0;background:none;cursor:pointer;--ic-point:var(--c);transition:transform .15s}
+.place:hover{transform:translate(-50%,-52%)}
+.isle{display:block;position:relative;line-height:0;border:3px solid var(--ink);border-radius:34px 52px 30px 48px/40px 30px 50px 36px;overflow:hidden;box-shadow:0 6px 0 rgba(74,54,24,.35);background:var(--paper)}
+.isle svg{display:block;width:100%;height:auto;aspect-ratio:2/1.2}
+.place.on .isle{border-color:var(--c);box-shadow:0 0 0 5px var(--paper),0 0 0 9px var(--c),0 8px 0 rgba(74,54,24,.35)}
+.flag{position:absolute;left:50%;bottom:-20px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;white-space:nowrap}
+.flag>b{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:2px solid var(--ink);border-radius:10px;background:var(--c);color:#fff8e8;font-size:15px;font-weight:800;box-shadow:0 2px 0 var(--ink);--ic-point:rgba(255,255,255,.3)}
+.flag>b .ic{color:#fff8e8}
+.flag .st{padding:3px 9px;border-radius:99px;background:var(--paper);border:1.5px solid var(--rule);font-size:12px}
+.place.next .isle{border-style:dashed;box-shadow:none}.place.next .flag>b{background:var(--paper);color:var(--ink)}.place.next .flag>b .ic{color:var(--ink)}
+.me{position:absolute;left:50%;top:50%;transform:translate(-50%,-58%);width:clamp(96px,10vw,150px);pointer-events:none;text-align:center}
+.me .dd{width:100%;height:auto;animation:hop .45s ease-out}
+.bubble{position:absolute;left:62%;top:-22px;white-space:nowrap;padding:6px 10px;border:2px solid var(--ink);border-radius:12px;background:#fffaf0;font-size:14px;font-weight:800}
+.bubble:after{content:"";position:absolute;left:12px;bottom:-9px;border:8px solid transparent;border-top-color:var(--ink);border-bottom:0}
+@keyframes hop{0%{transform:translateY(0)}40%{transform:translateY(-14px)}100%{transform:translateY(0)}}
+.deco{position:absolute;pointer-events:none}
+/* 옆 판 */
+.panel{position:relative;z-index:6;display:flex;flex-direction:column;background:var(--paper);border-left:3px solid var(--ink);box-shadow:-6px 0 20px var(--shadow);overflow:auto;padding:max(16px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) 90px 18px;--ic-point:var(--c)}
+.p-top{display:flex;gap:8px;justify-content:flex-end}
+.p-art{position:relative;margin:14px 0 12px;line-height:0;border:2px solid var(--ink);border-radius:14px;overflow:hidden}
+.p-art svg:first-child{width:100%;height:auto;aspect-ratio:2/1}
+.p-art .dd{position:absolute;right:12px;bottom:-4px;width:84px;height:104px}
+.p-place{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:var(--c)}
+.panel h2{margin:4px 0 6px;font-size:28px;letter-spacing:-.03em}
+.p-desc{margin:0 0 10px;color:var(--ink2);font-size:15px;line-height:1.5}
+.feats{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;padding:0;list-style:none}
+.feats li{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:99px;background:var(--soft);font-size:13px;font-weight:700}
+.p-h{display:flex;align-items:center;justify-content:space-between;margin:4px 0 8px;font-size:14px;font-weight:800}
+.srvs .srv{min-height:44px;padding:0 10px;border:2px solid var(--rule);border-radius:10px;background:#fffaf0;cursor:pointer;text-align:left;width:100%}
+.srvs .srv.pick{border-color:var(--c);background:var(--soft)}
+.srvs .srv-full{cursor:not-allowed;opacity:.7}
+.p-go{display:grid;gap:8px;margin-top:14px}
+.go{display:flex;align-items:center;justify-content:center;gap:8px;min-height:54px;border:2px solid var(--ink);border-radius:12px;background:var(--c);color:#fff8e8;font-size:17px;font-weight:800;text-decoration:none;box-shadow:0 3px 0 var(--ink);--ic-point:rgba(255,255,255,.3)}
+.go .ic{color:#fff8e8}
+.more{margin-top:auto;padding-top:22px}.more h3{margin:0 0 8px;font-size:13px;color:var(--ink2)}.more ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}.more button{width:100%;min-height:44px;display:flex;align-items:center;gap:8px;padding:0 10px;border:2px solid var(--rule);border-radius:10px;background:transparent;cursor:pointer;font-weight:700;text-align:left;--ic-point:var(--mc)}.more button .st{margin-left:auto}
+.solo{display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border:2px dashed var(--edge);border-radius:12px;font-weight:700;text-decoration:none;color:var(--ink2)}
+.panel.is-next .go{background:var(--paper);color:var(--ink)}.panel.is-next .go .ic{color:var(--ink)}
+.grip{display:none}
+/* 휴대폰 세로: 지도 위, 판 아래 */
+@media (max-width:760px){
+ #app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
+ .top{padding:max(10px,env(safe-area-inset-top)) 10px 0 10px;gap:6px}.brand{font-size:15px;padding:4px 10px 4px 6px}.brand small{display:none}.brand .compass{width:26px;height:26px}
+ .online{min-height:40px;padding:0 10px}.online .st i{display:none}
+ .top .btn-ic .lbl{display:none}
+ .place{width:40vw;top:calc(var(--my) );left:var(--mx)}
+ .flag{bottom:-14px}.flag>b{font-size:13px;padding:4px 8px}.flag .st{font-size:11px;padding:2px 7px}.flag .st span:not(b){}
+ .me{width:80px;top:53%}.bubble{font-size:12px;top:auto;bottom:-30px;left:50%;transform:translateX(-50%)}.bubble:after{bottom:auto;top:-9px;left:50%;margin-left:-8px;border-top:0;border-bottom:8px solid var(--ink)}
+ .demo{bottom:auto;top:calc(64px + env(safe-area-inset-top))}
+ .feats,.p-desc{display:none}.srvs .srv{min-height:42px}.p-h{margin-top:6px}
+ .panel{border-left:0;border-top:3px solid var(--ink);border-radius:20px 20px 0 0;box-shadow:0 -6px 20px var(--shadow);max-height:52dvh;padding:6px 16px calc(14px + env(safe-area-inset-bottom))}
+ .more{display:none}
+ .grip{display:block;width:44px;height:5px;border-radius:9px;background:var(--rule);margin:2px auto 6px}
+ .p-top{display:none}
+ .p-art{display:none}
+ .panel h2{font-size:22px;margin:2px 0 4px}.p-desc{font-size:13.5px;margin-bottom:8px}
+ .feats{margin-bottom:10px}.feats li{font-size:12px;padding:4px 8px}
+ .go{min-height:50px;font-size:16px}
+}
+@media (max-height:480px) and (orientation:landscape){
+ #app{grid-template-columns:1fr 330px}.panel{padding:10px 14px 70px}.p-art{display:none}.panel h2{font-size:20px}.p-desc,.feats{display:none}
+ .place{width:20vw}.flag .st{display:none}.me{width:64px}.bubble{display:none}.brand small{display:none}.top .btn-ic .lbl{display:none}
+}
+</style>
+</head>
+<body>
+<!--SPRITE-->
+<div id="app"><div class="map" id="map"></div><aside class="panel" id="panel" aria-live="polite"></aside></div>
+<div class="toast" role="status"></div>
+<div class="about-back" hidden><section class="about" role="dialog" aria-modal="true" aria-labelledby="ab-t">
+<button type="button" class="x js-about-close" aria-label="닫기">닫기</button>
+<h2 id="ab-t">시안 B · 동동이 마을 지도</h2>
+<p><b>한 줄 콘셉트:</b> 체험을 한 장의 손그림 지도 위 장소로 놓고, 가운데 동동이가 고른 곳의 옷으로 갈아입으며 기다립니다.</p>
+<h3>바뀌는 점</h3><ul>
+<li>장소(섬)를 누르면 옆 판(휴대폰은 아래 판)에 설명 · 즐길거리 · 서버 3개의 인원이 나옵니다.</li>
+<li>서버를 허브에서 바로 고를 수 있습니다(덜 붐비는 서버를 미리 골라 둠). 지금의 「서버 고르기 화면」 한 단계를 줄일 수 있습니다.</li>
+<li>가운데 동동이가 고른 체험의 옷(등산복·회사원 옷·산타 옷)으로 바뀝니다.</li>
+<li>넷째 장소는 공사 중인 빈 땅입니다. 체험이 늘면 지도에 땅이 하나씩 열립니다.</li></ul>
+<h3>장점</h3><ul><li>「여러 곳이 있는 하나의 세계」라는 메타버스 느낌이 가장 강합니다.</li><li>서버 인원을 장소마다 자세히 보여 줘 사람이 있는 곳으로 가기 쉽습니다.</li></ul>
+<h3>단점</h3><ul><li>장소가 6개를 넘으면 지도를 넓히거나 다시 그려야 합니다(그림 작업이 계속 따라옴).</li><li>휴대폰에서는 지도와 아래 판이 화면을 나눠 써서 장소 그림이 작아집니다.</li><li>서버 고르기 흐름이 바뀌므로 세 체험의 입장 흐름도 같이 고쳐야 합니다.</li></ul>
+<p class="lv">구현 난이도: 중상 (지도 그림 · 장소 배치 · 아래 판 · 서버 고르기 흐름 변경, 약 4~6일 · 추정)</p>
+</section></div>
+<script>/*COMMON_JS*/</script>
+<script>
+// 장소 자리(PC x,y / 휴대폰 mx,my, 지도 칸 기준 %)
+const POS={hiking:[24,30,25,28],smoking:[76,30,75,28],christmas:[24,76,25,77],next:[76,76,75,77]};
+let sel='hiking',pickSrv=null;
+const all=()=>[...EXPS,NEXT];
+const byId=id=>all().find(e=>e.id===id);
+const bestServer=e=>{const ok=e.servers.map((s,i)=>({s,i})).filter(o=>o.s.count<o.s.max);const busy=ok.filter(o=>o.s.count<o.s.max*.8).sort((a,b)=>b.s.count-a.s.count);return (busy[0]??ok[0])?.i??null;};
+const compass=`<svg class="compass" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="#fbf3df" stroke="#4a3618" stroke-width="2.5"/><path d="M20 6 L24 20 L20 34 L16 20Z" fill="#b8452e" stroke="#4a3618" stroke-width="1.5" stroke-linejoin="round"/><path d="M20 20 L24 20 L20 34 L16 20Z" fill="#fbf3df"/><circle cx="20" cy="20" r="2" fill="#4a3618"/></svg>`;
+const tree=(x,y,s=1)=>`<svg class="deco" style="left:${x}%;top:${y}%;width:${28*s}px" viewBox="0 0 28 34" aria-hidden="true"><path d="M14 2 L26 26 H2Z" fill="#5f9a73" stroke="#4a3618" stroke-width="2" stroke-linejoin="round"/><rect x="12" y="26" width="4" height="6" fill="#6b4a2e"/></svg>`;
+function mapHTML(){
+ const c=[50,52];
+ const paths=all().map(e=>{const p=POS[e.id];const mob=matchMedia('(max-width:760px)').matches;const x=mob?p[2]:p[0],y=mob?p[3]:p[1];return `<path d="M${c[0]} ${c[1]} Q${(c[0]+x)/2} ${y} ${x} ${y}" fill="none" stroke="#b49563" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 12" vector-effect="non-scaling-stroke"/>`;}).join('');
+ return `<svg class="paths" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M-5 58 C 20 50, 30 66, 50 60 S 80 48, 105 56" fill="none" stroke="#bfe3ee" stroke-width="26" stroke-linecap="round" vector-effect="non-scaling-stroke" opacity=".9"/>${paths}</svg>
+${tree(6,52)}${tree(9,48,.8)}${tree(92,50)}${tree(45,14,.9)}${tree(58,88,.8)}${tree(40,90)}
+<header class="top"><h1 class="brand">${compass}<span>온라인 메타버스<small>동동이 마을 지도</small></span></h1>
+<span class="online">${SERVER_MODE==='on'?`<span class="st st-on">${ic('c-people','xs')}<b>${allTotal()}명</b><i>지금 접속 중</i></span>`:statusHTML(EXPS[0])}</span>${soundBtnHTML()}<button type="button" class="btn-ic js-settings" aria-label="설정">${ic('c-settings','m')}<span class="lbl">설정</span></button></header>
+${all().map(e=>{const p=POS[e.id];return `<button type="button" class="place${e.id==='next'?' next':''}${sel===e.id?' on':''}" data-id="${e.id}" style="--x:${p[0]}%;--y:${p[1]}%;--mx:${p[2]}%;--my:${p[3]}%;--c:${e.color}" aria-pressed="${sel===e.id}">
+<span class="isle">${ART[e.art]}</span><span class="flag"><b>${ic(e.icon,'s')}${esc(e.id==='next'?'준비 중':e.title.replace('온라인 ',''))}</b>${e.id==='next'?`<span class="st">${ic('c-lock','xs')}곧 열려요</span>`:statusHTML(e)}</span></button>`;}).join('')}
+<div class="me">${dongdong({outfit:byId(sel).outfit??'hike',wave:true})}<span class="bubble">${sel==='next'?'여긴 아직 공사 중!':`${esc(byId(sel).place)}로 갈까?`}</span></div>`;
+}
+function panelHTML(){
+ const e=byId(sel);const next=e.id==='next';
+ if(!next&&(pickSrv===null||e.servers[pickSrv]?.count>=e.servers[pickSrv]?.max))pickSrv=bestServer(e);
+ const srvList=next?'':`<div class="p-h"><span>함께할 서버</span>${SERVER_MODE==='on'?`<span class="st">${ic('c-people','xs')}<b>${total(e)}</b>/${capOf(e)}명</span>`:''}</div><ul class="srvs">${SERVER_MODE==='on'?e.servers.map((s,i)=>{const full=s.count>=s.max;return `<li><button type="button" class="srv${full?' srv-full':''}${i===pickSrv?' pick':''}" data-srv="${i}" ${full?'disabled':''} aria-pressed="${i===pickSrv}"><span class="srv-name">${ic(full?'c-net-full':i===pickSrv?'c-check':'c-net-ok','s')}${esc(s.name)}</span><span class="srv-bar"><i style="width:${Math.round(s.count/s.max*100)}%"></i></span><span class="srv-n">${full?'꽉 참':`${s.count}/${s.max}`}</span></button></li>`;}).join(''):serverRows(e)}</ul>`;
+ const go=next?`<a class="go" href="#" data-go="의견 보내기">${ic('c-fb-idea','m')}가 보고 싶은 곳 알려 주기</a>`
+  :SERVER_MODE==='on'&&pickSrv!==null?`<a class="go" href="#" data-go="${esc(e.servers[pickSrv].name)}">${esc(e.servers[pickSrv].name.split(' ').pop())}로 들어가기${ic('c-enter','m')}</a><a class="solo" href="#" data-go="${esc(e.title)} 혼자 하기">${ic('c-person','s')}혼자 하기</a>`
+  :`<a class="go" href="#" data-go="${esc(e.title)} 혼자 하기">${ic('c-person','m')}혼자 하기로 들어가기</a>`;
+ return `<div class="grip"></div>
+<div class="p-art">${ART[e.art]}${dongdong({outfit:e.outfit??'hike'})}</div>
+<span class="p-place">${ic(e.icon,'s')}${esc(e.place)}</span><h2>${esc(e.title)}</h2><p class="p-desc">${esc(e.desc)}</p>
+${e.sub?`<ul class="feats">${e.sub.map(([n,l])=>`<li>${ic(n,'s')}${esc(l)}</li>`).join('')}</ul>`:''}${srvList}<div class="p-go">${go}</div>
+<nav class="more" aria-label="다른 곳"><h3>다른 곳 둘러보기</h3><ul>${all().filter(o=>o.id!==e.id).map(o=>`<li><button type="button" data-jump="${o.id}" style="--mc:${o.color}">${ic(o.icon,'s')}${esc(o.title)}${o.id==='next'?'':statusHTML(o)}</button></li>`).join('')}</ul></nav>`;
+}
+function render(){
+ const e=byId(sel);
+ const map=document.getElementById('map'),panel=document.getElementById('panel');
+ map.innerHTML=mapHTML();panel.innerHTML=panelHTML();
+ panel.style.setProperty('--c',e.color);panel.style.setProperty('--soft',e.soft);panel.classList.toggle('is-next',e.id==='next');
+ map.querySelectorAll('.place').forEach(b=>b.onclick=()=>{if(sel!==b.dataset.id){sel=b.dataset.id;pickSrv=null;tick(700);render();}});
+ panel.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>{sel=b.dataset.jump;pickSrv=null;tick(700);render();});
+ panel.querySelectorAll('[data-srv]').forEach(b=>b.onclick=()=>{pickSrv=+b.dataset.srv;tick(620);render();});
+ bindSound();bindSettings();
+}
+document.body.insertAdjacentHTML('beforeend',settingsHTML()+demoBarHTML());
+render();bindDemo(render);addEventListener('resize',()=>{clearTimeout(window._r);window._r=setTimeout(render,120);});
+</script>
+</body>
+</html>

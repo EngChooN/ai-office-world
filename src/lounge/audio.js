@@ -42,8 +42,9 @@ export const PITCH_SPREAD=.03; // 같은 소리를 다시 낼 때 음높이 ±3%
 const fetchBytes=url=>fetch(url).then(r=>{if(!r.ok)throw new Error(`HTTP ${r.status}`);return r.arrayBuffer();});
 const baseUrl=()=>{try{return import.meta.env?.BASE_URL??'/';}catch{return '/';}};
 
-export function createLoungeAudio({muted=false,base=`${baseUrl()}sounds/lounge/`,load=fetchBytes,random=Math.random}={}){
+export function createLoungeAudio({muted=false,volume=1,base=`${baseUrl()}sounds/lounge/`,load=fetchBytes,random=Math.random}={}){
  let ctx=null,master=null,sfx=null,amb=null,noise=null,brown=null,unlocked=false;
+ let vol=Number.isFinite(+volume)?Math.max(0,+volume):1; // 마스터 배수(세 체험 공용 소리 크기 → volumeGain, 기본 1 = 예전 크기)
  const listener={x:0,z:0,yaw:0};
  const stats={played:0,skipped:0,file:0,synth:0,byName:{}};
  const buffers=new Map(),loadErrors=[];let loading=null; // 버퍼는 이름마다 한 번만 만든다(휴대폰 메모리)
@@ -60,7 +61,7 @@ export function createLoungeAudio({muted=false,base=`${baseUrl()}sounds/lounge/`
  const unlockEvents=['pointerdown','keydown','touchend'];
  function unlock(){
   if(!ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
-   ctx=new AC();master=ctx.createGain();master.gain.value=muted?0:1;
+   ctx=new AC();master=ctx.createGain();master.gain.value=muted?0:vol;
    // 너무 큰 소리를 막는 부드러운 압축
    const comp=ctx.createDynamicsCompressor();comp.threshold.value=-18;comp.ratio.value=3;master.connect(comp).connect(ctx.destination);
    sfx=ctx.createGain();sfx.gain.value=.9;sfx.connect(master);amb=ctx.createGain();amb.gain.value=0;amb.connect(master);
@@ -189,10 +190,12 @@ export function createLoungeAudio({muted=false,base=`${baseUrl()}sounds/lounge/`
   amb$.nextWind-=dt;if(amb$.nextWind<=0){amb$.nextWind=25+Math.random()*40;if(night<.5&&Math.random()<.5)farHorn();}
  }
 
- function setMuted(b){muted=!!b;if(master)master.gain.setTargetAtTime(muted?0:1,now(),.05);}
+ function setMuted(b){muted=!!b;if(master)master.gain.setTargetAtTime(muted?0:vol,now(),.05);}
+ // 마스터 배수(세 체험 공용 소리 크기, 11-17)
+ function setVolume(v){vol=Number.isFinite(+v)?Math.max(0,+v):1;if(master)master.gain.setTargetAtTime(muted?0:vol,now(),.05);}
 
  return {play,setMuted,update,unlock,resume:unlock,duck,
-  get muted(){return muted;},
+  get muted(){return muted;},setVolume,get volume(){return vol;},
   status(){return {context:ctx?.state??'입력 대기',muted,unlocked,ambient:+amb$.level.toFixed(2),...stats,byName:{...stats.byName},
    files:{loaded:buffers.size,total:Object.keys(LOUNGE_FILES).length,errors:[...loadErrors],burn:+burn.level.toFixed(3)}};},
   ready:()=>loading, // 파일 불러오기가 끝나면 풀리는 약속(시험·점검용, 입력 전이면 null)
