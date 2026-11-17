@@ -21,6 +21,7 @@
 import {sanitizeName,anonymousName,REPORT_REASONS,GESTURES,FLAG,parseExperience,messageAllowed,CHAT,sanitizeChat,createChatGuard,sanitizeSmoke,sanitizeAct,SERVERS,EXPERIENCES,EXPERIENCE_MAX,findServer,serverRoomName,PAIR} from '../src/multi-protocol.js';
 import {createTreeState,TREE_RULES} from '../src/christmas/tree-state.js';
 import {createRoomPlay} from '../src/christmas/room-play.js';
+import {checkLoungeAct} from '../src/lounge/room-rules.js'; // 흡연장 자리 판정(11-17): 벤치 좌판·난간 지점·자판기는 먼저 온 사람
 
 export const ROOM_DEFAULTS=Object.freeze({
  maxPerRoom:30,           // 한 방 최대 인원(11-13 대표 지시 20 → 30)
@@ -111,6 +112,7 @@ export function createRooms(opts={}){
  }
  function enter(c,roomName){
   const room=roomOf(c.experience,roomName);c.room=room;room.members.set(c.id,c);
+  if(c.experience==='smoking'&&c.act){const r=checkLoungeAct(null,c.act,[...room.members.values()].filter(m=>m!==c).map(m=>m.act));if(r.deny.length){c.act=r.a;for(const d of r.deny)send(c,d);}} // 끊긴 사이 남이 차지한 자리로 돌아오면 일으켜 세운다(11-17)
   // 새로 온 사람에게 지금 있는 사람 이름과 마지막 자리, 다른 사람에게 새로 온 사람 이름
   for(const m of room.members.values())if(m!==c){send(c,nameRow(m));if(m.state)send(c,{t:'snap',p:[m.state]});if(m.smoke)send(c,{t:'lounge:smoke',id:m.id,...m.smoke});if(m.act)send(c,{t:'act',id:m.id,a:m.act});}
   toRoom(room,nameRow(c),c);
@@ -286,6 +288,7 @@ export function createRooms(opts={}){
    case 'act':{ // 행동 상태(11-10): 자세·소품·동작. 체험별 칸만 받아 기억하고 다른 사람에게 중계
     let a=sanitizeAct(c.experience,m.a);if(!a){stats.invalid++;return;}
     if(c.experience==='christmas'){const r=xmasOf(room).play.checkAct(member(c),a,playCtx(room));a=r.a;for(const d of r.deny)send(c,d);if(r.deny.length)send(c,{t:'act',id:c.id,a});} // 남이 쓰는 모닥불 자리·썰매 줄은 빼고, 고친 값을 본인에게도
+    if(c.experience==='smoking'){const r=checkLoungeAct(c.act,a,[...room.members.values()].filter(m=>m!==c).map(m=>m.act));a=r.a;for(const d of r.deny)send(c,d);} // 남이 먼저 앉은 좌판·기댄 난간·뽑는 중인 자판기는 늦은 사람에게 lounge:no(11-17)
     c.act=a;stats.acts++;toRoom(room,{t:'act',id:c.id,a},c);return;}
    case 'tree:put':case 'tree:undo':case 'tree:star':{ // 크리스마스 트리(판정은 서버)
     const x=xmasOf(room),tree=x.tree,who=c.hidden()?anonymousName(c.id,c.experience):c.name;

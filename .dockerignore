@@ -12,6 +12,7 @@
 !src/christmas/sled-race.js
 !src/christmas/sled-course.js
 !src/christmas/gondola.js
+!src/lounge/room-rules.js
 !server/ws.mjs
 !server/rooms.mjs
 !server/multi-server.mjs

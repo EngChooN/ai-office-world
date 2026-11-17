@@ -3,6 +3,8 @@
 :root[data-hud-time=night]{--ic-point:#f3a48c}
 :root{--ic-paper:var(--paper,#fbf3df)}
 .ic{display:inline-block;flex:none;vertical-align:-.18em;color:inherit;overflow:visible}
+/* 아이콘 그림은 누르는 대상이 되지 않는다(11-17): 누르면 늘 둘레 단추가 event.target — <svg><use>를 대상으로 주는 옛 사파리에서도 단추 처리가 같게 */
+svg.ic,.ic-emoji{pointer-events:none}
 .ic-xs{width:14px;height:14px;--ic-sw:2.57}
 .ic-s{width:18px;height:18px;--ic-sw:2.33}
 .ic-m{width:22px;height:22px;--ic-sw:2.18}
