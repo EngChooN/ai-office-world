@@ -270,3 +270,23 @@ html.xh-sledding .xh-top,html.xh-sledding .xh-tr,html.xh-sledding .xh-tags{displ
 .xh.touch .xg-bar .xg-c{font-size:22px}.xh.touch .xg-bar .xg-l{font-size:13px}.xh.touch .xg-bar .xg-r{font-size:11.5px}
 .xh.touch .xg-note{left:0;transform:none}
 html.xh-sledding .xc-chat,html.xh-sledding .hc-btn{display:none!important}
+/* ── 11-17 눈싸움 한 판(fight-ui.js) */
+html.xf-match .hc-btn,html.xf-match .xc-chat{display:none!important}
+.xfm-join{pointer-events:auto;position:absolute;left:calc(var(--sl) + 16px);top:calc(var(--st) + 128px);display:flex;align-items:center;min-height:48px;padding:0 16px;border:0;border-radius:24px;background:var(--stamp);color:#fff;font:900 15px var(--nb-font);box-shadow:1px 3px 0 var(--stamp-d),var(--soft)}
+.xfm-join.dim{background:var(--paper2);color:var(--ink2);box-shadow:var(--lift)}
+.xfm-wait{pointer-events:auto;position:absolute;left:50%;top:calc(var(--st) + 110px);transform:translateX(-50%);width:min(360px,calc(100vw - 28px));padding:10px 12px;border-radius:14px;background:var(--paper);box-shadow:var(--lift),var(--soft);text-align:center}
+.xfm-wait p{margin:2px 0 8px;font-weight:900}.xfm-wait small{font-weight:700;color:var(--ink2)}.xfm-wait .xh-row{justify-content:center;flex-wrap:wrap}
+.xfm-leave{pointer-events:auto;position:absolute;right:calc(var(--sr) + 14px);top:calc(var(--st) + 70px);display:flex;align-items:center;gap:4px;min-height:44px;padding:0 12px;border:0;border-radius:22px;background:var(--paper);box-shadow:var(--lift),var(--soft);font:900 13px var(--nb-font)}
+.xh.touch .xfm-leave{min-height:56px;min-width:56px;flex-direction:column;justify-content:center;gap:0;padding:0 8px;font-size:11px;border-radius:28px}
+.xg-bar.match .xg-l,.xg-bar.match .xg-r{display:flex;align-items:center;gap:6px;font-size:22px;color:var(--ink)}.xg-bar.match .xg-r{justify-content:flex-end}
+.tmdot{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--tm);box-shadow:0 0 0 2px #fff}
+.xfm-dots{display:flex;justify-content:center;gap:5px;margin-top:2px}.xfm-dots .rd{display:block;width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ink2);background:var(--tm)}
+.xfm-score{font:900 40px ui-monospace,Menlo,var(--nb-font)}.xfm-rr{display:flex;gap:6px;justify-content:center}.xfm-rr .rd{font-style:normal;font-size:12px;font-weight:900;padding:2px 8px;border-radius:10px;background:var(--tm);color:#fff}
+.xfm-titles{list-style:none;margin:8px 0;padding:0;font-size:13.5px}.xfm-titles li{display:flex;gap:8px;align-items:baseline;padding:3px 4px}.xfm-titles b{color:var(--stamp)}.xfm-titles span{flex:1;text-align:left;font-weight:900}.xfm-titles em{font-style:normal;color:var(--ink2);font-size:12px}
+.xfm-rows li{align-items:center}.xfm-rows .tm{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--tm);flex:none}.xfm-rows em{font-style:normal;font-size:12px;color:var(--ink2)}
+.xfm .xg-card,.xfm .xfm-wait,.xfm .xfm-confirm{z-index:3}
+@media (orientation:portrait) and (max-width:600px){.xfm-join{top:calc(var(--st) + 190px)}}
+.xh.touch .xfm-leave{right:auto;left:calc(var(--sl) + 12px);top:calc(var(--st) + 104px)}
+@media (orientation:landscape) and (max-height:540px){.xh.touch .xfm-leave{top:calc(var(--st) + 64px)}}
+html.xf-match .xh-top{display:none}
+.xh.touch .xfm-leave{top:calc(var(--st) + 64px)}

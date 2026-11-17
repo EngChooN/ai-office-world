@@ -150,6 +150,7 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
  addEventListener('blur',()=>{S.crouchKey=false;S.crouchBtn=false;if(S.aim)aimEnd(true);});
  return {
   forward,auto,toward,aimDrag,pack,throwDir,touchAim,aimStart,aimEnd,setCrouch,receiveBall,
+  resetAmmo(){ammo.reset();},
   set extraTargets(f){extraTargets=f??(()=>[]);},set localThrow(f){localThrow=f;},set onLand(f){onLand=f;},
   get ammo(){return ammo.n;},get packing(){return S.pack>0;},get inYard(){return S.inYard;},get aiming(){return !!S.aim;},get crouching(){return S.crouch;},
   // 걷기 빠르기 배수(조준 50%·웅크림 40%)

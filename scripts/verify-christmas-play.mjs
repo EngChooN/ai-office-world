@@ -14,7 +14,7 @@ import {startServer} from '../server/multi-server.mjs';
 import * as L from '../src/christmas/layout.js';
 
 const dir='artifacts/christmas-play',multiPort=Number(process.env.MULTI_PORT??8792),room='눈마을-2';mkdirSync(dir,{recursive:true});
-const PARTS=new Set((process.env.PART??'gift,fire,snowman,fight,sled,carol,offline').split(','));
+const PARTS=new Set((process.env.PART??'gift,fire,snowman,fight,match,sled,carol,offline').split(','));
 const {createServer}=await import('vite');const port=Number(process.env.PORT??5198);
 const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true},logLevel:'warn'});await vite.listen();
 const pageUrl=`http://127.0.0.1:${port}`,wsUrl=`ws://127.0.0.1:${multiPort}`;
@@ -195,6 +195,41 @@ try{
   // 마당 밖은 못 던짐
   await tp(A,L.CAMPFIRE.x+3,L.CAMPFIRE.z,0);await sleep(600);const n0=(await st(A)).fight.flying;
   await A.keyboard.press('KeyF');await sleep(400);check('④ 마당 밖에서는 F를 눌러도 안 던져짐(모닥불 쪽 안전)',!(await st(A)).actions.includes('sb:throw')&&(await st(A)).fight.flying===n0);
+ }
+
+ // ── ④-2 눈싸움 한 판(11-17): 한 판 하기 → 대기 → 바로 시작 → 1라운드(진영·경기 띠) → 맞히면 점수 → 상대가 나가면 결과 창 → 혼자 과녁 연습
+ if(PARTS.has('match')){
+  const Y=L.SNOWBALL_YARD;
+  await tp(A,Y.x-1,Y.z,-Math.PI/2);await tp(B,Y.x+2,Y.z,Math.PI/2);await sleep(1500);
+  await A.click('.xfm-join');await sleep(500);
+  await B.tap('.xfm-join');
+  const w2=await until(async()=>(await st(A)).fight.match?.n===2,5000);check('④-2 한 판 하기 → 두 사람 대기(빨강·초록 팀)',w2,{m:(await st(A)).fight.match});
+  await shot(A,'pc-match-wait');
+  await A.click('.xfm-wait [data-x="go"]');
+  const r1=await until(async()=>(await st(A)).fight.match?.ph==='round'&&(await st(B)).fight.match?.ph==='round',5000);
+  await sleep(1300);const sa=await st(A),sb=await st(B);
+  check('④-2 바로 시작 → 1라운드, 두 사람이 서로 다른 진영 끝으로',r1&&sa.fight.match.team!==sb.fight.match.team&&Math.sign(sa.player.x-Y.x)!==Math.sign(sb.player.x-Y.x),{a:{x:sa.player.x,t:sa.fight.match.team},b:{x:sb.player.x,t:sb.fight.match.team}});
+  const barA=await A.evaluate(()=>{const b=document.querySelector('.xfm .xg-bar');return b&&!b.hidden?b.textContent:'';});check('④-2 위 경기 띠(남은 시간·팀 점수·라운드 점)',/1:2\d|1:3\d/.test(barA),{barA});
+  const chatHidden=await B.evaluate(()=>{const c=document.querySelector('.hc-btn');return !c||getComputedStyle(c).display==='none';});check('④-2 경기 중 💬 단추 접힘(휴대폰)',chatHidden);
+  // 하나가 둘을 겨눠 던짐(마우스 조준과 같은 계산) → 점수
+  const bp=(await st(B)).player;await A.evaluate(([x,z])=>window.xmas.snowfight.toward({x,z}),[bp.x,bp.z]);
+  const scored=await until(async()=>{const m=(await st(A)).fight.match;return m&&(m.sc[0]+m.sc[1])>=1;},4000);check('④-2 맞히면 팀 점수 +1(또는 머리 +2)',scored,{m:(await st(A)).fight.match});
+  await sleep(500);await shot(A,'pc-match-round');await shot(B,'mobile-match-round');
+  // 둘이 나가기(확인 한 번) → 한 팀이 비어 판 끝 → 하나 결과 창
+  await B.tap('.xfm-leave');await B.waitForSelector('.xfm-confirm:not([hidden])',{timeout:3000});await B.tap('.xfm-confirm [data-x="leave-yes"]');
+  const res=await until(async()=>(await st(A)).fight.result,5000);await sleep(400);
+  const resTxt=await A.evaluate(()=>document.querySelector('.xfm .xg-card')?.innerText??'');
+  check('④-2 상대가 나가면 결과 창(이긴 팀·라운드·개인 표·칭호)',res&&/승리|무승부/.test(resTxt)&&/명사수/.test(resTxt),{resTxt:resTxt.slice(0,160)});
+  await shot(A,'pc-match-result');
+  await A.keyboard.press('KeyQ');await sleep(600);
+  // 혼자 과녁 연습: 한 판 하기 → (혼자) 혼자 과녁 연습 → 과녁 맞히기
+  await tp(A,Y.x,Y.z,-Math.PI/2);await sleep(600);
+  await A.click('.xfm-join');await A.waitForSelector('.xfm-wait [data-x="solo"]:not([hidden])',{timeout:4000});await A.click('.xfm-wait [data-x="solo"]');
+  const pr=await until(async()=>(await st(A)).fight.practice,3000);check('④-2 혼자면 눈사람 과녁 연습(과녁 5개·60초)',pr&&(await st(A)).fight.practice.targets.length===5,{p:(await st(A)).fight.practice});
+  let hitT=false;for(let k=0;k<4&&!hitT;k++){const tg=(await st(A)).fight.practice.targets[0];await A.evaluate(([x,z])=>window.xmas.snowfight.toward({x,z}),[tg.x,tg.z]);hitT=await until(async()=>(await st(A)).fight.practice?.score>0,1500);}
+  check('④-2 과녁을 맞히면 점수',hitT,{p:(await st(A)).fight.practice});
+  await shot(A,'pc-match-practice');
+  await A.click('.xfm-leave');await sleep(400);
  }
 
  // ── ⑤ 눈썰매

@@ -34,6 +34,7 @@ import {createCampfire,nearFire,FIRE} from './campfire.js';
 import {createSnowmanPlay} from './snowman-play.js';
 import {createSnowfight} from './snowfight-play.js';
 import {createSledPlay} from './sled-play.js';
+import {createFightUi} from './fight-ui.js';
 import {inYard as inSnowmanYard} from './snowman-state.js';
 import {inFightYard,FIGHT_TEXT} from './snowfight.js';
 
@@ -91,7 +92,7 @@ const poser=createXmasPoser({avatar:player,world,toon}); // 앉기·손 녹이�
 const cols=village.colliders;
 
 // ── 입력·카메라
-let net=null,gifts=null,campfire=null,snowman=null,snowfight=null,sledPlay=null; // 놀이 모듈(아래에서 만든다)
+let net=null,gifts=null,campfire=null,snowman=null,snowfight=null,sledPlay=null,fightUi=null; // 놀이 모듈(아래에서 만든다)
 const input=createInput({canvas:renderer.domElement,mobile});
 const cam={yaw:SPAWN.heading,pitch:.3,dist:mobile?4.2:3.6,min:1.8,max:9,target:new THREE.Vector3()};
 // 장식 달기 모드 카메라: 트리를 정면으로 보는 궤도(좌우 끌기·A/D로 둘레, 위아래 끌기·W/S·휠로 높이)
@@ -163,7 +164,7 @@ function updateCamera(dt){
 await serverReady;
 // 행동 상태: 옷 + 트리 꾸미는 중 + 놀이 칸(모닥불 자리·손 녹이기·코코아·썰매·눈덩이 밀기·눈 뭉치기)
 const myAct=()=>{const l=player.look??profile.look;return {o:l.outfit,hat:l.hat??'',sc:l.scarf==='stripe'?1:0,d:deco.on?1:0,
- ...(campfire?.act()??{}),...(snowman?.actFields()??{}),...(snowfight?.actFields()??{}),...(sledPlay?.actFields()??{})};};
+ ...(campfire?.act()??{}),...(snowman?.actFields()??{}),...(snowfight?.actFields()??{}),...(fightUi?.actFields()??{}),...(sledPlay?.actFields()??{})};};
 let treePlay=null;
 const multi=createXmasMulti({ctx:{world,player,profile,mobile,heightAt:H,
   createAvatar:({look,id,name})=>createXmasAvatar({rigUrl:RIG_URL,toon,look,id,name}),
@@ -263,6 +264,7 @@ gifts=createGifts({root:hud.root,net,multi,player,mobile,hud,audio,village,
 campfire=createCampfire({player,poser,multi,net,hud,audio,onChange:resend});
 snowman=createSnowmanPlay({root:hud.root,world,toon,heightAt:H,village,player,net,multi,hud,audio,camera,mobile,onChange:resend});
 snowfight=createSnowfight({root:hud.root,world,toon,heightAt:H,player,poser,net,multi,hud,audio,camera,canvas:renderer.domElement,renderer,yaw:()=>cam.yaw,mobile,onChange:resend});
+fightUi=createFightUi({root:hud.root,world,toon,heightAt:H,player,net,multi,hud,audio,snowfight,mobile,onChange:resend});
 sledPlay=createSledPlay({root:hud.root,world,toon,heightAt:H,player,poser,net,multi,hud,audio,input,mobile,onChange:resend});
 if(village.course?.boardCanvas)sledPlay.setBoardCanvas(village.course.boardCanvas,village.course.boardTex);
 addEventListener('xmas:multi-join',()=>{net.resetLocal();campfire.stand();if(sledPlay.mode!=='none')sledPlay.act('sled:off');});
@@ -314,6 +316,7 @@ addEventListener('keydown',e=>{const a=document.activeElement;if(a&&(a.tagName==
   if(e.code==='KeyE'&&deco.on){setDecorate(false);return;}
   if(gifts.open)return;
   if(sledPlay.key(KEYS[e.code]))return; // 썰매 결과 창: E 다시 타기 · Q 내리기
+  if(fightUi.key(KEYS[e.code]))return; // 눈싸움 결과 창: E 한 판 더 · Q 마당 나가기
   if(e.code==='KeyF'&&snowfight.inYard)return; // 눈싸움 F = 누르는 동안 조준(snowfight-play.js가 받음)
   const k=KEYS[e.code],list=currentActions(),hit=list.find(x=>x.key===k);
   if(hit){doAction(hit.id);return;}
@@ -353,7 +356,7 @@ renderer.setAnimationLoop(()=>{
  updateCamera(dt);if(ring.visible)ring.lookAt(camera.position);
  toon.updateSky(env,sunVec,moonVec);toon.pipeline.update(env);
  // 놀이 화면들 + 행동 단추(0.2초마다) + 구역 띠 + 소리
- snowman.update(dt);snowfight.update(dt,{moveInput:!!(input.move().forward||input.move().side)});gifts.update(dt);
+ snowman.update(dt);snowfight.update(dt,{moveInput:!!(input.move().forward||input.move().side)});fightUi.update(dt);gifts.update(dt);
  actT-=dt;if(actT<=0){actT=.2;hud.setActions(currentActions());updateZone();
   // 큰 창·판(선물·사람 목록·옷·눈사람 꾸미기)이 열린 동안 💬 단추를 접는다(휴대폰 아래 시트를 가리지 않게, 한 번에 한 가지 창)
   document.documentElement.classList.toggle('xh-panel',gifts.open||snowman.decoOpen||!!hud.sheet||hud.cardOpen);
@@ -370,7 +373,7 @@ dispatch('xmas:ready',{});
 
 // 진단·자동 점검용(브라우저 콘솔 window.xmas)
 window.xmas={village,player,multi,treePlay,hud,cam,deco,chat,pick,screenPos,
- poser,net,audio,gifts,campfire,snowman,snowfight,sled:sledPlay,doAction,currentActions,
+ poser,net,audio,gifts,campfire,snowman,snowfight,fightUi,sled:sledPlay,doAction,currentActions,
  get giftOrn(){return giftOrn;},
  get fps(){return fps;},
  teleport(x,z,heading=player.heading){player.place(x,z,heading);cam.yaw=heading;},
@@ -379,5 +382,5 @@ window.xmas={village,player,multi,treePlay,hud,cam,deco,chat,pick,screenPos,
  // 선물 옷 받기(선물 우체통 단계가 붙으면 그쪽이 부른다): 이 기기에 남긴다
  addWardrobe(item){if(!profile.wardrobe.includes(item)){profile.wardrobe.push(item);saveProfile();}},
  status(){return {multi:multi.status(),fps:+fps.toFixed(1),player:{x:+player.x.toFixed(2),z:+player.z.toFixed(2),y:+player.root.position.y.toFixed(3),heading:+player.heading.toFixed(2),look:player.look,sitting:poser.sitting,arms:poser.arms},tree:{count:treePlay.count,stage:treePlay.stage,star:treePlay.star?.n??null},decorating:deco.on,calls:renderer.info.render.calls,tris:renderer.info.render.triangles,
-  actions:hud.actions.map(a=>a.id),act:myAct(),gifts:gifts.status(),fire:campfire.status(),snowman:snowman.status(),fight:snowfight.status(),sled:sledPlay.status(),audio:{unlocked:audio.unlocked,muted:audio.muted,...audio.stats,carol:audio.carolNow()},zone:zoneNow};},
+  actions:hud.actions.map(a=>a.id),act:myAct(),gifts:gifts.status(),fire:campfire.status(),snowman:snowman.status(),fight:{...snowfight.status(),...fightUi.status()},sled:sledPlay.status(),audio:{unlocked:audio.unlocked,muted:audio.muted,...audio.stats,carol:audio.carolNow()},zone:zoneNow};},
 };
