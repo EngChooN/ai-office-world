@@ -84,14 +84,22 @@ export function createChatGuard({repeat=CHAT_GUARD.repeat,strikeWindowMs=CHAT_GU
 }
 // 흡연장 담배 상태(다른 사람 화면용) {t:'lounge:smoke',state,lit}. state는 src/lounge/smoke.js가 내는 상태 이름(go()·trick)만.
 export const SMOKE_STATES=Object.freeze(['idle','out','ready','lighting','smoking','inhale','exhale','flick','finished','dispose','done','trick']);
-export function sanitizeSmoke(m){return m&&SMOKE_STATES.includes(m.state)&&typeof m.lit==='boolean'?{state:m.state,lit:m.lit}:null;}
+// 11-17: 담배 종류 kind(상대 손에도 같은 멘솔·시가)와 이번 내뿜기 묘기 k(링·코·프렌치)도 실을 수 있다(목록 밖 값은 뺀다).
+export const SMOKE_KINDS=Object.freeze(['mild','strong','menthol','cigar']);   // src/lounge/smoke-feel.js CIG_KINDS와 같은 목록(tests/lounge-interact.test.mjs가 맞춰 봄)
+export const SMOKE_TRICKS=Object.freeze(['ring','nose','french']);
+export function sanitizeSmoke(m){
+ if(!(m&&SMOKE_STATES.includes(m.state)&&typeof m.lit==='boolean'))return null;
+ const out={state:m.state,lit:m.lit};if(SMOKE_KINDS.includes(m.kind))out.kind=m.kind;if(SMOKE_TRICKS.includes(m.k))out.k=m.k;return out;
+}
 // 행동 상태 act(2026-11-10 '내 상호작용이 상대에게 안 보임' 수정): 자세·소품·동작을 상대 화면에 그리기 위한 '지금 상태' 한 덩어리.
 // {t:'act',id,a:{…}} — 바뀔 때만 보내고, 서버는 사람마다 마지막 a를 기억해 새로 온 사람·이름 묻기(j)·다시 접속(resume)에 다시 준다(담배 상태와 같은 방식).
 // 체험마다 받는 칸이 다르다(목록 밖 칸·값은 버림). 칸 값은 enum 배열, 'int'(0~65535 정수), 'id'(영문 소문자·숫자·- 24자, 빈 값 허용).
 //  흡연장: p 자세(stand·lean·sit) · b 벤치 번호(앉을 때) · can 캔커피(0 없음·1 뽑는 중·2 들고 있음) · sip 한 모금 횟수(늘면 받는 쪽이 한 모금 마심)
 //  등산: p 자세(stand·sit·tea) · g 기구(none·binoculars·phone) · sf 셀카(0·1) · x 지금 동작 id(스트레칭·즐길거리·이모트 등, 없으면 '') · n 동작 횟수(같은 동작을 다시 시작하면 늘어남) · v 동작 보조 값(int)
 export const ACT_SCHEMA=Object.freeze({
- smoking:Object.freeze({p:Object.freeze(['stand','lean','sit']),b:'int',can:Object.freeze([0,1,2]),sip:'int'}),
+ //   + 11-17: s 좌판 칸(0 가운데·1·2 옆자리) · lx,lz 기댄 난간 지점(src/lounge/room-rules.js encodeLean) · o 고른 옷(src/lounge/outfit.js OUTFITS) · e 마지막 인사 동작 · en 인사 횟수(늘면 받는 쪽 말풍선)
+ smoking:Object.freeze({p:Object.freeze(['stand','lean','sit']),b:'int',can:Object.freeze([0,1,2]),sip:'int',
+  s:Object.freeze([0,1,2]),lx:'int',lz:'int',o:Object.freeze(['shirt','suit','cardigan','padding']),e:Object.freeze(['wave','sigh','stretch']),en:'int'}),
  hiking:Object.freeze({p:Object.freeze(['stand','sit','tea']),g:Object.freeze(['none','binoculars','phone']),sf:Object.freeze([0,1]),x:'id',n:'int',v:'int'}),
  //  크리스마스(11-16): o 옷(산타·니트·엘프) · hat 머리(''=옷 기본 모자) · sc 줄무늬 목도리(0·1) · d 트리 꾸미는 중(0·1, 머리 위 🎄 표시)
  //   + 놀이(11-16 2차): st 모닥불 자리(0 없음·1~8) · wm 손 녹이기(0·1) · cc 코코아 들기(0·1) · sl 썰매(0 없음·1~3 출발대 줄에서 기다림·4 타는 중·5 뒷자리) · sp 같이 타는 앞사람 id

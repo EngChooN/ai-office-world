@@ -15,6 +15,7 @@ import {part} from '../toon/concept-kit.js';
 import {finishTrailModel,BENCH} from '../toon/trail-props.js';
 import {SCENES} from './scene.js';
 import {icon,iconText} from '../icons/icon.js';
+import {encodeLean} from './room-rules.js';
 
 export const SPOT_RANGE=Object.freeze({rail:1.2,bench:1.5,vending:1.6,ashtray:1.6});
 // 자동 걷기 판정: arrive 안이면 도착, stall초 동안 더 가까워지지 않으면 near 안에선 그 자리에서 시작·밖이면 실패. 시간 한도 = extra + 거리/0.9m/s(불 붙이기·끄기로 못 걷는 동안은 세지 않는다)
@@ -216,7 +217,8 @@ export function applyRemoteAct(S,a,rooftop){
 // 내 행동 상태(보낼 것): 자세·앉은 벤치·캔·한 모금 횟수
 export function actOf(S){
  const a={p:S.pose,can:S.can.drop?1:S.can.held?2:0,sip:S.can.sipN&0xffff};
- if(S.pose==='sit'&&Number.isInteger(S.spot?.index))a.b=S.spot.index;
+ if(S.pose==='sit'&&Number.isInteger(S.spot?.index)){a.b=S.spot.index;a.s=Number.isInteger(S.spot.slot)?S.spot.slot:0;} // 좌판 칸(11-17): 서버가 같은 칸 두 사람을 막는다(room-rules.js)
+ if(S.pose==='lean'&&Number.isFinite(S.spot?.x)&&Number.isFinite(S.spot?.z))Object.assign(a,encodeLean(S.spot.x,S.spot.z)); // 기댄 난간 지점
  return a;
 }
 
@@ -229,8 +231,9 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
  const taken=(x,z,r=.36)=>!!ctx.multi?.occupied?.(x,z,r)||(ctx.npcs?.avatars??[]).some(a=>Math.hypot(a.x-x,a.z-z)<r);
  const free=(x,z)=>!taken(x,z)&&(!ctx.collide||[[0,0],[.03,0],[0,.03]].every(([ox,oz])=>{const c=ctx.collide(x+ox,z+oz);return Math.hypot(c.x-x-ox,c.z-z-oz)<.05;}));
  // 벤치(길이 1.5m): 가운데에 누가 앉아 있으면 왼쪽·오른쪽 자리(±0.42m)에 앉는다. 셋 다 차면 null.
+ // 좌판 칸 번호 slot(0 가운데·1·2)은 같이 피우기 act로 보내고, 같은 칸을 이미 차지했다고 서버가 알린 사람(seatTaken)도 피한다(11-17)
  const seatFor=spot=>{const s=spot.seat,ax=-Math.cos(s.heading),az=Math.sin(s.heading);
-  for(const o of [0,.42,-.42]){const x=s.x+ax*o,z=s.z+az*o;if(!taken(x,z,.3))return o?{...spot,seat:{...s,x,z},x:spot.x+ax*o,z:spot.z+az*o}:spot;}
+  for(const [slot,o] of [[0,0],[1,.42],[2,-.42]]){const x=s.x+ax*o,z=s.z+az*o;if(!taken(x,z,.3)&&!ctx.multi?.seatTaken?.(spot.index,slot))return o?{...spot,slot,seat:{...s,x,z},x:spot.x+ax*o,z:spot.z+az*o}:{...spot,slot};}
   return null;};
  const send=(spot,state,extra={})=>dispatch('lounge:spot',{id:player.id,spot,state,...extra});
  const S={pose:'stand',w:0,spot:null,anchor:null,pending:null,near:null,glide:null,notice:null,
@@ -271,6 +274,10 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   toast(P?.spot.kind==='vending'?'길이 막혔어요 · 자판기를 다시 눌러 보세요':'길이 막혔어요 · 다시 눌러 보세요');
   send(spotName(P?.spot.kind),'fail',{reason});render();}
  function buy(){
+  // 같이 피우기에서 다른 사람이 자판기에서 뽑는 중이면 그 캔이 나올 때까지 기다렸다가 뽑는다(11-17, 캔 두 개가 한 구멍에 겹치지 않게). 최종 판정은 서버.
+  const vm=rooftop.spots?.vending;if(S.vendWait&&vm&&Math.hypot(vm.x-player.x,vm.z-player.z)>SPOT_RANGE.vending){S.vendWait=0;render();return;} // 기다리다 걸어가 버리면 그만
+  if(ctx.multi?.vendingBusy?.()){S.pending=null;S.vendWait=(S.vendWait??0)+1;if(S.vendWait===1)toast('다른 사람이 뽑는 중이에요 · 곧 나와요');if(S.vendWait<40){setTimeout(buy,250);render();return;}}
+  S.vendWait=0;
   S.pending=null;const c=S.can;c.held=false;c.drop={t:0};can.visible=false;
   send('vending','use',{item:'can-coffee'});toast('덜컹! 캔커피 나왔어요','s-can-coffee');render();
  }
@@ -293,6 +300,12 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   sip(){const c=S.can,st=smokeState();if(!c.held||c.sip>=0||st==='inhale'||st==='lighting')return false;c.sip=0;c.sipN=(c.sipN+1)&0xffff;return true;},
   stand,
   dropCan(){if(!S.can.held)return false;S.can.held=false;can.visible=false;render();return true;},
+  // 서버가 '먼저 온 사람'에게 자리를 줬다고 알림(multi.js가 {t:'lounge:no',what}를 받아 부른다, 11-17): 좌판·난간이면 일어나고, 자판기면 캔을 되돌린다
+  denied(what){
+   if(what==='seat'&&S.pose==='sit'){stand();toast('방금 다른 사람이 그 자리에 앉았어요 · 옆자리를 눌러 보세요');return true;}
+   if(what==='rail'&&S.pose==='lean'){stand();toast('그 난간 자리는 다른 사람이 기대 있어요');return true;}
+   if(what==='vending'&&S.can.drop){S.can.drop=null;poser.fall.visible=false;toast('다른 사람이 먼저 뽑았어요 · 다시 눌러 주세요');render();return true;}
+   return false;},
   // 대상 위 표시를 눌렀을 때(멀리서도): kind = 'bench'|'rail'|'vending'|'ashtray', index = 벤치·재떨이 번호
   go(kind,index=0){
    if(kind==='vending')return act.coffee();
@@ -308,7 +321,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   },
  };
  // 자판기로 걸어가는 중이거나 캔이 떨어지는 중
- function buying(){return !!S.can.drop||S.pending?.spot.kind==='vending';}
+ function buying(){return !!S.can.drop||S.pending?.spot.kind==='vending'||(S.vendWait??0)>0;}
  // 지금 뜬 할 일(E 키·첫 단추)
  const primary=()=>S.pose!=='stand'?'stand':S.near?.kind==='rail'?'lean':S.near?.kind==='bench'?'sit':S.near?.kind==='vending'?'coffee':null;
 
@@ -381,6 +394,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
    if(busy)return {st:'act',icon:'s-vending',label:'뽑는 중…',off:true};
    if(going)return {st:'act',icon:L[0],label:'가는 중…',off:true};
    if(t.kind==='ashtray'&&near)return null; // 재떨이 앞에서는 흡연 단추(꽁초 버리기)가 할 일
+   if(near&&t.kind==='vending'&&ctx.multi?.vendingBusy?.())return {st:'act',icon:L[0],label:'다른 사람이 뽑는 중 · 줄 서기'}; // 같이 피우기: 눌러 두면 그 캔이 나온 뒤 뽑는다
    if(near)return {st:'act',icon:L[0],label:L[1]};
    return {st:t.d<=MARK.far?'mid':'far',icon:L[0],label:L[1]};
   }
@@ -421,8 +435,11 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   const openPanel=()=>{if(!scene)return;renderPanel();panel.hidden=false;};
   const closePanel=()=>{panel.hidden=true;};
   const pick=id=>{scene?.set(id);closePanel();sig='';renderDock();syncSettings();};
+  // <html data-scene>(scene.js 분위기 표시)도 [data-scene]이라, 단추만 찾고 이 묶음 안인지 본다.
+  //  전에는 상황을 한 번 고르면 둘레 [data-scene] 찾기가 <html>을 잡아 모든 손 단추·대상 위 표시·상황 단추가 '상황 다시 고르기'로 먹혔다(11-17 '눌러도 반응 없음').
+  const sceneBtn=e=>{const b=e.target.closest?.('button[data-scene]');return b&&e.currentTarget.contains(b)?b:null;};
   const onClick=e=>{
-   const sc=e.target.closest('[data-scene]');if(sc){pick(sc.dataset.scene);return;}
+   const sc=sceneBtn(e);if(sc){pick(sc.dataset.scene);return;}
    const t=e.target.closest('[data-sp]');if(!t)return;const a=t.dataset.sp;
    if(a==='scene'){panel.hidden?openPanel():closePanel();return;}
    if(a==='close'){closePanel();return;}
@@ -448,7 +465,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   let lobbyWasOpen=false,asked=false;
   const askScene=()=>{if(asked||!scene)return;asked=true;cssReady.then(openPanel);};
   if(modal){
-   modal.addEventListener('click',e=>{const sc=e.target.closest('[data-scene]');if(sc){scene?.set(sc.dataset.scene);sig='';renderDock();syncSettings();}});
+   modal.addEventListener('click',e=>{const sc=sceneBtn(e);if(sc){scene?.set(sc.dataset.scene);sig='';renderDock();syncSettings();}});
    new MutationObserver(()=>{
     if(!modal.hidden){closePanel();if(modal.querySelector('[data-a=enter]'))lobbyWasOpen=true;syncSettings();}
     else if(lobbyWasOpen){lobbyWasOpen=false;askScene();} // 입장하기를 누른 뒤 상황을 묻는다
@@ -466,7 +483,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
 
  return {
   update,act,
-  lean:act.lean,sit:act.sit,coffee:act.coffee,go:act.go,sip:act.sip,stand:act.stand,dropCan:act.dropCan,
+  lean:act.lean,sit:act.sit,coffee:act.coffee,go:act.go,sip:act.sip,stand:act.stand,dropCan:act.dropCan,denied:act.denied,
   get pose(){return S.pose;},
   // 같이 피우기로 보낼 행동 상태(multi.js가 바뀔 때만 보낸다)
   act:()=>actOf(S),

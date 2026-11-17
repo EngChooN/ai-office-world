@@ -58,7 +58,7 @@ test('등산 체험도 act를 받는다(흡연장 칸은 버림)',()=>{
 const rooftop={spots:{benches:[{x:0,z:0,heading:0,seat:{x:0,z:-.2,y:.44,heading:0}},{x:3,z:0,heading:0,seat:{x:3,z:-.2,y:.44,heading:0}}]}};
 test('흡연장 자세 상태: 보낼 act와 받은 act 적용(자세·벤치·캔·한 모금)',()=>{
  const me=newPoseState();assert.deepEqual(actOf(me),{p:'stand',can:0,sip:0});
- me.pose='sit';me.spot={index:1};me.can.held=true;me.can.sipN=4;assert.deepEqual(actOf(me),{p:'sit',can:2,sip:4,b:1});
+ me.pose='sit';me.spot={index:1};me.can.held=true;me.can.sipN=4;assert.deepEqual(actOf(me),{p:'sit',can:2,sip:4,b:1,s:0}); // 11-17: 좌판 칸 s(없으면 가운데 0)
  me.can.drop={t:0};assert.equal(actOf(me).can,1,'뽑는 중');
  const R=newPoseState();
  applyRemoteAct(R,{p:'lean',can:0,sip:0},rooftop);assert.equal(R.pose,'lean');assert.equal(R.last,'lean');
@@ -94,7 +94,7 @@ test('흡연장 연결: 내 자세·캔이 바뀔 때만 act를 보내고, 상�
  const seen=()=>B.multi.status().people.find(p=>p.id===A.multi.id);
  assert.equal(seen().pose,'lean');assert.equal(A.multi.status().stats.actsSent,sent0+1);
  A.S.pose='sit';A.S.spot={index:1};A.S.can.held=true;await tick([A,B],4);
- assert.equal(seen().pose,'sit');assert.equal(seen().can,'held');assert.deepEqual(seen().act,{p:'sit',b:1,can:2,sip:0});
+ assert.equal(seen().pose,'sit');assert.equal(seen().can,'held');assert.deepEqual(seen().act,{p:'sit',b:1,can:2,sip:0,s:0});
  // 나중에 온 C: 내 컴퓨터 모드는 처음 보는 사람에게 바로 인사하며 act도 다시 보낸다
  C=world('구름');C.multi=mount(C);C.multi.join({room:'act시험'});await tick([A,B,C],8);
  const cs=C.multi.status().people.find(p=>p.id===A.multi.id);assert.equal(cs?.pose,'sit');assert.equal(cs?.can,'held');

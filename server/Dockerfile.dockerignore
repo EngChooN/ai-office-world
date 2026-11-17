@@ -8,6 +8,7 @@
 !src/christmas/snowman-state.js
 !src/christmas/snowfight.js
 !src/christmas/layout.js
+!src/lounge/room-rules.js
 !server/ws.mjs
 !server/rooms.mjs
 !server/multi-server.mjs

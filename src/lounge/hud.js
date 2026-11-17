@@ -95,7 +95,7 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
   if(/^kind\d$/.test(name)){if(stage==='idle'||stage==='choose')act.kind(KIND_KEYS[+name.slice(4)-1]);return;}
   if(['ring','nose','french'].includes(name)&&stage==='lit')act.trick(name);
   if(name==='borrow')act.borrow();
-  if(name==='give'){if(npcs.social?.().incoming)act.accept();else act.offer();}
+  if(name==='give'){if(npcs.social?.()?.incoming)act.accept();else act.offer();} // NPC를 안 부른 기본 옥상은 social()이 null(11-17: G 키가 오류로 멈추던 것)
  }
  // 함께 단추: 가까운 NPC·불 안 붙인 담배·NPC가 권하는 중·수다 칩에 따라 뜬다. 바뀔 때만 다시 그린다.
  let socialSig='',socialT=0;
@@ -147,6 +147,8 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
  }
  const onChat=e=>{const {id,name,text}=e.detail??{};if(!text)return;addLog(id,name||'동동이',text);bubble(id,name||'동동이',text);};
  window.addEventListener('lounge:chat',onChat);
+ // 같이 피우는 사람이 누른 인사(multi.js가 act e·en을 받아 보냄): 내 인사와 같은 그림으로 말풍선·채팅 줄
+ window.addEventListener('lounge:remote-emote',e=>{const {id,name,emote}=e.detail??{};const em=EMOTES.find(x=>x.k===emote);if(!em||!id)return;addLog(id,name||'손님',em.i);bubble(id,name||'손님',em.i);});
  // 흡연 쪽 state(out·ready·lighting·smoking·inhale·exhale·flick·finished·dispose·done)를 단추 단계로 따라간다. 콘솔·자동 점검으로 피워도 단추가 맞게 바뀐다.
  window.addEventListener('lounge:smoke',e=>{const d=e.detail??{};if(d.id!==ctx.player.id)return;const s=String(d.state??d.stage??'');
   setStage(s==='done'||s==='idle'?'idle':s==='dispose'?'dropping':s==='out'||s==='ready'?'held':s==='finished'?'butt':'lit');});
@@ -235,7 +237,7 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
   const t=e.target.closest('[data-a]');if(!t||modal.contains(t))return;
   const a=t.dataset.a;
   if(act[a])act[a](t.dataset.k);
-  else if(a==='emote'){ctx.dispatch('lounge:emote',{emote:t.dataset.k});const em=EMOTES.find(x=>x.k===t.dataset.k);ctx.dispatch('lounge:chat',{id:'me',name:profile.nickname||'동동이',text:em.i});}
+  else if(a==='emote'){const em=EMOTES.find(x=>x.k===t.dataset.k);if(!em)return;ctx.dispatch('lounge:emote',{emote:em.k});ctx.dispatch('lounge:chat',{id:'me',name:profile.nickname||'동동이',text:em.i,emote:em.k});} // 같이 피우기는 채팅 c가 아니라 act e·en으로 보낸다(multi.js, 같은 말 반복 막기에 걸리지 않게)
   else if(a==='set')settings();
   else if(a==='snd'){save({muted:!profile.muted});renderSnd();}
   else if(a==='fold'){folded=!folded;renderNote();}

@@ -16,6 +16,7 @@ import {anonymousName,sanitizeName,createInterpolator,decodeState,FLAG,NET,findS
 import {OUTFITS} from './outfit.js';
 import {limitText} from '../hiking-chat-ui.js';
 import {createPoser,applyRemoteAct,newPoseState} from './spots.js';
+import {seatKey,decodeLean} from './room-rules.js';
 
 export const DEFAULT_ROOM='옥상-1';
 export const EXPERIENCE='smoking';
@@ -45,17 +46,20 @@ export const cleanName=raw=>[...String(raw??'').normalize('NFC').replace(/[\u000
 
 // 받은 담배 상태 → 상대 담배(smoke.js api)에 부를 일. cur = 지금 그 담배의 state.
 // 중간에 들어와서 처음 받은 상태가 'smoking'이어도 꺼내기 → 불 붙이기부터 차례로 따라간다(smoke.js가 동작 중 단추를 하나 기억했다 한다).
-export function smokePlan(cur,{state,lit}={}){
+// 11-17: kind(담배 종류)가 오면 꺼낼 때 같은 종류로, k(이번 내뿜기 묘기)가 오면 내뿜기를 그 묘기로(전에는 늘 순한 맛·링만 보였다).
+export function smokePlan(cur,{state,lit,kind,k}={}){
  const idle=cur==='idle'||cur==null,holding=cur==='out'||cur==='ready';
- const lightUp=()=>idle?[['start'],['light']]:holding?[['light']]:[];
+ const start=kind?['start',kind]:['start'];
+ const lightUp=()=>idle?[start,['light']]:holding?[['light']]:[];
+ if(state==='exhale'&&k){if(cur==='smoking'||cur==='inhale')return [['trick',k]];if(cur==='exhale')return k==='ring'?[['trick','ring']]:[];}
  switch(state){
-  case 'out':case 'ready':return idle?[['start']]:[];
+  case 'out':case 'ready':return idle?[start]:[];
   case 'lighting':return lightUp();
   case 'smoking':case 'finished':return lit?lightUp():idle?[['start']]:[];
   case 'inhale':return idle||holding?lightUp():[['puff']];
   case 'exhale':return cur==='smoking'?[['puff']]:lightUp();
   case 'flick':return idle||holding?lightUp():[['flick']];
-  case 'trick':return idle||holding?lightUp():[['trick','ring']];
+  case 'trick':return idle||holding?lightUp():[['trick',k??'ring']];
   case 'dispose':case 'done':case 'idle':return idle?[]:[['dispose']];
   default:return [];
  }
@@ -96,8 +100,9 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
  const roster=new Map(); // 서버 id → {id,name,tagHidden,interp,lastSeen,flags,avatar,smoker,pending,loading,smoke,shown}
  let transport=null,viaServer=false,joined=false,netState='offline',room=params.room,myId=null,myName='',nameFollowsProfile=false,askedName='';
  let presence=createPresence({timeout:MULTI.timeout}),beat=null,lastAnnounceAt=-Infinity,lastGreet=-Infinity;
+ let emoteN=0,lastEmote=null; // 내 인사 횟수·마지막 인사(act e·en)
  let lastAct='',seq=0,sendT=0,lastSent=null,lastSentAt=-Infinity,announceT=0,assignT=0,jumpNext=false,lastSmoke=null,statusSig='',offMsg=null,offStatus=null;
- const stats={sent:0,received:0,chatsSent:0,chatsReceived:0,chatsEchoSkipped:0,smokesSent:0,smokesReceived:0,actsSent:0,actsReceived:0,jumps:0};
+ const stats={sent:0,received:0,chatsSent:0,chatsReceived:0,chatsEchoSkipped:0,smokesSent:0,smokesReceived:0,actsSent:0,actsReceived:0,jumps:0,emotesSent:0,emotesReceived:0,denied:0};
  const dispatch=(type,detail)=>win?.dispatchEvent?.(new CustomEvent(type,{detail}));
  const send=m=>{if(!transport)return;stats.sent++;transport.send(m);};
  const online=()=>joined&&(!viaServer||netState==='online');
@@ -135,8 +140,8 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
   if(!silent)emitStatus(true);return true;
  }
  // 들어오자마자: 이름·지금 위치(순간 이동)·지금 담배 상태를 알린다(나중에 온 사람도 서버가 마지막 담배 상태를 넘겨준다)
- function greetNew(){const t=now();if(t-lastGreet<.3)return;lastGreet=t;announce();sendPos(true);if(!viaServer){const st=ctx.smoker?.status?.();if(st)sendSmoke(st.state,!!st.lit,true);sendAct(true);}}
- function greet(){announce();jumpNext=true;sendPos(true);const st=ctx.smoker?.status?.();if(st)sendSmoke(st.state,!!st.lit,true);sendAct(true);}
+ function greetNew(){const t=now();if(t-lastGreet<.3)return;lastGreet=t;announce();sendPos(true);if(!viaServer){const st=ctx.smoker?.status?.();if(st)sendSmoke(st.state,!!st.lit,true,st.kind);sendAct(true);}}
+ function greet(){announce();jumpNext=true;sendPos(true);const st=ctx.smoker?.status?.();if(st)sendSmoke(st.state,!!st.lit,true,st.kind);sendAct(true);}
  function announce(){announceT=0;lastAnnounceAt=now();send({t:'j',id:myId,n:myName});}
 
  // ── 받기
@@ -162,6 +167,7 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
    case 'moved':room=m.room??room;for(const id of [...roster.keys()])drop(id);dispatch('lounge:multi-note',{text:`다른 옥상(${room})으로 옮겼어요`});emitStatus();return;
    case 'reject':dispatch('lounge:multi-note',{text:'서버가 흡연장 연결을 받지 않았어요'});return;
    case 'c-limit':dispatch('lounge:multi-note',{text:limitText(m.reason,m.wait),kind:'limit'});return;
+   case 'lounge:no':stats.denied++;spots?.denied?.(m.what);return; // 서버 판정: 그 자리는 먼저 온 사람 것(room-rules.js, 11-17)
    case 'c':{const route=chatRoute(m,myId);if(route==='mine'){stats.chatsEchoSkipped++;return;}if(route!=='show')return;
     const r=roster.get(m.id);stats.chatsReceived++;
     dispatch('lounge:chat',{id:m.id,name:nameOf(r??{id:m.id}),text:m.text,remote:true});return;}
@@ -174,8 +180,12 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
    const isNew=!r.lastSeen;r.lastSeen=t;r.flags=d.flags;
    if(d.flags&FLAG.jump){r.interp=createInterpolator();r.snap=true;}
    r.interp.push(t,d);if(isNew)emitStatus();return;}
-  if(m.t==='act'){const a=sanitizeAct(EXPERIENCE,m.a);if(!a)return;const r=entry(m.id);if(!r)return;stats.actsReceived++;r.act=a;if(!r.lastSeen)r.lastSeen=t;if(r.S)applyRemoteAct(r.S,a,ctx.rooftop);return;}
-  if(m.t==='lounge:smoke'){const r=entry(m.id);if(!r)return;stats.smokesReceived++;r.smoke={state:m.state,lit:!!m.lit};if(!r.lastSeen)r.lastSeen=t;applySmoke(r);return;}
+  if(m.t==='act'){const a=sanitizeAct(EXPERIENCE,m.a);if(!a)return;const r=entry(m.id);if(!r)return;stats.actsReceived++;const prev=r.act;r.act=a;if(!r.lastSeen)r.lastSeen=t;if(r.S)applyRemoteAct(r.S,a,ctx.rooftop);
+   // 인사: 횟수 en이 늘었을 때만 말풍선(처음 받은 값 = 들어오기 전 인사라 기준으로만 둔다). 옷: 고른 옷 o로 갈아입힘(11-17)
+   if(prev&&a.e&&a.en!==prev.en){stats.emotesReceived++;dispatch('lounge:remote-emote',{id:m.id,name:nameOf(r),emote:a.e});}
+   if(a.o&&r.avatar&&r.avatar.outfit!==a.o)r.avatar.setOutfit?.(a.o);
+   return;}
+  if(m.t==='lounge:smoke'){const r=entry(m.id);if(!r)return;stats.smokesReceived++;r.smoke={state:m.state,lit:!!m.lit,...(m.kind?{kind:m.kind}:{}),...(m.k?{k:m.k}:{})};if(!r.lastSeen)r.lastSeen=t;applySmoke(r);return;}
  }
  function applySmoke(r){
   const sm=r.smoker;if(!sm||!r.smoke)return;
@@ -186,25 +196,29 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
  // ── 보내기
  // 내 채팅: HUD 입력·이모트가 낸 id:'me' 채팅(NPC 대화 칩의 각본 대사는 그 화면 NPC 맥락이라 보내지 않는다)
  const onChat=e=>{
-  const d=e.detail??{};if(d.id!==ctx.player.id||d.scripted||d.remote||!joined)return;
+  const d=e.detail??{};if(d.id!==ctx.player.id||d.scripted||d.remote||d.emote||!joined)return; // 인사(emote)는 act e·en으로(아래 onEmote)
   const text=String(d.text??'').trim();if(!text)return;
   if(!online()){dispatch('lounge:multi-note',{text:'아직 연결 전이라 옥상 NPC만 들었어요'});return;}
   stats.chatsSent++;send({t:'c',id:myId,text});
  };
  // 내 담배: 상태가 바뀔 때만
- function sendSmoke(state,lit,force=false){
-  const sig=`${state}:${lit}`;if(!force&&sig===lastSmoke)return;lastSmoke=sig;
-  if(!online())return;stats.smokesSent++;send({t:'lounge:smoke',id:myId,state,lit});
+ // kind = 담배 종류, k = 이번 내뿜기 묘기(내뿜기·링일 때만, 11-17)
+ function sendSmoke(state,lit,force=false,kind=null,k=null){
+  const sig=`${state}:${lit}:${kind}:${k}`;if(!force&&sig===lastSmoke)return;lastSmoke=sig;
+  if(!online())return;stats.smokesSent++;send({t:'lounge:smoke',id:myId,state,lit,...(kind?{kind}:{}),...(k?{k}:{})});
  }
  // 내 행동 상태(자세·캔): 바뀔 때만. 연결 전이면 기억하지 않아 연결되면 보낸다.
+ // 행동 상태 = 자세·캔(spots.js) + 고른 옷 o + 인사 e·en(11-17)
+ function myAct(){const a=spots?.act?.();if(!a)return null;const o=ctx.player?.outfit;return {...a,...(o?{o}:{}),...(lastEmote?{e:lastEmote,en:emoteN&0xffff}:{})};}
  function sendAct(force=false){
-  const a=spots?.act?.();if(!a||!online())return;const sig=JSON.stringify(a);if(!force&&sig===lastAct)return;
+  const a=myAct();if(!a||!online())return;const sig=JSON.stringify(a);if(!force&&sig===lastAct)return;
   lastAct=sig;stats.actsSent++;send({t:'act',id:myId,a});
  }
- const onSmoke=e=>{const d=e.detail??{};if(d.id!==ctx.player.id||!d.isPlayer)return;sendSmoke(String(d.state),!!d.lit);};
+ const onSmoke=e=>{const d=e.detail??{};if(d.id!==ctx.player.id||!d.isPlayer)return;const st=String(d.state);sendSmoke(st,!!d.lit,false,d.kind??null,(st==='exhale'||st==='trick')?d.trick??null:null);};
+ const onEmote=e=>{const k=e.detail?.emote;if(!['wave','sigh','stretch'].includes(k))return;lastEmote=k;emoteN++;stats.emotesSent++;sendAct();};
  // 자리(난간·벤치)에 들어가고 나올 때는 몸을 옮기므로 순간 이동으로 보낸다
  const onSpot=e=>{const d=e.detail??{};if(d.id===ctx.player.id&&(d.state==='enter'||d.state==='leave'))jumpNext=true;};
- win?.addEventListener?.('lounge:chat',onChat);win?.addEventListener?.('lounge:smoke',onSmoke);win?.addEventListener?.('lounge:spot',onSpot);
+ win?.addEventListener?.('lounge:chat',onChat);win?.addEventListener?.('lounge:smoke',onSmoke);win?.addEventListener?.('lounge:spot',onSpot);win?.addEventListener?.('lounge:emote',onEmote);
 
  function sendPos(force=false){
   if(!online())return;
@@ -222,7 +236,7 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
  // ── 다른 사람 몸 만들기(뼈대는 한 번만 읽고 복제 — avatar.js loadRig)
  async function spawn(r){
   r.loading=true;
-  const a=await ctx.createAvatar({outfit:remoteOutfit(r.id),name:nameOf(r),id:avatarId(r.id)});
+  const a=await ctx.createAvatar({outfit:r.act?.o??remoteOutfit(r.id),name:nameOf(r),id:avatarId(r.id)}); // 고른 옷(act o)이 오면 그 옷, 옛 클라이언트는 ID로 정한 옷
   if(r.dead||!roster.has(r.id)){r.loading=false;return;}
   const sm=ctx.createSmoker(a,{isPlayer:false});
   // 자세·캔(내 몸과 같은 spots.js 코드, 흡연 팔보다 먼저)
@@ -260,7 +274,10 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
   join,leave,
   // 화면(HUD 말풍선·이름표)용: 서버 id → 아바타
   // 그 자리에 다른 사람이 있는지(spots.js가 난간 지점·벤치 좌판을 고를 때)
-  occupied(x,z,r=.36){if(!joined)return false;for(const p of roster.values()){const s=p.sample;if(p.lastSeen>0&&s&&Math.hypot(s.x-x,s.z-z)<r)return true;}return false;},
+  occupied(x,z,r=.36){if(!joined)return false;for(const p of roster.values()){const s=p.sample;if(p.lastSeen>0&&s&&Math.hypot(s.x-x,s.z-z)<r)return true;const l=p.act?.p==='lean'?decodeLean(p.act):null;if(l&&Math.hypot(l.x-x,l.z-z)<r)return true;}return false;},
+  // 그 벤치 좌판 칸에 다른 사람이 앉았다고 알려 왔는지(act b·s), 다른 사람이 자판기에서 뽑는 중인지(act can 1) — 11-17
+  seatTaken(b,s=0){if(!joined)return false;const k=`${b}:${s}`;for(const p of roster.values())if(p.lastSeen>0&&seatKey(p.act)===k)return true;return false;},
+  vendingBusy(){if(!joined)return false;for(const p of roster.values())if(p.lastSeen>0&&p.act?.can===1)return true;return false;},
   avatarOf(id){const r=roster.get(id);return r?.avatar&&r.shown?r.avatar:null;},
   people(){return [...roster.values()].filter(r=>r.lastSeen>0).map(r=>({id:r.id,name:nameOf(r),avatar:r.shown?r.avatar:null,sample:r.sample,tagHidden:r.tagHidden}));},
   update(dt){
@@ -285,7 +302,7 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
    emitStatus();
   },
   status(){return {joined,state:joined?netState:'off',transport:viaServer?'server':'local',room,id:myId,name:myName,server:params.server,
-   people:[...roster.values()].map(r=>({id:r.id,name:nameOf(r),shown:r.shown,avatar:!!r.avatar,smoke:r.smoker?.state??null,lit:r.smoker?.status?.().lit??null,act:r.act,pose:r.S?.pose??null,can:r.S?r.S.can.drop?'drop':r.S.can.held?'held':'none':null,x:r.sample?+r.sample.x.toFixed(2):null,z:r.sample?+r.sample.z.toFixed(2):null})),stats:{...stats}};},
-  dispose(){leave(true);win?.removeEventListener?.('lounge:chat',onChat);win?.removeEventListener?.('lounge:smoke',onSmoke);win?.removeEventListener?.('lounge:spot',onSpot);},
+   people:[...roster.values()].map(r=>({id:r.id,name:nameOf(r),shown:r.shown,avatar:!!r.avatar,smoke:r.smoker?.state??null,lit:r.smoker?.status?.().lit??null,kind:r.smoker?.status?.().kind??null,trick:r.smoker?.status?.().trick??null,outfit:r.avatar?.outfit??null,act:r.act,pose:r.S?.pose??null,can:r.S?r.S.can.drop?'drop':r.S.can.held?'held':'none':null,x:r.sample?+r.sample.x.toFixed(2):null,z:r.sample?+r.sample.z.toFixed(2):null})),stats:{...stats}};},
+  dispose(){leave(true);win?.removeEventListener?.('lounge:chat',onChat);win?.removeEventListener?.('lounge:smoke',onSmoke);win?.removeEventListener?.('lounge:spot',onSpot);win?.removeEventListener?.('lounge:emote',onEmote);},
  };
 }
