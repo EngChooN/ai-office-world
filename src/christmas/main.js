@@ -44,6 +44,7 @@ import {createGondolaPlay} from './gondola-play.js';
 import {cabinYAt} from './gondola.js';
 import {createCarouselPlay,findCarousel} from './carousel-play.js'; // 회전목마 타기(시안 B ?look=festive-b에서만, 11-17 3차)
 import {createRinkPlay,heightWithRink,strideAt} from './rink-play.js'; // 아이스링크 들어가기·얼음 위 걷기(시안 B에서만)
+import {openWin,closeWin,onWin} from '../ui-frame.js'; // 창은 한 번에 하나(11-18 공통 틀)
 import {createSkySleighPlay} from './sky-sleigh-play.js'; // 루돌프 하늘 썰매 타기·비행·별 흔적(시안 B에서만, 11-18)
 import {createFightUi} from './fight-ui.js';
 import {inYard as inSnowmanYard} from './snowman-state.js';
@@ -104,7 +105,7 @@ const poser=createXmasPoser({avatar:player,world,toon}); // 앉기·손 녹이�
 const cols=village.colliders;
 
 // ── 입력·카메라
-let net=null,gifts=null,campfire=null,snowman=null,snowfight=null,sledPlay=null,fightUi=null,gondola=null,carousel=null,rink=null,travel=null,skyPlay=null; // 놀이 모듈(아래에서 만든다)
+let playWin=false,playWinHook=false,net=null,gifts=null,campfire=null,snowman=null,snowfight=null,sledPlay=null,fightUi=null,gondola=null,carousel=null,rink=null,travel=null,skyPlay=null; // 놀이 모듈(아래에서 만든다)
 const input=createInput({canvas:renderer.domElement,mobile});
 const cam={yaw:SPAWN.heading,pitch:.3,dist:mobile?4.2:3.6,min:1.8,max:9,target:new THREE.Vector3()};
 // 장식 달기 모드 카메라: 트리를 정면으로 보는 궤도(좌우 끌기·A/D로 둘레, 위아래 끌기·W/S·휠로 높이)
@@ -267,6 +268,8 @@ hud=createXmasHud({multi,treePlay,mobile,look,wardrobe:()=>profile.wardrobe,proj
  aimButton:(ph,dx,dy,sx,sy)=>snowfight.aimButton(ph,dx,dy,sx,sy),
  hold:(id,on)=>{if(id.startsWith('sb:'))snowfight.hold(id,on);else sledPlay.hold?.(id,on);},
  inbox:()=>gifts.openInbox(),
+ board:()=>gifts.openInbox(true),
+ unopened:()=>gifts?.unopened??0,
  sound(){profile.sound=!profile.sound;saveProfile();saveShared({sound:profile.sound});audio.setMuted(!profile.sound);hud.setSound(!profile.sound);showCarol();hud.say(profile.sound?'소리를 켰어요':'소리를 껐어요',1.4,profile.sound?'c-sound':'c-sound-off');},
  carol(){profile.carol=!profile.carol;saveProfile();saveShared({music:profile.carol});audio.setCarol(profile.carol);showCarol();hud.say(profile.carol?(profile.sound?'캐럴을 켰어요':'캐럴을 켰어요. 소리도 켜야 들려요'):'캐럴을 껐어요',1.6,profile.carol?(profile.sound?'c-music':'c-sound-off'):'c-music-off');},
  musicOpen(){showCarol();},
@@ -413,7 +416,7 @@ addEventListener('keydown',e=>{const a=document.activeElement;if(a&&(a.tagName==
 // 채팅(공용 창, 크리스마스 자리·문구)
 // 모닥불 둘레 6m 안 사람의 말풍선은 조금 크고 오래(6초, 체험설계 §5-3)
 const byFire=(x,z)=>Math.hypot(x-CAMPFIRE.x,z-CAMPFIRE.z)<FIRE.talkR;
-const chat=installHikingChat({ns:'xmas',cls:'xc-chat',chipSelector:null,title:'💬 광장 사람들',quick:['메리 크리스마스!','안녕하세요','트리 예뻐요','같이 꾸며요','🎄'],
+const chat=installHikingChat({ns:'xmas',cls:'xc-chat',chipSelector:null,frame:hud.frame,title:'💬 광장 사람들',quick:['메리 크리스마스!','안녕하세요','트리 예뻐요','같이 꾸며요','🎄'],
  notice:'전화번호·주소·SNS 아이디는 적지 마세요. 채팅은 저장되지 않아요.',lookup:id=>screenPos(id),
  bubbleFor:id=>{const p=id===multi.id||id==='me'?player:multi.sampleOf(id);return p&&byFire(p.x,p.z)?{ms:FIRE.bubbleMs,big:true}:null;}});
 
@@ -449,6 +452,9 @@ renderer.setAnimationLoop(()=>{
  actT-=dt;if(actT<=0){actT=.2;hud.setActions(currentActions());updateZone();
   // 큰 창·판(선물·사람 목록·옷·눈사람 꾸미기)이 열린 동안 💬 단추를 접는다(휴대폰 아래 시트를 가리지 않게, 한 번에 한 가지 창)
   document.documentElement.classList.toggle('xh-panel',gifts.open||snowman.decoOpen||!!hud.sheet||hud.cardOpen);
+  // 선물·눈사람 꾸미기 창도 「창은 하나만」(공통 틀): 열리면 메뉴·채팅·지도가 닫히고, 다른 창이 열리면 이 창들이 닫힌다
+  {const g=gifts.open||snowman.decoOpen;if(g&&!playWin){playWin=true;openWin('play');}else if(!g&&playWin){playWin=false;closeWin('play');}}
+  if(!playWinHook){playWinHook=true;onWin('play',()=>{if(gifts.open)gifts.closeAll();if(snowman.decoOpen)snowman.closeDeco();});}
   if(hud.sheet==='music')showCarol();}
  audio.update(dt,{x:player.x,z:player.z,fireDist:Math.hypot(player.x-CAMPFIRE.x,player.z-CAMPFIRE.z),sitting:campfire.sitting,sled:sledPlay.mode==='ride'?sledPlay.ride?.v??0:sledPlay.riding?6:skyPlay.riding?Math.max(2.5,skyPlay.speed):0}); // 하늘 썰매도 같은 방울 소리(둥실 멈춤이면 느리게)
  hud.update(dt,{hasBubble:id=>chat?.hasBubble?.(id)});

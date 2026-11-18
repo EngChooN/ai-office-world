@@ -1,0 +1,667 @@
+{
+ "smoking-portrait-base": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 5.2,
+  "visiblePct": 94.8,
+  "freePct": 75.4,
+  "btnCount": 6,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "꺼내기",
+   "uf": "big",
+   "sheet": false,
+   "x": 298,
+   "y": 740,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  }
+ },
+ "smoking-portrait-chat": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 10.8,
+  "visiblePct": 89.2,
+  "freePct": 77.7,
+  "btnCount": 9,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": {
+   "t": "꺼내기",
+   "uf": "big",
+   "sheet": false,
+   "x": 318,
+   "y": 710,
+   "w": 60,
+   "h": 60,
+   "covered": null
+  }
+ },
+ "smoking-portrait-menu": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 45.2,
+  "visiblePct": 54.8,
+  "freePct": 50.7,
+  "btnCount": 15,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "smoking-portrait-menu-note": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 34.8,
+  "visiblePct": 65.2,
+  "freePct": 61.1,
+  "btnCount": 9,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "smoking-portrait-lit": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 5.9,
+  "visiblePct": 94.1,
+  "freePct": 72,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "꾹 눌러 들이마시기",
+   "uf": "big",
+   "sheet": false,
+   "x": 298,
+   "y": 740,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  }
+ },
+ "smoking-portrait-lit-chat": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 10.9,
+  "visiblePct": 89.1,
+  "freePct": 77.7,
+  "btnCount": 9,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": {
+   "t": "꾹 눌러 들이마시기",
+   "uf": "big",
+   "sheet": false,
+   "x": 318,
+   "y": 710,
+   "w": 60,
+   "h": 60,
+   "covered": null
+  }
+ },
+ "smoking-portrait-lit-menu": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 34.8,
+  "visiblePct": 65.2,
+  "freePct": 61.1,
+  "btnCount": 9,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "smoking-landscape-base": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 5.3,
+  "visiblePct": 94.7,
+  "freePct": 70.3,
+  "btnCount": 6,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "꺼내기",
+   "uf": "big",
+   "sheet": false,
+   "x": 752,
+   "y": 298,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  }
+ },
+ "smoking-landscape-chat": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 12.4,
+  "visiblePct": 87.6,
+  "freePct": 61.6,
+  "btnCount": 12,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": {
+   "t": "꺼내기",
+   "uf": "big",
+   "sheet": false,
+   "x": 772,
+   "y": 256,
+   "w": 60,
+   "h": 60,
+   "covered": null
+  }
+ },
+ "smoking-landscape-menu": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 41.4,
+  "visiblePct": 58.6,
+  "freePct": 52.4,
+  "btnCount": 13,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "smoking-landscape-menu-note": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 41.4,
+  "visiblePct": 58.6,
+  "freePct": 52.4,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "smoking-landscape-lit": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 5.9,
+  "visiblePct": 94.1,
+  "freePct": 70.3,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "꾹 눌러 들이마시기",
+   "uf": "big",
+   "sheet": false,
+   "x": 752,
+   "y": 298,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  }
+ },
+ "smoking-landscape-lit-chat": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 12.4,
+  "visiblePct": 87.6,
+  "freePct": 61.6,
+  "btnCount": 12,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": {
+   "t": "꾹 눌러 들이마시기",
+   "uf": "big",
+   "sheet": false,
+   "x": 772,
+   "y": 256,
+   "w": 60,
+   "h": 60,
+   "covered": null
+  }
+ },
+ "smoking-landscape-lit-menu": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 41.4,
+  "visiblePct": 58.6,
+  "freePct": 52.4,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "christmas-portrait-base": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 4.1,
+  "visiblePct": 95.9,
+  "freePct": 81.5,
+  "btnCount": 5,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "달리기",
+   "uf": "big",
+   "sheet": false,
+   "x": 298,
+   "y": 740,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  }
+ },
+ "christmas-portrait-chat": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 11,
+  "visiblePct": 89,
+  "freePct": 77.7,
+  "btnCount": 10,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": {
+   "t": "달리기",
+   "uf": "big",
+   "sheet": false,
+   "x": 318,
+   "y": 710,
+   "w": 60,
+   "h": 60,
+   "covered": null
+  }
+ },
+ "christmas-portrait-map": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 51.9,
+  "visiblePct": 48.1,
+  "freePct": 44.1,
+  "btnCount": 16,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "xt-map"
+  ],
+  "big": null
+ },
+ "christmas-portrait-menu": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 51.9,
+  "visiblePct": 48.1,
+  "freePct": 44.1,
+  "btnCount": 17,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "christmas-portrait-fight": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 8.3,
+  "visiblePct": 91.7,
+  "freePct": 59.2,
+  "btnCount": 9,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "던지기",
+   "uf": "big",
+   "sheet": false,
+   "x": 298,
+   "y": 740,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  }
+ },
+ "christmas-portrait-fight-chat": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 11,
+  "visiblePct": 89,
+  "freePct": 77.7,
+  "btnCount": 10,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": {
+   "t": "던지기",
+   "uf": "big",
+   "sheet": false,
+   "x": 318,
+   "y": 710,
+   "w": 60,
+   "h": 60,
+   "covered": null
+  }
+ },
+ "christmas-landscape-base": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 4.1,
+  "visiblePct": 95.9,
+  "freePct": 77.3,
+  "btnCount": 5,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "달리기",
+   "uf": "big",
+   "sheet": false,
+   "x": 752,
+   "y": 298,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  }
+ },
+ "christmas-landscape-chat": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 12.6,
+  "visiblePct": 87.4,
+  "freePct": 61.6,
+  "btnCount": 11,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": {
+   "t": "달리기",
+   "uf": "big",
+   "sheet": false,
+   "x": 772,
+   "y": 256,
+   "w": 60,
+   "h": 60,
+   "covered": null
+  }
+ },
+ "christmas-landscape-map": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 41.1,
+  "visiblePct": 58.9,
+  "freePct": 52.4,
+  "btnCount": 13,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "xt-map"
+  ],
+  "big": null
+ },
+ "christmas-landscape-menu": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 41.1,
+  "visiblePct": 58.9,
+  "freePct": 52.4,
+  "btnCount": 14,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "christmas-landscape-fight": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 8.4,
+  "visiblePct": 91.6,
+  "freePct": 70.3,
+  "btnCount": 9,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "던지기",
+   "uf": "big",
+   "sheet": false,
+   "x": 752,
+   "y": 298,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  }
+ },
+ "christmas-landscape-fight-chat": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 12.6,
+  "visiblePct": 87.4,
+  "freePct": 61.6,
+  "btnCount": 11,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": {
+   "t": "던지기",
+   "uf": "big",
+   "sheet": false,
+   "x": 772,
+   "y": 256,
+   "w": 60,
+   "h": 60,
+   "covered": null
+  }
+ },
+ "hiking-portrait-base": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 9.1,
+  "visiblePct": 90.9,
+  "freePct": 60.2,
+  "btnCount": 11,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "자동 걷기 켜기 (R)",
+   "uf": "big",
+   "sheet": false,
+   "x": 298,
+   "y": 740,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  }
+ },
+ "hiking-portrait-chat": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 13.1,
+  "visiblePct": 86.9,
+  "freePct": 72.5,
+  "btnCount": 13,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": {
+   "t": "자동 걷기 켜기 (R)",
+   "uf": "big",
+   "sheet": false,
+   "x": 318,
+   "y": 710,
+   "w": 60,
+   "h": 60,
+   "covered": null
+  }
+ },
+ "hiking-portrait-menu": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 54.4,
+  "visiblePct": 45.6,
+  "freePct": 38.4,
+  "btnCount": 14,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "hiking-portrait-menu-settings": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 54.4,
+  "visiblePct": 45.6,
+  "freePct": 38.4,
+  "btnCount": 22,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "hiking-portrait-menu-book": {
+  "W": 390,
+  "H": 844,
+  "uiPct": 40,
+  "visiblePct": 60,
+  "freePct": 38.4,
+  "btnCount": 15,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "hiking-landscape-base": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 10.1,
+  "visiblePct": 89.9,
+  "freePct": 60.5,
+  "btnCount": 11,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "자동 걷기 켜기 (R)",
+   "uf": "big",
+   "sheet": false,
+   "x": 752,
+   "y": 298,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  }
+ },
+ "hiking-landscape-chat": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 15.8,
+  "visiblePct": 84.2,
+  "freePct": 51.3,
+  "btnCount": 13,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": {
+   "t": "자동 걷기 켜기 (R)",
+   "uf": "big",
+   "sheet": false,
+   "x": 772,
+   "y": 256,
+   "w": 60,
+   "h": 60,
+   "covered": null
+  }
+ },
+ "hiking-landscape-menu": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 44.8,
+  "visiblePct": 55.2,
+  "freePct": 45.1,
+  "btnCount": 14,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "hiking-landscape-menu-settings": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 44.8,
+  "visiblePct": 55.2,
+  "freePct": 45.1,
+  "btnCount": 21,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "hiking-landscape-menu-book": {
+  "W": 844,
+  "H": 390,
+  "uiPct": 44.8,
+  "visiblePct": 55.2,
+  "freePct": 45.1,
+  "btnCount": 13,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null
+ },
+ "fails": []
+}

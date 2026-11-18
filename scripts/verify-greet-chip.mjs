@@ -53,7 +53,7 @@ async function run(label,vp){
  await put(20);res.alone=await measure(A);await A.screenshot({path:`${dir}/${label}-alone.png`});
  ok(`${label} 혼자: 칩 없음·도장 걷기`,!res.alone.chip&&res.alone.stampMode==='walk',res.alone.stampText);
  // 거리별
- res.byDist={};for(const d of [6,4.5,3.6,5,5.4,6.2]){await put(d,.2,900);const m=await measure(A);res.byDist[d]=m.greet.mode;}
+ res.byDist={};for(const d of [6,4.5,3.6,5,5.4,6.2]){await put(d,.2,1600);const m=await measure(A);res.byDist[d]=m.greet.mode;}
  ok(`${label} 4m 안에서 보이고 5.5m 밖에서 숨김`,res.byDist[6]==='none'&&res.byDist[4.5]==='none'&&res.byDist[3.6]==='chip'&&res.byDist[5]==='chip'&&res.byDist[5.4]==='chip'&&res.byDist[6.2]==='none',res.byDist);
  await put(3,.2,1800);res.near=await measure(A);await A.screenshot({path:`${dir}/${label}-near.png`});
  const n=res.near;
@@ -73,7 +73,7 @@ async function run(label,vp){
  // 2m 안 1초 멈춤 → 펼침 → 5초 뒤 접힘
  await sleep(6500);await put(1.6,.15,0);await sleep(1600);res.open=await measure(A);await A.screenshot({path:`${dir}/${label}-open.png`});
  const o=res.open;ok(`${label} 2m 안 1초 멈춤 = 머리 위 카드`,o.greet.mode==='open'&&o.card,`${o.cardPct}% ${o.card?.w}×${o.card?.h}`);
- const blockers=await A.evaluate(()=>[...document.querySelectorAll('.nb-tag,.nb-card,.nb-tabs,.nb-dial,#auto,.nb-view,.me-chip,.hc-btn,.pw-btn')].map(e=>{const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return r.width&&cs.display!=='none'&&cs.visibility!=='hidden'&&!e.hidden?{c:e.className||e.id,x:r.x,y:r.y,w:r.width,h:r.height}:null;}).filter(Boolean));
+ const blockers=await A.evaluate(()=>[...document.querySelectorAll('.nb-tag,.nb-card,.nb-tabs,.nb-dial,#auto,.nb-view,.me-chip,.hc-btn,.pw-btn,[data-uf],.uf-tr button,.hk-pill')].map(e=>{const r=e.getBoundingClientRect(),cs=getComputedStyle(e);return r.width&&cs.display!=='none'&&cs.visibility!=='hidden'&&!e.hidden?{c:e.className||e.id,x:r.x,y:r.y,w:r.width,h:r.height}:null;}).filter(Boolean));
  const hits=o.card?blockers.filter(b=>overlap(o.card,b)).map(b=>b.c):['카드 없음'];
  ok(`${label} 펼친 카드가 HUD 단추와 안 겹침`,!hits.length,hits.join(','));
  if(mobile)ok(`${label} 카드 단추 높이 44px 이상`,o.btns.length===2&&o.btns.every(h=>h>=44),o.btns);

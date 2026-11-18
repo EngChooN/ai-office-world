@@ -20,6 +20,8 @@ export function installLoungeMultiUi({multi,ctx,hud=null,root=document.getElemen
  const btn=doc.createElement('button');btn.type='button';btn.className='lg-btn lg-mp-btn';btn.dataset.mp='open';btn.setAttribute('aria-haspopup','dialog');
  btn.innerHTML=`<i aria-hidden="true" data-ic="c-multi-join">${icon('c-multi-join',{size:'s'})}</i><span class="lg-mp-t">같이 피우기</span><b class="lg-mp-n" hidden></b>`;
  top.prepend(btn);
+ // 11-18 공통 틀: 이 단추가 위 왼쪽 상태 알약(「옥상 1서버 · 👥 2」)이 된다(ui-frame.css .uf-pill)
+ const pill=doc.documentElement.classList.contains('uf');if(pill)btn.classList.add('uf-pill');
  // ── 이름표 층(말풍선 아래에 깔리게 맨 앞에)
  const tags=doc.createElement('div');tags.className='lg-mp-tags';root.prepend(tags);
  // ── 알림(HUD 토스트와 겹치지 않게 조금 아래)
@@ -35,8 +37,10 @@ export function installLoungeMultiUi({multi,ctx,hud=null,root=document.getElemen
   const v=last?.joined?loungeStatusView(last):null;
   btn.dataset.tone=v?.tone??'';btn.dataset.state=last?.joined?last.state:'';
   {const i=btn.querySelector('i'),ic=v?.ic??'c-multi-join';if(i.dataset.ic!==ic){i.dataset.ic=ic;i.innerHTML=icon(ic,{size:'s'});}} // 연결 상태 아이콘(multi.js ic = 아이콘 이름)
-  btn.querySelector('.lg-mp-t').textContent=v?.text??'같이 피우기';
-  const n=btn.querySelector('.lg-mp-n');n.hidden=!v;n.textContent=v?.short??'';
+  const ok=v?.tone==='ok'&&v.sub;
+  btn.querySelector('.lg-mp-t').textContent=pill&&ok?v.sub:v?.text??'같이 피우기';
+  const n=btn.querySelector('.lg-mp-n');n.hidden=!v||pill&&!ok;
+  if(pill){const k='p'+(v?.short??'');if(n.dataset.k!==k){n.dataset.k=k;n.innerHTML=`${icon('c-people',{size:'xs'})} ${v?.short??''}`;}}else n.textContent=v?.short??'';
   btn.setAttribute('aria-label',v?`같이 피우기 ${v.text}${v.sub?' · '+v.sub:''}`:'같이 피우기');
  }
  btn.addEventListener('click',()=>{

@@ -10,6 +10,7 @@
 // main.js와는 생성 인자(콜백)와 반환 객체로만 만난다.
 import './travel-ui.css';
 import {icon} from '../icons/icon.js';
+import {openWin,closeWin,onWin} from '../ui-frame.js';
 import {mapBounds,mapShapes,toMap,TRAVEL,placeRun,RUN_HOLD_MS} from './travel.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -49,7 +50,10 @@ export function createTravelUi({spots,shapes=mapShapes(),mobile=false,onRun=()=>
  const run=root.querySelector('.xt-run'),map=root.querySelector('.xt-map'),board=root.querySelector('.xt-board'),dots=root.querySelector('.xt-dots'),me=root.querySelector('.xt-me'),meRing=root.querySelector('.xt-me-ring'),fade=root.querySelector('.xt-fade');
  // 지도 단추: 위 오른쪽 둥근 단추 줄(hud.js .xh-tr) 맨 앞에. 줄이 없으면 이 화면 안에
  const mapBtn=doc.createElement('button');mapBtn.type='button';mapBtn.className='xh-round xt-map-btn';mapBtn.setAttribute('aria-label','바로 가기 지도');mapBtn.setAttribute('aria-haspopup','dialog');mapBtn.innerHTML=icon('x-map',{size:'m'});
- const tr=doc.querySelector('.xh-tr');if(tr)tr.prepend(mapBtn);else root.appendChild(mapBtn);
+ // 11-18 공통 틀이 있으면 위 오른쪽 공통 줄(.uf-tr) 맨 앞 = 콘텐츠 전용 1칸, 지도 창은 메뉴와 같은 시트 자리(travel-ui.css)
+ const ufTr=doc.querySelector('.uf-tr');
+ if(ufTr){mapBtn.classList.add('uf-rb');ufTr.prepend(mapBtn);map.classList.add('uf-mapsheet','xt-on-body');doc.body.appendChild(map);} // 지도 창은 위 단추 줄(46)보다 위에 오게 body로
+ else{const tr=doc.querySelector('.xh-tr');if(tr)tr.prepend(mapBtn);else root.appendChild(mapBtn);}
  let runOn=false,runOff=false,othersT=0;const runLabel=run.querySelector('span');
  const setRunView=()=>{run.setAttribute('aria-pressed',String(runOn));run.classList.toggle('on',runOn);run.toggleAttribute('data-off',runOff);};
  const setRun=on=>{if(runOn===on)return;runOn=on;setRunView();onRun(runOn);};
@@ -63,6 +67,7 @@ export function createTravelUi({spots,shapes=mapShapes(),mobile=false,onRun=()=>
  // 자리 맞추기: 0.2초마다·화면 크기 바뀔 때. 지도 창이 열려 있거나 단추가 숨어 있으면 건너뜀
  const BLOCKS='button,[role=button],.xf-ammo,.xs-alt';let placeT=0;
  function place(){
+  if(run.dataset.uf){run.style.bottom=run.style.right='';return;} // 공통 틀 자리(data-uf)면 CSS가 놓는다
   run.style.bottom=run.style.right='';const r=run.getBoundingClientRect();if(!r.width)return;
   const H=doc.documentElement.clientHeight||innerHeight,W=doc.documentElement.clientWidth||innerWidth;
   const boxes=[...doc.querySelectorAll(BLOCKS)].filter(e=>e!==run&&(!root.contains(e)||e===mapBtn)).map(e=>{if(e.closest('[hidden]'))return null;const b=e.getBoundingClientRect();if(b.width<2||b.height<2)return null;
@@ -79,7 +84,9 @@ export function createTravelUi({spots,shapes=mapShapes(),mobile=false,onRun=()=>
   run.dataset.moved='';
  }
  addEventListener('resize',()=>{placeT=0;});
- const open=on=>{map.hidden=!on;mapBtn.setAttribute('aria-pressed',String(on));if(on){othersT=0;draw(0);onOpen();}};
+ const open=on=>{const was=!map.hidden;map.hidden=!on;mapBtn.setAttribute('aria-pressed',String(on));mapBtn.classList.toggle('on',!!on);if(on){othersT=0;draw(0);onOpen();if(!was&&ufTr)openWin('map',{doc});}else if(was&&ufTr)closeWin('map',{doc});};
+ if(ufTr){onWin('map',()=>{if(!map.hidden)open(false);});
+  doc.addEventListener('pointerdown',e=>{if(map.hidden||e.target.closest?.('.xt-map,.uf-tr'))return;open(false);},true);} // 시트 바깥 게임을 누르면 닫힘
  mapBtn.addEventListener('click',()=>open(map.hidden));
  map.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){open(false);onGo(b.dataset.go);return;}if(e.target.closest('[data-x="close"]'))open(false);});
  doc.addEventListener('keydown',e=>{if(e.key==='Escape'&&!map.hidden)open(false);});

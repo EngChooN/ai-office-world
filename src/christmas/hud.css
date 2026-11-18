@@ -308,3 +308,52 @@ html.xf-match .xh-top{display:none}
 /* 알림 말(.xh-toast, 위 104px) 아래에 카드. 휴대폰 세로는 오른쪽 둥근 단추 기둥을 비켜 왼쪽 정렬, 가로는 알림 말이 60px라 그 아래 */
 .xh.touch .xl-note{left:calc(var(--sl) + 12px);transform:none;width:calc(100vw - var(--sl) - var(--sr) - 88px);top:calc(var(--st) + 176px)} /* 휴대폰 세로는 알림 말이 두 줄이 되기도 해서 더 아래 */
 @media (orientation:landscape) and (max-height:540px){.xl-note,.xh.touch .xl-note{top:calc(var(--st) + 108px);left:50%;transform:translateX(-50%);width:min(420px,calc(100vw - 24px - var(--sl) - var(--sr) - 140px))}}
+
+/* ───── 11-18 공통 화면 틀(src/ui-frame.js/.css) 위에 크리스마스만 ─────
+   위 왼쪽 알약 = 장소·사람 칩 + 트리 수(.xh-top.uf-pill), 위 오른쪽 = 🗺(travel-ui)·💬·☰. 예전 둥근 단추 줄(.xh-tr)은 ☰ 탭으로 들어가 숨긴다.
+   행동 단추 줄(.xh-acts)은 data-uf 자리(큰 단추 + 작은 단추), 달리기도 그 안. */
+.xh.uf-on .xh-tr{display:none!important}
+.xh.uf-on .xh-top.uf-pill{flex-direction:row;align-items:center;gap:6px;padding:0 12px 0 4px;max-width:calc(100vw - 190px - var(--sl) - var(--sr))}
+.xh.uf-on .xh-top.uf-pill .xh-place{min-height:40px;padding:0 4px 0 6px;background:transparent;box-shadow:none;font-size:13px;font-weight:800;color:var(--uf-ink);max-width:none;overflow:hidden;text-overflow:ellipsis}
+.xh.uf-on .xh-top.uf-pill .xh-place[data-tone=bad]{color:var(--uf-red);background:transparent;box-shadow:none}
+.xh.uf-on .xh-top.uf-pill .xh-place[data-tone=ok] em{width:8px;height:8px;border-radius:50%;background:var(--uf-grn);overflow:hidden;font-size:0;flex:none}
+.xh.uf-on .xh-top.uf-pill .xh-place[data-tone=ok] em>*{display:none}
+.xh.uf-on .xh-top.uf-pill .xh-tree{padding:0;background:none;box-shadow:none;font-size:13px;font-weight:800;color:var(--uf-ink)}
+.xh.uf-on .xh-top.uf-pill .xh-tree::before{content:"·";opacity:.35;margin-right:2px}
+.xh.uf-on .xh-top.uf-pill .xh-bar{display:none}
+.uf-tr .xt-map-btn{width:44px!important;height:44px!important;background:var(--uf-cream)!important;box-shadow:var(--uf-shadow)!important;font-size:20px}
+.uf-tr .xt-map-btn.on{background:var(--uf-ink)!important;color:#fff}
+/* 💬는 공통 줄 안(크리스마스 예전 왼쪽 아래 자리 규칙을 덮음). 창이 열려도 숨기지 않는다 */
+html.uf .uf-tr .hc-btn.xc-chat{display:grid!important}
+html.uf .uf-tr .hc-btn.xc-chat[hidden]{display:none!important}
+/* 지도 창 = 메뉴와 같은 시트 자리: 세로 아래(절반 이하) · 가로 오른쪽 340px */
+html.uf .xt-map.uf-mapsheet{position:fixed;flex-direction:column;font-family:var(--nb-font);color:var(--ink);pointer-events:auto;left:0;right:0;top:auto;bottom:0;transform:none;width:auto;max-height:52dvh;border-radius:22px 22px 0 0;padding:10px calc(var(--sr) + 14px) calc(var(--sb) + 12px) calc(var(--sl) + 14px);background:rgba(255,250,238,.97);box-shadow:0 -6px 20px rgba(40,25,10,.22);z-index:60}
+html.uf .xt-map.uf-mapsheet .xt-board{width:auto;height:calc(52dvh - 80px);max-height:none;max-width:100%;margin:0 auto} /* 지도는 세로로 긴 판(폭/높이 0.88)이라 높이에 맞춤 */
+@media (orientation:landscape) and (max-height:540px),(min-width:900px) and (min-height:541px){
+ html.uf .xt-map.uf-mapsheet{left:auto;top:0;bottom:0;right:0;width:calc(340px + var(--sr));max-height:none;border-radius:22px 0 0 22px;padding:calc(var(--st) + 10px) calc(var(--sr) + 12px) calc(var(--sb) + 10px) 12px;box-shadow:-6px 0 20px rgba(40,25,10,.22)}
+ html.uf .xt-map.uf-mapsheet .xt-board{width:auto;height:calc(100dvh - var(--st) - var(--sb) - 76px)}
+}
+/* ☰ 탭 안 */
+.uf-panel .xh-sheet.uf-moved{display:flex;flex-direction:column;gap:8px;padding:0 2px 6px;overflow:visible;color:var(--uf-ink)}
+.uf-panel .xh-sheet.uf-moved>header .xh-x{display:none}
+.uf-panel .xh-tab-h{margin:2px 2px 8px;font-size:14px}
+.uf-panel .xh-sub{font-size:12px;color:var(--uf-ink2)}
+.uf-panel .xh-mini{background:#fff;border:1.5px solid var(--uf-line);box-shadow:none;border-radius:12px;color:var(--uf-ink)}
+.uf-panel .xh-pick{background:#fff;border:1.5px solid var(--uf-line);box-shadow:none}
+.uf-panel .xh-pick[aria-pressed=true]{border-color:var(--uf-grn);background:#eef8f1;box-shadow:none}
+/* 행동 단추: 공통 틀 원 모양(눌림 표시만 크리스마스 색) */
+html.uf .xh-acts [data-uf] em{font-size:inherit}
+html.uf .xh-acts [data-uf] .xh-badge{position:absolute;top:-3px;right:-3px}
+html.uf .xh-act[data-aim].aiming{box-shadow:0 0 0 4px var(--gold),0 4px 12px rgba(120,30,20,.35)!important}
+html.uf .xh-sub-act[data-hold].on{background:#fff!important;box-shadow:inset 0 0 0 4px var(--pine)!important}
+html.uf .xt-run.on[data-uf]{background:var(--stamp)!important;color:#fff!important}
+html.uf .xt-run.on[data-uf=big]{background:#8f2219!important}
+/* 알림 띠: 위 가운데(시안 ⑥) */
+html.uf .xh-toast{top:calc(var(--st) + 60px);padding:7px 14px;border-radius:17px;background:rgba(30,20,12,.72);color:#fff;box-shadow:none;font-size:12.5px;font-weight:700;max-width:calc(100vw - 120px)}
+html.uf .xh-zone{top:calc(var(--st) + 100px)}
+html.uf .xt-map.uf-mapsheet[hidden]{display:none}
+html.uf .xt-map.uf-mapsheet header .xt-sub{display:none}
+html.uf .xt-map.uf-mapsheet{align-items:stretch}
+html.uf .xt-map.uf-mapsheet header{align-self:stretch;width:auto}
+html.uf .xf-ammo[data-uf=todo]{border-color:transparent!important;font-size:18px!important}
+html.uf .xfm-join[data-uf=todo]{border-color:var(--uf-red)!important}

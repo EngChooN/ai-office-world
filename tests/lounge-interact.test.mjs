@@ -22,9 +22,11 @@ test('HUD 단추(data-a)마다 처리하는 곳이 있다',()=>{
  const hud=src('hud.js');
  const made=new Set([...hud.matchAll(/data-a="([a-z]+)"/g),...hud.matchAll(/\bb\('([a-z]+)'/g),...hud.matchAll(/\bsec\('([a-z]+)'/g)].map(m=>m[1]));
  const actKeys=new Set([...hud.slice(hud.indexOf('const act={'),hud.indexOf('// 꾹 누르는 모금 단추')).matchAll(/^\s{2}([a-z]+)\(/gm)].map(m=>m[1]));
- // 클릭 묶음의 따로 처리(emote·set·snd·fold·chat), 창 안(close·enter·mute·info·age·feedback), 꾹 단추(draw = pointerdown)
- const branches=new Set(['emote','set','snd','fold','chat','close','enter','mute','info','age','feedback','draw']);
- for(const b of ['emote','set','snd','fold','chat'])assert.match(hud,new RegExp(`a==='${b}'`),`클릭 처리 ${b}`);
+ // 클릭 묶음의 따로 처리(emote·set·snd), 창 안(close·enter·mute·info·age·feedback), 꾹 단추(draw = pointerdown)
+ // 11-18 UI 개선: 수첩 접기(fold)는 ☰ 「금연 수첩」 탭, 채팅 열기(chat)는 공통 틀 💬 단추(chatBtn)로 바뀜
+ const branches=new Set(['emote','set','snd','close','enter','mute','info','age','feedback','draw']);
+ for(const b of ['emote','set','snd'])assert.match(hud,new RegExp(`a==='${b}'`),`클릭 처리 ${b}`);
+ assert.match(hud,/chatBtn\.addEventListener\('click'/,'💬 단추 처리');
  for(const b of ['close','enter','mute','info','age','feedback'])assert.match(hud,new RegExp(`dataset\\.a==='${b}'`),`창 단추 ${b}`);
  assert.ok(made.size>=20,`단추 종류 ${made.size}`);
  const missing=[...made].filter(a=>!actKeys.has(a)&&!branches.has(a));

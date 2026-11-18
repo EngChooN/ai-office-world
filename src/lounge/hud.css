@@ -150,3 +150,46 @@
  .lg-age-list{grid-column:1}.lg-age-form{grid-column:2;display:grid;gap:8px;align-content:start}
  .lg-age-card h1{font-size:20px}
 }
+
+/* ── 11-18 공통 화면 틀(src/ui-frame.js/.css) 위에 흡연장만 ──
+   위 = 👥 상태 알약(multi-ui.js .uf-pill)·💬·☰ / 오른쪽 아래 = 흡연 단추(data-uf) / 상황·수첩·옷·소리·설정은 ☰ 탭.
+   자리를 받지 않은 아래 단추(한숨·기지개는 말하기 줄 칩, ⋯ 없앰)와 「상황」 단추는 숨긴다. */
+#app.lg-uf .lg-dock button:not([data-uf]),#app.lg-uf .lg-more,#app.lg-uf .sp-dock{display:none!important}
+#app.lg-uf .lg-dock [data-uf]{display:inline-flex!important} /* 휴대폰 「⋯」 안 접힘 규칙(.tools:not(.open)) 무시 */
+:root[data-uf-heavy] #app.lg-uf [data-uf],:root[data-uf-win=chat] #app.lg-uf [data-uf^=s],:root[data-uf-win=chat] #app.lg-uf [data-uf=todo],:root[data-uf-kb] #app.lg-uf [data-uf]{display:none!important} /* 위 줄이 틀의 숨김 규칙보다 세서 다시 적음 */
+#app.lg-uf .lg-dock .lg-draw{background-color:var(--uf-red)!important;border:0!important}
+#app.lg-uf .lg-dock .lg-draw[data-uf=big] .ic-row{display:flex;flex-direction:column;align-items:center;gap:1px}
+#app.lg-uf .lg-dock .lg-draw[data-uf=big] .ic-txt{font-size:11px;line-height:1.1;white-space:normal;max-width:64px}
+#app.lg-uf .sp-mark[data-uf=todo] .sp-t{display:inline!important}
+#app.lg-uf .lg-mp-btn.uf-pill .lg-mp-t{display:inline!important}
+#app.lg-uf .lg-mp-btn.uf-pill .lg-mp-n:not([hidden]){display:inline-flex!important;align-items:center;gap:3px;min-width:0;height:auto;padding:0;background:none!important;color:var(--uf-ink);font-size:13px}
+#app.lg-uf .lg-mp-btn.uf-pill .lg-mp-n::before{content:"·";opacity:.35;margin-right:3px}
+#app.lg-uf .lg-mp-btn.uf-pill[data-tone=ok] i{width:8px;height:8px;border-radius:50%;background:var(--uf-grn);font-size:0;overflow:hidden}
+#app.lg-uf .lg-mp-btn.uf-pill[data-tone=ok] i>*{display:none}
+#app.lg-uf .lg-mp-btn.uf-pill[data-tone=bad]{color:var(--uf-red)!important}
+/* 알림 띠: 위 가운데 하나(시안 ⑥) */
+#app.lg-uf .lg-toast,#app.lg-uf .lg-mp-toast{top:calc(var(--st) + 60px);height:auto;min-height:34px;box-sizing:border-box;display:flex;align-items:center;gap:6px;padding:6px 14px;border:0;border-radius:17px;background:rgba(30,20,12,.72);color:#fff;font-size:12.5px;font-weight:700;box-shadow:none;max-width:calc(100% - 120px);white-space:normal;text-align:center;z-index:44}
+#app.lg-uf .lg-mp-toast{top:calc(var(--st) + 100px)}
+/* 도장(한 대를 다 피우면 7초): 가운데 카드(큰 알림은 가운데 — 시안 규칙) */
+.lg-stamp-card{position:absolute;left:50%;top:32%;transform:translate(-50%,-50%);width:220px;height:84px;pointer-events:none;z-index:44}
+.lg-stamp-card .lg-stamp{position:absolute;inset:0;transform:rotate(-6deg);border:3px solid var(--stamp);border-radius:12px;color:var(--stamp);background:rgba(255,248,238,.94);display:grid;place-items:center;text-align:center;font-size:15px;line-height:1.35;font-weight:900;box-shadow:var(--soft);animation:lg-stamp .35s cubic-bezier(.2,1.6,.4,1)}
+/* ☰ 탭 안 */
+.uf-panel .lg-tab-h{margin:4px 2px 6px;font-size:13px;color:var(--uf-ink2)}
+.uf-panel .lg-tab-h:not(:first-child){margin-top:12px}
+.uf-panel .opts{display:flex;gap:8px;flex-wrap:wrap}
+.uf-panel .lg-btn{min-height:44px;padding:0 12px;border-radius:12px;border:1.5px solid var(--uf-line);background:#fff;box-shadow:none;font:800 13px var(--uf-font);color:var(--uf-ink);display:inline-flex;align-items:center;gap:6px;pointer-events:auto;cursor:pointer}
+.uf-panel .lg-btn.on{border-color:var(--uf-grn);background:#eef8f1;outline:0}
+.uf-panel .lg-outfits{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.uf-panel .lg-outfits .lg-btn{flex-direction:column;justify-content:center;min-height:54px;white-space:normal;text-align:center;line-height:1.2}
+.uf-panel .lg-note-tab{position:relative;width:auto;padding:6px 4px;background:none;border:0;box-shadow:none;color:var(--uf-ink)}
+.uf-panel .lg-note-tab h3{margin:0 0 4px;font-size:13px;color:var(--uf-ink2)}
+.uf-panel .lg-note-tab .big{font-size:24px;font-weight:900}
+.uf-panel .lg-note-tab .row{display:flex;justify-content:space-between;font-size:14px;padding:6px 0;border-top:1px dashed #e2d4b8}
+.uf-panel .lg-note-tab .seal{position:absolute;right:8px;top:6px;transform:rotate(-8deg);border:2px solid var(--stamp);color:var(--stamp);border-radius:8px;padding:1px 6px;font-size:11px;font-weight:900}
+.uf-panel .sp-panel h3{font-size:14px;margin:2px 2px 8px}
+.uf-panel .sp-panel .sp-x{display:none!important}
+.uf-panel .sp-scenes{gap:8px}
+.uf-panel .sp-scenes .lg-btn{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;align-content:center;justify-items:start;column-gap:8px;row-gap:1px;text-align:left;min-height:52px;padding:6px 10px}
+.uf-panel .sp-scenes .lg-btn .sp-i{grid-row:1/3;align-self:center}
+.uf-panel .sp-scenes .lg-btn b{font-size:12.5px;line-height:1.2}.uf-panel .sp-scenes .lg-btn small{font-size:10.5px;font-weight:600;color:var(--uf-ink2);line-height:1.2}
+.uf-panel .sp-keep,.uf-panel .sp-fb{width:100%;justify-content:center;margin-top:8px}

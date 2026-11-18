@@ -97,7 +97,7 @@ try{
   const in2=await wsIn(S2);
   check('흡연장 서로 보임',in2.some(m=>m.t==='s'&&m.id===id1)&&in2.some(m=>m.t==='j'&&m.id===id1),{미나ID:id1});
   // 채팅: 실제 채팅 입력칸으로
-  await S1.evaluate(()=>{const f=document.querySelector('.lg-form'),i=f.querySelector('input');document.querySelector('.lg-chat')?.classList.add('open');i.value='불 좀 빌려 주세요';f.requestSubmit();});
+  await S1.evaluate(()=>{const f=document.querySelector('.uf-chatbar form'),i=f.querySelector('input');i.value='불 좀 빌려 주세요';f.requestSubmit();});
   await waitFor(S2,()=>window.__ev.some(e=>e.type==='lounge:chat'&&e.remote&&e.text==='불 좀 빌려 주세요'),null,8000).catch(()=>{});
   const c2=(await ev(S2)).filter(e=>e.type==='lounge:chat'&&e.remote);
   check('흡연장 채팅',c2.some(e=>e.text==='불 좀 빌려 주세요'),{지훈받음:c2});
@@ -119,7 +119,7 @@ async function rawSmoker(name){
 try{
  const raws=smokingWired?[]:[await rawSmoker('흡연시험1'),await rawSmoker('흡연시험2')];
  if(raws.length){raws[0].send({t:'s',q:1,z:0,x:1,y:1,h:0,v:0,f:0});raws[0].send({t:'c',text:'흡연장 비밀글'});raws[0].send({t:'lounge:smoke',state:'smoking',lit:true});}
- else if(S1){await sleep(2100);await S1.evaluate(()=>{const f=document.querySelector('.lg-form'),i=f.querySelector('input');i.value='흡연장 비밀글';f.requestSubmit();});}
+ else if(S1){await sleep(2100);await S1.evaluate(()=>{const f=document.querySelector('.uf-chatbar form'),i=f.querySelector('input');i.value='흡연장 비밀글';f.requestSubmit();});}
  await sleep(400);
  await A.evaluate(()=>dispatchEvent(new CustomEvent('hiking:chat-send',{detail:{text:'등산 비밀글'}})));
  await sleep(2000);

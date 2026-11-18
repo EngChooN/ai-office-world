@@ -1,0 +1,136 @@
+/* 온라인 시리즈 공통 화면 틀(ui-frame.js). 시안 docs/UI-개선/온라인시리즈-UI-개선-시안-v1.html 값 그대로:
+   크림 반투명(rgba(255,250,238,.86~.9))·얇은 그림자·동그라미/알약 두 모양·빨강은 큰 단추에만·단추는 손가락 크기(작은 단추 52px, 위 단추 44px).
+   자리(세로 390×844 기준): 위 단추 줄 오른쪽 12px·위 10px / 큰 단추 76px 오른쪽 16px·아래 28px / 작은 단추 52px는 큰 단추 가운데에서 92px 원 둘레 /
+   할 일 칩은 작은 단추 위. 콘텐츠는 단추에 data-uf="big|s1..s5|todo"만 달면 된다(ufPlace). */
+:root.uf{
+ --uf-cream:rgba(255,250,238,.88);--uf-cream2:rgba(255,250,238,.95);--uf-ink:#3a2b22;--uf-ink2:#6b5a4c;--uf-line:#e2d4b8;--uf-red:#c8382d;--uf-grn:#3f9a62;
+ --uf-shadow:0 2px 8px rgba(40,25,10,.16);--uf-font:"Apple SD Gothic Neo","Pretendard",-apple-system,"Malgun Gothic",sans-serif;
+ --uf-sl:env(safe-area-inset-left,0px);--uf-sr:env(safe-area-inset-right,0px);--uf-st:env(safe-area-inset-top,0px);--uf-sb:env(safe-area-inset-bottom,0px);
+ --uf-big:76px;--uf-sm:52px;--uf-r:92px;--uf-d:65px;--uf-edge:16px;--uf-low:28px;--uf-chat-h:0px;--uf-kb:0px;
+ /* 큰 단추 가운데(오른쪽·아래에서 잰 값) */
+ --uf-cx:calc(var(--uf-sr) + var(--uf-edge) + var(--uf-big)/2);--uf-cy:calc(var(--uf-sb) + var(--uf-low) + var(--uf-big)/2);
+}
+@media (orientation:landscape) and (max-height:540px){:root.uf{--uf-edge:max(16px,var(--uf-sr));--uf-low:16px;--uf-r:86px;--uf-d:66px}}
+
+/* ── ② 위 오른쪽 공통 단추 줄 ── */
+.uf-tr{position:fixed;z-index:46;top:calc(var(--uf-st) + 10px);right:calc(var(--uf-sr) + 12px);display:flex;gap:8px;align-items:center;pointer-events:none;font-family:var(--uf-font)}
+.uf-tr>*{pointer-events:auto}
+.uf-chat-slot{display:contents}
+.uf-rb,.uf-tr .hc-btn,.uf-tr .uf-chat-btn{position:relative;display:grid;place-items:center;width:44px;height:44px;min-width:44px;padding:0;margin:0;border:0;border-radius:50%;background:var(--uf-cream);color:var(--uf-ink);box-shadow:var(--uf-shadow);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+:root.uf .uf-tr .hc-btn{left:auto!important;top:auto!important;right:auto!important;bottom:auto!important;position:relative!important;width:44px!important;height:44px!important;font-size:19px;z-index:auto!important;display:grid!important}
+:root.uf .uf-tr .hc-btn[hidden]{display:none!important}
+.uf-rb.on,.uf-tr .hc-btn.on,.uf-tr .uf-chat-btn.on{background:var(--uf-ink);color:#fff;box-shadow:var(--uf-shadow)}
+.uf-rb[hidden],.uf-tr .uf-chat-btn[hidden]{display:none}
+.uf-rb .ic-emoji{font-size:20px;line-height:1}
+.uf-rb:focus-visible,.uf-tr button:focus-visible{outline:3px solid var(--uf-red);outline-offset:2px}
+.uf-tr .hc-dot,.uf-dot{position:absolute;right:1px;top:1px;width:12px;height:12px;border-radius:50%;background:var(--uf-red);box-shadow:0 0 0 2px #fff}
+
+/* ── ① 상태 알약(콘텐츠가 자기 상태 칩에 .uf-pill을 단다) ── */
+.uf-pill{position:fixed!important;z-index:45;left:calc(var(--uf-sl) + 12px)!important;top:calc(var(--uf-st) + 10px)!important;right:auto!important;bottom:auto!important;transform:none!important;
+ min-height:40px;box-sizing:border-box;margin:0!important;padding:0 14px 0 10px;border:0!important;border-radius:20px!important;background:var(--uf-cream)!important;color:var(--uf-ink)!important;box-shadow:var(--uf-shadow)!important;
+ display:flex;align-items:center;gap:6px;font:700 13px/1.2 var(--uf-font);white-space:nowrap;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+
+/* ── ⑦ ☰ 메뉴 창: 세로 = 아래에서 올라옴(화면 절반 이하), 가로 = 오른쪽 340px ── */
+.uf-sheet{position:fixed;z-index:60;left:0;right:0;bottom:0;max-height:50dvh;display:flex;flex-direction:column;box-sizing:border-box;padding:6px calc(var(--uf-sr) + 14px) calc(var(--uf-sb) + 12px) calc(var(--uf-sl) + 14px);
+ border-radius:22px 22px 0 0;background:rgba(255,250,238,.97);color:var(--uf-ink);box-shadow:0 -6px 20px rgba(40,25,10,.22);font-family:var(--uf-font);pointer-events:auto}
+.uf-sheet[hidden]{display:none}
+.uf-grip{display:block;flex:none;width:40px;height:5px;margin:2px auto 8px;border-radius:3px;background:#d3c4a6}
+.uf-quick{flex:none;display:flex;gap:6px;margin-bottom:8px}
+.uf-quick:empty{display:none}
+.uf-tabs{flex:none;display:flex;gap:4px;align-items:stretch;margin-bottom:8px;padding-bottom:6px;border-bottom:1.5px solid #eadfc8}
+.uf-tab{flex:1;min-width:0;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 0;border:0;border-radius:12px;background:transparent;color:var(--uf-ink2);font:700 11px/1.15 var(--uf-font);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.uf-tab span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.uf-tab.on{background:var(--uf-ink);color:#fff}
+.uf-x{flex:none;align-self:center;display:grid;place-items:center;width:44px;height:44px;margin-left:2px;padding:0;border:0;border-radius:50%;background:#efe6d2;color:var(--uf-ink);cursor:pointer}
+.uf-body{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.uf-panel[hidden]{display:none!important}
+/* 창 안으로 옮겨 온 콘텐츠 원래 창(.uf-moved)은 자기 자리·그림자를 벗는다 */
+.uf-panel>.uf-moved{position:static!important;inset:auto!important;transform:none!important;width:auto!important;max-width:none!important;max-height:none!important;margin:0!important;box-shadow:none!important;border:0!important;background:transparent!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important}
+@media (orientation:landscape) and (max-height:540px),(min-width:900px) and (min-height:541px){
+ .uf-sheet{left:auto;top:0;bottom:0;right:0;width:calc(340px + var(--uf-sr));max-height:none;border-radius:22px 0 0 22px;padding:calc(var(--uf-st) + 10px) calc(var(--uf-sr) + 14px) calc(var(--uf-sb) + 10px) 14px;box-shadow:-6px 0 20px rgba(40,25,10,.22)}
+ .uf-grip{display:none}
+ .uf-tab{min-height:44px}
+}
+@media (min-width:900px) and (min-height:541px){.uf-sheet{width:380px}}
+
+/* ── ④ 행동 원·⑤ 할 일 칩(data-uf) ── */
+/* display는 건드리지 않는다(각 콘텐츠의 숨김 규칙·hidden을 그대로 따르게). 단추는 원래 flex/inline-flex */
+:root.uf [data-uf]{position:fixed!important;z-index:30;left:auto!important;top:auto!important;margin:0!important;transform:none!important;box-sizing:border-box!important;
+ flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:1px!important;
+ font:800 10px/1.1 var(--uf-font)!important;letter-spacing:-.02em;white-space:nowrap!important;text-align:center;touch-action:manipulation;pointer-events:auto;-webkit-tap-highlight-color:transparent}
+:root.uf [data-uf=big],:root.uf [data-uf^=s]{border-radius:50%!important;padding:0!important;min-width:0!important;min-height:0!important;overflow:visible}
+/* 큰 단추: 빨강 원 76px */
+:root.uf [data-uf=big]{right:calc(var(--uf-cx) - var(--uf-big)/2)!important;bottom:calc(var(--uf-cy) - var(--uf-big)/2)!important;width:var(--uf-big)!important;height:var(--uf-big)!important;
+ background:var(--uf-red)!important;color:#fff!important;border:0!important;box-shadow:0 4px 12px rgba(120,30,20,.35),inset 0 0 0 3px rgba(255,255,255,.25)!important;font-size:11.5px!important;--ic-point:#ffd36b}
+/* 작은 단추: 크림 원 52px */
+:root.uf [data-uf^=s]{width:var(--uf-sm)!important;height:var(--uf-sm)!important;background:var(--uf-cream2)!important;color:var(--uf-ink)!important;border:0!important;box-shadow:0 2px 8px rgba(40,25,10,.18)!important}
+:root.uf [data-uf=s1]{right:calc(var(--uf-cx) + var(--uf-r) - var(--uf-sm)/2)!important;bottom:calc(var(--uf-cy) - var(--uf-sm)/2)!important}
+:root.uf [data-uf=s2]{right:calc(var(--uf-cx) + var(--uf-d) - var(--uf-sm)/2)!important;bottom:calc(var(--uf-cy) + var(--uf-d) - var(--uf-sm)/2)!important}
+:root.uf [data-uf=s3]{right:calc(var(--uf-cx) - var(--uf-sm)/2)!important;bottom:calc(var(--uf-cy) + var(--uf-r) - var(--uf-sm)/2)!important}
+:root.uf [data-uf=s4]{right:calc(var(--uf-cx) + var(--uf-r)*2 - var(--uf-sm)/2 - 20px)!important;bottom:calc(var(--uf-cy) - var(--uf-sm)/2)!important}
+:root.uf [data-uf=s5]{right:calc(var(--uf-cx) + var(--uf-r)*2 + var(--uf-d) - var(--uf-sm)/2 - 34px)!important;bottom:calc(var(--uf-cy) + var(--uf-d)*.55 - var(--uf-sm)/2)!important}
+/* 할 일 칩: 흰 알약 + 초록 테두리, 작은 단추 위(여러 개면 위로 쌓임) */
+:root.uf [data-uf=todo]{right:calc(var(--uf-sr) + 12px)!important;bottom:calc(var(--uf-cy) + var(--uf-r) + var(--uf-sm)/2 + 14px + var(--uf-k,0)*50px)!important;height:42px!important;min-height:42px!important;width:auto!important;max-width:min(260px,calc(100vw - 150px))!important;
+ flex-direction:row!important;gap:6px!important;padding:0 14px 0 10px!important;border-radius:21px!important;background:#fffaf0!important;color:var(--uf-ink)!important;border:2px solid var(--uf-grn)!important;box-shadow:0 3px 10px rgba(40,25,10,.2)!important;font-size:13px!important;overflow:hidden}
+:root.uf [data-uf=todo]::after{display:none!important}
+/* 짧은 글(data-uf-t)이 있으면 원래 글은 숨기고 그 글을 그림 아래에 */
+:root.uf [data-uf][data-uf-t]{font-size:0!important}
+:root.uf [data-uf][data-uf-t] .ic-txt,:root.uf [data-uf][data-uf-t]>span:not(.ic):not(.sp-i):not(.ic-row):not(i),:root.uf [data-uf][data-uf-t] kbd,:root.uf [data-uf][data-uf-t] small{display:none!important}
+:root.uf [data-uf][data-uf-t] .ic-row{display:contents!important}
+:root.uf [data-uf][data-uf-t]::after{content:attr(data-uf-t);display:block!important;position:static!important;border:0!important;margin:0!important;font:800 10px/1.1 var(--uf-font);color:inherit;white-space:nowrap}
+:root.uf [data-uf=big][data-uf-t]::after{font-size:11.5px}
+:root.uf [data-uf=todo][data-uf-t]::after{font-size:13px}
+:root.uf [data-uf] .ic{flex:none}
+:root.uf [data-uf^=s] .ic-m,:root.uf [data-uf^=s] .ic-l{width:22px;height:22px;font-size:20px}
+:root.uf [data-uf=big] .ic-m,:root.uf [data-uf=big] .ic-l,:root.uf [data-uf=big] .ic-s{width:28px;height:28px;font-size:24px}
+:root.uf [data-uf] kbd{display:none!important}
+:root.uf [data-uf][disabled],:root.uf [data-uf][data-dim]{opacity:.55}
+:root.uf [data-uf]:active{transform:translateY(1px)!important}
+
+/* ── 창이 열렸을 때 ── */
+/* 무거운 창(메뉴·지도·사람 목록…): 행동 원·할 일 칩 숨김. 상태 알약·위 단추는 그대로 */
+:root.uf[data-uf-heavy] [data-uf]{display:none!important}
+/* 세로 휴대폰 메뉴 창: 위 단추 줄만 남고 아래는 창 */
+/* 채팅(가벼운 창): 큰 단추만 60px로 말하기 줄 위에, 작은 단추·할 일 칩은 숨김 */
+:root.uf[data-uf-win=chat] [data-uf^=s],:root.uf[data-uf-win=chat] [data-uf=todo]{display:none!important}
+:root.uf[data-uf-win=chat] [data-uf=big]{--uf-big:60px;width:60px!important;height:60px!important;font-size:10px!important;bottom:calc(var(--uf-chat-h) + 10px)!important;right:calc(var(--uf-sr) + 12px)!important}
+:root.uf[data-uf-win=chat] [data-uf=big] .ic{width:24px;height:24px}
+/* 가로 휴대폰에서 오른쪽 시트(메뉴·지도)가 열리면 그 밑에 깔리는 위 단추 줄은 숨긴다(시트의 ✕로 닫음) */
+@media (orientation:landscape) and (max-height:540px),(min-width:900px) and (min-height:541px){:root.uf[data-uf-win=menu] .uf-tr,:root.uf[data-uf-win=map] .uf-tr{visibility:hidden}}
+/* 키보드가 올라오면: 상태 알약과 말하기 줄만 */
+:root.uf[data-uf-kb] [data-uf],:root.uf[data-uf-kb] .uf-tr{display:none!important}
+
+/* ── 말하기 줄(채팅 창이 .uf-chatbar를 달면 아래 한 줄로) ── */
+:root.uf .uf-chatbar[hidden]{display:none!important}
+:root.uf .uf-chatbar{position:fixed!important;z-index:47!important;left:calc(var(--uf-sl) + 0px)!important;right:calc(var(--uf-sr) + 0px)!important;top:auto!important;bottom:0!important;width:auto!important;max-width:none!important;max-height:none!important;
+ box-sizing:border-box;margin:0!important;padding:8px 10px calc(var(--uf-sb) + 8px)!important;border:0!important;border-radius:20px 20px 0 0!important;background:rgba(255,250,238,.95)!important;box-shadow:0 -4px 16px rgba(40,25,10,.18)!important;
+ display:flex!important;flex-direction:column!important;gap:8px!important;font-family:var(--uf-font);overflow:visible!important;pointer-events:auto}
+:root.uf[data-uf-kb] .uf-chatbar{bottom:var(--uf-kb)!important;padding-bottom:8px!important}
+@media (orientation:landscape) and (max-height:540px){
+ :root.uf .uf-chatbar{right:auto!important;left:calc(var(--uf-sl) + 12px)!important;bottom:calc(var(--uf-sb) + 10px)!important;width:min(470px,calc(100vw - var(--uf-sl) - var(--uf-sr) - 110px))!important;border-radius:20px!important}
+ :root.uf[data-uf-kb] .uf-chatbar{top:calc(var(--uf-st) + 4px)!important;bottom:auto!important}
+}
+@media (min-width:900px) and (min-height:541px){
+ :root.uf .uf-chatbar{right:auto!important;left:calc(var(--uf-sl) + 16px)!important;bottom:16px!important;width:440px!important;border-radius:20px!important}
+}
+/* 지난 말: 회색 반투명 줄 2~3개, 말하기 줄 바로 위 */
+:root.uf .uf-chatbar .uf-lines{position:absolute;left:10px;right:80px;bottom:calc(100% + 8px);display:flex;flex-direction:column;align-items:flex-start;gap:5px;pointer-events:none}
+:root.uf .uf-chatbar .uf-lines p{margin:0;max-width:min(280px,100%);padding:4px 10px;border-radius:12px;background:rgba(30,20,12,.55);color:#fff;font:600 12.5px/1.35 var(--uf-font);overflow-wrap:anywhere;word-break:keep-all}
+:root.uf .uf-chatbar .uf-lines p b{color:#ffd36b;margin-right:4px}
+:root.uf[data-uf-kb] .uf-chatbar .uf-lines{display:none}
+/* 빠른 말 칩 줄 + ✏️ */
+:root.uf .uf-chatbar .uf-say{display:flex;gap:6px;align-items:center;min-width:0}
+:root.uf .uf-chatbar .uf-say>.uf-chips{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;overscroll-behavior:contain;padding:2px 0}
+:root.uf .uf-chatbar .uf-say>.uf-chips::-webkit-scrollbar{display:none}
+:root.uf .uf-chatbar .uf-chips button{flex:none;min-height:44px;padding:0 13px;border:1.5px solid var(--uf-line);border-radius:20px;background:#fff;color:var(--uf-ink);box-shadow:none;font:700 13px var(--uf-font)!important;white-space:nowrap;cursor:pointer}
+:root.uf .uf-chatbar .uf-pen{flex:none;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--uf-ink);color:#fff;cursor:pointer}
+:root.uf .uf-chatbar .uf-pen.on{background:var(--uf-red)}
+/* 입력 줄: ✏️를 누르거나(휴대폰) PC면 보임 */
+:root.uf .uf-chatbar .uf-type{display:none!important}
+:root.uf .uf-chatbar.typing .uf-type{display:flex!important}
+:root.uf .uf-chatbar .uf-type input{flex:1;min-width:0;height:44px;min-height:44px;box-sizing:border-box;padding:0 14px;border:2px solid #d9c9aa;border-radius:22px;background:#fff;color:var(--uf-ink);font:600 16px var(--uf-font)!important;outline:0}
+:root.uf .uf-chatbar .uf-type input:focus{border-color:var(--uf-red)}
+:root.uf .uf-chatbar .uf-type button[type=submit]{flex:none;min-width:44px;min-height:44px;height:44px;padding:0 14px;border:0;border-radius:22px;background:var(--uf-red);color:#fff;box-shadow:none;font:800 14px var(--uf-font)!important;cursor:pointer}
+@media (prefers-reduced-motion:no-preference){.uf-sheet:not([hidden]){animation:uf-up .18s ease-out}}
+@keyframes uf-up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+@media (orientation:landscape) and (max-height:540px){@keyframes uf-up{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}}

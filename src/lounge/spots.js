@@ -359,6 +359,10 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   // 대상 위 표시 층(말풍선 아래)
   const marks=document.createElement('div');marks.className='sp-marks';marks.hidden=true;cssReady.then(()=>{marks.hidden=false;});mood.after(marks);
   const panel=document.createElement('section');panel.className='lg-card sp-panel';panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','상황 고르기');app.appendChild(panel);
+  // 11-18 공통 틀(ctx.uf, hud.js가 만듦): 「상황」 단추 대신 ☰ 메뉴 「상황」 탭 안에 이 패널을 넣는다
+  const uf=ctx.uf??null;
+  if(uf){const host=uf.panel('scene');if(host){panel.classList.add('uf-moved');panel.hidden=false;host.appendChild(panel);}
+   addEventListener('uf:tab',e=>{if(e.detail?.id==='scene')renderPanel();});}
   const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const btn=(a,ic,label,cls='',extra='')=>`<button class="lg-btn sp-btn ${cls}" data-sp="${a}" aria-label="${esc(label)}"${extra}><span class="sp-i" aria-hidden="true">${icon(ic,{size:'s'})}</span><span class="sp-t">${esc(label)}</span></button>`;
   let sig='';
@@ -416,7 +420,8 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   function placeMarks(){
    if(!camera||!els.size)return;const W=innerWidth,H=innerHeight,pad=8;
    const dr=dock.childElementCount?dock.getBoundingClientRect():null; // 「상황」 단추 자리
-   for(const o of els.values()){const t=o.t;pv.set(t.x,t.lift,t.z).project(camera);
+   for(const o of els.values()){const t=o.t;if(o.el.dataset.uf){o.el.style.visibility='';continue;} // 할 일 칩 자리(공통 틀)로 간 단추는 대상 위가 아니라 행동 원 위에 있다
+    pv.set(t.x,t.lift,t.z).project(camera);
     const hide=pv.z>1||Math.abs(pv.x)>1.15||Math.abs(pv.y)>1.15;o.el.style.visibility=hide?'hidden':'';if(hide)continue;
     if(!o.w){o.w=o.el.offsetWidth;o.h=o.el.offsetHeight;}
     // 화면 가장자리를 넘으면 안쪽으로 붙인다(위 수첩·설정 줄 아래, 아래 단추 묶음 위까지)
@@ -432,8 +437,9 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
     <button class="lg-btn sp-keep" data-sp="close">지금 시간 그대로 둘게요</button>
     <button class="lg-btn sp-fb" data-sp="feedback">${iconText('c-feedback','의견 보내기')}</button>`;
   }
-  const openPanel=()=>{if(!scene)return;renderPanel();panel.hidden=false;};
-  const closePanel=()=>{panel.hidden=true;};
+  const openPanel=()=>{if(!scene)return;renderPanel();if(uf)uf.open('scene');else panel.hidden=false;};
+  const isPanelOpen=()=>uf?uf.isOpen&&uf.tab==='scene':!panel.hidden;
+  const closePanel=()=>{if(uf){if(isPanelOpen())uf.close();}else panel.hidden=true;};
   const pick=id=>{scene?.set(id);closePanel();sig='';renderDock();syncSettings();};
   // <html data-scene>(scene.js 분위기 표시)도 [data-scene]이라, 단추만 찾고 이 묶음 안인지 본다.
   //  전에는 상황을 한 번 고르면 둘레 [data-scene] 찾기가 <html>을 잡아 모든 손 단추·대상 위 표시·상황 단추가 '상황 다시 고르기'로 먹혔다(11-17 '눌러도 반응 없음').
@@ -441,7 +447,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   const onClick=e=>{
    const sc=sceneBtn(e);if(sc){pick(sc.dataset.scene);return;}
    const t=e.target.closest('[data-sp]');if(!t)return;const a=t.dataset.sp;
-   if(a==='scene'){panel.hidden?openPanel():closePanel();return;}
+   if(a==='scene'){isPanelOpen()?closePanel():openPanel();return;}
    if(a==='close'){closePanel();return;}
    if(a==='feedback'){closePanel();dispatch('lounge:feedback-open');return;} // 카드는 공용 src/feedback.js(hud.js가 설치)
    if(a==='go'){const [k,i]=t.dataset.k.split(':');act.go(k,+i);renderMarks();return;}
@@ -450,7 +456,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
   dock.addEventListener('click',onClick);panel.addEventListener('click',onClick);hand.addEventListener('click',onClick);marks.addEventListener('click',onClick);
   // PC: E 키 = 지금 뜬 할 일
   const modal=app.querySelector('.lg-modal');
-  addEventListener('keydown',e=>{const a=document.activeElement;if(e.key==='Escape'&&!panel.hidden){closePanel();return;}if(e.code!=='KeyE'||e.repeat||(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'))||(modal&&!modal.hidden))return;const p=primary();if(p){e.preventDefault();act[p]();}});
+  addEventListener('keydown',e=>{const a=document.activeElement;if(e.key==='Escape'&&isPanelOpen()){closePanel();return;}if(e.code!=='KeyE'||e.repeat||(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'))||(modal&&!modal.hidden))return;const p=primary();if(p){e.preventDefault();act[p]();}});
   // PC: C 키 = 캔커피(들고 있으면 한 모금, 없으면 뽑으러 가기)
   addEventListener('keydown',e=>{const a=document.activeElement;if(e.code!=='KeyC'||e.repeat||(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'))||(modal&&!modal.hidden))return;e.preventDefault();S.can.held?act.sip():act.coffee();});
   // 설정 창에 「상황」 줄을 덧붙인다(hud.js는 그대로, 설정 창이 그려질 때마다 다시 붙인다)

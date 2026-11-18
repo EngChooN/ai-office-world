@@ -94,8 +94,12 @@ export function installNotebookHud(doc=document,win=window){
  if(ticks)ticks.innerHTML=checkpointTicks().map(t=>`<u data-cp="${esc(t.id)}" style="left:${(t.at*100).toFixed(2)}%"></u>`).join('');
  // ── 탭과 종이 시트 ──
  let openSheet=null;
- function setSheet(id){
+ // 11-18 공통 틀(src/hiking-frame.js, win.hikingFrame): 시트는 ☰ 메뉴 탭 안. 시트를 열면 그 탭이 열리고, 닫으면 메뉴가 닫힌다
+ const FRAME_TAB={backpack:'backpack',rest:'rest',settings:'settings',jump:'settings',free:'settings'};
+ const fr=()=>win.hikingFrame??null;
+ function setSheet(id,fromFrame=false){
   openSheet=SHEETS.includes(id)?id:null;
+  const f=fr();if(f&&!fromFrame){if(openSheet)f.open(FRAME_TAB[openSheet]);else if(f.isOpen&&Object.values(FRAME_TAB).includes(f.tab))f.close();}
   for(const s of all('.nb-sheet'))s.hidden=s.dataset.sheet!==openSheet;
   for(const t of tabs.querySelectorAll('[data-tab]')){const on=t.dataset.tab===openSheet||((openSheet==='jump'||openSheet==='free')&&t.dataset.tab==='settings');if(t.hasAttribute('aria-expanded'))t.setAttribute('aria-expanded',String(on));t.classList.toggle('on',on);}
   body.classList.toggle('nb-sheet-open',!!openSheet);
@@ -139,10 +143,12 @@ export function installNotebookHud(doc=document,win=window){
   else syncSheets();
  });
  win.addEventListener('hiking:sheet',e=>setSheet(e.detail?.id??null));
+ win.addEventListener('uf:tab',e=>{const t=e.detail?.id;if(!fr())return;if(FRAME_TAB[t]===t){if(FRAME_TAB[openSheet]!==t)setSheet(t,true);}else if(openSheet)setSheet(null,true);});
+ win.addEventListener('uf:win',e=>{if(e.detail?.closed==='menu'&&openSheet)setSheet(null,true);});
  // ESC: 열린 시트를 먼저 닫는다(input.js의 ESC 처리보다 앞, 같은 키로 기구까지 닫지 않게).
- win.addEventListener('keydown',e=>{if(e.code==='Escape'&&openSheet&&!doc.querySelector('dialog[open]')){e.stopPropagation();e.preventDefault();setSheet(null);}},true);
+ win.addEventListener('keydown',e=>{if(e.code==='Escape'&&openSheet&&!fr()&&!doc.querySelector('dialog[open]')){e.stopPropagation();e.preventDefault();setSheet(null);}},true);
  // 바깥을 누르면 닫힌다.
- doc.addEventListener('pointerdown',e=>{if(openSheet&&!e.target.closest?.('.nb-sheet,.nb-tabs'))setSheet(null);},true);
+ doc.addEventListener('pointerdown',e=>{if(openSheet&&!fr()&&!e.target.closest?.('.nb-sheet,.nb-tabs'))setSheet(null);},true); // 틀이 있으면 바깥 누르기는 틀이 닫는다
  // ── 시트 안 거울 항목(원래 버튼 상태를 그대로 보여 준다) ──
  let lastState={};
  function syncSheets(){

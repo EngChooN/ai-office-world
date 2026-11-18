@@ -9,6 +9,7 @@
 //  - 다른 사람 이름표(누르면 사람 카드: 🔇 음소거·🚩 신고), 알림
 // main.js와는 콜백(act)과 update(dt,view)로만 만난다. 채팅 창은 공용 src/hiking-chat-ui.js(ns 'xmas')를 main.js가 설치한다.
 import './hud.css';
+import '../ui-frame.css';   // 11-18 공통 화면 틀
 import '../icons/icons.css';   // 아이콘 공통 모양(아이콘-규칙-v1)
 document.documentElement.dataset.icExp='christmas';
 import {xmasStatusView} from './multi.js';
@@ -16,6 +17,7 @@ import {ORNAMENTS,TREE_RULES} from './tree-state.js';
 import {XMAS_OUTFITS,XMAS_HATS} from './outfits.js';
 import {CAROLS} from './carols.js';
 import {icon,iconText} from '../icons/icon.js';
+import {createUiFrame,ufPlace,openWin,closeWin,onWin} from '../ui-frame.js';
 
 // 장식·옷·모자 고르기 칸 아이콘 이름(아이콘-규칙-v1 §7-4)
 const ORN_IC={ballRed:'x-orn-red',ballGold:'x-orn-yellow',ballBlue:'x-orn-blue',ballSilver:'x-orn-white',candy:'x-orn-candy',bell:'x-orn-bell',snowflake:'x-orn-snow',gift:'x-orn-gift'};
@@ -80,11 +82,52 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  <p class="xh-sub">음소거하면 이 사람의 모습·말이 내 화면에서 사라져요. 상대에게는 알리지 않아요.</p>
 </section>`;
  doc.body.appendChild(root);
- const $=s=>root.querySelector(s),$$=s=>[...root.querySelectorAll(s)];
+ let frame=null; // 옮긴 창(옷·캐럴·사람)은 틀의 메뉴 창 안에 있으니 둘 다 찾는다
+ const $=s=>root.querySelector(s)??frame?.sheet.querySelector(s)??null,$$=s=>[...root.querySelectorAll(s),...(frame?.sheet.querySelectorAll(s)??[])];
+ // ── 공통 화면 틀(11-18 UI 개선, src/ui-frame.js): 위 왼쪽 = 장소·사람·트리 알약 / 위 오른쪽 = 🗺 지도(travel-ui.js)·💬·☰ /
+ //  ☰ 탭 = 우체통·옷·캐럴·소리·설정(광장 사람·서버). 원래 창(.xh-sheet)은 탭 안으로 옮긴다
+ const TAB_OF={people:'set',outfit:'outfit',music:'music'},SHEET_OF={set:'people',outfit:'outfit',music:'music'};
+ frame=createUiFrame({doc,win,exp:'christmas',tabs:[
+  {id:'mail',label:'우체통',ic:'x-mailbox',onOpen:p=>renderMail(p)},
+  {id:'outfit',label:'옷',ic:'x-outfit',onOpen:()=>renderOutfit()},
+  {id:'music',label:'캐럴',ic:'c-music',onOpen:()=>act.musicOpen?.()},
+  {id:'sound',label:'소리',ic:'c-sound',onOpen:p=>renderSoundTab(p)},
+  {id:'set',label:'설정',ic:'c-settings',onOpen:()=>renderPeople()},
+ ]});
+ root.classList.add('uf-on');
+ for(const [name,tab] of Object.entries(TAB_OF)){const sec=$(`.xh-sheet[data-sheet=${name}]`),host=frame.panel(tab);if(sec&&host){sec.classList.add('uf-moved');sec.hidden=false;host.appendChild(sec);}}
+ $('.xh-top').classList.add('uf-pill');
+ win.addEventListener('uf:tab',e=>{const n=SHEET_OF[e.detail?.id]??e.detail?.id;sheet=n;win.dispatchEvent(new CustomEvent('xmas:sheet',{detail:{id:n}}));});
+ win.addEventListener('uf:win',e=>{if(e.detail?.closed==='menu')sheet=null;});
+ function renderMail(p){
+  const n=act.unopened?.()??0;
+  p.innerHTML=`<h2 class="xh-tab-h">${iconText('x-mailbox','우체통')}</h2><div class="xh-row"><button type="button" class="xh-mini" data-mail="inbox">${iconText('x-mailbox',n?`받은 선물 ${n}개 열기`:'받은 선물 보기')}</button><button type="button" class="xh-mini" data-mail="board">${iconText('x-cards-all','모두의 카드')}</button></div><p class="xh-sub">선물을 보내려면 광장 우체통 앞에 가서 「선물 보내기」를 누르세요. 사람 목록에서도 보낼 수 있어요.</p>`;
+  p.onclick=e=>{const b=e.target.closest('[data-mail]');if(!b)return;frame.close();b.dataset.mail==='board'?act.board?.():act.inbox?.();};
+ }
+ let mutedNow=false;
+ function renderSoundTab(p){
+  p.innerHTML=`<h2 class="xh-tab-h">${iconText('c-sound','소리')}</h2><div class="xh-row"><button type="button" class="xh-mini" data-snd="1" aria-pressed="${!mutedNow}">${iconText('c-sound',mutedNow?'소리 꺼짐':'소리 켜짐',{off:mutedNow})}</button></div><p class="xh-sub">소리를 끄면 캐럴도 같이 꺼져요. 캐럴만 끄려면 「캐럴」 탭을 보세요.</p>`;
+  p.onclick=e=>{if(e.target.closest('[data-snd]'))act.sound?.();};
+ }
  const place=$('.xh-place'),treeEl=$('.xh-tree'),acts=$('.xh-acts'),deco=$('.xh-deco'),toast=$('.xh-toast'),tags=$('.xh-tags'),card=$('.xh-card'),zone=$('.xh-zone');
- let status={state:'off'},toastT=0,zoneT=0,kind=ORNAMENTS[0],cardId=null,sheet=null,decorating=false,pending=null,actSig='',actList=[];
+ let layoutT=0,status={state:'off'},toastT=0,zoneT=0,kind=ORNAMENTS[0],cardId=null,sheet=null,decorating=false,pending=null,actSig='',actList=[];
  // ── 행동 단추 줄(첫 줄 = 큰 단추)
+ // 행동 원 자리(공통 틀 ufPlace): 첫 줄 = 큰 단추, 나머지 = 작은 단추, 달리기(travel-ui .xt-run)는 맨 뒤 작은 단추(할 일이 없으면 큰 단추)
+ function layoutActs(){
+  const btns=[...acts.children],run=doc.querySelector('.xt-run');
+  const runOk=!!run&&!acts.hidden&&!root.classList.contains('decorating')&&getComputedStyle(run).display!=='none';
+  let big=btns[0]??null,small=btns.slice(1);
+  if(runOk){if(big)small=[...small,run];else big=run;}
+  const labels=new Map();btns.forEach((b,i)=>{const a=actList[i];if(a)labels.set(b,a.short??a.label);});
+  if(run&&runOk)labels.set(run,run.querySelector('span')?.textContent||'달리기');
+  // 할 일 칩: 「한 판 하기」(fight-ui.js), 그 위에 눈덩이 수(snowfight-play.js .xf-ammo) — 보일 때만
+  const vis=e=>!!e&&!e.hidden&&!e.closest('[hidden]')&&getComputedStyle(e).display!=='none';
+  const todo=[doc.querySelector('.xfm-join'),doc.querySelector('.xf-ammo')].filter(vis);
+  ufPlace(root,{big,small,todo,labels});
+  if(run){if(runOk&&(run===big||small.includes(run))){run.dataset.uf=run===big?'big':`s${small.indexOf(run)+1}`;run.dataset.ufT=labels.get(run);}else{delete run.dataset.uf;delete run.dataset.ufT;}}
+ }
  function setActions(list=[]){
+  queueMicrotask(layoutActs);
   const sig=JSON.stringify(list.map(a=>[a.id,a.ic,a.label,a.tailIc??'',a.tail??'',a.key,a.badge??0,a.dim?1:0,a.hold?1:0]));if(sig===actSig)return;actSig=sig;actList=list;
   const html=list.slice(0,3).map((a,i)=>`<button type="button" class="${i?'xh-sub-act':'xh-act'}" data-act="${esc(a.id)}"${a.aim?' data-aim="1"':''}${a.hold?' data-hold="1"':''}${a.dim?' data-dim="1"':''}><em aria-hidden="true">${icon(a.ic,{size:i?'m':'l'})}</em><span>${esc(a.label)}${a.tailIc?` · ${iconText(a.tailIc,String(a.tail??''),{size:'xs'})}`:''}</span>${a.key?`<kbd>${esc(a.key)}</kbd>`:''}${a.badge?`<b class="xh-badge">${a.badge}</b>`:''}</button>`).join('');
   // 같은 단추 줄에서 글자만 바뀌면(「출발! 5→4」 등) 단추를 그대로 두고 안쪽만 고침 — 통째로 다시 그리면 그 순간 누른 것이 사라짐
@@ -109,14 +152,14 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  function banner(title,sub='',sec=1.5,ic=null){const t=zone.querySelector(':scope>b');if(ic)t.innerHTML=iconText(ic,title);else t.textContent=title;zone.querySelector(':scope>span').textContent=sub;zone.hidden=false;zone.classList.remove('out');zoneT=sec;}
  function setBadge(name,n){if(name!=='inbox')return;const b=$('[data-x=inbox] .xh-badge');b.hidden=!n;b.textContent=n>9?'9+':String(n);}
  function setCarol(on,now,nowIc=null){const b=$('[data-x=carol]');b.innerHTML=iconText('c-music',on?'캐럴 켜짐':'캐럴 꺼짐',{off:!on});b.setAttribute('aria-pressed',String(!!on));if(now!=null){const el=$('[data-carol-now]'),k=(nowIc??'')+'|'+now;if(el.dataset.k!==k){el.dataset.k=k;if(nowIc)el.innerHTML=iconText(nowIc,now,{size:'xs'});else el.textContent=now;}}}
- function setSound(muted){const b=$('[data-x=sound]');b.innerHTML=icon('c-sound',{size:'m',off:!!muted});b.setAttribute('aria-pressed',String(!!muted));b.setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');}
+ function setSound(muted){mutedNow=!!muted;if(frame.isOpen&&frame.tab==='sound')renderSoundTab(frame.panel('sound'));const b=$('[data-x=sound]');b.innerHTML=icon('c-sound',{size:'m',off:!!muted});b.setAttribute('aria-pressed',String(!!muted));b.setAttribute('aria-label',muted?'소리 켜기':'소리 끄기');}
 
  // ── 알림
  // ic: 알림 줄 맨 앞 XS 아이콘(아이콘-규칙-v1 §6-4). 글은 그대로 이스케이프
  function say(text,sec=2.6,ic=null){if(ic)toast.innerHTML=iconText(ic,text,{size:'xs'});else toast.textContent=text;toast.hidden=false;toast.classList.remove('out');toastT=sec;}
  // ── 연결 칩
  function renderPlace(){
-  const v=xmasStatusView(status);place.dataset.tone=v.tone;{const em=place.querySelector('em');if(em.dataset.ic!==v.ic){em.dataset.ic=v.ic;em.innerHTML=icon(v.ic,{size:'s'});}const sp=place.querySelector(':scope>span');if(sp.dataset.t!==v.text){sp.dataset.t=v.text;sp.innerHTML=esc(v.text).replace('👥 ',icon('c-people',{size:'xs'})+' ');}}
+  const v=xmasStatusView(status);place.dataset.tone=v.tone;{const em=place.querySelector('em');if(em.dataset.ic!==v.ic){em.dataset.ic=v.ic;em.innerHTML=icon(v.ic,{size:'s'});}const sp=place.querySelector(':scope>span'),tx=v.text.replace(/^눈마을 광장 /,''); /* 위 알약은 짧게(「1서버 · 👥 2/30」) */if(sp.dataset.t!==tx){sp.dataset.t=tx;sp.innerHTML=esc(tx).replace('👥 ',icon('c-people',{size:'xs'})+' ');}}
   place.setAttribute('aria-label',`${v.text}${v.sub?' · '+v.sub:''}`);
  }
  win.addEventListener('xmas:multi-status',e=>{const d=e.detail;if(!d)return;const was=status.state;status=d;
@@ -165,13 +208,16 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
   const muted=multi.mutedList();$('[data-muted-n]').textContent=muted.length;
   $('[data-muted-list]').innerHTML=muted.map(m=>`<li><b>${esc(m.name)}</b><button type="button" class="xh-mini" data-unmute="${esc(m.id)}">음소거 풀기</button></li>`).join('')||'<li class="xh-empty">없어요</li>';
  }
- function openSheet(name){sheet=name;for(const s of $$('.xh-sheet'))s.hidden=s.dataset.sheet!==name;if(name==='people')renderPeople();if(name==='outfit')renderOutfit();if(name==='music')act.musicOpen?.();card.hidden=true;win.dispatchEvent(new CustomEvent('xmas:sheet',{detail:{id:name}}));}
- function closeSheet(){sheet=null;for(const s of $$('.xh-sheet'))s.hidden=true;}
- function openCard(id){const p=multi.people().find(x=>x.id===id);if(!p)return;cardId=id;$('[data-card-name]').textContent=p.name;card.hidden=false;closeSheet();}
+ // 창은 ☰ 메뉴 탭(틀이 열고 닫음). 사람 카드는 따로 무거운 창('card')
+ function openSheet(name){setCard(false);frame.open(TAB_OF[name]??name);}
+ function closeSheet(){if(frame.isOpen)frame.close();sheet=null;}
+ function setCard(on){const was=!card.hidden;card.hidden=!on;if(on&&!was)openWin('card',{doc,win});else if(!on&&was)closeWin('card',{doc,win});if(!on)cardId=null;}
+ onWin('card',()=>setCard(false),{win});
+ function openCard(id){const p=multi.people().find(x=>x.id===id);if(!p)return;closeSheet();cardId=id;$('[data-card-name]').textContent=p.name;setCard(true);}
  // 채팅 창이 열리면 다른 창은 닫는다(한 번에 한 가지 창, 체험설계 §1-4)
- win.addEventListener('xmas:sheet',e=>{if(e.detail?.id===null){closeSheet();card.hidden=true;}});
+ win.addEventListener('xmas:sheet',e=>{if(e.detail?.id===null){closeSheet();setCard(false);}});
 
- root.addEventListener('click',e=>{
+ const onClick=e=>{
   const b=e.target.closest('button,[data-tag]');if(!b)return;
   if(b.dataset.tag){openCard(b.dataset.tag);return;}
   if(b.dataset.act){if(b.dataset.aim||b.dataset.hold)return;act.do?.(b.dataset.act);return;}
@@ -184,26 +230,27 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
   if(b.dataset.report){multi.report(b.dataset.report);say(multi.viaServer?'신고를 보내고 음소거했어요':'신고를 기록하고 음소거했어요(이 기기에만)');renderPeople();return;}
   if(b.dataset.unmute){multi.unmute(b.dataset.unmute);say('음소거를 풀었어요');renderPeople();return;}
   switch(b.dataset.x){
-   case 'place':if(status.joined&&status.state==='offline'){act.rejoin?.();return;}sheet==='people'?closeSheet():openSheet('people');return;
-   case 'outfit':sheet==='outfit'?closeSheet():openSheet('outfit');return;
+   case 'place':if(status.joined&&status.state==='offline'){act.rejoin?.();return;}frame.toggle('set');return;
+   case 'outfit':frame.toggle('outfit');return;
    case 'sheet-close':closeSheet();return;
    case 'servers':closeSheet();act.servers?.();return;
    case 'retry':act.rejoin?.();return;
    case 'inbox':act.inbox?.();return;
    case 'sound':act.sound?.();return;
-   case 'music':sheet==='music'?closeSheet():openSheet('music');return;
+   case 'music':frame.toggle('music');return;
    case 'carol':act.carol?.();return;
-   case 'gift':if(cardId){const id=cardId;card.hidden=true;cardId=null;act.gift?.(id);}return;
+   case 'gift':if(cardId){const id=cardId;setCard(false);act.gift?.(id);}return;
    case 'deco-close':act.decorate?.(false);return;
    case 'confirm':if(pending!==null)act.place?.(pending,kind);return;
    case 'cancel':act.cancel?.();return;
    case 'undo':{const u=treePlay.lastUndoable();if(u)act.undo?.(u.slot);return;}
    case 'star':act.star?.();return;
-   case 'card-close':card.hidden=true;cardId=null;return;
-   case 'mute':if(cardId){multi.mute(cardId);say('음소거했어요. 이 사람은 더 보이지 않아요');}card.hidden=true;cardId=null;return;
-   case 'report':if(cardId){multi.report(cardId);say(multi.viaServer?'신고를 보내고 음소거했어요':'신고를 기록하고 음소거했어요(이 기기에만)');}card.hidden=true;cardId=null;return;
+   case 'card-close':setCard(false);return;
+   case 'mute':if(cardId){multi.mute(cardId);say('음소거했어요. 이 사람은 더 보이지 않아요');}setCard(false);return;
+   case 'report':if(cardId){multi.report(cardId);say(multi.viaServer?'신고를 보내고 음소거했어요':'신고를 기록하고 음소거했어요(이 기기에만)');}setCard(false);return;
   }
- });
+ };
+ root.addEventListener("click",onClick);frame.sheet.addEventListener("click",onClick); // 메뉴 창 안으로 옮긴 옷·캐럴·사람 단추도 같은 처리
 
  // ── 이름표(다른 사람 머리 위). 말풍선이 떠 있으면 말풍선이 이름을 보여 주니 이름표는 숨긴다(chat.hasBubble)
  const tagEls=new Map();
@@ -222,12 +269,12 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  }
 
  renderPlace();renderTree();
- return {root,say,setDecorating,setPending,renderTree,renderDeco,openSheet,closeSheet,setActions,banner,setBadge,setSound,setCarol,
+ return {root,frame,layoutActs,say,setDecorating,setPending,renderTree,renderDeco,openSheet,closeSheet,setActions,banner,setBadge,setSound,setCarol,
   get kind(){return kind;},get pending(){return pending;},get sheet(){return sheet;},get cardOpen(){return !card.hidden;},get actions(){return actList;},
   update(dt,{hasBubble=null}={}){
    if(toastT>0){toastT-=dt;if(toastT<=.4)toast.classList.add('out');if(toastT<=0)toast.hidden=true;}
    if(zoneT>0){zoneT-=dt;if(zoneT<=.4)zone.classList.add('out');if(zoneT<=0)zone.hidden=true;}
-   acts.hidden=decorating;
+   acts.hidden=decorating;layoutT-=dt;if(layoutT<=0){layoutT=.2;layoutActs();}
    renderTree();if(decorating)renderDeco();
    updateTags(hasBubble);
   },

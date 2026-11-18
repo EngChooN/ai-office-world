@@ -52,7 +52,7 @@
 - **모바일 조이스틱은 손가락을 댄 자리에 생깁니다**(떠다니는 조이스틱). `src/joystick.js`를 보세요.
 - **구간 이동 버튼(개발용)을 유지합니다.** 설정 탭 안의 '개발용' 점선 칸에 있습니다.
 - **1인칭 카메라는 위아래로 흔들지 않습니다**(멀미 때문). 걸음 리듬은 발소리로만 냅니다.
-- **시점 전환(1인칭/3인칭)은 늘 보이는 칩**입니다. 진행 카드 옆에 있습니다.
+- **시점 전환(1인칭/3인칭)은 늘 보이는 칩**입니다. 위 왼쪽 진행 알약 옆에 있습니다(11-18 공통 틀).
 - **쌍안경·휴대폰 카메라는 휴대폰에서 "✕ 내리기" 버튼으로 바로 내릴 수 있어야 합니다.** 버튼은 손가락 크기(44px 이상)이고 안전 영역 안에 둡니다. `scripts/verify-mobile-gadgets.mjs`로 확인합니다.
 - **알림이 HUD에 가려지면 안 됩니다.** 이어하기 안내·스탬프·완등 카드 모두 HUD 위에 뜹니다.
 - **휴대폰 메모리를 지킵니다.** 아이폰 사파리는 탭 메모리(약 1~1.5GB)를 넘으면 페이지를 다시 엽니다. 대표에게는 "로딩 화면이 다시 뜬다"로 보입니다. 휴대폰 상한은 `src/device-profile.js` 한곳에 모아 두었습니다(도시 칸 8개, 숲 풀 25%, DPR 1.0 등).
@@ -106,7 +106,8 @@ npm run deploy         # gh-pages 브랜치에 강제 push (대표 지시가 있
 | 카툰 그래픽 | `src/toon/**` (재질·하늘·물·풀·도시·동동이 `link-hiker.js`) |
 | 캐릭터 동작 | `src/realistic-hiker.js`(카툰도 쓰는 뼈대 코드라 남김), `src/hiker-*.js` |
 | 서울 도심 원경 | `src/city-grid.js`(2km 칸, 지연 생성·해제), `src/city-facade.js`, `src/city-landmarks.js` |
-| HUD (등산 수첩) | `src/hud-notebook.js/.css`. main.js와는 `hiking:*` window 이벤트로만 주고받음 |
+| 세 콘텐츠 공통 화면 틀(11-18) | `src/ui-frame.js/.css`(위 알약·💬·☰ 메뉴 창·말하기 줄 `createChatBar`·창 하나만 `openWin/onWin`·키보드·행동 원 `ufPlace` data-uf). 등산 연결 `src/hiking-frame.js/.css`, 흡연장 `lounge/hud.js`·`spots.js`·`multi-ui.js`, 크리스마스 `christmas/hud.js`·`travel-ui.js`·`main.js`, 채팅 `hiking-chat-ui.js`(frame 옵션). 점검 `scripts/verify-ui-frame.mjs` |
+| HUD (등산 수첩) | `src/hud-notebook.js/.css`. main.js와는 `hiking:*` window 이벤트로만 주고받음. 11-18부터 시트는 ☰ 메뉴 탭 안(`win.hikingFrame`) |
 | 의견 보내기 | `src/feedback.js/.css`(등산·흡연장 공용 카드·GitHub 이슈 주소·복사), 등산은 `hud-notebook.js`, 흡연장은 `lounge/hud.js`가 설치. 검사 `tests/feedback-issue.test.mjs` |
 | 상호작용 | `src/interaction-*.js` (안내판·스탬프·완등 카드·쌍안경 이름표), `src/gadget*.js`(쌍안경·휴대폰 카메라) |
 | 쉬기 | `src/rest-ui.js` (앉기·차 마시기·스트레칭) |
@@ -145,6 +146,7 @@ npm run deploy         # gh-pages 브랜치에 강제 push (대표 지시가 있
 
 | 날짜 | 결정 | 근거 문서 |
 |---|---|---|
+| 11-18 | 세 콘텐츠 UI 개선 공통 틀(대표 결정, 시안 `docs/UI-개선/온라인시리즈-UI-개선-시안-v1.html`): 위 = 상태 알약·[전용 1칸]·💬·☰, 왼쪽 아래 = 걷기 비움, 오른쪽 아래 = 큰 단추 + 작은 단추 + 할 일 칩. ☰ = 세로 아래 창·가로 오른쪽 340px, 창은 한 번에 하나, 채팅 = 아래 한 줄(큰 단추 60px 남김), 등산 아래 탭 줄·꼬리표는 ☰ 안(11-06 등산 수첩 탭 줄 결정을 바꿈). 시안과 다르게 한 곳(칩 44px·등산 함께 걷기 둘째 줄 등)은 변경기록 §3 | 변경기록-2026-11-18-UI-개선-공통틀.md |
 | 11-18 | 등산 인사창 = 이름표 옆 👋 칩(대표 승인, 시안 `docs/인사창/인사창-전후-시안-v1.html`): 사람은 알약·도장에서 빼고 칩(4m·앞 70°에 보임, 5.5m 밖 숨김), 칩·F = 인사(예전과 같음), 칩·이름표 누름 또는 2m 안 1초 멈춤 = 머리 위 카드(인사·같이 등산하기·✕, 5초 무입력·3m 밖·걷기·✕면 접힘), 걷는 중 흐리게, 동행 상대는 둘 다 멈춘 뒤 2초. `src/greet-chip.js/.css`, 검사 `tests/greet-chip.test.mjs`·`scripts/verify-greet-chip.mjs`. 인사·동행 규칙·서버 그대로 | 변경기록-2026-11-18-인사창-칩.md |
 | 11-18 | 링크 공유 미리보기(대표 승인): 4페이지 `<head>`에 description·canonical·og·twitter·apple-touch-icon 태그, 그림 `public/og/`(월드아트), `meta content` 주소는 전체 주소 `https://engchoon.github.io/ai-office-world/…`, 탭 아이콘은 허브만 `favicon.svg`·나머지 `og/favicon-*.svg`. 검사 `tests/share-preview.test.mjs` | 변경기록-2026-11-18-공유미리보기-태그.md |
 | 11-18 | 크리스마스 썰매 경주 마무리 그림(월드아트, 추천안·대표 미확인, 동작 코드 안 고침): 길 띠가 아래를 보게 감겨 위에서 안 보이던 1차 결함 고침 + 길을 둘레 눈보다 한 단 짙게·4줄 결, 굽이 바깥 눈둑 최대 0.86m·바깥으로만 두껍게(안쪽 가장자리 그대로)·빨강·흰 턱, 터널 안 짙은 그늘, 출발대 바닥 줄 색 판(1 빨강·2 초록·3 파랑·4 노랑, 깃발도 같은 색), 마을 「썰매 경주」 판 새 그림(`race-board-art.js`), 눈싸움 취소 전용 아이콘 `x-throw-cancel`(눈덩이 + ✕) | 변경기록-2026-11-18-썰매경주-그림-다듬기.md |

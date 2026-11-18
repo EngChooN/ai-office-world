@@ -73,7 +73,7 @@ try{
  const A=await open('대표PC'),B=await open('손님폰',{touch:true});
  // 처음 뜬 상황 고르기를 실제로 고른다 → <html data-scene>
  for(const [p,sc] of [[A,'evening'],[B,'lunch']]){
-  const ok=await tryPress(p,'[data-sp=scene]',{timeout:15000})&&await tryPress(p,`.sp-panel:not([hidden]) [data-scene=${sc}]`,{timeout:5000});
+  const ok=await tryPress(p,'.uf-menu-btn',{timeout:15000})&&await tryPress(p,'[data-uf-tab=scene]')&&await tryPress(p,`[data-uf-panel=scene] .sp-panel [data-scene=${sc}]`,{timeout:5000}); // 11-18: 상황은 ☰ 「상황」 탭
   row(p.nm,'상황 고르기(입장)',ok&&await until(p,s=>document.documentElement.dataset.scene===s,sc,3000),null);
  }
  await until(A,()=>window.lounge.multi.status().people.length>=1,null,20000);await until(B,()=>window.lounge.multi.status().people.length>=1,null,20000);
@@ -82,10 +82,11 @@ try{
 
  // ── A(PC)가 단추를 하나씩
  await A.evaluate(()=>window.lounge.teleport(0,1.5,0));await sleep(800);
- row(A.nm,'소리',await tryPress(A,'[data-a=snd]')&&await until(A,()=>window.lounge.ctx.profile.muted===false,null,2000),null);await tryPress(A,'[data-a=snd]');
- row(A.nm,'설정 열기·닫기',await tryPress(A,'[data-a=set]')&&await tryPress(A,'.lg-modal [data-a=close]')&&await until(A,()=>document.querySelector('.lg-modal').hidden,null,2000),null);
- row(A.nm,'수첩 접기·펴기',await tryPress(A,'[data-a=fold]')&&await until(A,()=>document.querySelector('.lg-note').classList.contains('folded'),null,2000)&&await tryPress(A,'[data-a=fold]'),null);
- row(A.nm,'상황 단추(다시)',await tryPress(A,'[data-sp=scene]')&&await until(A,()=>!document.querySelector('.sp-panel').hidden,null,2000)&&await tryPress(A,'.sp-panel [data-sp=close]'),null,'상황·시간은 각자 화면 설정');
+ // 11-18 공통 틀: 소리·설정·수첩·상황·옷은 ☰ 메뉴 탭, 채팅은 위 💬 → 아래 말하기 줄
+ row(A.nm,'소리',await tryPress(A,'.uf-menu-btn')&&await tryPress(A,'[data-uf-tab=sound]')&&await tryPress(A,'[data-uf-panel=sound] [data-a=mute]')&&await until(A,()=>window.lounge.ctx.profile.muted===false,null,2000),null);await tryPress(A,'[data-uf-panel=sound] [data-a=mute]');
+ row(A.nm,'설정 열기·닫기',await tryPress(A,'[data-uf-tab=set]')&&await until(A,()=>!!document.querySelector('[data-uf-panel=set] [data-t]'),null,2000)&&await tryPress(A,'.uf-x')&&await until(A,()=>document.querySelector('.uf-sheet').hidden,null,2000),null);
+ row(A.nm,'금연 수첩 탭',await tryPress(A,'.uf-menu-btn')&&await tryPress(A,'[data-uf-tab=note]')&&await until(A,()=>/일째|마디/.test(document.querySelector('[data-uf-panel=note]')?.textContent??''),null,2000),null);
+ row(A.nm,'상황 탭(다시)',await tryPress(A,'[data-uf-tab=scene]')&&await until(A,()=>!!document.querySelector('[data-uf-panel=scene] [data-scene]'),null,2000)&&await tryPress(A,'.sp-panel .sp-keep')&&await until(A,()=>document.querySelector('.uf-sheet').hidden,null,2000),null,'상황·시간은 각자 화면 설정');
  row(A.nm,'꺼내기·그만두기',await tryPress(A,'[data-a=take]')&&await tryPress(A,'[data-a=cancel]')&&await until(A,()=>document.querySelector('.lg-dock .smoke').dataset.stage==='idle',null,2000),null);
  await tryPress(A,'[data-a=take]');
  const kindOk=await tryPress(A,'[data-a=kind][data-k=cigar]')&&await until(A,()=>window.lounge.smoker.status().kind==='cigar'&&window.lounge.smoker.status().state!=='idle',null,3000);
@@ -103,10 +104,10 @@ try{
  await tryPress(A,'[data-a=tricks]'); // 묘기 닫기
  row(A.nm,'재 털기',await tryPress(A,'[data-a=flick]')&&await until(A,()=>window.lounge.smoker.status().state==='flick',null,3000),await seenA("r.smoke==='flick'",6000));
  const ew0=await B.evaluate(()=>window.__emotes.length);
- for(const k of ['wave','wave','sigh','stretch'])await tryPress(A,`[data-a=emote][data-k=${k}]`);
+ await tryPress(A,'.uf-chat-btn');for(const k of ['wave','wave','sigh','stretch'])await tryPress(A,`.uf-chatbar [data-emote=${k}]`); // 이모트는 말하기 줄 칩(인사는 서 있을 때 작은 단추에도 — 아래 재떨이로 뒤 확인)
  row(A.nm,'인사·한숨·기지개(4번)',await until(A,()=>document.querySelectorAll('.lg-bub').length>0,null,2000),await until(B,n=>window.__emotes.length>=n+4,ew0,6000),'같은 인사 두 번도 상대에게 두 번');
- await A.fill('.lg-form input','다들 안녕');await tryPress(A,'.lg-form [type=submit]');
- row(A.nm,'채팅 보내기',true,await until(B,()=>[...document.querySelectorAll('.lg-log p')].some(p=>p.textContent.includes('다들 안녕')),null,6000));
+ await A.fill('.uf-chatbar input','다들 안녕');await tryPress(A,'.uf-chatbar [type=submit]');await tryPress(A,'.uf-chat-btn');
+ row(A.nm,'채팅 보내기',true,await until(B,()=>[...document.querySelectorAll('.uf-chatbar .uf-lines p')].some(p=>p.textContent.includes('다들 안녕')),null,6000));
  // 자판기·캔
  await aim(A,'vending');
  row(A.nm,'자판기(캔커피)',await tryPress(A,'.sp-mark[data-k="vending:0"]')&&await until(A,()=>window.lounge.spots.status().can.held,null,20000),await seenA("r.act?.can===2&&r.can==='held'",8000));
@@ -126,9 +127,9 @@ try{
  row(A.nm,'난간에 기대기',await tryPress(A,'.sp-mark[data-k="rail:0"]')&&await until(A,()=>window.lounge.spots.pose==='lean',null,20000),await seenA("r.pose==='lean'&&Number.isInteger(r.act?.lx)",8000));
  row(A.nm,'난간에서 떨어지기',await tryPress(A,'[data-sp=stand]')&&await until(A,()=>window.lounge.spots.pose==='stand',null,3000),await seenA("r.pose==='stand'",6000));
  // 옷 바꾸기(설정 창)
- await tryPress(A,'[data-a=set]');
- row(A.nm,'옷 바꾸기(정장)',await tryPress(A,'.lg-modal [data-o=suit]')&&await until(A,()=>window.lounge.player.outfit==='suit',null,2000),await seenA("r.outfit==='suit'&&r.act?.o==='suit'",8000));
- await tryPress(A,'.lg-modal [data-a=close]');
+ await tryPress(A,'.uf-menu-btn');await tryPress(A,'[data-uf-tab=outfit]');
+ row(A.nm,'옷 바꾸기(정장)',await tryPress(A,'[data-uf-panel=outfit] [data-o=suit]')&&await until(A,()=>window.lounge.player.outfit==='suit',null,2000),await seenA("r.outfit==='suit'&&r.act?.o==='suit'",8000));
+ await tryPress(A,'.uf-x');
  // 재떨이로 걷기
  const p0=await state(A);
  row(A.nm,'재떨이로',await tryPress(A,'[data-a=ashtray]')&&await until(A,([x,z])=>Math.hypot(window.lounge.player.x-x,window.lounge.player.z-z)>.5,[p0.x,p0.z],6000),await seenA(`Math.hypot((r.x??0)-(${p0.x}),(r.z??0)-(${p0.z}))>.5`,8000));
@@ -136,9 +137,9 @@ try{
 
  // ── B(휴대폰)가 탭
  await B.evaluate(()=>window.lounge.teleport(-1.5,1.5,0));await sleep(800);
- row(B.nm,'채팅 열기',await tryPress(B,'[data-a=chat]')&&await until(B,()=>document.querySelector('.lg-chat').classList.contains('open'),null,2000),null);
- await B.fill('.lg-form input','폰에서 왔어요');await tryPress(B,'.lg-form [type=submit]');
- row(B.nm,'채팅 보내기',true,await until(A,()=>[...document.querySelectorAll('.lg-log p')].some(p=>p.textContent.includes('폰에서 왔어요')),null,6000));
+ row(B.nm,'채팅 열기',await tryPress(B,'.uf-chat-btn')&&await until(B,()=>!document.querySelector('.uf-chatbar').hidden,null,2000),null);
+ await tryPress(B,'.uf-pen');await B.fill('.uf-chatbar input','폰에서 왔어요');await tryPress(B,'.uf-chatbar [type=submit]');await B.evaluate(()=>document.activeElement?.blur());await tryPress(B,'.uf-chat-btn');
+ row(B.nm,'채팅 보내기',true,await until(A,()=>[...document.querySelectorAll('.uf-chatbar .uf-lines p')].some(p=>p.textContent.includes('폰에서 왔어요')),null,6000));
  await tryPress(B,'[data-a=take]');
  row(B.nm,'꺼내기→멘솔',await tryPress(B,'[data-a=kind][data-k=menthol]')&&await until(B,()=>window.lounge.smoker.status().kind==='menthol',null,3000),await seenB("r.kind==='menthol'&&r.smoke!=='idle'"));
  row(B.nm,'불',await tryPress(B,'[data-a=light]')&&await until(B,()=>window.lounge.smoker.status().lit,null,6000),await seenB('r.lit===true',10000));
@@ -150,8 +151,8 @@ try{
  await until(B,()=>window.lounge.smoker.status().state==='smoking',null,10000);await tryPress(B,'[data-a=tricks]');
  row(B.nm,'재 털기',await tryPress(B,'[data-a=flick]')&&await until(B,()=>window.lounge.smoker.status().state==='flick',null,3000),await seenB("r.smoke==='flick'",6000));
  const ea0=await A.evaluate(()=>window.__emotes.length);
- row(B.nm,'⋯ 더 보기',await tryPress(B,'[data-a=more]')&&await until(B,()=>document.querySelector('.lg-dock .tools').classList.contains('open'),null,2000),null);
- await tryPress(B,'[data-a=emote][data-k=wave]');await tryPress(B,'[data-a=emote][data-k=wave]');
+ row(B.nm,'말하기 줄 열기(피우는 중)',await tryPress(B,'.uf-chat-btn')&&await until(B,()=>!document.querySelector('.uf-chatbar').hidden,null,2000),null);
+ await tryPress(B,'.uf-chatbar [data-emote=wave]');await tryPress(B,'.uf-chatbar [data-emote=wave]');await tryPress(B,'.uf-chat-btn');
  row(B.nm,'인사 두 번',true,await until(A,n=>window.__emotes.length>=n+2,ea0,6000));
  await aim(B,'vending');
  row(B.nm,'자판기(캔커피)',await tryPress(B,'.sp-mark[data-k="vending:0"]')&&await until(B,()=>window.lounge.spots.status().can.held,null,20000),await seenB("r.act?.can===2",8000));
@@ -222,7 +223,7 @@ try{
  await key2('KeyE');row(A.nm,'키 E(가까운 할 일)',await until(A,()=>window.lounge.spots.status().can.dropping||window.lounge.spots.status().can.held,null,8000),await seenA('r.act?.can>=1',8000));
  await until(A,()=>window.lounge.spots.status().can.held&&!window.lounge.spots.status().can.sipping,null,8000);
  await key2('KeyC');row(A.nm,'키 C(한 모금)',await until(A,()=>window.lounge.spots.status().can.sipping,null,3000),null);
- await A.locator('canvas').first().click({position:{x:960,y:500}}).catch(()=>{});await key2('Enter');row(A.nm,'키 Enter(채팅 칸)',await until(A,()=>document.activeElement?.matches?.('.lg-form input'),null,2000),null);
+ await A.locator('canvas').first().click({position:{x:960,y:500}}).catch(()=>{});await key2('Enter');row(A.nm,'키 Enter(채팅 칸)',await until(A,()=>document.activeElement?.matches?.('.uf-chatbar input'),null,2000),null);
 
  await C.ctx.close();await A.ctx.close();await B.ctx.close();
 }catch(e){failed++;report.errors.push('스크립트: '+(e.stack??e.message));console.error(e);}

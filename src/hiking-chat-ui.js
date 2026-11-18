@@ -5,6 +5,7 @@
 //  - 머리 위 위치: window.hiking.multiApi.screenPos(id) → {x,y,visible}
 // 색·글꼴은 등산 수첩 토큰(낮·노을·밤)을 따른다. 사양: docs/변경기록-2026-11-08-등산채팅-HUD.md
 import {icon,iconText} from './icons/icon.js';
+import {createChatBar,openWin,closeWin,onWin} from './ui-frame.js';
 export const LOG_MAX=30,TEXT_MAX=80,BUBBLE_MS=4000;
 export const QUICK=['안녕하세요','같이 가요','정상에서 봐요','쉬었다 가요','👍'];
 // 채팅 제한 문구(11-16: 같은 말 반복·30초 쉬기 추가, 등산·흡연장·크리스마스 공통). wait = 남은 초(서버가 알려 줌)
@@ -25,8 +26,9 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 // titleIcon = 창 제목 앞 아이콘 이름(기본 c-chat, 옛 호출처럼 제목 앞에 💬 글자가 붙어 오면 떼고 아이콘으로 그림).
 // chipSelector = 💬 단추를 옆에 붙일 상태 칩(없으면 CSS 기본 자리).
 // bubbleFor(id) = 말풍선을 사람마다 다르게(11-16 크리스마스 모닥불 둘레: {ms:6000,big:true}). 없으면 4초·보통 크기(등산·흡연장 그대로).
+// frame = 공통 화면 틀(src/ui-frame.js, 11-18 UI 개선). 있으면 💬는 틀의 위 오른쪽 줄에, 창은 아래 한 줄 말하기 줄(createChatBar)로 바뀐다.
 export function installHikingChat({doc=document,win=window,lookup=id=>win.hiking?.multiApi?.screenPos?.(id)??null,raf=win.requestAnimationFrame?.bind(win),
- ns='hiking',title='같이 걷는 사람들',titleIcon='c-chat',quick=QUICK,cls='',chipSelector='.me-chip',notice='',bubbleFor=null}={}){
+ ns='hiking',title='같이 걷는 사람들',titleIcon='c-chat',quick=QUICK,cls='',chipSelector='.me-chip',notice='',bubbleFor=null,frame=null}={}){
  const body=doc.body;if(!body||doc.querySelector('.hc-btn'))return null;
  const EV=n=>`${ns}:${n}`;
  import('./hiking-chat-ui.css');
@@ -35,14 +37,17 @@ export function installHikingChat({doc=document,win=window,lookup=id=>win.hiking
 
  const btn=mk('button','hc-btn'+(cls?' '+cls:''),`<span aria-hidden="true">${icon('c-chat',{size:'m'})}</span><i class="hc-dot" hidden></i>`);
  btn.type='button';btn.hidden=true;btn.setAttribute('aria-label','채팅 열기');btn.setAttribute('aria-expanded','false');
- const panel=mk('section','hc-panel'+(cls?' '+cls:''),`<h4><span>${titleIcon?iconText(titleIcon,String(title).replace(/^💬\s*/,''),{size:'s'}):esc(title)}</span><button type="button" class="hc-x" aria-label="채팅 접기">✕</button></h4>
+ const bar=frame?createChatBar({doc,win,quick,maxLength:TEXT_MAX,cls:'hc-panel'+(cls?' '+cls:''),onSay:t=>send(t)}):null;
+ if(bar){const h=mk('div','hc-hint');h.setAttribute('role','status');h.setAttribute('aria-live','polite');h.hidden=true;bar.el.insertBefore(h,bar.el.querySelector('.uf-say'));}
+ const panel=bar?bar.el:mk('section','hc-panel'+(cls?' '+cls:''),`<h4><span>${titleIcon?iconText(titleIcon,String(title).replace(/^💬\s*/,''),{size:'s'}):esc(title)}</span><button type="button" class="hc-x" aria-label="채팅 접기">✕</button></h4>
   ${notice?`<p class="hc-notice">${esc(notice)}</p>`:''}<div class="hc-log" role="log" aria-live="polite"></div>
   <div class="hc-hint" role="status" aria-live="polite" hidden></div>
   <div class="hc-chips" aria-label="빠른 말">${quick.map(t=>`<button type="button" class="hc-chip" data-say="${esc(t)}">${esc(t)}</button>`).join('')}</div>
   <form class="hc-form" autocomplete="off"><input type="text" name="text" maxlength="${TEXT_MAX}" enterkeyhint="send" placeholder="한마디 해 보세요" autocapitalize="off" spellcheck="false" aria-label="채팅 입력"><button type="submit" class="hc-send">보내기</button></form>`);
  panel.hidden=true;
  const layer=mk('div','hc-bubbles');layer.setAttribute('aria-hidden','true');
- body.append(layer,panel,btn);
+ if(frame){btn.classList.add('uf-chat-btn');body.append(layer,panel);frame.chatSlot.replaceWith(btn);frame.watchChat?.(panel);}
+ else body.append(layer,panel,btn);
  const logEl=panel.querySelector('.hc-log'),hint=panel.querySelector('.hc-hint'),form=panel.querySelector('form'),input=form.elements.text,dot=btn.querySelector('.hc-dot');
  // 글자를 치는 동안 단축키(R·C·F…)가 걷기에 먹히지 않게 한다(multi-entry-ui와 같은 방식). Esc만 접기에 쓴다.
  // Enter: 글이 있으면 form이 보내고, 빈 칸이면 창을 접어 걷기로 돌아간다(한글 조합 중 Enter는 건드리지 않음).
@@ -61,6 +66,7 @@ export function installHikingChat({doc=document,win=window,lookup=id=>win.hiking
  // ── 💬 버튼: 연결 상태 칩 옆(칩이 없으면 기본 자리)
  const chipEl=()=>chipSelector?doc.querySelector(chipSelector):null;
  function placeBtn(){
+  if(frame)return; // 틀이 있으면 위 오른쪽 줄 안 자리(CSS)
   const c=chipEl();
   if(c&&!c.hidden){const r=c.getBoundingClientRect();if(r.width){btn.style.left=`${Math.round(r.right+8)}px`;btn.style.top=`${Math.round(r.top+(r.height-44)/2)}px`;btn.style.bottom='auto';btn.style.right='auto';return;}}
   btn.style.left=btn.style.top=btn.style.bottom=btn.style.right='';
@@ -72,17 +78,19 @@ export function installHikingChat({doc=document,win=window,lookup=id=>win.hiking
   const c=chipEl();if(c&&ro&&!c._hcObserved){ro.observe(c);c._hcObserved=true;}
  }
  function setOpen(on){
-  open=!!on&&joined;panel.hidden=!open;body.classList.toggle('hc-open',open);
-  if(open){unread=0;win.dispatchEvent(new CustomEvent(EV('sheet'),{detail:{id:null}}));renderLog();setTimeout(fit,0);}
-  else{input.blur();hint.hidden=true;}
+  const was=open;open=!!on&&joined;if(bar)bar.show(open);else panel.hidden=!open;body.classList.toggle('hc-open',open);
+  if(open){unread=0;win.dispatchEvent(new CustomEvent(EV('sheet'),{detail:{id:null}}));renderLog();setTimeout(fit,0);if(frame&&!was)openWin('chat',{doc,win});}
+  else{input.blur();hint.hidden=true;if(frame&&was)closeWin('chat',{doc,win});}
   renderBtn();
  }
+ if(frame)onWin('chat',()=>{if(open)setOpen(false);},{win}); // 다른 창(메뉴·지도…)이 열리면 접힌다
  btn.addEventListener('click',()=>{setOpen(!open);if(open&&!matchMediaCoarse())input.focus();});
- panel.querySelector('.hc-x').addEventListener('click',()=>setOpen(false));
+ panel.querySelector('.hc-x')?.addEventListener('click',()=>setOpen(false));
  const matchMediaCoarse=()=>!!win.matchMedia?.('(pointer:coarse)').matches; // 휴대폰은 열자마자 키보드가 올라오지 않게 칩부터 보인다
 
  // ── 기록
  function renderLog(){
+  if(bar){bar.lines(log);return;}
   logEl.innerHTML=log.map(r=>`<p class="${r.me?'me':''}"><b>${esc(r.name)}</b> ${esc(r.text)}</p>`).join('')||'<p class="hc-empty">아직 말이 없어요. 칩을 눌러 인사해 보세요.</p>';
   logEl.scrollTop=logEl.scrollHeight;
  }
@@ -115,13 +123,13 @@ export function installHikingChat({doc=document,win=window,lookup=id=>win.hiking
  // 막힌 글은 입력칸에 되돌려 다시 보낼 수 있게 한다(체험설계 §8-1). 30초 쉬기 동안은 입력칸·칩을 잠근다.
  let lastSent='',muteUntil=0,muteT=0;
  const send=raw=>{const text=cleanText(raw);if(!text||performance.now()<muteUntil)return false;lastSent=text;win.dispatchEvent(new CustomEvent(EV('chat-send'),{detail:{text}}));return true;};
- form.addEventListener('submit',e=>{e.preventDefault();if(send(input.value))input.value='';input.focus();});
+ if(!bar)form.addEventListener('submit',e=>{e.preventDefault();if(send(input.value))input.value='';input.focus();}); // 말하기 줄은 createChatBar가 보냄
  function lockFor(sec){muteUntil=performance.now()+sec*1000;clearInterval(muteT);
   const step=()=>{const left=Math.ceil((muteUntil-performance.now())/1000),on=left>0;
-   input.disabled=on;form.querySelector('.hc-send').disabled=on;panel.querySelectorAll('.hc-chip').forEach(b=>b.disabled=on);
+   input.disabled=on;form.querySelector('[type=submit]').disabled=on;panel.querySelectorAll('.hc-chip,[data-say]').forEach(b=>b.disabled=on);
    input.placeholder=on?`${left}초 뒤에 다시 쓸 수 있어요`:'한마디 해 보세요';if(!on)clearInterval(muteT);};
   step();muteT=setInterval(step,500);}
- panel.querySelector('.hc-chips').addEventListener('click',e=>{const b=e.target.closest('[data-say]');if(b)send(b.dataset.say);});
+ panel.querySelector('.hc-chips')?.addEventListener('click',e=>{const b=e.target.closest('[data-say]');if(b)send(b.dataset.say);});
 
  // ── 받기
  win.addEventListener(EV('chat'),e=>{
