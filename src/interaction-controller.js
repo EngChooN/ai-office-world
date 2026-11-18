@@ -44,14 +44,11 @@ export function createInteraction({state,sites=[],streams=[],player,ui,sound,sto
   if(c.action==='drink'||c.action==='dip'||c.action==='cairn'){const a=ACTIONS[c.action],wait=Math.max(0,(cool[c.action]??0)-t);
    if(wait>0&&c.action!=='cairn')return {key,label:a.label,sub:a.sub,state:'lock',reason:`${Math.ceil(wait)}초 뒤에 다시 할 수 있어요`};
    return {key,label:a.label,sub:c.action==='cairn'?`${STONE_NOTICE}${progress.stones?` · 내 돌 ${progress.stones}개`:''}`:state.stamina>=100?`${a.sub} · 체력이 가득해요`:a.sub,state:'ready'};}
-  if(c.action==='greet')return {key,label:'인사하기',sub:c.name,state:'ready'};
   return {key,label:c.label??'',sub:'',state:'ready'};
  }
  const hidden=()=>(state.pose&&state.pose!=='stand')||!!action||ui.boardOpen||ui.bookOpen||ui.cardOpen||curSpeed>RULES.runSpeed;
- function personCandidate(p){
-  const m=multi();if(!m?.nearest)return null;const n=m.nearest(RULES.show);if(!n)return null;
-  return {id:'greet',action:'greet',x:n.player.x,z:n.player.z,name:n.player.name,showRadius:RULES.show,group:'greet',glyph:'',icon:'c-wave'};
- }
+ // 가까운 사람은 이 알약·도장에 넣지 않는다(11-18): 이름표 옆 👋 칩(src/greet-chip.js). F는 물건이 없을 때 칩 대상에게 인사.
+ function greetPerson(){const m=multi();if(!m?.greetKey?.())return false;if(state.auto)state.auto=false;return true;}
 
  // ── 스탬프 ──
  function stamp(c){
@@ -146,7 +143,6 @@ export function createInteraction({state,sites=[],streams=[],player,ui,sound,sto
   const c=view.cands[i];if(row.state==='lock'){ui.toast(row.reason);return true;}
   if(c.action==='read')openRead(c);
   else if(c.action==='stamp')stamp(c);
-  else if(c.action==='greet'){multi()?.doGesture?.('hello');}
   else if(c.action==='drink'||c.action==='dip'||c.action==='cairn')begin(c.action,ACTIONS[c.action].label,c);
   if(state.auto&&c.action!=='read')state.auto=false;
   return true;
@@ -171,8 +167,7 @@ export function createInteraction({state,sites=[],streams=[],player,ui,sound,sto
   else{lastBino=null;ui.setBino(null);}
   if(g==='phone'&&p.zone==='summit'&&nearSummitStone(RULES.showStamp)&&gadget()==='phone'){next={kind:'frame',rows:[frameRow()],cands:[],where:'phone'};}
   if(!next&&g==='none'&&!hidden()){
-   const list=[...cands];const person=personCandidate(p);if(person)list.push(person);
-   const hit=pickCandidate(list,p,current);
+   const hit=pickCandidate(cands,p,current);
    if(hit){if(current!==hit.primary.id&&t-lastTick>=RULES.recheck){lastTick=t;sound.play('tick');}current=hit.primary.id;const cs=[hit.primary,...hit.stack].sort((a,b)=>(a.priority??0)-(b.priority??0)),primary=hit.primary;
     // 쌓기 순서: 같은 자리에서는 priority가 낮은 행동(스탬프)이 맨 위 F, 아래 줄이 숫자키
     const ordered=cs.slice(0,3);next={kind:'world',rows:ordered.map(rowFor),cands:ordered};}
@@ -204,7 +199,8 @@ export function createInteraction({state,sites=[],streams=[],player,ui,sound,sto
    if(ui.boardOpen&&n===0){closeBoard();return true;}
    if(ui.bookOpen)return false;
    if(action)return false;
-   return run(n);
+   if(id==='interact'&&value==='greet')return greetPerson();
+   return run(n)||(id==='interact'&&greetPerson());
   }
   if(id==='panel-close'){if(ui.cardOpen)ui.closeCard();else if(ui.boardOpen)closeBoard();else if(ui.bookOpen)ui.closeBook();else return false;return true;}
   if(id==='page-prev'||id==='page-next'){return ui.stepBoard(id==='page-next'?1:-1);}

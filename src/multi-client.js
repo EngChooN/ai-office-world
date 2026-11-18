@@ -22,6 +22,8 @@ import {createSimCrowd} from './multi-sim.js';
 import {createHikerActs,ACT_SECONDS} from './toon/hiker-acts.js';
 import {hikingAct,createActSender,remoteActPlan,remoteBody,frameFromSpot} from './multi-act.js';
 import './multi-ui.css';
+import {createGreetUI} from './greet-chip.js';
+import './greet-chip.css';
 import {icon} from './icons/icon.js';
 
 const COLORS=[0xd9534f,0x3b82c4,0x4caf6a,0xe0a030,0x9b59b6,0x16a5a5,0xd2691e,0x7a8b2e];
@@ -82,6 +84,10 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
  const ui=el('div','multi-panel');ui.innerHTML=`<div class="multi-head"><b>함께 걷기</b> <span class="multi-count"></span></div><div class="multi-near"></div><div class="multi-buttons"></div><div class="multi-roster" hidden></div><div class="multi-note"></div>`;
  const tagLayer=el('div','multi-tags'),toast=el('div','multi-toast'),request=el('div','multi-request');request.hidden=true;
  document.body.append(ui,tagLayer,toast,request);
+ // 가까운 사람 인사 칩·카드(11-18): 아래 수첩 카드 대신 이름표 옆 👋. 인사는 F와 같은 길(hiking:command interact greet), 같이 등산하기는 이름표 카드와 같은 제안.
+ const greet=createGreetUI({onGreet:()=>window.dispatchEvent(new CustomEvent('hiking:command',{detail:{id:'interact',value:'greet'}})),
+  onOffer:id=>window.dispatchEvent(new CustomEvent('hiking:pair-offer',{detail:{to:id}})),
+  pairState:()=>{const v=pair.view();return {phase:v.phase,partner:v.partner&&{id:v.partner},offer:v.offer&&{id:v.offer.id}};}});
  const buttons=ui.querySelector('.multi-buttons'),mk=(label,key,fn)=>{const b=el('button','multi-btn',`${label}`);if(key)b.append(el('kbd','',key));b.type='button';b.onclick=()=>{fn();b.blur();};buttons.append(b);return b;};
  const bHello=mk('인사','X',()=>doGesture('hello')),bWave=mk('손 흔들기','G',()=>doGesture('wave')),bSelfie=mk('같이 셀카','K',()=>selfieKey());
  mk('이름표','N',()=>{if(command)command('labels-toggle');else tagsOn=!tagsOn;});mk('목록','',()=>{rosterEl.hidden=!rosterEl.hidden;});
@@ -282,7 +288,7 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
    // 동행 표시·몸짓 표시 아이콘(아이콘-규칙-v1 §7). 보일지는 multi-ui.css가 data-pair·data-gesture로 정한다
    const pi=el('i','multi-tag-pair');pi.setAttribute('aria-hidden','true');pi.innerHTML=icon('h-pair',{size:'xs'});t.label.append(pi);
    const gi=el('i','multi-tag-gest');gi.setAttribute('aria-hidden','true');gi.innerHTML=icon('c-wave',{size:'xs',className:'g-wave'})+icon('h-bow',{size:'xs',className:'g-hello'});t.root.append(gi);
-   t.label.addEventListener('click',e=>{e.stopPropagation();const rr=roster.get(id);if(rr&&!rr.tagHidden)window.dispatchEvent(new CustomEvent('hiking:pair-pick',{detail:{id,name:rr.name}}));});
+   t.label.addEventListener('click',e=>{e.stopPropagation();if(greet.openFromTag(id))return;const rr=roster.get(id);if(rr&&!rr.tagHidden)window.dispatchEvent(new CustomEvent('hiking:pair-pick',{detail:{id,name:rr.name}}));});
    tagLayer.append(t.root);tagEls.set(r.id,t);}
   v3.set(r.sample.x,y+tagHeight,r.sample.z).project(camera);
   const on=tagsOn&&!local.selfie?.()&&v3.z>-1&&v3.z<1&&Math.abs(v3.x)<1.1&&Math.abs(v3.y)<1.1;
@@ -291,6 +297,24 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
   t.root.dataset.kind=kind;{const txt=kind==='name'&&!r.tagHidden?r.name:'';if(t.label.firstChild?.nodeType!==3)t.label.prepend(document.createTextNode(''));if(t.label.firstChild.data!==txt)t.label.firstChild.data=txt;}
   t.root.dataset.pair=pair.state.phase==='paired'&&pair.state.partner===r.id?'1':'';t.root.style.opacity=kind==='name'?Math.max(.55,1-d/45):.8;
   t.root.dataset.gesture=r.gesture&&performance.now()/1000<r.gesture.until?r.gesture.kind:'';t.seen=true;
+  t.sx=(v3.x*.5+.5)*innerWidth;t.sy=(-v3.y*.5+.5)*innerHeight;
+ }
+ // 인사 칩 자리용 이름표 상자(이름표가 안 보이면 null). 몸짓 아이콘이 오른쪽에 붙어 있으면 그만큼 넓게 본다.
+ function tagBox(id){
+  const t=tagEls.get(id);if(!t||t.root.style.display==='none'||t.root.dataset.kind!=='name'||!t.label.firstChild?.data)return null;
+  const w=t.label.offsetWidth,h=t.label.offsetHeight+6,g=t.root.dataset.gesture?24:0;
+  return {x:t.sx-w/2,y:t.sy-h,w:w+g,h:h-6};
+ }
+ // 인사 칩 후보: 같은 구역·차단 안 한 사람의 거리와 내 시선(카메라 앞) 기준 각도
+ const camDir=new THREE.Vector3();
+ function greetPeople(){
+  const me=local.position();if(!me)return [];camera.getWorldDirection(camDir);const fl=Math.hypot(camDir.x,camDir.z)||1,fx=camDir.x/fl,fz=camDir.z/fl;
+  const out=[];
+  for(const r of roster.values()){const s=r.sample;if(!s||s.zone!==me.zone||moderation.isBlocked(r.id))continue;
+   const dx=s.x-me.x,dz=s.z-me.z,d=Math.hypot(dx,dz);if(d>8)continue;
+   const ang=d<.05?0:Math.acos(Math.max(-1,Math.min(1,(dx*fx+dz*fz)/d)));
+   out.push({id:r.id,name:r.tagHidden?anonymousName(r.id,'hiking'):r.name,d,ang,moving:!!s.moving||(s.speed??0)>.3,partner:pair.state.phase==='paired'&&pair.state.partner===r.id});}
+  return out;
  }
 
  // ── 프레임 갱신
@@ -394,6 +418,8 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
   for(const row of cls.name){const r=roster.get(row.p.id);placeTag(r,row.d,'name',groundHeight(r.sample.x,r.sample.z));}
   for(const row of cls.dot){const r=roster.get(row.p.id);placeTag(r,row.d,'dot',groundHeight(r.sample.x,r.sample.z));}
   for(const [id,x] of tagEls)if(!x.seen)x.root.style.display='none';
+  {const w=local.walk?.()??{};greet.update({now:t,people:greetPeople(),moving:!!(w.auto||w.moving)||local.speed()>.3,tag:tagBox,
+   busy:local.sit()||local.gadget()!=='none'||!!local.selfie?.()||!!local.busy?.()||!!social.state.session||netState!=='online'});}
   // 사회 행동 정리
   const ended=social.tick(t);if(ended){endSession();}
   pairEvents(pair.tick(Date.now()));pairFrame(dt);
@@ -426,7 +452,7 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
   transport.close();
   for(const e of pool){scene.remove(e.hiker.scene);e.hiker.dispose?.();}pool.length=0;
   if(!hadNbMulti)document.body.classList.remove('nb-multi','nb-multi-open');
-  night?.setOthers([]);ui.remove();tagLayer.remove();toast.remove();request.remove();clearTimeout(toastTimer);roster.clear();
+  night?.setOthers([]);ui.remove();tagLayer.remove();greet.dispose();toast.remove();request.remove();clearTimeout(toastTimer);roster.clear();
   netState='offline';emitStatus(true);pairState(true);
  }
  emitStatus(true);pairState(true);
@@ -442,7 +468,9 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
  }
  // 걷기 직전에 main.js가 부른다: 동행 중 자동 걷기 옆 자리(laneTarget)·속도 배율(pace). 동행이 아니면 null.
  const pairInput=()=>pairGuideNow&&pair.state.phase==='paired'?{laneTarget:pairGuideNow.laneTarget,pace:pairGuideNow.pace}:null;
- return {update,afterLocalGround,info,dispose,transport,screenPos,pair,pairInput,statusNow:()=>{emitStatus(true);pairState(true);peopleSig="";emitPeople();},get room(){return room;},get status(){return netState;},social,doGesture,selfieKey,roster,nearest:range=>nearestTarget(range),setTags:on=>{tagsOn=!!on;},get tagsOn(){return tagsOn;},send,moderation,teleport:pos=>local.setPosition(pos),
+ // F·칩 인사(interaction-controller가 부른다): 칩이 떠 있을 때만 인사하고 true
+ const greetKey=()=>{if(!greet.target)return false;doGesture('hello');return true;};
+ return {update,afterLocalGround,info,dispose,greetKey,greet:()=>({...greet.view,target:greet.target}),transport,screenPos,pair,pairInput,statusNow:()=>{emitStatus(true);pairState(true);peopleSig="";emitPeople();},get room(){return room;},get status(){return netState;},social,doGesture,selfieKey,roster,nearest:range=>nearestTarget(range),setTags:on=>{tagsOn=!!on;},get tagsOn(){return tagsOn;},send,moderation,teleport:pos=>local.setPosition(pos),
   get frozen(){return performance.now()/1000<frozenUntil&&!!social.state.session;},
   group:scene};
 }

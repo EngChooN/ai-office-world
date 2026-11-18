@@ -219,9 +219,12 @@ test('인사 메뉴: X를 짧게 누르면 바로 인사, 누르고 있으면 �
  t.c.handle('emote-menu','down');t.tick(.4);t.c.handle('choice-3');assert.equal(calls.at(-1),'selfie');
  const solo=setup({sites:[]});solo.c.handle('emote-menu','down');solo.c.handle('emote-menu','up');assert.match(solo.ui.toasts.at(-1),/함께 걷기/);
 });
-test('가까운 사람 4m 안이면 알약 "인사하기"',()=>{
- const calls=[],multi={nearest:r=>({player:{x:0,z:-3,name:'하늘'},distance:3}),doGesture:k=>calls.push(k)};
- const t=setup({sites:[],multi});t.tick(.2);assert.equal(t.c.view.rows[0].label,'인사하기');t.c.handle('interact');assert.deepEqual(calls,['hello']);
+test('가까운 사람은 알약·도장에 안 넣고(이름표 옆 👋 칩), F·칩 인사는 칩 대상이 있을 때만 · 자동 걷기는 멈춤(11-18)',()=>{
+ const calls=[];let target=true;const multi={nearest:r=>({player:{x:0,z:-3,name:'하늘'},distance:3}),greetKey:()=>{if(!target)return false;calls.push('hello');return true;}};
+ const t=setup({sites:[],multi,state:{auto:true}});t.tick(.2);assert.equal(t.c.view,null,'사람만 있으면 알약 없음');
+ t.c.handle('interact');assert.deepEqual(calls,['hello']);assert.equal(t.state.auto,false,'인사하면 자동 걷기 멈춤(예전과 같음)');
+ t.c.handle('interact','greet');assert.deepEqual(calls,['hello','hello']);
+ target=false;t.c.handle('interact');assert.deepEqual(calls,['hello','hello'],'칩이 없으면 인사 안 함');
 });
 test('쌍안경: 정상 부근에서 방위 띠·이름표·가운데 맞춤 F, 이름표 끄면 띠만',()=>{
  const o=geographicToLocal(LANDMARK_OBSERVER.lat,LANDMARK_OBSERVER.lon,0);

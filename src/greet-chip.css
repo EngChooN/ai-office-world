@@ -1,0 +1,27 @@
+/* 사람 인사 칩·카드(src/greet-chip.js, 시안 docs/인사창/인사창-전후-시안-v1.html). 수첩 종이 톤, 아이콘 c-wave·h-pair·c-close. */
+.gr-chip,.gr-card{position:fixed;left:0;top:0;z-index:21;box-sizing:border-box;color:var(--ink,#4a3618);font-family:var(--nb-font,system-ui),sans-serif;will-change:transform}
+.gr-chip{display:flex;align-items:center;justify-content:center;gap:4px;min-width:40px;height:36px;padding:0 9px;border:0;border-radius:16px;background:var(--paper,#fbf3df);box-shadow:0 2px 0 var(--edge,#b49563),0 4px 10px rgba(52,34,8,.25);font:800 13px var(--nb-font,system-ui);cursor:pointer;transition:opacity .2s;animation:gr-pop .22s ease-out}
+.gr-chip::after{content:'';position:absolute;inset:-6px -4px}
+.gr-chip .gr-ic{display:block;width:20px;height:20px;line-height:0}.gr-chip .gr-ic svg,.gr-chip .gr-ic .ic{width:20px;height:20px}
+.gr-chip .gr-name:empty{display:none}.gr-chip .gr-name{max-width:9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gr-chip.dim{opacity:.5}
+.gr-chip kbd,.gr-card kbd{display:inline-block;font:600 10px/1 ui-monospace,Menlo,monospace;padding:2px 3px;border-radius:4px;border:1px solid var(--rule,#d9c79d);color:var(--ink2,#7a5f3a);background:var(--paper2,#f4e7c8);margin-left:2px}
+.gr-card{width:236px;padding:8px 10px 10px;border-radius:12px;background:var(--paper,#fbf3df);box-shadow:0 3px 0 var(--edge,#b49563),0 8px 20px rgba(52,34,8,.3);animation:gr-pop .2s ease-out}
+.gr-tail{position:absolute;width:14px;height:14px;background:var(--paper,#fbf3df);transform:rotate(45deg)}
+.gr-card[data-side=above] .gr-tail{bottom:-7px;top:auto!important}.gr-card[data-side=below] .gr-tail{top:-7px}
+.gr-card[data-side=right] .gr-tail{left:-7px!important}.gr-card[data-side=left] .gr-tail{right:-7px;left:auto!important}
+.gr-head{position:relative;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-weight:800;font-size:14px}
+.gr-who{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.gr-who small{font-weight:600;color:var(--ink2,#7a5f3a);font-size:12px}
+.gr-x{position:relative;flex:none;display:grid;place-items:center;width:28px;height:28px;padding:0;border:0;border-radius:50%;background:var(--paper2,#f4e7c8);color:var(--ink,#4a3618);cursor:pointer}
+.gr-x::after{content:'';position:absolute;inset:-8px}
+.gr-row{position:relative;display:flex;gap:6px}
+.gr-row button{flex:1;display:flex;align-items:center;justify-content:center;gap:4px;min-height:40px;padding:0 6px;border:0;border-radius:10px;background:var(--paper2,#f4e7c8);color:var(--ink,#4a3618);font:800 13px var(--nb-font,system-ui);white-space:nowrap;box-shadow:0 2px 0 var(--edge,#b49563);cursor:pointer}
+.gr-row button.main{flex:.8;background:var(--stamp,#b9472f);color:#fff;box-shadow:0 2px 0 var(--stamp-d,#7f2f20)}
+.gr-row button.main .ic{--ic-point:#fff;color:#fff}.gr-row button.main kbd{color:#fff;border-color:#fff8;background:transparent}
+.gr-row button:disabled{opacity:.5;cursor:default}
+.gr-bar{position:absolute;left:10px;right:10px;bottom:4px;height:2px;background:var(--track,#e3d3ad);border-radius:2px;overflow:hidden}
+.gr-bar i{display:block;height:100%;background:var(--stamp,#b9472f);transform-origin:left center}
+@media (hover:none),(pointer:coarse){.gr-chip kbd,.gr-card kbd{display:none}.gr-row button{min-height:44px}}
+body.touch .gr-chip kbd,body.touch .gr-card kbd{display:none}
+@keyframes gr-pop{from{opacity:0;scale:.7}}
+@media (prefers-reduced-motion:reduce){.gr-chip,.gr-card{animation:none}}
