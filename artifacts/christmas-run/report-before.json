@@ -1,0 +1,41 @@
+{
+ "tag": "before",
+ "checks": {
+  "걷는 중 달리기 톡 → 바로 달림": {
+   "ok": false,
+   "walk": 1.37,
+   "run": 1.37,
+   "on": false
+  },
+  "다시 톡 → 걷기": {
+   "ok": true,
+   "walk": 1.37,
+   "now": 1.37
+  },
+  "걷는 중 달리기 누르고 있기 → 누르는 동안 달림, 떼면 걷기": {
+   "ok": false,
+   "walk": 1.37,
+   "hold": 1.37,
+   "after": 1.37
+  },
+  "PC 걷다가 Shift 누르면 달리고 떼면 걷기": {
+   "ok": true,
+   "walk": 1.37,
+   "run": 3.29,
+   "back": 1.37
+  }
+ },
+ "errors": [],
+ "layouts": {},
+ "runlog": [
+  "pointerdown:3:false",
+  "pointerup:3:false",
+  "lostpointercapture:3:false",
+  "pointerdown:4:false",
+  "pointerup:4:false",
+  "lostpointercapture:4:false",
+  "pointerdown:5:false",
+  "pointerup:5:false",
+  "lostpointercapture:5:false"
+ ]
+}

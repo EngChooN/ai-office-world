@@ -1,0 +1,35 @@
+{
+ "tag": "dbg",
+ "checks": {
+  "걷는 중 달리기 톡 → 바로 달림": {
+   "ok": true,
+   "walk": 1.37,
+   "run": 2.19,
+   "on": true
+  },
+  "다시 톡 → 걷기": {
+   "ok": true,
+   "walk": 1.37,
+   "now": 1.37
+  },
+  "걷는 중 달리기 누르고 있기 → 누르는 동안 달림, 떼면 걷기": {
+   "ok": true,
+   "walk": 1.37,
+   "hold": 2.19,
+   "after": 1.37
+  }
+ },
+ "errors": [],
+ "layouts": {},
+ "runlog": [
+  "pointerdown:3:true",
+  "pointerup:3:true",
+  "lostpointercapture:3:true",
+  "pointerdown:4:true",
+  "pointerup:4:false",
+  "lostpointercapture:4:false",
+  "pointerdown:5:true",
+  "pointerup:5:false",
+  "lostpointercapture:5:false"
+ ]
+}

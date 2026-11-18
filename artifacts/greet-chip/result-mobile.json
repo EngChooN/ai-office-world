@@ -1,0 +1,228 @@
+{
+ "alone": {
+  "W": 390,
+  "H": 844,
+  "chip": null,
+  "card": null,
+  "ctx": null,
+  "tag": null,
+  "stamp": {
+   "x": 285,
+   "y": 681,
+   "w": 95,
+   "h": 95,
+   "op": 1
+  },
+  "stampMode": "walk",
+  "stampText": "걷기 자동 걷기",
+  "cover": 0,
+  "chipPct": 0,
+  "cardPct": 0,
+  "hitChip": null,
+  "btns": [],
+  "chipFar": false,
+  "chipDim": false,
+  "greet": {
+   "mode": "none",
+   "target": null
+  }
+ },
+ "byDist": {
+  "5": "chip",
+  "6": "none",
+  "4.5": "none",
+  "3.6": "chip",
+  "5.4": "chip",
+  "6.2": "none"
+ },
+ "near": {
+  "W": 390,
+  "H": 844,
+  "chip": {
+   "x": 332,
+   "y": 262,
+   "w": 40,
+   "h": 44,
+   "op": 1
+  },
+  "card": null,
+  "ctx": null,
+  "tag": {
+   "x": 280,
+   "y": 279,
+   "w": 46,
+   "h": 23,
+   "op": 1
+  },
+  "stamp": {
+   "x": 285,
+   "y": 681,
+   "w": 95,
+   "h": 95,
+   "op": 1
+  },
+  "stampMode": "walk",
+  "stampText": "걷기 자동 걷기",
+  "cover": 0.535,
+  "chipPct": 0.535,
+  "cardPct": 0,
+  "hitChip": {
+   "w": 48,
+   "h": 56
+  },
+  "btns": [],
+  "chipFar": false,
+  "chipDim": false,
+  "greet": {
+   "mode": "chip",
+   "id": "o3aii9ly",
+   "name": "바다",
+   "d": 2.9996116044419425,
+   "partner": false,
+   "target": "o3aii9ly"
+  }
+ },
+ "open": {
+  "W": 390,
+  "H": 844,
+  "chip": null,
+  "card": {
+   "x": 8,
+   "y": 175,
+   "w": 236,
+   "h": 112,
+   "op": 1
+  },
+  "ctx": null,
+  "tag": {
+   "x": 253,
+   "y": 192,
+   "w": 46,
+   "h": 23,
+   "op": 1
+  },
+  "stamp": {
+   "x": 285,
+   "y": 681,
+   "w": 95,
+   "h": 95,
+   "op": 1
+  },
+  "stampMode": "walk",
+  "stampText": "걷기 자동 걷기",
+  "cover": 8.03,
+  "chipPct": 0,
+  "cardPct": 8.03,
+  "hitChip": null,
+  "btns": [
+   44,
+   44
+  ],
+  "chipFar": false,
+  "chipDim": false,
+  "greet": {
+   "mode": "open",
+   "id": "o3aii9ly",
+   "name": "바다",
+   "d": 1.5950285513363744,
+   "partner": false,
+   "target": "o3aii9ly"
+  }
+ },
+ "walk": {
+  "W": 390,
+  "H": 844,
+  "chip": {
+   "x": 315,
+   "y": 248,
+   "w": 40,
+   "h": 44,
+   "op": 0.5
+  },
+  "card": null,
+  "ctx": null,
+  "tag": {
+   "x": 263,
+   "y": 264,
+   "w": 46,
+   "h": 23,
+   "op": 1
+  },
+  "stamp": {
+   "x": 285,
+   "y": 681,
+   "w": 95,
+   "h": 95,
+   "op": 1
+  },
+  "stampMode": "stop",
+  "stampText": "멈추기 자동 걷기 중",
+  "cover": 0.535,
+  "chipPct": 0.535,
+  "cardPct": 0,
+  "hitChip": {
+   "w": 48,
+   "h": 56
+  },
+  "btns": [],
+  "chipFar": false,
+  "chipDim": true,
+  "greet": {
+   "mode": "dim",
+   "id": "o3aii9ly",
+   "name": "바다",
+   "d": 2.486848214456246,
+   "partner": false,
+   "target": "o3aii9ly"
+  }
+ },
+ "far": {
+  "W": 390,
+  "H": 844,
+  "chip": {
+   "x": 300,
+   "y": 627,
+   "w": 65,
+   "h": 44,
+   "op": 1
+  },
+  "card": null,
+  "ctx": null,
+  "tag": null,
+  "stamp": {
+   "x": 285,
+   "y": 681,
+   "w": 95,
+   "h": 95,
+   "op": 1
+  },
+  "stampMode": "walk",
+  "stampText": "걷기 자동 걷기",
+  "cover": 0.869,
+  "chipPct": 0.869,
+  "cardPct": 0,
+  "hitChip": {
+   "w": 73,
+   "h": 56
+  },
+  "btns": [],
+  "chipFar": true,
+  "chipDim": false,
+  "greet": {
+   "mode": "chip",
+   "id": "o3aii9ly",
+   "name": "바다",
+   "d": 2.9996116044419425,
+   "partner": false,
+   "target": "o3aii9ly"
+  }
+ },
+ "pairWalk": [
+  "none/stop",
+  "none/stop",
+  "none/stop",
+  "none/stop",
+  "none/stop",
+  "none/stop"
+ ]
+}

@@ -1,0 +1,18 @@
+import {chromium} from '@playwright/test';
+const dir='artifacts/greet-chip/live',url='https://engchoon.github.io/ai-office-world/hiking/';
+const b=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--use-angle=metal']});
+const ctx=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true});
+await ctx.addInitScript(()=>localStorage.setItem('gwanak-sound-enabled','false'));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const open=async n=>{const p=await ctx.newPage();await p.goto(`${url}?multi=${encodeURIComponent('인사점검-live')}&server=off&name=${encodeURIComponent(n)}&start=entrance&time=13:00&weather=clear&t=${Date.now()}`);await p.waitForFunction(()=>window.hiking?.started,null,{timeout:240000});return p;};
+const A=await open('하늘'),B=await open('바다');
+await A.waitForFunction(()=>window.hiking.multi?.()?.roster?.length>0,null,{timeout:60000});
+const me=await A.evaluate(()=>window.hiking.position()),h=await A.evaluate(()=>window.hiking.orientation().cameraHeading);
+const put=async d=>{const fx=-Math.sin(h),fz=-Math.cos(h),sx=-fz,sz=fx,a=.2,bx=me.x+fx*d*Math.cos(a)+sx*d*Math.sin(a),bz=me.z+fz*d*Math.cos(a)+sz*d*Math.sin(a);await B.evaluate(p=>window.hiking.multiApi.teleport({zone:'plaza',...p}),{x:bx,z:bz,heading:Math.atan2(-(me.x-bx),-(me.z-bz))});};
+await A.evaluate(p=>window.hiking.multiApi.teleport({zone:'plaza',...p}),{x:me.x,z:me.z,heading:me.heading});
+await put(3);await A.bringToFront();await sleep(6500);
+const g1=await A.evaluate(()=>({g:window.hiking.multiApi.greet(),stamp:document.getElementById('auto').innerText.replace(/\s+/g,' '),ctx:!document.querySelector('.nb-ctx')||document.querySelector('.nb-ctx').hidden}));
+await A.screenshot({path:`${dir}/live-mobile-near.png`});
+await put(1.6);await sleep(2000);const g2=await A.evaluate(()=>window.hiking.multiApi.greet());await A.screenshot({path:`${dir}/live-mobile-open.png`});
+console.log(JSON.stringify({near:g1,open:g2}));
+await b.close();

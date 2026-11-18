@@ -1,0 +1,109 @@
+[
+ {
+  "label": "pc 혼자: 칩 없음·도장 걷기",
+  "pass": true,
+  "info": "걷기 자동 걷기 R"
+ },
+ {
+  "label": "pc 4m 안에서 보이고 5.5m 밖에서 숨김",
+  "pass": true,
+  "info": {
+   "5": "chip",
+   "6": "none",
+   "4.5": "none",
+   "3.6": "chip",
+   "5.4": "chip",
+   "6.2": "none"
+  }
+ },
+ {
+  "label": "pc 근처: 칩만(가린 비율 1% 미만)",
+  "pass": true,
+  "info": "0.123% 칩 58×44"
+ },
+ {
+  "label": "pc 근처: 큰 단추 「걷기」 그대로",
+  "pass": true,
+  "info": "걷기 자동 걷기 R"
+ },
+ {
+  "label": "pc 칩이 이름표 옆(겹치지 않음)",
+  "pass": true,
+  "info": {
+   "tag": {
+    "x": 1112,
+    "y": 322,
+    "w": 46,
+    "h": 23,
+    "op": 1
+   },
+   "chip": {
+    "x": 1164,
+    "y": 305,
+    "w": 58,
+    "h": 44,
+    "op": 1
+   }
+  }
+ },
+ {
+  "label": "pc F 키 = 인사(상대 화면에 몸짓)",
+  "pass": true,
+  "info": "hello"
+ },
+ {
+  "label": "pc 칩 클릭 = 카드 펼침",
+  "pass": true,
+  "info": "open"
+ },
+ {
+  "label": "pc ✕ = 접힘",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "label": "pc 2m 안 1초 멈춤 = 머리 위 카드",
+  "pass": true,
+  "info": "1.229% 236×108"
+ },
+ {
+  "label": "pc 펼친 카드가 HUD 단추와 안 겹침",
+  "pass": true,
+  "info": ""
+ },
+ {
+  "label": "pc 5초 무입력 뒤 접힘",
+  "pass": true,
+  "info": "chip"
+ },
+ {
+  "label": "pc 걷는 중 칩 흐리게·안 펼침",
+  "pass": true,
+  "info": "dim 도장 멈추기 자동 걷기 중 R"
+ },
+ {
+  "label": "pc 이름표가 안 보이면 큰 단추 위 「👋 바다」",
+  "pass": true,
+  "info": {
+   "chip": {
+    "x": 1798,
+    "y": 892,
+    "w": 85,
+    "h": 44,
+    "op": 1
+   },
+   "stamp": {
+    "x": 1786,
+    "y": 946,
+    "w": 108,
+    "h": 108,
+    "op": 1
+   }
+  }
+ },
+ {
+  "label": "오류",
+  "pass": false,
+  "info": "Error: page.evaluate: TypeError: Cannot read properties of undefined (reading 'phase')\n    at eval (eval at evaluate (:370:30), <anonymous>:1:37)\n    at UtilityScript.evaluate (<anonymous>:372:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+ }
+]

@@ -1,6 +1,8 @@
 // 넓힌 광장 이동 돕기 화면(월드개발, 2026-11-17 5차). 시안 B(?look=festive-b)에서만 main.js가 만든다. 규칙·목적지는 travel.js.
 // 구조(월드아트 디자인을 입힐 자리, 크기는 CSS 변수 travel-ui.css):
-//  - 「달리기」 단추 .xt-run(왼쪽 아래 💬 위, 높이 52px·글 「달리기」, PC는 Shift 표시). 누르면 켜짐/꺼짐(aria-pressed). 못 쓰는 때는 흐리게(data-off)
+//  - 「달리기」 단추 .xt-run(오른쪽 행동 단추 줄 위, PC는 Shift 표시). 톡 = 켜짐/꺼짐(aria-pressed), 누르고 있기 = 누르는 동안만 달림. 못 쓰는 때는 흐리게(data-off)
+//    누름은 pointerdown에서 바로 받는다(11-18): 조이스틱을 다른 손가락으로 누른 채 톡 하면 click이 안 생겨 걷는 중에는 안 켜지던 결함.
+//    자리는 CSS 기본(아래에서 --xt-run-bottom)에서, 위 오른쪽 단추 줄·행동 단추·▲▼·눈덩이 수와 겹치면 오른쪽 세로 줄의 빈 칸으로 옮긴다(placeRun).
 //  - 지도 단추 .xt-map-btn(위 오른쪽 둥근 단추 줄 .xh-tr 맨 앞, 48px)
 //  - 지도 창 .xt-map(가운데, 정사각형에 가까운 판 .xt-board 최대 560px): 바탕 SVG(광장·마당·집·회전목마·링크·산·케이블카 줄) +
 //    핀 .xt-pin(44px 누르는 곳, 아이콘 + 이름) + 내 자리 .xt-me(방향 화살표) + 다른 사람 점 .xt-dot. 핀을 누르면 onGo(id)
@@ -8,7 +10,7 @@
 // main.js와는 생성 인자(콜백)와 반환 객체로만 만난다.
 import './travel-ui.css';
 import {icon} from '../icons/icon.js';
-import {mapBounds,mapShapes,toMap,TRAVEL} from './travel.js';
+import {mapBounds,mapShapes,toMap,TRAVEL,placeRun,RUN_HOLD_MS} from './travel.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pct=t=>`${(t*100).toFixed(2)}%`;
@@ -50,7 +52,33 @@ export function createTravelUi({spots,shapes=mapShapes(),mobile=false,onRun=()=>
  const tr=doc.querySelector('.xh-tr');if(tr)tr.prepend(mapBtn);else root.appendChild(mapBtn);
  let runOn=false,runOff=false,othersT=0;const runLabel=run.querySelector('span');
  const setRunView=()=>{run.setAttribute('aria-pressed',String(runOn));run.classList.toggle('on',runOn);run.toggleAttribute('data-off',runOff);};
- run.addEventListener('click',()=>{if(runOff)return;runOn=!runOn;setRunView();onRun(runOn);});
+ const setRun=on=>{if(runOn===on)return;runOn=on;setRunView();onRun(runOn);};
+ // 톡: 꺼져 있으면 누르는 순간 켜고, 켜져 있으면 뗄 때 끔. 누르고 있기(0.35초 이상): 누르는 동안 달리고 떼면 누르기 전 상태로
+ let press=null;
+ run.addEventListener('pointerdown',e=>{if(runOff||e.button>0)return;e.preventDefault();try{run.setPointerCapture(e.pointerId);}catch{}press={id:e.pointerId,at:performance.now(),was:runOn};setRun(true);});
+ const release=(e,cancel=false)=>{if(!press||e.pointerId!==press.id)return;const held=cancel||performance.now()-press.at>=RUN_HOLD_MS,was=press.was;press=null;run.blur();
+  if(runOff)return;if(held)setRun(was);else if(was)setRun(false);};
+ run.addEventListener('pointerup',e=>release(e));run.addEventListener('pointercancel',e=>release(e,true));run.addEventListener('lostpointercapture',e=>release(e,true));
+ run.addEventListener('click',e=>{if(e.detail!==0||runOff)return;setRun(!runOn);}); // 키보드(Enter·Space)만. 손가락·마우스는 위 pointer로
+ // 자리 맞추기: 0.2초마다·화면 크기 바뀔 때. 지도 창이 열려 있거나 단추가 숨어 있으면 건너뜀
+ const BLOCKS='button,[role=button],.xf-ammo,.xs-alt';let placeT=0;
+ function place(){
+  run.style.bottom=run.style.right='';const r=run.getBoundingClientRect();if(!r.width)return;
+  const H=doc.documentElement.clientHeight||innerHeight,W=doc.documentElement.clientWidth||innerWidth;
+  const boxes=[...doc.querySelectorAll(BLOCKS)].filter(e=>e!==run&&(!root.contains(e)||e===mapBtn)).map(e=>{if(e.closest('[hidden]'))return null;const b=e.getBoundingClientRect();if(b.width<2||b.height<2)return null;
+   let n=e;while(n&&n!==doc.documentElement){const c=getComputedStyle(n);if(c.display==='none'||c.visibility==='hidden'||+c.opacity<.05)return null;n=n.parentElement;}return b;}).filter(Boolean);
+  // 오른쪽 세로 줄 → 막히면 그 왼쪽 한 줄(조이스틱이 생기는 왼쪽 절반은 넘지 않음)
+  for(const dx of [0,r.width+12]){
+   const L=r.left-dx,R=r.right-dx;if(L<W/2)break;
+   const y=placeRun(r.top,r.height,boxes.filter(b=>b.right>L-4&&b.left<R+4).map(b=>({y:b.top,h:b.height})),{lo:8,hi:H-8,gap:10});
+   if(y===null)continue;
+   if(dx)run.style.right=`${Math.round(W-R)}px`;
+   if(Math.abs(y-r.top)>.5)run.style.bottom=`${Math.round(H-y-r.height)}px`;
+   run.dataset.moved=dx||Math.abs(y-r.top)>.5?'1':'';return;
+  }
+  run.dataset.moved='';
+ }
+ addEventListener('resize',()=>{placeT=0;});
  const open=on=>{map.hidden=!on;mapBtn.setAttribute('aria-pressed',String(on));if(on){othersT=0;draw(0);onOpen();}};
  mapBtn.addEventListener('click',()=>open(map.hidden));
  map.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){open(false);onGo(b.dataset.go);return;}if(e.target.closest('[data-x="close"]'))open(false);});
@@ -69,7 +97,7 @@ export function createTravelUi({spots,shapes=mapShapes(),mobile=false,onRun=()=>
   syncRun({on=runOn,blocked=false,label='달리기'}={}){const was=runOn;runOff=blocked;runOn=blocked?false:on;setRunView();if(runLabel.textContent!==label){runLabel.textContent=label;run.setAttribute('aria-label',label);}if(was!==runOn)onRun(runOn);}, // label: 하늘 썰매 탄 동안 「빨리」(11-18)
   // 화면 어두워짐 → mid() → 밝아짐. 끝나면 resolve
   fade(mid){fade.classList.add('on');return new Promise(r=>setTimeout(()=>{try{mid?.();}finally{setTimeout(()=>{fade.classList.remove('on');setTimeout(r,TRAVEL.fadeMs);},60);}},TRAVEL.fadeMs));},
-  update(dt){if(!map.hidden)draw(dt);},
+  update(dt){if(!map.hidden)draw(dt);placeT-=dt;if(placeT<=0){placeT=.2;place();}},place,
   status(){return {open:!map.hidden,run:runOn,runBlocked:runOff,pins:spots.map(s=>s.id),dots:[...dots.children].filter(e=>!e.hidden).length};},
   el:root,mapBtn,
  };

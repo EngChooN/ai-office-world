@@ -14,6 +14,8 @@
 .xh.touch .xs-pads button kbd{display:none}
 /* 타는 동안 「달리기」 단추는 「빨리」(travel-ui.js), 휴대폰은 ▲▼ 위로 올림 */
 html.xs-flying .xt{--xt-run-bottom:300px}
+/* 높이가 낮은 세로 휴대폰(360×640 + 안전 영역): ▲▼가 위 오른쪽 단추 줄에 닿지 않게 조금 작게(11-18) */
+@media (orientation:portrait) and (max-height:700px){.xs-pads{--xs-pad:56px;gap:6px}.xs-pads button .ic{width:24px;height:24px}}
 @media (orientation:landscape) and (max-height:540px){
  .xs-pads{--xs-pad:56px}.xs-pads button .ic{width:24px;height:24px}
  .xs-alt{top:calc(var(--st,0px) + 56px)}

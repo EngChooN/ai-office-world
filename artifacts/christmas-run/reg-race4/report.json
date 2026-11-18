@@ -1,0 +1,155 @@
+{
+ "at": "2026-11-18T07:12:32.955Z",
+ "checks": {
+  "⑤ 썰매 카메라(pc): 곧은 길 꿈틀 중 프레임마다 방향 변화 0.05° 이하·길 방향과 0.3° 안(썰매는 좌우로 돌아도)": {
+   "ok": true,
+   "frames": 181,
+   "straight": 128,
+   "maxStepDeg": 0,
+   "maxPathDiffDeg": 0,
+   "maxSledAngleDeg": 26.9
+  },
+  "⑤ 썰매 카메라(mobile): 곧은 길 꿈틀 중 프레임마다 방향 변화 0.05° 이하·길 방향과 0.3° 안(썰매는 좌우로 돌아도)": {
+   "ok": true,
+   "frames": 181,
+   "straight": 132,
+   "maxStepDeg": 0,
+   "maxPathDiffDeg": 0,
+   "maxSledAngleDeg": 26.9
+  },
+  "⑥ 마당 안에서 걷기만 하면 카메라 방향 그대로(PC 대각선 걷기 1초)": {
+   "ok": true,
+   "y0": -1.5708,
+   "y1": -1.5708
+  },
+  "⑥ 몸은 조준 방향(카메라 방향)을 봄": {
+   "ok": true,
+   "heading": -1.57,
+   "y1": -1.5708
+  },
+  "⑥ PC 휠 = 가운데 고리 거리 +1m(4~14m)": {
+   "ok": true,
+   "d0": 9,
+   "d1": 10
+  },
+  "⑥ 마당 안 늘 연한 고리(겨눈 자리)": {
+   "ok": true,
+   "idle": {
+    "tx": -20.73,
+    "tz": 0.92,
+    "hit": null
+   }
+  },
+  "⑥ 휴대폰 조이스틱 옆걸음 중에는 카메라 방향 그대로": {
+   "ok": true,
+   "yb0": 1.5708,
+   "yawWalk": 1.5708,
+   "moved": 0.83
+  },
+  "⑥ 휴대폰 옆걸음 + ❄️ 끌어 30° 돌림 → 착탄이 미리보기 고리 0.3m 안": {
+   "ok": true,
+   "turnedDeg": 30.1,
+   "landDiff": 0.072,
+   "walkYawChange": 0,
+   "aim": {
+    "src": "touch",
+    "dx": 86,
+    "dy": 0,
+    "t": 1.12,
+    "dots": true,
+    "ring": true,
+    "tx": -30.11,
+    "tz": 0.97,
+    "hit": "96jx6sh7",
+    "target": "96jx6sh7"
+   },
+   "inYard": true,
+   "ammo": 3,
+   "stun": 0,
+   "pack": false,
+   "sb": true
+  },
+  "⑥ 끌다가 ✕(56px) 위에서 떼면 취소 — 눈덩이를 보내지 않음, ✕는 화면 안·단추와 안 겹침": {
+   "ok": true,
+   "shown": true,
+   "over": true,
+   "size": 56,
+   "inView": true,
+   "hit": 0,
+   "sent": 0
+  },
+  "⑥ 휴대폰 ❄️ 톡 = 지금 고리 자리로 바로(0.3m 안)": {
+   "ok": true,
+   "tapD": 0.1599999999999997,
+   "ring": {
+    "tx": -36.09,
+    "tz": 2.78,
+    "hit": null
+   }
+  },
+  "⑥ 눈싸움 단추 화면 안·겹침 없음(1920×1080)": {
+   "ok": true,
+   "n": 10,
+   "out": [],
+   "hit": [],
+   "throwW": 136
+  },
+  "⑥ 눈싸움 단추 화면 안·겹침 없음(390×844)": {
+   "ok": true,
+   "n": 10,
+   "out": [],
+   "hit": [],
+   "throwW": 96
+  },
+  "⑥ 눈싸움 단추 화면 안·겹침 없음(844×390)": {
+   "ok": true,
+   "n": 10,
+   "out": [],
+   "hit": [],
+   "throwW": 96
+  },
+  "페이지 오류 0": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": [],
+ "measure": {
+  "cam-pc": {
+   "frames": 181,
+   "straight": 128,
+   "maxStepDeg": 0,
+   "maxPathDiffDeg": 0,
+   "maxSledAngleDeg": 26.9
+  },
+  "cam-mobile": {
+   "frames": 181,
+   "straight": 132,
+   "maxStepDeg": 0,
+   "maxPathDiffDeg": 0,
+   "maxSledAngleDeg": 26.9
+  },
+  "mobileThrow": {
+   "turnedDeg": 30.1,
+   "landDiff": 0.072,
+   "walkYawChange": 0,
+   "aim": {
+    "src": "touch",
+    "dx": 86,
+    "dy": 0,
+    "t": 1.12,
+    "dots": true,
+    "ring": true,
+    "tx": -30.11,
+    "tz": 0.97,
+    "hit": "96jx6sh7",
+    "target": "96jx6sh7"
+   },
+   "inYard": true,
+   "ammo": 3,
+   "stun": 0,
+   "pack": false,
+   "sb": true
+  }
+ }
+}

@@ -48,3 +48,14 @@ export function mapShapes({carousel=true,rink=true}={}){
 }
 // 달리기를 쓸 수 없는(걷기 단추·Shift가 무시되는) 때: 링크·회전목마·앉기·썰매·케이블카·장식·조준
 export function runBlocked(s){return !!(s.rink||s.carousel||s.sitting||s.sled||s.gondola||s.deco||s.aiming);}
+// 「달리기」 단추(travel-ui.js, 11-18): 누르고 있기 기준 시간과 오른쪽 세로 줄 빈 칸 고르기
+export const RUN_HOLD_MS=350;
+// 오른쪽 세로 줄에서 달리기 단추 자리(순수 계산, tests/christmas-run.test.mjs): want = 기본 위쪽 y, size = 단추 높이, blocks = 같은 세로 줄에 걸친 상자들,
+// 화면 [lo, hi] 안에서 상자와 gap만큼 떨어진 빈 칸 중 want에 가장 가까운 y. 빈 칸이 없으면 null.
+export function placeRun(want,size,blocks,{lo=8,hi=800,gap=10}={}){
+ const iv=blocks.map(b=>[b.y-gap-size,b.y+b.h+gap]).sort((a,b)=>a[0]-b[0]),free=[];let at=lo;
+ for(const [a,b] of iv){if(a>at)free.push([at,Math.min(a,hi-size)]);at=Math.max(at,b);}
+ if(at<=hi-size)free.push([at,hi-size]);
+ let best=null;for(const [a,b] of free){if(b<a)continue;const y=Math.max(a,Math.min(b,want));if(best===null||Math.abs(y-want)<Math.abs(best-want))best=y;}
+ return best;
+}

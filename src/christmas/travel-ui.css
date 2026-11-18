@@ -9,6 +9,7 @@
 .xt-run.on{background:var(--stamp);color:#fff;box-shadow:1px 3px 0 var(--stamp-d),var(--soft)}
 .xt-run.on kbd{background:rgba(255,255,255,.22)}
 .xt-run[data-off]{opacity:.45}
+.xt-run{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none} /* 누르고 있기·다른 손가락 조이스틱과 같이 누름(travel-ui.js) */
 html.xh-decorating .xt-run,html.xh-sledding .xt-run,html.xf-match .xt-run,html.xh-panel .xt-run{display:none}
 
 /* 지도 창: 가운데 */

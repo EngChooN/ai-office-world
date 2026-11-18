@@ -1,0 +1,173 @@
+{
+ "mobile": {
+  "base": {
+   "x": -40.78,
+   "z": -38.62,
+   "heading": -2.3
+  },
+  "alone": {
+   "W": 390,
+   "H": 844,
+   "stamp": {
+    "x": 285,
+    "y": 681,
+    "w": 95,
+    "h": 95
+   },
+   "stampMode": "walk",
+   "ctx": null,
+   "ctxText": "인사하기바다자동 걷기R도장이 바뀌어도 여기서 켜고 끌 수 있어요",
+   "markers": [],
+   "me": {
+    "id": "a9ua4vfv",
+    "name": "바다",
+    "x": -29.63,
+    "z": -22.02,
+    "heading": 0.59,
+    "speed": 0,
+    "moving": false,
+    "model": true,
+    "act": {
+     "p": "stand",
+     "g": "none",
+     "sf": 0,
+     "x": "",
+     "n": 0,
+     "v": 0
+    },
+    "drawnAct": {
+     "p": "stand",
+     "g": "none",
+     "sf": 0,
+     "x": null,
+     "tea": 0
+    },
+    "gesture": null,
+    "blocked": false
+   }
+  },
+  "byDist": {
+   "2": {
+    "mode": "interact",
+    "ctx": true
+   },
+   "3": {
+    "mode": "interact",
+    "ctx": true
+   },
+   "5": {
+    "mode": "walk",
+    "ctx": false
+   },
+   "6": {
+    "mode": "walk",
+    "ctx": false
+   },
+   "4.5": {
+    "mode": "walk",
+    "ctx": false
+   },
+   "3.8": {
+    "mode": "interact",
+    "ctx": true
+   }
+  },
+  "near": {
+   "W": 390,
+   "H": 844,
+   "stamp": {
+    "x": 285,
+    "y": 681,
+    "w": 95,
+    "h": 95
+   },
+   "stampMode": "interact",
+   "ctx": {
+    "x": 14,
+    "y": 488,
+    "w": 362,
+    "h": 101
+   },
+   "ctxText": "인사하기\n바다\n자동 걷기\n도장이 바뀌어도 여기서 켜고 끌 수 있어요",
+   "markers": [],
+   "me": {
+    "id": "a9ua4vfv",
+    "name": "바다",
+    "x": -39.11,
+    "z": -36.13,
+    "heading": 0.59,
+    "speed": 0,
+    "moving": false,
+    "model": true,
+    "act": {
+     "p": "stand",
+     "g": "none",
+     "sf": 0,
+     "x": "",
+     "n": 0,
+     "v": 0
+    },
+    "drawnAct": {
+     "p": "stand",
+     "g": "none",
+     "sf": 0,
+     "x": null,
+     "tea": 0
+    },
+    "gesture": null,
+    "blocked": false
+   }
+  },
+  "leave": {
+   "5": "walk",
+   "6": "walk",
+   "7": "walk"
+  },
+  "auto": {
+   "W": 390,
+   "H": 844,
+   "stamp": {
+    "x": 285,
+    "y": 681,
+    "w": 95,
+    "h": 95
+   },
+   "stampMode": "interact",
+   "ctx": {
+    "x": 14,
+    "y": 488,
+    "w": 362,
+    "h": 101
+   },
+   "ctxText": "인사하기\n바다\n자동 걷기 멈추기\n도장이 바뀌어도 여기서 켜고 끌 수 있어요",
+   "markers": [],
+   "me": {
+    "id": "a9ua4vfv",
+    "name": "바다",
+    "x": -39.11,
+    "z": -36.13,
+    "heading": 0.59,
+    "speed": 0,
+    "moving": false,
+    "model": true,
+    "act": {
+     "p": "stand",
+     "g": "none",
+     "sf": 0,
+     "x": "",
+     "n": 0,
+     "v": 0
+    },
+    "drawnAct": {
+     "p": "stand",
+     "g": "none",
+     "sf": 0,
+     "x": null,
+     "tea": 0
+    },
+    "gesture": null,
+    "blocked": false
+   }
+  }
+ }
+}
