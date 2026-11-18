@@ -1,0 +1,344 @@
+{
+ "at": "2026-11-18T03:41:01.591Z",
+ "checks": {
+  "시안 B에 하늘 썰매가 있음": {
+   "ok": true
+  },
+  "정류장 밖에서는 타기 단추 없음": {
+   "ok": true
+  },
+  "정류장 원 안 「하늘 썰매 타기」": {
+   "ok": true
+  },
+  "타는 0.6초 동안 정류장 썰매가 숨음": {
+   "ok": true
+  },
+  "좌석에 앉음(act.hs 1)": {
+   "ok": true,
+   "enabled": true,
+   "mode": "ground",
+   "hs": 1,
+   "alt": 0,
+   "v": 0,
+   "x": 23.5,
+   "z": 30.68,
+   "heading": 1.25,
+   "y": 0.06,
+   "near": false,
+   "remotes": 0,
+   "homing": 0,
+   "fleet": 2,
+   "stars": 0,
+   "degrade": 0,
+   "seated": true,
+   "takeoff": {
+    "ok": true
+   },
+   "waiting": false,
+   "station": false
+  },
+  "땅에서 단추: 날아오르기·내리기·만세": {
+   "ok": true,
+   "actions": [
+    "hs:up",
+    "hs:off",
+    "hs:cheer"
+   ]
+  },
+  "2초 뒤 정류장 썰매 다시 나타남": {
+   "ok": true
+  },
+  "정류장에서 바로 날아오를 수 있음(단추가 흐리지 않음)": {
+   "ok": true
+  },
+  "날아오르기 시작(act.hs 2)": {
+   "ok": true,
+   "s": {
+    "enabled": true,
+    "mode": "takeoff",
+    "hs": 2,
+    "alt": 0,
+    "v": 1.5,
+    "x": 23.5,
+    "z": 30.68,
+    "heading": 1.25,
+    "y": 0.06,
+    "near": false,
+    "remotes": 0,
+    "homing": 0,
+    "fleet": 2,
+    "stars": 0,
+    "degrade": 0,
+    "seated": true,
+    "takeoff": null,
+    "waiting": true,
+    "station": false
+   },
+   "dim": false
+  },
+  "2.7초 안에 땅 위 6m 비행(act.hs 3)": {
+   "ok": true,
+   "enabled": true,
+   "mode": "fly",
+   "hs": 3,
+   "alt": 6,
+   "v": 5.6,
+   "x": 13.53,
+   "z": 19.38,
+   "heading": 0.61,
+   "y": 5.09,
+   "near": false,
+   "remotes": 0,
+   "homing": 0,
+   "fleet": 2,
+   "stars": 32,
+   "degrade": 0,
+   "seated": true,
+   "takeoff": null,
+   "waiting": true,
+   "station": false
+  },
+  "Space를 누르는 동안 오름(2.5m/s)": {
+   "ok": true,
+   "a0": 6,
+   "a1": 11
+  },
+  "20m보다 높이 못 올라감": {
+   "ok": true,
+   "alt": 20
+  },
+  "하늘을 날 때 별 흔적이 생김": {
+   "ok": true,
+   "stars": 23
+  },
+  "둘 화면: 하나의 썰매가 하늘에 보임(높이 a칸)": {
+   "ok": true,
+   "rB": {
+    "x": 6.84,
+    "z": 9.79,
+    "y": 13.76,
+    "seated": true,
+    "hs": 3,
+    "alt": 13.9
+   },
+   "me": {
+    "x": 6.01,
+    "z": 8.61,
+    "y": 13.95,
+    "alt": 14
+   }
+  },
+  "둘 화면: 받은 높이와 내 높이 차이 1m 안": {
+   "ok": true,
+   "alt": 13.9,
+   "mine": 14
+  },
+  "둘 화면에도 하나의 별 흔적": {
+   "ok": true,
+   "starsB": 12
+  },
+  "범위 끝에서 안쪽으로 휨(38m 원 안 + 썰매 길이)": {
+   "ok": true,
+   "maxR": 37.53,
+   "near": true
+  },
+  "「광장 끝이에요」 칩 또는 고도 칩이 보임": {
+   "ok": true
+  },
+  "눈싸움 마당 위에서 내려앉으면 마당 밖 땅으로": {
+   "ok": true,
+   "overYard": {
+    "x": -28.69,
+    "z": 1.77
+   },
+   "s": {
+    "enabled": true,
+    "mode": "ground",
+    "hs": 1,
+    "alt": 0,
+    "v": 0,
+    "x": -35.14,
+    "z": -6.02,
+    "heading": 0.52,
+    "y": 0,
+    "near": false,
+    "remotes": 0,
+    "homing": 0,
+    "fleet": 2,
+    "stars": 22,
+    "degrade": 0,
+    "seated": true,
+    "takeoff": {
+     "ok": false,
+     "why": "out",
+     "at": 2
+    },
+    "waiting": true,
+    "station": false
+   }
+  },
+  "땅에서 앞으로 달림(3.6m/s 안팎)": {
+   "ok": true,
+   "run": 5.99
+  },
+  "뒤 입력이면 돌아섬(뒤로 안 감)": {
+   "ok": true,
+   "h0": 0.52,
+   "h1": -0.57
+  },
+  "앞이 막히면(트리) 날아오르기 단추가 흐림": {
+   "ok": false,
+   "why": "zone",
+   "at": 4
+  },
+  "둘 화면: 하나가 땅에 내려옴": {
+   "ok": true
+  },
+  "내리면 썰매 옆에 서고 act.hs 0": {
+   "ok": true,
+   "s": {
+    "enabled": true,
+    "mode": "none",
+    "hs": 0,
+    "alt": 0,
+    "v": 0,
+    "x": -1.3,
+    "z": 10.62,
+    "heading": null,
+    "y": null,
+    "near": false,
+    "remotes": 0,
+    "homing": 1,
+    "fleet": 2,
+    "stars": 15,
+    "degrade": 0,
+    "seated": false,
+    "takeoff": null,
+    "waiting": true,
+    "station": false
+   },
+   "act": {
+    "o": "santa",
+    "hat": "santa",
+    "sc": 0,
+    "d": 0,
+    "st": 0,
+    "wm": 0,
+    "cc": 0,
+    "pu": 0,
+    "pk": 0,
+    "cr": 0,
+    "tm": 0,
+    "sl": 0,
+    "sp": "",
+    "gd": 0,
+    "mg": 0,
+    "hs": 0
+   }
+  },
+  "빈 썰매는 정류장으로 날아가 사라짐(1.5초)": {
+   "ok": true
+  },
+  "둘 화면: 하나의 썰매가 사라짐": {
+   "ok": true
+  },
+  "휴대폰: 단추로 타기": {
+   "ok": true
+  },
+  "휴대폰: 「달리기」 단추가 「빨리」로": {
+   "ok": true
+  },
+  "휴대폰: 날아오름": {
+   "ok": true
+  },
+  "휴대폰: ▲▼ 단추 보임": {
+   "ok": true
+  },
+  "휴대폰: ▲ 누르는 동안 오름": {
+   "ok": true,
+   "b0": 6,
+   "b1": 9.75,
+   "ub": {
+    "x": 340,
+    "y": 594
+   }
+  },
+  "휴대폰 세로: 비행 단추 겹침·화면 밖 없음": {
+   "ok": true,
+   "n": 8,
+   "bad": [],
+   "off": []
+  },
+  "휴대폰 가로: 비행 단추 겹침·화면 밖 없음": {
+   "ok": true,
+   "n": 8,
+   "bad": [],
+   "off": []
+  },
+  "PC: 단추 겹침 없음": {
+   "ok": true,
+   "n": 3,
+   "bad": [],
+   "off": []
+  },
+  "휴대폰: 하늘에서 「내리기」 = 내려앉고 내림": {
+   "ok": true,
+   "enabled": true,
+   "mode": "none",
+   "hs": 0,
+   "alt": 0,
+   "v": 0,
+   "x": 8.79,
+   "z": 15.6,
+   "heading": null,
+   "y": null,
+   "near": false,
+   "remotes": 0,
+   "homing": 1,
+   "fleet": 2,
+   "stars": 25,
+   "degrade": 0,
+   "seated": false,
+   "takeoff": null,
+   "waiting": true,
+   "station": false
+  },
+  "회전목마 타는 중에는 하늘 썰매를 못 탐": {
+   "ok": true
+  },
+  "타는 동안 케이블카 단추 없음": {
+   "ok": true,
+   "actions": [
+    "hs:up",
+    "hs:off",
+    "hs:cheer"
+   ]
+  },
+  "지도 이동이면 썰매를 돌려보내고 그 장소로": {
+   "ok": true,
+   "went": true,
+   "s": "none",
+   "p": {
+    "x": 0,
+    "z": 4,
+    "y": 0,
+    "heading": 0,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   }
+  },
+  "지도 「하늘 썰매」 핀으로 가면 정류장 원 안": {
+   "ok": true
+  },
+  "페이지 오류 0": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": []
+}

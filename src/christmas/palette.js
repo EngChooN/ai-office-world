@@ -23,6 +23,10 @@ export const XMAS=Object.freeze({
  door:'#7a4a2f',frame:'#f6efdc',chimney:'#9a5b46',
  // 우체통·썰매·울타리
  post:'#d23b36',postDark:'#9f2a26',sled:'#c94a3a',runner:'#3d3f44',fence:'#a87a52',flag:Object.freeze(['#e0473f','#4f86d9','#efc04f','#3f9a5c']),
+ // 썰매 경주 줄 색(11-18 설계 v2 §3-2): 1 빨강 · 2 초록 · 3 파랑 · 4 노랑. 위 띠 참가자 칩(sled-play.js LANE_COLORS)과 같은 값 — 시험이 맞는지 본다
+ lane:Object.freeze(['#d8443a','#2f9a5a','#3a78d8','#e9b939']),
+ // 썰매 길(11-18 다듬기): 밤 달빛 아래에서도 둘레 눈보다 한 단 짙어 길이 읽히게. groom = 다진 4줄 결, kerb = 굽이 바깥 눈둑 아래 빨강·흰 띠
+ sledRoad:'#b4c1d6',sledGroom:'#c6d1e2',bankShade:'#c5d2e4',
  // 눈사람 부품
  coal:'#2b2a2e',carrot:'#f08a3c',twig:'#6e4a2e',topHat:'#2a2830',hatBand:'#d23b36',
 });

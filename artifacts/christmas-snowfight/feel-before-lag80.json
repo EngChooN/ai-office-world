@@ -1,0 +1,56 @@
+{
+ "at": "2026-11-17T08:11:32.681Z",
+ "lag": 80,
+ "label": "before-lag80",
+ "errors": [],
+ "still": {
+  "label": "가만히 선 상대",
+  "throws": 5,
+  "hits": 5,
+  "showMs": [
+   172,
+   180,
+   182,
+   175,
+   172
+  ],
+  "gapAtLand": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "ghost": 0,
+  "miss": 0
+ },
+ "moving": {
+  "label": "옆으로 걷는 상대",
+  "throws": 5,
+  "hits": 5,
+  "showMs": [
+   173,
+   178,
+   177,
+   169,
+   177
+  ],
+  "gapAtLand": [
+   0.88,
+   0.76,
+   0.92,
+   0.7,
+   0.86
+  ],
+  "ghost": 3,
+  "miss": 0
+ },
+ "react": {
+  "pushed": 0,
+  "splat": 1,
+  "covers": {
+   "dlbk6n55": 3
+  },
+  "stun": 0
+ }
+}

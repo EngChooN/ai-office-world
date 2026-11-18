@@ -10,7 +10,8 @@ import * as P from './props.js';
 import {createSnowfall} from './snowfall.js';
 import {buildSledCourse} from './sled-course-art.js';
 import {buildGondolaArt} from './gondola-art.js';
-import {BENCH} from './sled-course.js';
+import {BENCH,skeletonAt} from './sled-course.js';
+import {laneOffset} from './sled.js';
 import {buildFestive,skyFor} from './festive.js';
 
 const lin=hex=>new THREE.Color(hex);
@@ -109,7 +110,8 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false,look=0
  const course=buildSledCourse({group,tz,f,H,vcMat,noEdge,putS,mobile});
  // ── 케이블카(마을 승강장 ↔ 꼭대기 승강장, gondola-art.js)
  const gondola=buildGondolaArt({group,tz,f,H,putS,mobile});
- const sleds=samples?Array.from({length:R.deck.lanes},(_,i)=>{const s=P.buildSled(tz),d=R.deck;put(s,d.x,d.z+(i-1.5),Math.PI/2,H(d.x,d.z)+.11);return s;}):[];
+ // 미리보기용 줄 썰매(samples): 게임과 같은 줄 자리(출발선 1.5m 뒤, sled-play laneSpot) — 줄 색 판 번호가 보이는지 확인(월드아트 11-18)
+ const sleds=samples?Array.from({length:R.deck.lanes},(_,i)=>{const s=P.buildSled(tz),c=skeletonAt(-1.5),o=laneOffset(i+1);put(s,c.x-Math.sin(c.th)*o,c.z+Math.cos(c.th)*o,-c.th+Math.PI/2,H(c.x,c.z)+.11);return s;}):[];
  // ── 마을 입구 아치(남쪽, 처음 들어올 때 지나는 문)
  {const arch=P.buildArch(tz);putS(arch.group,L.ENTRANCE.x,L.ENTRANCE.z,0,0);for(const sx of [-1,1])circleC(L.ENTRANCE.x+sx*L.ENTRANCE.w/2,L.ENTRANCE.z,.35);}
  // ── 가로등(바닥 빛 + 가까운 4개만 점광원, 휴대폰은 점광원 없음)

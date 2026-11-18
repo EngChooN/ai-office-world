@@ -1,0 +1,396 @@
+{
+ "shots": [
+  {
+   "name": "pc",
+   "time": "day",
+   "layout": "map",
+   "net": "ok",
+   "overflowX": 0,
+   "docH": 1080,
+   "vh": 1080,
+   "tiles": [
+    {
+     "id": "hub-hiking",
+     "top": 226,
+     "bottom": 444,
+     "left": 180,
+     "right": 540
+    },
+    {
+     "id": "hub-smoking",
+     "top": 226,
+     "bottom": 444,
+     "left": 960,
+     "right": 1320
+    },
+    {
+     "id": "hub-christmas",
+     "top": 701,
+     "bottom": 919,
+     "left": 180,
+     "right": 540
+    },
+    {
+     "id": "hub-next",
+     "top": 701,
+     "bottom": 919,
+     "left": 960,
+     "right": 1320
+    }
+   ],
+   "allVisible": true,
+   "small": [],
+   "emoji": 0,
+   "errors": [],
+   "pick": {
+    "sel": "christmas",
+    "sheet": false,
+    "srv": 3,
+    "go": "혼자 둘러보기로 들어가기",
+    "overflowX": 0,
+    "goBox": {
+     "top": 571,
+     "bottom": 625
+    }
+   }
+  },
+  {
+   "name": "pc",
+   "time": "night",
+   "layout": "map",
+   "net": "ok",
+   "overflowX": 0,
+   "docH": 1080,
+   "vh": 1080,
+   "tiles": [
+    {
+     "id": "hub-hiking",
+     "top": 226,
+     "bottom": 444,
+     "left": 180,
+     "right": 540
+    },
+    {
+     "id": "hub-smoking",
+     "top": 226,
+     "bottom": 444,
+     "left": 960,
+     "right": 1320
+    },
+    {
+     "id": "hub-christmas",
+     "top": 701,
+     "bottom": 919,
+     "left": 180,
+     "right": 540
+    },
+    {
+     "id": "hub-next",
+     "top": 701,
+     "bottom": 919,
+     "left": 960,
+     "right": 1320
+    }
+   ],
+   "allVisible": true,
+   "small": [],
+   "emoji": 0,
+   "errors": []
+  },
+  {
+   "name": "pc-1280",
+   "time": "day",
+   "layout": "map",
+   "net": "ok",
+   "overflowX": 0,
+   "docH": 800,
+   "vh": 800,
+   "tiles": [
+    {
+     "id": "hub-hiking",
+     "top": 162,
+     "bottom": 334,
+     "left": 66,
+     "right": 347
+    },
+    {
+     "id": "hub-smoking",
+     "top": 162,
+     "bottom": 334,
+     "left": 513,
+     "right": 794
+    },
+    {
+     "id": "hub-christmas",
+     "top": 514,
+     "bottom": 686,
+     "left": 66,
+     "right": 347
+    },
+    {
+     "id": "hub-next",
+     "top": 514,
+     "bottom": 686,
+     "left": 513,
+     "right": 794
+    }
+   ],
+   "allVisible": true,
+   "small": [],
+   "emoji": 0,
+   "errors": [],
+   "pick": {
+    "sel": "christmas",
+    "sheet": false,
+    "srv": 3,
+    "go": "혼자 둘러보기로 들어가기",
+    "overflowX": 0,
+    "goBox": {
+     "top": 538,
+     "bottom": 592
+    }
+   }
+  },
+  {
+   "name": "mobile",
+   "time": "day",
+   "layout": "list",
+   "net": "ok",
+   "overflowX": 0,
+   "docH": 844,
+   "vh": 844,
+   "tiles": [
+    {
+     "id": "hub-hiking",
+     "top": 170,
+     "bottom": 278,
+     "left": 14,
+     "right": 376
+    },
+    {
+     "id": "hub-smoking",
+     "top": 290,
+     "bottom": 398,
+     "left": 14,
+     "right": 376
+    },
+    {
+     "id": "hub-christmas",
+     "top": 410,
+     "bottom": 518,
+     "left": 14,
+     "right": 376
+    },
+    {
+     "id": "hub-next",
+     "top": 530,
+     "bottom": 638,
+     "left": 14,
+     "right": 376
+    }
+   ],
+   "allVisible": true,
+   "small": [],
+   "emoji": 0,
+   "errors": [],
+   "pick": {
+    "sel": "christmas",
+    "sheet": true,
+    "srv": 3,
+    "go": "혼자 둘러보기로 들어가기",
+    "overflowX": 0,
+    "goBox": {
+     "top": 774,
+     "bottom": 828
+    }
+   }
+  },
+  {
+   "name": "mobile",
+   "time": "night",
+   "layout": "list",
+   "net": "ok",
+   "overflowX": 0,
+   "docH": 844,
+   "vh": 844,
+   "tiles": [
+    {
+     "id": "hub-hiking",
+     "top": 170,
+     "bottom": 278,
+     "left": 14,
+     "right": 376
+    },
+    {
+     "id": "hub-smoking",
+     "top": 290,
+     "bottom": 398,
+     "left": 14,
+     "right": 376
+    },
+    {
+     "id": "hub-christmas",
+     "top": 410,
+     "bottom": 518,
+     "left": 14,
+     "right": 376
+    },
+    {
+     "id": "hub-next",
+     "top": 530,
+     "bottom": 638,
+     "left": 14,
+     "right": 376
+    }
+   ],
+   "allVisible": true,
+   "small": [],
+   "emoji": 0,
+   "errors": []
+  },
+  {
+   "name": "land",
+   "time": "day",
+   "layout": "list",
+   "net": "ok",
+   "overflowX": 0,
+   "docH": 390,
+   "vh": 390,
+   "tiles": [
+    {
+     "id": "hub-hiking",
+     "top": 62,
+     "bottom": 147,
+     "left": 14,
+     "right": 417
+    },
+    {
+     "id": "hub-smoking",
+     "top": 62,
+     "bottom": 147,
+     "left": 427,
+     "right": 830
+    },
+    {
+     "id": "hub-christmas",
+     "top": 157,
+     "bottom": 241,
+     "left": 14,
+     "right": 417
+    },
+    {
+     "id": "hub-next",
+     "top": 157,
+     "bottom": 241,
+     "left": 427,
+     "right": 830
+    }
+   ],
+   "allVisible": true,
+   "small": [],
+   "emoji": 0,
+   "errors": [],
+   "pick": {
+    "sel": "christmas",
+    "sheet": true,
+    "srv": 3,
+    "go": "혼자 둘러보기로 들어가기",
+    "overflowX": 0,
+    "goBox": {
+     "top": 320,
+     "bottom": 374
+    }
+   }
+  },
+  {
+   "name": "land",
+   "time": "night",
+   "layout": "list",
+   "net": "ok",
+   "overflowX": 0,
+   "docH": 390,
+   "vh": 390,
+   "tiles": [
+    {
+     "id": "hub-hiking",
+     "top": 62,
+     "bottom": 147,
+     "left": 14,
+     "right": 417
+    },
+    {
+     "id": "hub-smoking",
+     "top": 62,
+     "bottom": 147,
+     "left": 427,
+     "right": 830
+    },
+    {
+     "id": "hub-christmas",
+     "top": 157,
+     "bottom": 241,
+     "left": 14,
+     "right": 417
+    },
+    {
+     "id": "hub-next",
+     "top": 157,
+     "bottom": 241,
+     "left": 427,
+     "right": 830
+    }
+   ],
+   "allVisible": true,
+   "small": [],
+   "emoji": 0,
+   "errors": []
+  }
+ ],
+ "enter": [
+  {
+   "exp": "christmas",
+   "kind": "server",
+   "srv": "2",
+   "joined": true,
+   "room": "눈마을-2",
+   "pickOpen": false,
+   "errors": []
+  },
+  {
+   "exp": "smoking",
+   "kind": "server",
+   "srv": "3",
+   "joined": true,
+   "room": "옥상-3",
+   "pickOpen": false,
+   "errors": []
+  },
+  {
+   "exp": "hiking",
+   "kind": "server",
+   "srv": "2",
+   "joined": true,
+   "room": "관악산-2",
+   "state": "online",
+   "started": true,
+   "pickOpen": false,
+   "errors": []
+  },
+  {
+   "exp": "christmas",
+   "kind": "solo",
+   "srv": null,
+   "joined": false,
+   "pickOpen": false,
+   "errors": []
+  },
+  {
+   "exp": "christmas",
+   "kind": "direct",
+   "srv": null,
+   "pickOpen": true,
+   "errors": []
+  }
+ ],
+ "settings": null
+}

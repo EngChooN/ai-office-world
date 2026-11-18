@@ -86,14 +86,20 @@ export function createXmasHud({doc=document,win=window,multi,treePlay,mobile=fal
  // ── 행동 단추 줄(첫 줄 = 큰 단추)
  function setActions(list=[]){
   const sig=JSON.stringify(list.map(a=>[a.id,a.ic,a.label,a.tailIc??'',a.tail??'',a.key,a.badge??0,a.dim?1:0,a.hold?1:0]));if(sig===actSig)return;actSig=sig;actList=list;
-  acts.innerHTML=list.slice(0,3).map((a,i)=>`<button type="button" class="${i?'xh-sub-act':'xh-act'}" data-act="${esc(a.id)}"${a.aim?' data-aim="1"':''}${a.hold?' data-hold="1"':''}${a.dim?' data-dim="1"':''}><em aria-hidden="true">${icon(a.ic,{size:i?'m':'l'})}</em><span>${esc(a.label)}${a.tailIc?` · ${iconText(a.tailIc,String(a.tail??''),{size:'xs'})}`:''}</span>${a.key?`<kbd>${esc(a.key)}</kbd>`:''}${a.badge?`<b class="xh-badge">${a.badge}</b>`:''}</button>`).join('');
+  const html=list.slice(0,3).map((a,i)=>`<button type="button" class="${i?'xh-sub-act':'xh-act'}" data-act="${esc(a.id)}"${a.aim?' data-aim="1"':''}${a.hold?' data-hold="1"':''}${a.dim?' data-dim="1"':''}><em aria-hidden="true">${icon(a.ic,{size:i?'m':'l'})}</em><span>${esc(a.label)}${a.tailIc?` · ${iconText(a.tailIc,String(a.tail??''),{size:'xs'})}`:''}</span>${a.key?`<kbd>${esc(a.key)}</kbd>`:''}${a.badge?`<b class="xh-badge">${a.badge}</b>`:''}</button>`).join('');
+  // 같은 단추 줄에서 글자만 바뀌면(「출발! 5→4」 등) 단추를 그대로 두고 안쪽만 고침 — 통째로 다시 그리면 그 순간 누른 것이 사라짐
+  const tmp=document.createElement('div');tmp.innerHTML=html;const next=[...tmp.children],prev=[...acts.children];
+  const same=prev.length===next.length&&next.every((b,i)=>{const o=prev[i];return o.dataset.act===b.dataset.act&&o.className===b.className&&o.attributes.length===b.attributes.length&&[...b.attributes].every(x=>o.getAttribute(x.name)===x.value);});
+  if(!same){acts.innerHTML=html;return;}
+  next.forEach((b,i)=>{const o=prev[i];if(o.innerHTML===b.innerHTML)return;const oc=[...o.children],nc=[...b.children];
+   if(oc.length===nc.length&&nc.every((c,k)=>oc[k].tagName===c.tagName))nc.forEach((c,k)=>{if(oc[k].innerHTML!==c.innerHTML)oc[k].innerHTML=c.innerHTML;});else o.innerHTML=b.innerHTML;});
  }
  // 조준 단추(❄️, data-aim): 누르는 동안 조준, 끌면 방향·거리(휴대폰), 떼면 던짐 → act.aimButton(phase,dx,dy). PC 단추도 같음(누름 = F 누름)
  //  누르고 있는 단추(data-hold, 웅크리기 등): 누름·뗌 → act.hold(id,on)
  {let hold=null;
   acts.addEventListener('pointerdown',e=>{const b=e.target.closest('[data-aim],[data-hold]');if(!b)return;e.preventDefault();try{b.setPointerCapture?.(e.pointerId);}catch{}
    hold={id:b.dataset.act,x:e.clientX,y:e.clientY,pid:e.pointerId,b,aim:!!b.dataset.aim};b.classList.add(hold.aim?'aiming':'on');
-   if(hold.aim)act.aimButton?.('down');else act.hold?.(hold.id,true);});
+   if(hold.aim)act.aimButton?.('down',0,0,e.clientX,e.clientY);else act.hold?.(hold.id,true);});
   acts.addEventListener('pointermove',e=>{if(!hold||e.pointerId!==hold.pid||!hold.aim)return;act.aimButton?.('move',e.clientX-hold.x,e.clientY-hold.y);});
   const end=e=>{if(!hold||e.pointerId!==hold.pid)return;const h=hold;hold=null;h.b.classList.remove('aiming','on');
    if(h.aim)act.aimButton?.(e.type==='pointercancel'?'cancel':'up',e.clientX-h.x,e.clientY-h.y);else act.hold?.(h.id,false);lastAim=performance.now();};

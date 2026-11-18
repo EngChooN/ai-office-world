@@ -1143,6 +1143,15 @@
   "color": true
  },
  {
+  "name": "x-throw-cancel",
+  "group": "christmas",
+  "file": "icons/christmas/x-throw-cancel.svg",
+  "symbol": "ic-x-throw-cancel",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
   "name": "x-part-eyes",
   "group": "christmas",
   "file": "icons/christmas/x-part-eyes.svg",

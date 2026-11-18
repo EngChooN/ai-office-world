@@ -28,12 +28,18 @@ export const SLED_RULES=Object.freeze({maxSpeed:10,boostMax:12,g:9.8,friction:.0
 //    빠를 때 꺾임 55→48°/s(안정), 느릴 때 95→105°/s. 드리프트는 가볍게(꺾임 1.5→1.3배, 미끄러지는 몸 28→16°)
 export const SLED_RULES_2=Object.freeze({...SLED_RULES,startSpeed:1.6,startBoost:1.4,maxSpeed:11.5,boostMax:12.5,accelMul:.8,drag:.0025,par:55,
  rise:.1,fall:.09,turnSlow:105*D2R,turnFast:48*D2R,align:.8,carry:.3,outward:.02,driftMul:1.3,slipMax:16*D2R,airSteer:.35});
-let FEEL=2;
-const RS=()=>FEEL===2?SLED_RULES_2:SLED_RULES;
+// 조작감 3(11-18, 월드디자인 설계 v2 §1 「직접 조작」): 손을 떼면 길 방향으로 돌아오던 보정(align)과 굽이를 저절로 따라 돌던 보정(carry)을 없앤다.
+//  - 썰매는 꺾지 않으면 지금 방향 그대로 감(굽이에서 손을 떼면 바깥 눈둑으로). 얼음 길 맞춤(iceAlign)도 0
+//  - 대신 꺾임을 조금 빠르게: 느릴 때 110°/s · 빠를 때 60°/s, 핸들은 누르면 0.14초에 최대·떼면 0.10초에 가운데
+//  - 남는 것(물리): 굽이 바깥 밀림·눈둑 튕김·드리프트·부스터·점프. 길 폭은 sled-course.js(6m·좁은 곳 4.5m)와 함께 맞춘 값
+export const SLED_RULES_3=Object.freeze({...SLED_RULES_2,rise:.14,fall:.1,turnSlow:110*D2R,turnFast:60*D2R,align:0,carry:1,iceAlign:0,laneGap:1.4,par:60});
+let FEEL=3;
+const RS=()=>FEEL===3?SLED_RULES_3:FEEL===2?SLED_RULES_2:SLED_RULES;
 export const sledFeel=()=>FEEL;
-export function setSledFeel(n){FEEL=n===2?2:1;}
-// 화면에서 고르는 길은 없앰(11-17 대표 결정: 같은 방 기록판이 섞이지 않게 모두 2). 기록판에 내는 기록에는 SLED_FEEL_VERSION을 붙이고 서버는 2만 받는다(sled-race.js)
-export const SLED_FEEL_VERSION=2;
+export function setSledFeel(n){FEEL=n===3?3:n===2?2:1;}
+// 화면에서 고르는 길은 없음. 기록판에 내는 기록에는 SLED_FEEL_VERSION을 붙이고 서버는 지금 조작감만 받는다(sled-race.js BOARD_FEEL).
+// 11-18: 3(직접 조작). 예전 2 기록은 서버 기록판에 섞이지 않고, 이 기기의 개인 최고 기록(xmas-sled:v2)은 지우지 않는다.
+export const SLED_FEEL_VERSION=3;
 export const sledFeelFrom=()=>SLED_FEEL_VERSION;
 export const SLED_SENS=Object.freeze({soft:.7,normal:1,fast:1.3});
 export const DEFAULT_SEED=dailySeed();
@@ -95,7 +101,7 @@ export function createRide({course=defaultCourse(),lane=2,start=-1.5,sens=1,dela
    R.psi+=yawRate*dt;
    // 썰매는 제 방향으로 계속 가려 한다: 길이 굽으면 길에 대한 각이 그만큼 벌어짐(길이 45%만큼만, 나머지는 자동으로 따라 돎). 굽이에서 꺾지 않으면 바깥 눈둑으로
    if(!air)R.psi-=here.k*R.v*Math.cos(R.psi)*RS().carry*dt;
-   if(Math.abs(tgt)<.05&&!air)R.psi*=Math.pow(1-(ice?RS().iceAlign:RS().align),dt);
+   {const al=ice?RS().iceAlign:RS().align;if(al>0&&Math.abs(tgt)<.05&&!air)R.psi*=Math.pow(1-al,dt);} // 조작감 3은 0(손 떼도 돌아오지 않음)
    R.psi=Math.max(-RS().maxYaw,Math.min(RS().maxYaw,R.psi));
    // 드리프트 모습: 몸이 진행 방향보다 더 돌아감(놓으면 0.25초에 돌아옴)
    {const want=drifting?Math.sign(R.st)*RS().slipMax*Math.min(1,Math.abs(R.st)):0;R.slip+=(want-R.slip)*(1-Math.exp(-dt*(drifting?6:9)));}
@@ -145,6 +151,27 @@ export function createRide({course=defaultCourse(),lane=2,start=-1.5,sens=1,dela
   },
  };
 }
+// ── 썰매 카메라 방향·자리(11-18 설계 v2 §2 「앞 고정, 좌우 흔들림 없음」, three 없음 — 화면 sled-play.js와 시험이 같이 쓴다)
+//  - 방향: 썰매 각도(psi)·드리프트 몸 돌림은 넣지 않고 길 방향만(지금 자리 45% + 앞쪽(속도×0.9m, 최소 5m) 55%)
+//  - 옆 자리: 썰매 옆 위치(off)를 0.5초에 걸쳐 천천히 따라감(작은 좌우 꿈틀은 화면에서 썰매만 움직여 보임), 빠르기 1.1m/s까지(프레임마다 2cm 안)
+//  - 굽이 안쪽 미리보기(ahead)는 길 굽음으로만 정함
+export const SLED_CAM=Object.freeze({here:.45,aheadMin:5,aheadV:.9,latSecs:.5,latMax:1.1,latFar:1.8,lead:1.2,inside:.6,shake:.04,shakeSecs:.15,dip:.08,dipSecs:.2});
+export const SLED_CAM_OLD_PSI=.6; // 조작감 2까지 카메라 방향에 섞던 썰매 각도 몫(비교 기록용)
+export function createSledCam(){
+ let off=null;
+ return {
+  reset(){off=null;},
+  // ride → {yaw(게임 heading), th(길 방향), x,z(카메라가 보는 썰매 자리), ahead{x,z}(앞·굽이 안쪽 미리보기)}
+  update(ride,dt=1/60,{oldPsi=0}={}){
+   const C=ride.course,v=ride.v,here=C.at(ride.s),ah=C.at(ride.s+Math.max(SLED_CAM.aheadMin,v*SLED_CAM.aheadV));
+   const th=here.th*SLED_CAM.here+ah.th*(1-SLED_CAM.here)+ride.psi*oldPsi;
+   // 0.5초에 걸쳐 따라가되 한 번에 옮기는 빠르기는 latMax(m/s)까지(프레임마다 2cm 안). 썰매가 1.8m 넘게 벗어나면(큰 튕김·헤어핀) 제한 없이 따라감
+   if(off==null)off=ride.off;else{const gap=ride.off-off;let d=gap*(1-Math.exp(-dt/SLED_CAM.latSecs));if(Math.abs(gap)<SLED_CAM.latFar)d=Math.max(-SLED_CAM.latMax*dt,Math.min(SLED_CAM.latMax*dt,d));off+=d;}
+   const q=C.xz(ride.s,off),yaw=headingOf(th),fx=-Math.sin(yaw),fz=-Math.cos(yaw),lat=Math.max(-1,Math.min(1,ah.k*4))*SLED_CAM.inside;
+   return {yaw,th,x:q.x,z:q.z,off,ahead:{x:fx*SLED_CAM.lead+(-fz)*lat,z:fz*SLED_CAM.lead+fx*lat}};
+  },
+ };
+}
 // 고스트(내 최고 기록 주행): 0.1초마다 [x,z,y,heading,s] 기록 → 이 기기 저장(코스마다 따로). at(t)로 그 시각 자리
 export const GHOST_DT=.1;
 export function createGhostRecorder(){const pts=[];let acc=0;return {
@@ -162,8 +189,10 @@ export function lineWant(C,s,{look=6.5,boosters=true,inside=1.8}={}){
  want+=C.at(s+5).k*inside;
  const lim=C.widthAt(s)/2-.7;return Math.max(-lim,Math.min(lim,want));
 }
-export function botSteer(ride,{skill=1}={}){
- const want=lineWant(ride.course,ride.s,{inside:2.5});
+// bias = 가고 싶은 옆 자리에 더할 값(점검: 4대가 각자 줄을 지키며 달리기). 눈둑 안으로 자름
+// want = 가고 싶은 옆 자리를 직접 줌(점검용 줄 지키기)
+export function botSteer(ride,{skill=1,bias=0,want:w=null}={}){
+ const lim=ride.course.widthAt(ride.s)/2-.7,want=w??Math.max(-lim,Math.min(lim,lineWant(ride.course,ride.s,{inside:2.5})+bias));
  const err=want-ride.off;const desired=Math.max(-.6,Math.min(.6,err*.5))*skill;
  return Math.max(-1,Math.min(1,(desired-ride.psi)*3));
 }

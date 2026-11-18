@@ -1,7 +1,7 @@
 // 북쪽 「썰매 산」 코스(월드개발, 2026-11-17 · 2차: 긴 코스 + 판마다 다른 코스). three 없음(서버·시험·layout.js가 같이 쓴다).
 // 산(땅)과 코스(길)를 나눴다.
 //  - 산 = 늘 같은 「뼈대」: 동서로 긴 단(段) 7줄을 지그재그로 잇는다(줄 간격 12m, 줄 직선 x −24~24, 끝은 반지름 6m 반원).
-//    단은 폭 8.6m(길 4.5m가 옆으로 1.6m까지 비켜도 들어감)로 옆으로 평평하고, 뼈대를 따라 출발대 높이 START_H에서 결승 0m까지 고르게 내려간다.
+//    단은 폭 8.6m(11-18: 길 6m가 옆으로 1.0m까지 비켜도, 굽이 7m가 0.75m 비켜도 들어감)로 옆으로 평평하고, 뼈대를 따라 출발대 높이 START_H에서 결승 0m까지 고르게 내려간다.
 //    걸어 다니는 땅 높이(mountainH)·눈 굴곡 끄기(courseDist)는 뼈대로만 정해 코스가 바뀌어도 땅은 그대로다(산 위에 서 있던 사람이 뜨거나 묻히지 않음).
 //  - 코스 = 시드(seed)로 고른 구간 블록을 뼈대 위에 늘어놓은 것: 굽이(S자)·점프대·부스터·좁은 길·장애물 숲·얼음 길·터널 + 줄 끝 굽이 3종(헤어핀·보통·크게).
 //    같은 시드 = 같은 코스(서버·혼자 모드·시험 모두 같은 계산). 같은 방은 서버가 정한 시드 하나를 같이 쓴다(sled-race.js).
@@ -9,8 +9,13 @@
 // 마을 경계: 북쪽 울타리를 연 곳(z < −24, |x| < 36, z ≥ −116) 안. 출발대 옆 꼭대기 승강장(케이블카, gondola.js) 자리는 평평하게 둔다.
 // 좌표: x 동, z 남(+), 위에서 볼 때 방향 θ: 동 0, 남 π/2. 오른쪽으로 꺾기 = θ 커짐. 옆 거리 off는 진행 방향 오른쪽 +.
 
-export const COURSE_W=4.5;            // 기본 길 폭(4줄 동시 출발)
-export const NARROW_W=3.0;            // 좁은 길 폭
+// 길 폭(11-18 설계 v2 §3-1, 4명 경주): 썰매 4대(0.48m×4) + 사이 3칸(0.5m×3) + 양쪽 눈둑 몫(0.32m×2) = 4.06m → 어디서든 MIN_RACE_W 이상
+export const COURSE_W=6.0;            // 기본 길 폭(부스터·얼음·점프대·장애물 숲 포함, 예전 4.5)
+export const NARROW_W=4.5;            // 좁은 길 폭(예전 3.0)
+export const WIDE_W=7.0;              // 출발 직선(처음 20m)·줄 끝 굽이·결승 직선·멈춤 구역
+export const TUNNEL_W=5.5;            // 터널
+export const START_STRAIGHT=20;       // 출발선부터 넓은 길(m, 뼈대 u)
+export const MIN_RACE_W=4.1;          // 4대가 나란히 지나갈 수 있는 가장 좁은 폭(시험이 모든 시드로 확인)
 export const BANK_H=.5;               // 양옆 눈둑 높이
 export const START_H=26;              // 출발대 높이(m)
 export const START_DROP=Object.freeze({len:40,h:5.6});   // 처음 40m는 가파르게 5.6m(빨리 속도가 붙게), 그 뒤 결승까지 고르게
@@ -111,7 +116,8 @@ export const BLOCKS=Object.freeze({
  chicane:{len:20,name:'굽이'},jump:{len:23,name:'점프대'},boost:{len:12,name:'부스터'},narrow:{len:14,name:'좁은 길'},
  forest:{len:18,name:'장애물 숲'},ice:{len:14,name:'얼음 길'},tunnel:{len:14,name:'터널'},
 });
-export const TURN_KINDS=Object.freeze({hairpin:{w:1.5,name:'헤어핀'},normal:{w:0,name:'굽이'},wide:{w:-1.5,name:'큰 굽이'}}); // w: 굽이 안쪽으로 비키는 거리(+ = 안쪽 = 반지름 작아짐)
+// w: 굽이 안쪽으로 비키는 거리(+ = 안쪽 = 반지름 작아짐). 11-18: 길이 옆으로 비키는 폭 1.6→1.0m 안(굽이 폭 7m가 단 8.6m 안에 들게 0.75)
+export const TURN_KINDS=Object.freeze({hairpin:{w:.75,name:'헤어핀'},normal:{w:0,name:'굽이'},wide:{w:-.75,name:'큰 굽이'}});
 const LEAD=5;                         // 줄 끝 굽이로 들어가고 나오는 비킴 구간(m)
 const REQUIRED=['jump','jump','boost','boost','forest','chicane','chicane','narrow','ice','tunnel'];
 const EXTRA=['boost','chicane','forest','jump','ice','narrow','boost'];
@@ -137,10 +143,11 @@ export function planCourse(seed){
   // 남는 길이를 블록 앞·사이·뒤에 나눠 둔다
   const cuts=list.map(()=>R()).concat(R());const sum=cuts.reduce((a,b)=>a+b,0)||1;let u=sl.a;
   list.forEach((t,j)=>{u+=slack*cuts[j]/sum;const b={type:t,u0:+u.toFixed(2),u1:+(u+BLOCKS[t].len).toFixed(2),row:i};
-   if(t==='chicane'){b.amp=(R()<.5?-1:1)*(1.2+R()*.35);}
+   if(t==='chicane'){b.amp=(R()<.5?-1:1)*(.75+R()*.25);} // 옆으로 최대 1.0m(6m 길이 단 안에)
    if(t==='jump'){b.big=R()<.5;}
    if(t==='boost'){b.offs=[pick([-1,0,1]),pick([-1,0,1])];}
-   if(t==='forest'){let sg=R()<.5?-1:1;b.obs=[0,1,2,3].map(k=>{const off=sg*(.55+R()*.65);sg=R()<.8?-sg:sg;return {du:2.5+k*4.8,off:+off.toFixed(2),kind:R()<.35?'fir':'pile'};});}
+   // 장애물은 가운데 근처(옆 0.3~0.5m) → 양옆 틈이 모두 2m 이상(6m 길, 반지름 0.5m)
+   if(t==='forest'){let sg=R()<.5?-1:1;b.obs=[0,1,2,3].map(k=>{const off=sg*(.3+R()*.2);sg=R()<.8?-sg:sg;return {du:2.5+k*4.8,off:+off.toFixed(2),kind:R()<.35?'fir':'pile'};});}
    if(t==='tunnel'){b.lights=R()<.5;}
    blocks.push(b);u=b.u1;});});
  const turns=TURN_SPANS.map(()=>pick(['hairpin','normal','wide','hairpin','normal']));
@@ -152,15 +159,21 @@ export function planCourse(seed){
 function lateral(plan){
  const {blocks,turns}=plan;
  return u=>{
-  let w=0,W=COURSE_W,ice=false,tun=false;
-  // 줄 끝 굽이(안쪽 + 방향 = 굽이 방향 sg)
-  TURN_SPANS.forEach((t,i)=>{const kw=TURN_KINDS[turns[i]].w*t.sg;if(!kw)return;
-   if(u>=t.u0-LEAD&&u<=t.u1+LEAD){const f=u<t.u0?sm((u-(t.u0-LEAD))/LEAD):u>t.u1?1-sm((u-t.u1)/LEAD):1;w+=kw*f;}});
-  for(const b of blocks){if(u<b.u0||u>b.u1)continue;const t=(u-b.u0)/(b.u1-b.u0);
+  let w=0,ice=false,tun=false,wide=0;
+  // 넓은 곳: 출발 직선(처음 20m, 그 뒤 3m에 걸쳐 6m로) · 결승 직선(결승 12m 앞 ~ 결승 뒤 3m) 7m. 그 뒤 감속 구간 6m·멈춤 구역 4.5m
+  //  (넓히면 마을 승강장을 막 떠난 케이블카 객실 아래로 길 가장자리가 들어감 — 시험 「객실은 길 위 2.5m 넘게」)
+  wide=Math.max(wide,u<=START_STRAIGHT?1:1-sm((u-START_STRAIGHT)/3),Math.min(sm((u-(FINISH_U-12))/3),1-sm((u-(FINISH_U+3))/3)));
+  // 줄 끝 굽이(안쪽 + 방향 = 굽이 방향 sg) — 굽이는 7m
+  TURN_SPANS.forEach((t,i)=>{if(u<t.u0-LEAD||u>t.u1+LEAD)return;const f=u<t.u0?sm((u-(t.u0-LEAD))/LEAD):u>t.u1?1-sm((u-t.u1)/LEAD):1;
+   wide=Math.max(wide,f);const kw=TURN_KINDS[turns[i]].w*t.sg;if(kw)w+=kw*f;});
+  let W=COURSE_W+(WIDE_W-COURSE_W)*wide;
+  // 멈춤 구역 끝(결승 6m 뒤부터)은 4.5m — 4대가 나란히 멈출 수 있는 폭(4.1m 이상)은 지키고, 케이블카 객실(마을 승강장 바로 앞) 아래에서는 비킨다
+  if(u>FINISH_U+6)W=W-(W-NARROW_W)*sm((u-(FINISH_U+6))/3);
+  for(const b of blocks){if(u<b.u0||u>b.u1)continue;const t=(u-b.u0)/(b.u1-b.u0),e=Math.min(u-b.u0,b.u1-u);
    if(b.type==='chicane')w+=b.amp*(Math.sin(2*Math.PI*t)-.5*Math.sin(4*Math.PI*t))/1.3;
-   else if(b.type==='narrow'){const L=b.u1-b.u0,e=Math.min(u-b.u0,b.u1-u);W=COURSE_W-(COURSE_W-NARROW_W)*sm(e/3);void L;}
+   else if(b.type==='narrow')W=W-(W-NARROW_W)*sm(e/3);
    else if(b.type==='ice')ice=true;
-   else if(b.type==='tunnel')tun=true;}
+   else if(b.type==='tunnel'){tun=true;W=W-(W-TUNNEL_W)*sm(e/2);}}
   return {w,W,ice,tun};
  };
 }
@@ -184,7 +197,7 @@ export function makeCourse(seed){
  const idx=s=>{if(s<=P[0].s)return 0;if(s>=P[N-1].s)return N-2;let lo=0,hi=N-1;while(hi-lo>1){const m=(lo+hi)>>1;if(P[m].s<=s)lo=m;else hi=m;}return lo;};
  const uOfS=s=>{if(s<=P[0].s)return P[0].u+(s-P[0].s);if(s>=P[N-1].s)return P[N-1].u+(s-P[N-1].s);const i=idx(s),a=P[i],b=P[i+1];return a.u+(b.u-a.u)*(s-a.s)/((b.s-a.s)||1);};
  const finish=+sOfU(FINISH_U).toFixed(2);
- const at=s=>{if(s<=P[0].s){const p=P[0],e=s-p.s;return {x:p.x+Math.cos(p.th)*e,z:p.z+Math.sin(p.th)*e,th:p.th,k:0,W:COURSE_W,ice:false,tun:false,u:p.u+e};}
+ const at=s=>{if(s<=P[0].s){const p=P[0],e=s-p.s;return {x:p.x+Math.cos(p.th)*e,z:p.z+Math.sin(p.th)*e,th:p.th,k:0,W:p.W,ice:false,tun:false,u:p.u+e};}
   if(s>=P[N-1].s){const p=P[N-1],e=s-p.s;return {x:p.x+Math.cos(p.th)*e,z:p.z+Math.sin(p.th)*e,th:p.th,k:0,W:p.W,ice:false,tun:false,u:p.u+e};}
   const i=idx(s),a=P[i],b=P[i+1],t=(s-a.s)/((b.s-a.s)||1);
   return {x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,th:a.th+(b.th-a.th)*t,k:a.k+(b.k-a.k)*t,W:a.W+(b.W-a.W)*t,ice:t<.5?a.ice:b.ice,tun:t<.5?a.tun:b.tun,u:a.u+(b.u-a.u)*t};};
@@ -212,7 +225,7 @@ export function makeCourse(seed){
   jumps:Object.freeze(jumps),boosters:Object.freeze(boosters.sort((a,b)=>a.s-b.s)),obstacles:Object.freeze(obstacles),
   ice:Object.freeze(ice),tunnels:Object.freeze(tunnels),narrows:Object.freeze(narrows),sections:Object.freeze(sections),
   at,xz,nearest:(x,z,o={})=>nearest(x,z,{...o,key:'s'}),profileH,rampH,widthAt,surfaceAt,uOfS,sOfU,
-  onCourse:(x,z,m=0)=>{const a=nearest(x,z,{maxD:COURSE_W,key:'s'});return !!a&&a.d<=at(a.s).W/2+m;}});
+  onCourse:(x,z,m=0)=>{const a=nearest(x,z,{maxD:WIDE_W,key:'s'});return !!a&&a.d<=at(a.s).W/2+m;}});
  cache.set(sd,course);if(cache.size>24)cache.delete(cache.keys().next().value);
  return course;
 }

@@ -1,0 +1,416 @@
+{
+ "at": "2026-11-17T09:25:35.337Z",
+ "pageUrl": "http://127.0.0.1:5233",
+ "wsUrl": "ws://127.0.0.1:8833",
+ "rows": [
+  {
+   "who": "대표PC",
+   "button": "상황 고르기(입장)",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "상황 고르기(입장)",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "소리",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "설정 열기·닫기",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "수첩 접기·펴기",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "상황 단추(다시)",
+   "mine": true,
+   "seen": null,
+   "note": "상황·시간은 각자 화면 설정",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "꺼내기·그만두기",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "담배 고르기(시가)",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "불",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "꾹 들이마시기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "묘기 코로",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "묘기 링",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "재 털기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "인사·한숨·기지개(4번)",
+   "mine": true,
+   "seen": true,
+   "note": "같은 인사 두 번도 상대에게 두 번",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "채팅 보내기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "자판기(캔커피)",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "한 모금",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "꽁초 버리기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "캔 버리기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "벤치 걸터앉기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "일어나기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "난간에 기대기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "난간에서 떨어지기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "옷 바꾸기(정장)",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "재떨이로",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "채팅 열기",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "채팅 보내기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "꺼내기→멘솔",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "불",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "꾹 들이마시기(터치)",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "묘기 프렌치",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "재 털기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "⋯ 더 보기",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "인사 두 번",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "자판기(캔커피)",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "벤치 걸터앉기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "손님폰",
+   "button": "일어나기",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "둘 다",
+   "button": "같은 좌판 동시",
+   "mine": true,
+   "seen": true,
+   "note": "A 0:0 · B 서 있음",
+   "ok": true
+  },
+  {
+   "who": "나중폰",
+   "button": "나중 입장: A 지금 모습",
+   "mine": null,
+   "seen": true,
+   "note": "A stand·cigar·불 true·캔 false·suit",
+   "ok": true
+  },
+  {
+   "who": "나중폰",
+   "button": "나중 입장: B 지금 모습",
+   "mine": null,
+   "seen": true,
+   "note": "B stand·menthol·불 true·캔 true",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "키 2(독한 맛)",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "키 F(불)",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "키 Space 꾹",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "키 T(프렌치)",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "키 N(코로)",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "키 R(링)",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "키 B·G(NPC 없음)",
+   "mine": true,
+   "seen": null,
+   "note": "NPC를 안 부른 옥상: 할 일 없음·오류 없음",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "키 E(가까운 할 일)",
+   "mine": true,
+   "seen": true,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "키 C(한 모금)",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "키 Enter(채팅 칸)",
+   "mine": true,
+   "seen": null,
+   "note": "",
+   "ok": true
+  }
+ ],
+ "errors": [],
+ "failed": 0,
+ "serverLog": [
+  "{\"at\":\"2026-11-17T09:25:34.640Z\",\"event\":\"start\",\"port\":8833,\"host\":\"127.0.0.1\",\"dataDir\":\"/Users/pc-2311001/gwanak-hiking/artifacts/lounge-interact/data\",\"origins\":\"*(모두 허용)\",\"reports\":0,\"chatBanned\":127}",
+  "{\"at\":\"2026-11-17T09:25:34.640Z\",\"event\":\"warn\",\"message\":\"ALLOWED_ORIGINS가 비어 모든 페이지 주소를 허용합니다\"}",
+  "{\"at\":\"2026-11-17T09:26:34.637Z\",\"event\":\"summary\",\"clients\":2,\"rooms\":1,\"replaced\":0,\"pairOffers\":0,\"pairDenied\":0,\"pairs\":0,\"pairEnds\":0,\"joined\":2,\"chats\":2,\"chatLimited\":0,\"smokes\":30,\"acts\":15,\"badExperience\":0,\"wrongExperience\":0,\"full\":0,\"stateAccepted\":272,\"rateDropped\":0,\"teleportRejected\":0,\"resynced\":0,\"jumps\":1,\"relayed\":0,\"animals\":0,\"animalDup\":0,\"reports\":0,\"hidden\":0,\"invalid\":0,\"snapshots\":258,\"tree\":0,\"treeDenied\":0,\"treeResets\":0,\"play\":0}",
+  "{\"at\":\"2026-11-17T09:27:34.638Z\",\"event\":\"summary\",\"clients\":3,\"rooms\":1,\"replaced\":0,\"pairOffers\":0,\"pairDenied\":0,\"pairs\":0,\"pairEnds\":0,\"joined\":3,\"chats\":2,\"chatLimited\":0,\"smokes\":47,\"acts\":32,\"badExperience\":0,\"wrongExperience\":0,\"full\":0,\"stateAccepted\":603,\"rateDropped\":0,\"teleportRejected\":0,\"resynced\":0,\"jumps\":3,\"relayed\":0,\"animals\":0,\"animalDup\":0,\"reports\":0,\"hidden\":0,\"invalid\":0,\"snapshots\":553,\"tree\":0,\"treeDenied\":0,\"treeResets\":0,\"play\":0}",
+  ""
+ ]
+}

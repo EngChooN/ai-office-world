@@ -8,10 +8,20 @@
 import {SNOWBALL_YARD} from './layout.js';
 
 export const FIGHT=Object.freeze({ammo:3,refillMs:3000,packMs:1000,gapMs:800,speed:13,minDist:2.5,maxDist:14,hand:.35,hitR:.42,
- autoCone:Math.PI/3,autoRange:12,forward:9,coverMs:2000,stackMs:5000,maxCover:3,softN:5,softMs:10000,wallH:.7,
- // 11-17 조준(눈썰매-눈싸움-개선-v1 §2-1·§2-2): 힘 게이지 0~1초 → 4m + 게이지×10m, 고리 지름 0.8→1.2m(멀수록), 보정 0.5m 안 사람 쪽으로 최대 0.4m,
+ forward:9,coverMs:2000,stackMs:5000,maxCover:3,softN:5,softMs:10000,wallH:.7,
+ // 11-17 조준(눈썰매-눈싸움-개선-v1 §2-1·§2-2): 힘 게이지 0~1초 → 4m + 게이지×10m, 고리 지름 0.8→1.2m(멀수록),
  //  머리 맞힘 = 닿을 때 눈덩이 높이 0.75m 이상, 웅크리면 키 0.6m(눈벽 뒤 안 맞음), 맞은 뒤 0.6초 못 던짐·1.0초 무적
- gaugeSecs:1,aimMin:4,aimRange:10,ringD:.8,ringMaxD:1.2,assistR:.5,assistMax:.4,headH:.75,crouchH:.6,stunMs:600,invulnMs:1000,dots:12});
+ // 11-18(설계 v2 §4, 직접 겨냥): 자동 조준·고리 근처 사람 쪽으로 끌어당기기를 없앰. 조준점 = 화면 가운데 방향 + 겨냥 거리(처음 9m, 4~14m, 마당을 나갈 때까지 기억)
+ gaugeSecs:1,aimMin:4,aimRange:10,ringD:.8,ringMaxD:1.2,headH:.75,crouchH:.6,stunMs:600,invulnMs:1000,dots:12});
+// 휴대폰 ❄️ 끌기(설계 v2 §4-2): 좌우 1px = 0.35° 시야·조준 회전, 위로 1px = +0.08m, 누른 곳에서 좌우 90px 넘게 벗어나 있으면 그쪽으로 계속 돎(최대 120°/s, 150px에서 최대),
+//  톡 = 0.2초·12px 안, 끌다가 ✕(누른 곳 왼쪽 위 120px, 지름 56px) 위에서 떼면 취소. 조준 중 걷기 85%
+export const AIM=Object.freeze({degPerPx:.35,mPerPx:.08,spinFrom:90,spinFull:150,spinMax:120,tapMs:200,tapPx:12,cancelDx:-85,cancelDy:-85,cancelR:28,walkMul:.85,dist0:9});
+// 끌기(dx,dy px) → 회전(rad, 오른쪽으로 끌면 오른쪽으로 돎 = yaw 감소)·거리(m). 거리는 시작 거리 d0에서 위로 끈 만큼
+export const dragTurn=dx=>-dx*AIM.degPerPx*Math.PI/180;
+export const dragDistFrom=(d0,dy)=>Math.max(FIGHT.aimMin,Math.min(FIGHT.aimMin+FIGHT.aimRange,d0-dy*AIM.mPerPx));
+// 좌우 끝에 대고 있으면 계속 도는 빠르기(rad/s, 부호 = yaw 변화)
+export const dragSpin=dx=>{const a=Math.abs(dx);if(a<=AIM.spinFrom)return 0;return -Math.sign(dx)*AIM.spinMax*Math.PI/180*Math.min(1,(a-AIM.spinFrom)/(AIM.spinFull-AIM.spinFrom));};
+export const overCancel=(dx,dy)=>Math.hypot(dx-AIM.cancelDx,dy-AIM.cancelDy)<=AIM.cancelR;
 export const FIGHT_TEXT=Object.freeze({
  enter:'눈싸움 마당이에요. 안에 있으면 눈덩이를 맞을 수 있어요',outside:'눈덩이는 눈싸움 마당 안에서만 던질 수 있어요',
  empty:'눈덩이가 없어요. 「눈 뭉치기」를 누르거나 잠깐 기다려 주세요',gap:'',offline:'연결이 돌아오면 다시 눌러 주세요',
@@ -73,25 +83,19 @@ export function sweepFlight(f,s0,s1,people=[],{walls=SNOWBALL_YARD.walls}={}){
 // 힘 게이지(누른 시간 초 → 0~1). 가득 찬 뒤 0.5초 넘으면 full(깜빡임)이지만 값은 1 그대로(손해 없음)
 export const gaugeOf=sec=>Math.max(0,Math.min(1,sec/FIGHT.gaugeSecs));
 export const gaugeDist=g=>FIGHT.aimMin+Math.max(0,Math.min(1,g))*FIGHT.aimRange;
-// 휴대폰 ❄️ 끌기 길이(px) → 거리. 20px 아래는 방향만(거리는 게이지), 20~120px = 4~14m. 40px 아래로 짧게 끌면 게이지 우선
-export const DRAG=Object.freeze({min:20,max:120,gaugeUnder:40,tapMs:200});
-export function dragDist(len,g){if(len<DRAG.gaugeUnder)return gaugeDist(g);return FIGHT.aimMin+Math.min(1,(len-DRAG.min)/(DRAG.max-DRAG.min))*FIGHT.aimRange;}
+// 옛 끌기 규칙(11-17, 끈 쪽으로 던짐) — 11-18에 끌기 = 시야 회전·거리로 바뀜. 톡 판정 시간만 같이 씀
+export const DRAG=Object.freeze({tapMs:AIM.tapMs});
 // 고리 지름(m): 4m 안 0.8m → 14m 1.2m
 export const ringDiameter=d=>FIGHT.ringD+(FIGHT.ringMaxD-FIGHT.ringD)*Math.max(0,Math.min(1,(d-FIGHT.aimMin)/FIGHT.aimRange));
-// 조준 보정: 겨눈 점 (tx,tz)에서 0.5m 안에 사람이 있으면 가장 가까운 사람 쪽으로 최대 0.4m 끌어당긴 점과 그 사람
-export function assistPoint(tx,tz,people=[]){
- let best=null;for(const p of people){if(p.safe)continue;const d=Math.hypot(p.x-tx,p.z-tz);if(d<=FIGHT.assistR&&(!best||d<best.d))best={d,p};}
- if(!best)return {x:tx,z:tz,target:null};
- const k=Math.min(1,FIGHT.assistMax/Math.max(1e-6,best.d));return {x:tx+(best.p.x-tx)*k,z:tz+(best.p.z-tz)*k,target:best.p.id};
-}
-// 조준 한 번: 내 자리 me{x,z}, 겨눈 점(땅) → 보낼 방향·거리 + 미리보기(서버와 같은 resolveThrow). people은 판정과 같은 목록
+// 조준 한 번: 내 자리 me{x,z}, 겨눈 점(땅) → 보낼 방향·거리 + 미리보기(서버와 같은 resolveThrow). people은 판정과 같은 목록.
+// 11-18: 겨눈 점 그대로(사람 쪽으로 끌어당기지 않음). target = 미리보기 선이 닿는 사람(정보 표시만)
 export function planThrow(me,tx,tz,people=[]){
- const a=assistPoint(tx,tz,people);let dx=a.x-me.x,dz=a.z-me.z,d=Math.hypot(dx,dz);
+ let dx=tx-me.x,dz=tz-me.z,d=Math.hypot(dx,dz);
  if(d<.3){dx=0;dz=-1;d=FIGHT.minDist;}
  // 시작점은 손(앞으로 0.35m)이라 거리에서 손 몫을 빼야 끝점이 겨눈 점에 떨어진다
  const dist=Math.max(FIGHT.minDist,Math.min(FIGHT.maxDist,d-FIGHT.hand));
  const r=resolveThrow({x:me.x,z:me.z,dx,dz,dist},people);
- return {dx:dx/d,dz:dz/d,dist,target:a.target,r};
+ return {dx:dx/d,dz:dz/d,dist,target:r.hit,r};
 }
 // 점선 미리보기 점들(손 → 끝, 끝은 벽에 막힌 곳까지). [{x,y(땅 위 높이),z,end?,blocked?}]
 export function arcDots(r,n=FIGHT.dots){
@@ -99,13 +103,7 @@ export function arcDots(r,n=FIGHT.dots){
  for(let i=0;i<=n;i++){const s=r.d*i/n;out.push({x:r.x+dx*s,z:r.z+dz*s,y:arcHeight(Math.min(1,s/r.d0)),end:i===n,blocked:r.wall&&i>=n-1});}
  return out;
 }
-// 휴대폰 짧게 누름: 앞쪽 60° 안 12m 이내 가장 가까운 사람에게(없으면 정면 9m). heading 0 = -Z.
-export function autoAim(me,heading,people=[]){
- const fx=-Math.sin(heading),fz=-Math.cos(heading);let best=null;
- for(const p of people){if(!inFightYard(p.x,p.z,-.3))continue;const dx=p.x-me.x,dz=p.z-me.z,d=Math.hypot(dx,dz);if(d<.6||d>FIGHT.autoRange)continue;
-  const cos=(dx*fx+dz*fz)/d;if(cos<Math.cos(FIGHT.autoCone/2))continue;if(!best||d<best.d)best={d,dx:dx/d,dz:dz/d,id:p.id};}
- return best?{dx:best.dx,dz:best.dz,dist:best.d+.2,target:best.id}:{dx:fx,dz:fz,dist:FIGHT.forward,target:null};
-}
+// (11-18) 자동 조준(autoAim)은 없앰 — 휴대폰 톡·PC F 톡은 지금 고리 자리로 던진다(직접 겨냥)
 // 손에 든 눈덩이(화면 쪽): 3초마다 1개, 뭉치면 1개, 던지면 -1, 간격 0.8초
 export function createAmmo({now=()=>Date.now()}={}){
  let n=FIGHT.ammo,refillAt=now(),lastThrow=-Infinity;

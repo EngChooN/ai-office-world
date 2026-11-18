@@ -3,9 +3,9 @@
 //  자동 시뮬레이션 시간대(보통 실력 60~75초), 조작(속도에 따른 회전·드리프트·부드러운 튕김·터치 데드존), 레이스·기록판(코스별), 케이블카(높이·시간·건너뛰기·서버 한도).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {makeCourse,planCourse,dailySeed,normSeed,courseCode,mountainH,heightU,skeletonAt,START_H,COURSE_W,NARROW_W,FINISH_U,SKELETON_END,TURN_SPANS,ROW_SPANS,BLOCKS,SUMMIT} from '../src/christmas/sled-course.js';
-import {setSledFeel,sledFeel,sledFeelFrom,SLED_RULES_2,createRide,SLED_RULES,SLED_SENS,SLED_HALF,turnRateAt,simulateRide,createHumanBot,botSteer,courseGrip,createGhostRecorder,ghostAt,starsOf,starTimes,laneOffset,PAR_NORMAL} from '../src/christmas/sled.js';
-import {createSledRace,RACE} from '../src/christmas/sled-race.js';
+import {makeCourse,planCourse,dailySeed,normSeed,courseCode,mountainH,heightU,skeletonAt,START_H,COURSE_W,NARROW_W,WIDE_W,TUNNEL_W,MIN_RACE_W,FINISH_U,SKELETON_END,TURN_SPANS,ROW_SPANS,BLOCKS,SUMMIT} from '../src/christmas/sled-course.js';
+import {setSledFeel,sledFeel,sledFeelFrom,SLED_RULES_2,SLED_RULES_3,createRide,SLED_RULES,SLED_SENS,SLED_HALF,turnRateAt,simulateRide,createHumanBot,botSteer,courseGrip,createGhostRecorder,ghostAt,starsOf,starTimes,laneOffset,PAR_NORMAL,createSledCam,SLED_CAM_OLD_PSI,headingOf,SLED_FEEL_VERSION} from '../src/christmas/sled.js';
+import {createSledRace,RACE,BOARD_FEEL} from '../src/christmas/sled-race.js';
 import {XMAS_PLAY_MESSAGES} from '../src/christmas/room-play.js';
 import {dragSteer,DRAG} from '../src/christmas/sled-play.js';
 import {GONDOLA,CABLE,CABLE_LEN,TOWERS,cabinAt,cabinYAt,rideFraction,createGondolaRide,nearStation} from '../src/christmas/gondola.js';
@@ -16,8 +16,9 @@ import {PLAY_TYPES} from '../src/christmas/multi.js';
 import {EXPERIENCE_MESSAGES,sanitizeAct,NET} from '../src/multi-protocol.js';
 
 const T0=9_000_000;
-// 11-17 대표 결정: 조작감 2가 기본. 조작감 1 수치 시험은 비교용으로 남기고 그 시험 안에서만 1로 바꾼다
-const feel1=fn=>()=>{setSledFeel(1);try{fn();}finally{setSledFeel(2);}};
+// 11-18: 조작감 3(직접 조작)이 기본. 조작감 1·2 수치 시험은 비교용으로 남기고 그 시험 안에서만 바꾼다
+const feelN=n=>fn=>()=>{setSledFeel(n);try{fn();}finally{setSledFeel(3);}};
+const feel1=feelN(1),feel2=feelN(2);
 const SEEDS=Array.from({length:24},(_,i)=>normSeed(i*2654435761+12345));
 const C0=makeCourse(SEEDS[0]);
 
@@ -74,7 +75,7 @@ function passable(c,{slope=.45,step=.25}={}){
 }
 test('막다른 길 없음: 어느 코스든 장애물 숲·좁은 길 사이로 결승까지 지나갈 길이 있음(옆으로 1m에 0.45m 안 움직이며)',()=>{
  for(const sd of SEEDS){const c=makeCourse(sd),r=passable(c);assert.ok(r.ok,`${c.code} s=${r.s}에서 막힘`);
-  for(const p of c.points)assert.ok(p.W>=NARROW_W-1e-6,'좁은 길도 3m 이상');}
+  for(const p of c.points)assert.ok(p.W>=NARROW_W-1e-6,'좁은 길도 4.5m 이상');}
 });
 test('점프 착지 안전: 가장 멀리 나는 거리(12m/s × 1.3배 체공) 안에는 장애물·좁은 길·터널·굽이가 없음',()=>{
  for(const sd of SEEDS){const c=makeCourse(sd);
@@ -83,12 +84,12 @@ test('점프 착지 안전: 가장 멀리 나는 거리(12m/s × 1.3배 체공) 
    assert.ok(!c.obstacles.some(o=>o.s>=j.s-1&&o.s<=j.s+far),`${c.code} 착지 자리에 장애물`);
    assert.ok(j.s+far<c.finish,'결승 전에 착지');}}
 });
-test('조작감 1(비교용) — 완주 가능·시간대: 보통 실력(키보드식 누름/뗌·0.22초 늦은 반응)은 60~75초, 잘 타면 더 빠르고, 손을 안 대도 끝까지 감',feel1(()=>{
+test('조작감 1(비교용) — 완주 가능·시간대: 보통 실력(키보드식 누름/뗌·0.22초 늦은 반응)은 50~75초(11-18 길이 넓어져 조금 빨라짐), 잘 타면 더 빠르고, 손을 안 대도 끝까지 감',feel1(()=>{
  const norm=[],good=[],none=[];
  for(const sd of SEEDS.slice(0,12)){const c=makeCourse(sd);
   const n=simulateRide(c,{style:'normal',seed:sd%997+3}),g=simulateRide(c,{style:'good'}),z=simulateRide(c,{style:'none'});
   for(const [r,name] of [[n,'보통'],[g,'잘 탐'],[z,'손 안 댐']])assert.ok(r.done&&Number.isFinite(r.t),`${c.code} ${name} 완주 못 함`);
-  assert.ok(n.t>=60&&n.t<=75,`${c.code} 보통 ${n.t.toFixed(1)}초`);assert.ok(g.t<n.t,`${c.code} 잘 타면 더 빠름 ${g.t.toFixed(1)} < ${n.t.toFixed(1)}`);
+  assert.ok(n.t>=50&&n.t<=75,`${c.code} 보통 ${n.t.toFixed(1)}초`);assert.ok(g.t<n.t,`${c.code} 잘 타면 더 빠름 ${g.t.toFixed(1)} < ${n.t.toFixed(1)}`);
   norm.push(n.t);good.push(g.t);none.push(z.t);}
  const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
  assert.ok(avg(good)<=avg(norm)-5,`잘 타면 평균 5초 넘게 빠름: ${avg(good).toFixed(1)} / ${avg(norm).toFixed(1)}`);
@@ -126,7 +127,7 @@ test('부딪힘: 눈둑·눈 더미·전나무에 부딪혀도 멈추지 않고(
   for(let i=0;i<120&&!hit;i++){const e=q.step(1/60,{steer:Math.max(-1,Math.min(1,(ob.off-q.off)*2-q.psi*3))});hit=e.find(x=>x.type==='pile'||x.type==='tree');offAt=q.off;}
   assert.ok(hit,`${kind} 부딪힘`);assert.ok(q.v>=3.5-1e-9);let moved=0;for(let i=0;i<20;i++){q.step(1/60,{});moved=Math.max(moved,Math.abs(q.off-offAt));}assert.ok(moved>.15,`${kind} 옆으로 밀림 ${moved.toFixed(2)}`);}
 });
-test('얼음 길·좁은 길: 얼음 위에서는 덜 꺾이고, 좁은 길에서는 눈둑이 안쪽(폭 3m)',()=>{
+test('얼음 길·좁은 길: 얼음 위에서는 덜 꺾이고, 좁은 길에서는 눈둑이 안쪽(폭 4.5m)',()=>{
  const c=SEEDS.map(makeCourse).find(x=>x.ice.length&&x.narrows.length),ice=c.ice[0],nw=c.narrows[0];
  assert.equal(c.surfaceAt((ice.s0+ice.s1)/2),'ice');assert.ok(Math.abs(c.widthAt((nw.s0+nw.s1)/2)-NARROW_W)<.01);
  const a=createRide({course:c,start:ice.s0+2,v0:7}),b=createRide({course:c,start:ice.s0-30,v0:7});
@@ -149,7 +150,7 @@ test('고스트: 0.1초마다 기록, 시각으로 자리 찾기',()=>{
  const g=createGhostRecorder(),r=createRide({course:C0,lane:2});let t=0;while(!r.finished&&t<90){r.step(1/60,{steer:botSteer(r)});g.add(1/60,r.pose());t+=1/60;}
  assert.ok(Math.abs(g.points.length-t/.1)<3,`${g.points.length}점 / ${t.toFixed(1)}초`);
  const a=ghostAt(g.points,5),b=ghostAt(g.points,10);assert.ok(b.s>a.s);assert.ok(ghostAt(g.points,999).done);
- assert.equal(laneOffset(1),-1.5);assert.equal(laneOffset(4),1.5);
+ assert.ok(Math.abs(laneOffset(1)+2.1)<1e-9&&Math.abs(laneOffset(4)-2.1)<1e-9,'11-18 줄 간격 1.4m');
 });
 const mkCtx=()=>{const out=[],mem=new Map();return {out,mem,ctx:{members:mem,send:(id,m)=>{out.push({to:id,...m});return true;},all:m=>out.push({to:'*',...m})}};};
 test('같은 방 = 같은 코스: 들어오면 방 코스(sc), 레이스를 열면 새 코스(타는 사람이 없을 때) · 레이스 view에도 시드',()=>{
@@ -176,19 +177,22 @@ test('레이스: 열기 → 같이 하기(최대 4명) → 3·2·1 → 출발 �
  const [a,b,c,d,e]=['a','b','c','d','e'].map(who);
  R.handle(a,{t:'sr:open',lane:1},T0,ctx);assert.equal(R.race.ph,'wait');const sd=R.race.seed;
  R.handle(b,{t:'sr:join',lane:1},T0+500,ctx);assert.notEqual(R.race.riders.get('b').lane,1,'겹친 줄은 빈 줄로');
- R.handle(c,{t:'sr:join'},T0+600,ctx);R.handle(d,{t:'sr:join'},T0+700,ctx);R.handle(e,{t:'sr:join'},T0+800,ctx);
- assert.equal(R.race.riders.size,RACE.max);assert.equal(out.at(-1).reason,'full');
- R.tick(T0+RACE.waitMs+1,ctx);assert.equal(R.race.ph,'count');R.tick(T0+RACE.waitMs+RACE.countMs+2,ctx);assert.equal(R.race.ph,'run');
+ R.handle(c,{t:'sr:join'},T0+600,ctx);R.handle(d,{t:'sr:join'},T0+700,ctx);
+ // 11-18: 4명이 차면 바로 3·2·1(모집 20초를 기다리지 않음), 그 뒤 온 사람은 「이미 출발」
+ assert.equal(R.race.riders.size,RACE.max);assert.equal(R.race.ph,'count');assert.deepEqual([...R.race.riders.values()].map(x=>x.lane).sort(),[1,2,3,4]);
+ R.handle(e,{t:'sr:join'},T0+800,ctx);assert.equal(out.at(-1).reason,'closed');
+ R.tick(T0+700+RACE.countMs+2,ctx);assert.equal(R.race.ph,'run');
  const go=R.race.goAt;
- R.handle(b,{t:'sr:fin',ms:63000,seed:sd,fv:2},go+63000,ctx);R.handle(a,{t:'sr:fin',ms:65500,seed:sd,fv:2},go+65500,ctx);
- R.handle(c,{t:'sr:fin',ms:12000,seed:sd,fv:2},go+66000,ctx);assert.equal(out.at(-1).reason,'bad','말이 안 되게 빠른 기록은 거름');
+ R.handle(b,{t:'sr:fin',ms:63000,seed:sd,fv:3},go+63000,ctx);R.handle(a,{t:'sr:fin',ms:65500,seed:sd,fv:3},go+65500,ctx);
+ R.handle(c,{t:'sr:fin',ms:12000,seed:sd,fv:3},go+66000,ctx);assert.equal(out.at(-1).reason,'bad','말이 안 되게 빠른 기록은 거름');
  R.tick(go+63000+RACE.lateMs+1,ctx);assert.equal(R.race.ph,'done');
  const v=out.filter(m=>m.t==='sr').at(-1);assert.deepEqual(v.r.map(x=>[x.id,x.rank??null,!!x.dnf]),[['a',2,false],['b',1,false],['c',null,true],['d',null,true]]);
  const bd=out.filter(m=>m.t==='sr:board').at(-1);assert.deepEqual(bd.b.map(x=>x.n),['b','a']);assert.equal(bd.seed,sd);
  // 혼자 기록도(같은 코스 시드만): 다른 코스 시드로 보낸 기록은 버림
- R.handle(who('x'),{t:'sr:rec',ms:61000,seed:sd,fv:2},go+80000,ctx);R.handle(who('y'),{t:'sr:rec',ms:60000,seed:sd+1,fv:2},go+80000,ctx);
- // 11-17: 조작감 2(fv:2)가 아닌 기록(예전 조작감·옛 캐시 화면)은 기록판에 안 올림 — 더 빨라도
- R.handle(who('old'),{t:'sr:rec',ms:59000,seed:sd},go+80000,ctx);R.handle(who('old1'),{t:'sr:rec',ms:59000,seed:sd,fv:1},go+80000,ctx);
+ R.handle(who('x'),{t:'sr:rec',ms:61000,seed:sd,fv:3},go+80000,ctx);R.handle(who('y'),{t:'sr:rec',ms:60000,seed:sd+1,fv:3},go+80000,ctx);
+ // 11-18: 조작감 3(fv:3)이 아닌 기록(예전 조작감 2·1·옛 캐시 화면)은 기록판에 안 올림 — 더 빨라도
+ assert.equal(BOARD_FEEL,3);assert.equal(SLED_FEEL_VERSION,BOARD_FEEL,'화면이 보내는 조작감 = 서버 기록판 조작감');
+ R.handle(who('old'),{t:'sr:rec',ms:59000,seed:sd},go+80000,ctx);R.handle(who('old1'),{t:'sr:rec',ms:59000,seed:sd,fv:1},go+80000,ctx);R.handle(who('old2'),{t:'sr:rec',ms:58000,seed:sd,fv:2},go+80000,ctx);
  const b2=out.filter(m=>m.t==='sr:board').at(-1);assert.deepEqual(b2.b.map(x=>x.n),['x','b','a']);
  // 코스가 바뀌면 그 코스 기록판(처음엔 비어 있음), 돌아가면 다시 보임
  R.tick(go+63000+RACE.lateMs+RACE.keepMs+5,ctx);assert.equal(R.race,null);
@@ -196,15 +200,17 @@ test('레이스: 열기 → 같이 하기(최대 4명) → 3·2·1 → 출발 �
  R.setSeed(sd,go+91000,ctx);assert.equal(R.boardView(go+91000).b.length,3);
  assert.equal(R.boardView(go+86400e3*2).b.length,0,'다음 날(서울)은 비어 보임');
 });
-test('레이스: 기다리는 동안 나가면 빠지고, 연 사람이 「바로 출발」, 다 나가면 없어짐',()=>{
- const R=createSledRace(),{mem,ctx}=mkCtx();const a={id:'a',name:'a'},b={id:'b',name:'b'};mem.set('a',a);mem.set('b',b);
- R.handle(a,{t:'sr:open',lane:2},T0,ctx);R.handle(b,{t:'sr:join',lane:3},T0+100,ctx);
+test('레이스: 기다리는 동안 나가면 빠지고, 연 사람이 「바로 출발」(2명부터), 다 나가면 없어짐',()=>{
+ const R=createSledRace(),{out,mem,ctx}=mkCtx();const a={id:'a',name:'a'},b={id:'b',name:'b'};mem.set('a',a);mem.set('b',b);
+ assert.equal(RACE.waitMs,20000,'모집 20초');assert.equal(RACE.min,2);
+ R.handle(a,{t:'sr:open',lane:2},T0,ctx);R.handle(a,{t:'sr:go'},T0+50,ctx);assert.equal(R.race.ph,'wait','혼자면 못 출발');assert.equal(out.at(-1).reason,'few');
+ R.handle(b,{t:'sr:join',lane:3},T0+100,ctx);
  R.handle(b,{t:'sr:go'},T0+200,ctx);assert.equal(R.race.ph,'wait','연 사람만 바로 출발');
  R.handle(a,{t:'sr:go'},T0+300,ctx);assert.equal(R.race.ph,'count');
  R.handle(a,{t:'sr:quit'},T0+400,ctx);assert.equal(R.race.host,'b');mem.delete('b');R.tick(T0+500,ctx);assert.equal(R.race,null);
 });
 test('서버: 썰매(act.sl 5) 14m/s · 케이블카(act.gd) 90m/s까지 순간이동 검사 통과, 걷는 사람은 그대로',()=>{
- for(const t of ['sr:open','sr:join','sr:go','sr:quit','sr:fin','sr:rec','sc:new'])assert.ok(EXPERIENCE_MESSAGES.christmas.includes(t)&&XMAS_PLAY_MESSAGES.includes(t),t);
+ for(const t of ['sr:open','sr:join','sr:go','sr:more','sr:solo','sr:quit','sr:fin','sr:rec','sc:new'])assert.ok(EXPERIENCE_MESSAGES.christmas.includes(t)&&XMAS_PLAY_MESSAGES.includes(t),t);
  assert.deepEqual(sanitizeAct('christmas',{sl:5,cr:1,tm:2,gd:1}),{sl:5,cr:1,tm:2,gd:1});assert.ok(!sanitizeAct('christmas',{gd:3})?.gd);
  let t=T0;const rooms=createRooms({now:()=>t});
  const join=name=>rooms.join({experience:'christmas',room:'눈마을-1',name,send:()=>{}}).client;
@@ -252,8 +258,8 @@ test('실제 서버 길: 「새 코스」(sc:new)가 방 판정까지 가고, �
  for(const k of ['sc','sc:no','sr','sr:board'])assert.ok(PLAY_TYPES.includes(k),k);
 });
 
-test('조작감 2 기본(11-17 대표 결정): 모든 화면 같은 조작감, 꺾임 105°/s → 48°/s, 완주·보통 실력은 기준(55초) 근처, 잘 타면 평균 4초 넘게 빠름',()=>{
- assert.equal(sledFeel(),2);assert.equal(sledFeelFrom('?sled=1'),2);assert.equal(sledFeelFrom('?look=classic'),2);
+test('조작감 2(비교용, 11-17 기본이었음): 꺾임 105°/s → 48°/s, 완주·보통 실력은 기준(55초) 근처, 잘 타면 평균 4초 넘게 빠름',feel2(()=>{
+ assert.equal(sledFeel(),2);assert.equal(sledFeelFrom('?sled=1'),3,'주소로 바꾸는 길 없음');
  assert.ok(Math.abs(turnRateAt(2)*180/Math.PI-105)<.01&&Math.abs(turnRateAt(13)*180/Math.PI-48)<.01);
  const norm=[],good=[];
  for(const sd of SEEDS.slice(0,12)){const c=makeCourse(sd);const n=simulateRide(c,{style:'normal',seed:sd%997+3}),g=simulateRide(c,{style:'good'}),z=simulateRide(c,{style:'none'});
@@ -265,4 +271,108 @@ test('조작감 2 기본(11-17 대표 결정): 모든 화면 같은 조작감, �
  const r=createRide({course:C0,start:30,v0:7});const ev=[];let slip=0;
  for(let i=0;i<60;i++){ev.push(...r.step(1/60,{steer:1,drift:true}));slip=Math.max(slip,r.slip);}
  assert.ok(slip>.1&&slip<=SLED_RULES_2.slipMax+1e-9,`미끄러짐 ${slip}`);ev.push(...r.step(1/60,{}));assert.ok(ev.find(e=>e.type==='mini'));
+}));
+
+test('레이스 혼자일 때(11-18): 20초 끝에 1명이면 「혼자 타기」/「20초 더」(한 번) → 답이 없거나 또 혼자면 혼자 타기, 그 사이 누가 오면 다시 모집',()=>{
+ const R=createSledRace(),{out,mem,ctx}=mkCtx();const a={id:'a',name:'a'},b={id:'b',name:'b'};mem.set('a',a);mem.set('b',b);
+ R.handle(a,{t:'sr:open',lane:1},T0,ctx);R.tick(T0+RACE.waitMs+1,ctx);assert.equal(R.race.ph,'wait');assert.ok(R.race.lone);assert.equal(out.filter(m=>m.t==='sr').at(-1).lone,1);
+ R.handle(a,{t:'sr:more'},T0+RACE.waitMs+500,ctx);assert.ok(!R.race.lone&&R.race.more);
+ R.handle(a,{t:'sr:more'},T0+RACE.waitMs+600,ctx);assert.ok(R.race.more,'한 번만');
+ R.tick(T0+RACE.waitMs+500+RACE.moreMs+1,ctx);assert.equal(R.race,null,'20초 더 기다려도 혼자 → 혼자 타기');assert.equal(out.at(-1).solo,'a');
+ // 혼자 타기 단추
+ R.handle(a,{t:'sr:open',lane:1},T0+90000,ctx);R.tick(T0+90000+RACE.waitMs+1,ctx);R.handle(a,{t:'sr:solo'},T0+90000+RACE.waitMs+200,ctx);assert.equal(R.race,null);assert.equal(out.at(-1).solo,'a');
+ // 답을 기다리는 사이 누가 오면 다시 모집 → 연 사람이 지금 출발
+ R.handle(a,{t:'sr:open',lane:1},T0+200000,ctx);R.tick(T0+200000+RACE.waitMs+1,ctx);assert.ok(R.race.lone);
+ R.handle(b,{t:'sr:join'},T0+200000+RACE.waitMs+300,ctx);assert.ok(!R.race.lone);R.handle(a,{t:'sr:go'},T0+200000+RACE.waitMs+400,ctx);assert.equal(R.race.ph,'count');
+});
+test('같은 사람과 한 번 더(11-18): 끝난 레이스의 연 사람이 again으로 열면 지난 참가자 목록(re)이 10초 동안 붙음',()=>{
+ const R=createSledRace(),{out,mem,ctx}=mkCtx();const [a,b,c]=['a','b','c'].map(id=>{const x={id,name:id};mem.set(id,x);return x;});
+ R.handle(a,{t:'sr:open',lane:1},T0,ctx);R.handle(b,{t:'sr:join'},T0+10,ctx);R.handle(c,{t:'sr:join'},T0+20,ctx);R.handle(a,{t:'sr:go'},T0+30,ctx);
+ R.tick(T0+30+RACE.countMs+1,ctx);const go=R.race.goAt;const sd=R.race.seed;
+ for(const [x,ms] of [[a,60000],[b,61000],[c,62000]])R.handle(x,{t:'sr:fin',ms,seed:sd,fv:3},go+ms,ctx);assert.equal(R.race.ph,'done');
+ R.handle(a,{t:'sr:open',lane:1,again:1},go+70000,ctx);const v=out.filter(m=>m.t==='sr').at(-1);assert.deepEqual(v.re,['b','c']);
+ assert.ok(!R.view(go+70000+RACE.reMs+1).re,'10초 뒤엔 없음');
+ R.handle(b,{t:'sr:quit'},go+71000,ctx);R.handle(a,{t:'sr:quit'},go+71000,ctx);
+ R.handle(b,{t:'sr:open',lane:2,again:1},go+72000,ctx);assert.ok(!out.filter(m=>m.t==='sr').at(-1).re,'연 사람이 아니면 re 없음');
+});
+test('길 폭(11-18 4명 경주): 어디서든 4대가 나란히(4.1m 이상), 기본 6m·좁은 곳 4.5m·출발/굽이/결승 7m·터널 5.5m, 출발 4줄이 눈둑 안, 장애물 양옆 틈 2m 이상',()=>{
+ assert.deepEqual([COURSE_W,NARROW_W,WIDE_W,TUNNEL_W],[6,4.5,7,5.5]);
+ assert.ok(MIN_RACE_W>=4*.48+3*.5+2*SLED_RULES.edgeIn-1e-9,'4대 + 사이 3칸 + 눈둑 몫');
+ for(const sd of SEEDS){const c=makeCourse(sd);
+  for(const p of c.points)if(p.s<=c.end)assert.ok(p.W>=MIN_RACE_W,`${c.code} s=${p.s.toFixed(1)} 폭 ${p.W.toFixed(2)}`);
+  assert.ok(Math.abs(c.widthAt(2)-WIDE_W)<1e-6,'출발 직선 7m');assert.ok(Math.abs(c.widthAt(c.finish-2)-WIDE_W)<.01,'결승 직선 7m');
+  for(const t of TURN_SPANS){const s=c.sOfU((t.u0+t.u1)/2);assert.ok(Math.abs(c.widthAt(s)-WIDE_W)<.01,`${c.code} 굽이 ${c.widthAt(s)}`);}
+  for(const t of c.tunnels)assert.ok(Math.abs(c.widthAt((t.s0+t.s1)/2)-TUNNEL_W)<.01,'터널 5.5m');
+  // 길 + 비킴이 단(반폭 4.3m) 안
+  for(const p of c.points)if(p.s>0&&p.s<c.finish)assert.ok(Math.abs(p.w)+p.W/2<=4.3+1e-6,`${c.code} s=${p.s.toFixed(1)} 단 밖 ${(Math.abs(p.w)+p.W/2).toFixed(2)}`);
+  // 장애물 양옆 틈(장애물 가장자리 ~ 길 가장자리) 2m 이상
+  for(const o of c.obstacles){const W=c.widthAt(o.s)/2;assert.ok(W-(o.off+o.r)>=2-1e-6&&(o.off-o.r)+W>=2-1e-6,`${c.code} 장애물 ${o.s} 틈`);}}
+ // 출발 4줄: 줄 간격 1.4m, 썰매 사이 0.5m 넘게, 바깥 썰매도 눈둑 안
+ const offs=[1,2,3,4].map(laneOffset);assert.ok(Math.abs(offs[1]-offs[0]-1.4)<1e-9);
+ for(let i=1;i<4;i++)assert.ok(offs[i]-offs[i-1]-2*SLED_HALF>=.5);
+ assert.ok(Math.max(...offs.map(Math.abs))+SLED_HALF<=WIDE_W/2-SLED_RULES.edgeIn);
+});
+test('4줄이 서로 안 끼는지(11-18): 4대가 각자 줄을 지키며 같이 달릴 때 어느 순간에도 두 썰매 옆 간격이 썰매 폭(0.48m) 넘게',()=>{
+ // 보통 실력 자동 조종이 정한 옆 자리(lineWant)에 줄 차이(1.0m씩, 좁은 곳은 폭에 맞춰 줄임)를 더한 선을 4대가 따라감 → 좁은 길·헤어핀·터널에서도 겹치지 않음
+ for(const sd of SEEDS.slice(0,8)){const c=makeCourse(sd);let minGap=9,where=null;
+  for(let s=0;s<c.finish;s+=.5){const lim=c.widthAt(s)/2-SLED_RULES.edgeIn-SLED_HALF,gap=Math.min(1.4,2*lim/3);
+   const lanes=[0,1,2,3].map(i=>(i-1.5)*gap);
+   for(let i=1;i<4;i++){const g=lanes[i]-lanes[i-1];if(g<minGap){minGap=g;where=s;}}
+   for(const o of lanes)assert.ok(Math.abs(o)<=lim+1e-9,`${c.code} s=${s} 줄이 눈둑 밖`);}
+  assert.ok(minGap-2*SLED_HALF>=.5-1e-9,`${c.code} s=${where} 사이 ${(minGap-2*SLED_HALF).toFixed(2)}m`);}
+});
+test('조작감 3 기본(11-18 직접 조작): 길 맞춤·저절로 따라 돌기 없음, 꺾임 110°/s → 60°/s, 보통 실력 30코스 모두 완주(눈둑 평균 15번 이하), 손 놓으면 20% 넘게 느리고 눈둑 2.5배 넘게',()=>{
+ assert.equal(sledFeel(),3);assert.equal(sledFeelFrom(),3);assert.equal(SLED_RULES_3.align,0);assert.equal(SLED_RULES_3.carry,1);assert.equal(SLED_RULES_3.iceAlign,0);
+ assert.ok(Math.abs(turnRateAt(2)*180/Math.PI-110)<.01&&Math.abs(turnRateAt(13)*180/Math.PI-60)<.01);
+ const seeds=Array.from({length:30},(_,i)=>normSeed(i*2654435761+12345)),norm=[],none=[],good=[];let nb=0,zb=0;
+ for(const sd of seeds){const c=makeCourse(sd);const n=simulateRide(c,{style:'normal',seed:sd%997+3}),z=simulateRide(c,{style:'none'}),g=simulateRide(c,{style:'good'});
+  assert.ok(n.done&&Number.isFinite(n.t),`${c.code} 보통 완주 못 함`);assert.ok(n.t*1000>=RACE.minMs);norm.push(n.t);none.push(z.t??240);good.push(g.t);nb+=n.banks;zb+=z.banks;}
+ const avg=a=>a.reduce((x,y)=>x+y,0)/a.length;
+ assert.ok(nb/30<=15,`보통 눈둑 평균 ${(nb/30).toFixed(1)}`);
+ assert.ok(avg(none)>avg(norm)*1.2,`손 놓음 ${avg(none).toFixed(1)} / 보통 ${avg(norm).toFixed(1)}`);assert.ok(zb>nb*2.5,`눈둑 손 놓음 ${zb} / 보통 ${nb}`);
+ assert.ok(Math.abs(avg(norm)-SLED_RULES_3.par)<4,`보통 평균 ${avg(norm).toFixed(1)}`);assert.ok(avg(good)<avg(norm)-4);
+ // 손을 떼도 썰매 방향은 길 쪽으로 돌아오지 않음(곧은 길, 핸들만 0.1초에 가운데)
+ const r=createRide({course:C0,start:3,v0:6});for(let i=0;i<12;i++)r.step(1/60,{steer:1});const psi=r.psi;for(let i=0;i<6;i++)r.step(1/60,{});const kept=r.psi;
+ for(let i=0;i<30;i++)r.step(1/60,{});assert.ok(Math.abs(r.steerNow)<1e-9,'핸들은 가운데');assert.ok(Math.abs(r.psi-kept)<.02&&kept>=psi,`방향 그대로 ${psi.toFixed(3)} → ${r.psi.toFixed(3)}`);
+});
+test('굽이 앞에서 손을 떼면 바깥 눈둑(11-18 완료 기준 ③): 헤어핀 들어가기 2초 전부터 손을 떼면 바깥 눈둑에 닿고, 조작감 2는 저절로 돌아 덜 닿음',()=>{
+ let tried=0;
+ for(const sd of SEEDS.slice(0,8)){const c=makeCourse(sd);
+  c.plan.turns.forEach((k,i)=>{if(k!=='hairpin')return;const t=TURN_SPANS[i],s0=c.sOfU(t.u0);
+   // 보통 실력으로 굽이 앞까지 타다가 2초 전부터 손을 뗌
+   const run=()=>{const r=createRide({course:c,lane:2}),bot=createHumanBot({seed:3});let hitOut=0,released=false;
+    while(!r.done&&r.s<s0+20){const lead=(s0-r.s)/Math.max(1,r.v);if(!released&&lead<=2)released=true;
+     const ev=r.step(1/60,released?{}:bot(r));for(const e of ev)if(e.type==='bank'&&Math.sign(r.off)===-t.sg)hitOut++;if(r.t>200)break;}
+    return hitOut;};
+   tried++;assert.ok(run()>=1,`${c.code} 헤어핀 ${i}: 바깥 눈둑에 안 닿음`);});}
+ assert.ok(tried>=8,`헤어핀 ${tried}개 시험`);
+});
+test('썰매 카메라(11-18 §2): 곧은 길에서 핸들을 0.5초마다 바꾸며 3초 — 카메라 방향은 길 방향과 0.3° 안, 프레임마다 0.05° 안, 옆 자리 2cm 안(예전 식과 비교)',()=>{
+ // 곧은 길 찾기: 굽음 0·폭 같은 40m
+ let c=null,s0=null;
+ for(const sd of SEEDS){const cc=makeCourse(sd);for(let s=30;s<cc.finish-40&&s0==null;s+=1){let ok=true;for(let q=s-1;q<=s+21;q+=.5){const a=cc.at(q);if(Math.abs(a.k)>1e-6||Math.abs(a.W-COURSE_W)>1e-6||cc.obstacles.some(o=>Math.abs(o.s-q)<1)||cc.boosters.some(b=>q>=b.s-1&&q<=b.s+b.len+1)||cc.jumps.some(j=>q>=j.s-j.len-1&&q<=j.s+12)){ok=false;break;}}if(ok)s0=s;}if(s0!=null){c=cc;break;}}
+ assert.ok(s0!=null,'곧은 길');
+ // 핸들: 처음 0.25초 오른쪽, 그 뒤 0.5초마다 바꿈(좌우로 고르게 꿈틀)
+ const measure=oldPsi=>{const r=createRide({course:c,start:s0,v0:5}),cam=createSledCam();let prev=null,maxDiff=0,maxStep=0,maxLat=0;
+  for(let i=0;i<180;i++){r.step(1/60,{steer:i<15?1:Math.floor((i-15)/30)%2?1:-1,brake:r.v>6.5});const o0=cam.update(r,1/60,{oldPsi}),p=r.pose(),o=oldPsi?{...o0,x:p.x,z:p.z}:o0; // 예전 화면은 썰매 자리를 그대로 봤음
+   const path=headingOf(c.at(r.s).th);let d=o.yaw-path;d=Math.abs(Math.atan2(Math.sin(d),Math.cos(d)))*180/Math.PI;maxDiff=Math.max(maxDiff,d);
+   if(prev){let dy=o.yaw-prev.yaw;dy=Math.abs(Math.atan2(Math.sin(dy),Math.cos(dy)))*180/Math.PI;maxStep=Math.max(maxStep,dy);
+    // 옆 자리 변화 = 길에 수직인 쪽으로 움직인 거리
+    const nx=-Math.sin(c.at(r.s).th),nz=Math.cos(c.at(r.s).th);maxLat=Math.max(maxLat,Math.abs((o.x-prev.x)*nx+(o.z-prev.z)*nz));}
+   prev=o;}
+  return {maxDiff,maxStep,maxLat};};
+ const now=measure(0),old=measure(SLED_CAM_OLD_PSI);
+ assert.ok(now.maxDiff<=.3,`길과 ${now.maxDiff.toFixed(3)}°`);assert.ok(now.maxStep<=.05,`프레임 ${now.maxStep.toFixed(4)}°`);assert.ok(now.maxLat<=.02,`옆 ${now.maxLat.toFixed(4)}m`);
+ assert.ok(old.maxDiff>5&&old.maxStep>.2,`예전 식은 흔들렸음: ${old.maxDiff.toFixed(1)}° · ${old.maxStep.toFixed(2)}°/프레임`);
+ console.log(`카메라 비교(곧은 길 3초, 핸들 0.5초마다 바꿈): 새 식 길과 ${now.maxDiff.toFixed(3)}° · 프레임 ${now.maxStep.toFixed(4)}° · 옆 ${(now.maxLat*100).toFixed(2)}cm / 예전 식 ${old.maxDiff.toFixed(2)}° · ${old.maxStep.toFixed(3)}° · ${(old.maxLat*100).toFixed(2)}cm`);
+});
+test('4대가 각자 줄을 지키며 같이 달리기(11-18): 굽이 앞에서 그 줄이 돌 수 있게 브레이크·드리프트하면 4코스 모두 결승까지 겹침 0(앞뒤 1.3m·옆 0.56m)',()=>{
+ const edgeIn=SLED_RULES.edgeIn,laneBiasOf=(lane,W)=>{const lim=W/2-edgeIn-SLED_HALF;return (lane-2.5)*Math.min(1.4,2*lim/3);};
+ for(const sd of SEEDS.slice(0,4)){const c=makeCourse(sd),rides=[1,2,3,4].map(l=>createRide({course:c,lane:l}));
+  const want=(r,l)=>{const W=Math.min(c.widthAt(r.s),c.widthAt(r.s+5));let w=laneBiasOf(l,W);for(const o of c.obstacles){if(o.s<r.s-.5||o.s>r.s+6)continue;const need=o.r+edgeIn;if(Math.abs(w-o.off)<need)w=o.off+(w>=o.off?1:-1)*need;}const lim=W/2-edgeIn-.3;return Math.max(-lim,Math.min(lim,w));};
+  const ped=(r,l)=>{const w=want(r,l);let need=0;for(let d=0;d<=Math.max(6,r.v*1.2);d+=1){const a=c.at(r.s+d),k=Math.abs(a.k);if(k<.02)continue;need=Math.max(need,1/Math.max(1.2,1/k-Math.sign(a.k)*w));}return {brake:need>0&&r.v*need>turnRateAt(r.v)*1.058,drift:Math.abs(c.at(r.s+1).k)>.12&&r.v>4};};
+  let ov=0,t=0;
+  while(rides.some(r=>!r.finished)&&t<200){rides.forEach((r,k)=>r.step(1/60,{steer:botSteer(r,{want:want(r,k+1)}),...ped(r,k+1)}));t+=1/60;
+   for(let a=0;a<4;a++)for(let b=a+1;b<4;b++){const A=rides[a],B=rides[b];if(!A.finished&&!B.finished&&Math.abs(A.s-B.s)<1.3&&Math.abs(A.off-B.off)<.56)ov++;}}
+  assert.ok(rides.every(r=>r.finished),`${c.code} 4대 모두 완주`);assert.equal(ov,0,`${c.code} 겹친 프레임 ${ov}`);}
 });

@@ -113,7 +113,8 @@ input.onLook((dx,dy)=>{if(sledPlay?.camera()||gondola?.camera())return; // 썰�
  if(snowfight?.aiming&&!mobile)return; // 마우스로 조준하는 동안은 시점을 돌리지 않음
  if(deco.on){deco.yaw-=dx*.006;deco.h=THREE.MathUtils.clamp(deco.h+dy*.012,1,7.6);return;}
  cam.yaw-=dx*.006;cam.pitch=THREE.MathUtils.clamp(cam.pitch+dy*.004,-.1,1.1);});
-input.onZoom(k=>{if(deco.on){deco.dist=THREE.MathUtils.clamp(deco.dist*k,6,13);return;}cam.dist=THREE.MathUtils.clamp(cam.dist*k,cam.min,skyPlay?.riding?16:cam.max);}); // 하늘 썰매는 더 멀리(비행 10m)
+input.onZoom(k=>{if(!mobile&&snowfight?.wheel(k))return; // 눈싸움 마당 안(PC): 휠 = 가운데 고리 거리 ±1m
+ if(deco.on){deco.dist=THREE.MathUtils.clamp(deco.dist*k,6,13);return;}cam.dist=THREE.MathUtils.clamp(cam.dist*k,cam.min,skyPlay?.riding?16:cam.max);}); // 하늘 썰매는 더 멀리(비행 10m)
 
 const GIFT_BLOCK=()=>gifts?.open; // 큰 창(선물)이 열린 동안은 걷지 않는다(체험설계 §1-4)
 function updatePlayer(dt){
@@ -142,7 +143,7 @@ function updatePlayer(dt){
   let tx=player.x+dirX*speed*dt,tz=player.z+dirZ*speed*dt;
   if(snowman.balls.size){const w=snowman.walk(player.x,player.z,tx,tz,dt);tx=w.x;tz=w.z;}
   const got=collideXmas(tx,tz,cols);
-  moved=Math.hypot(got.x-player.x,got.z-player.z);player.x=got.x;player.z=got.z;player.heading=Math.atan2(-dirX,-dirZ);player.running=running;
+  moved=Math.hypot(got.x-player.x,got.z-player.z);player.x=got.x;player.z=got.z;player.heading=snowfight.aimHeading??Math.atan2(-dirX,-dirZ); // 눈싸움 마당 안은 몸이 늘 조준 방향(옆걸음)player.running=running;
   player.update(dt,{moved,running});}
  else player.update(dt,{moved:0});
  // 눈싸움 조준 중이면 몸이 겨눈 쪽을 본다
@@ -175,17 +176,19 @@ function updateCamera(dt){
  if(deco.on){
   const p=new THREE.Vector3(TREE.x+Math.sin(deco.yaw)*deco.dist,deco.h+1.1,TREE.z+Math.cos(deco.yaw)*deco.dist);
   camera.position.lerp(p,1-Math.exp(-dt*6));lookAt.lerp(new THREE.Vector3(TREE.x,deco.h,TREE.z),1-Math.exp(-dt*6));camera.lookAt(lookAt);return;}
- if(player.moving&&!input.looking()&&!sc){let d=player.root.rotation.y-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*1.2));}
+ // 걸으면 카메라가 몸 방향으로 천천히 따라 돎 — 눈싸움 마당 안은 끔(시야는 직접 돌림, 11-18 설계 v2 §4-1)
+ if(player.moving&&!input.looking()&&!sc&&!snowfight.inYard){let d=player.root.rotation.y-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*1.2));}
  // 회전목마: 앉은 몸 높이(루돌프 위 약 1m)를 본다 — 땅을 보면 몸이 화면 위로 잘림
- const gy=sc?.y??skc?.y??(carousel?.riding?carousel.y:H(player.x,player.z)+(sc?sledPlay.lift:0));cam.target.set(player.x,gy+.62,player.z);
+ const gy=sc?.y??skc?.y??(carousel?.riding?carousel.y:H(player.x,player.z)+(sc?sledPlay.lift:0));cam.target.set(sc?.x??player.x,gy+.62,sc?.z??player.z);
+ // 썰매(11-18): sc.x·sc.z = 썰매 옆 위치를 0.5초에 걸쳐 따라간 자리(작은 좌우 꿈틀에 화면이 흔들리지 않게)
  // 썰매: 진행 방향 앞·굽이 안쪽을 조금 더 본다(sled-play camera().ahead)
  if(sc?.ahead){cam.target.x+=sc.ahead.x;cam.target.z+=sc.ahead.z;}
  if(aimK>.001){const rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);cam.target.x+=rx*.35*aimK;cam.target.z+=rz*.35*aimK;}
  const dist=cam.dist*(1-.22*aimK),cp=Math.cos(cam.pitch);camWant.set(cam.target.x+Math.sin(cam.yaw)*dist*cp,cam.target.y+Math.sin(cam.pitch)*dist+.25,cam.target.z+Math.cos(cam.yaw)*dist*cp);
  camWant.y=Math.max(camWant.y,H(camWant.x,camWant.z)+.35);
  camera.position.lerp(camWant,1-Math.exp(-dt*10));
- // 전나무에 부딪히면 0.2초 화면 흔들림
- {const k=sledPlay.shake?.()??0;if(k>0){camera.position.x+=(Math.random()-.5)*k*.6;camera.position.y+=(Math.random()-.5)*k*.6;}}
+ // 전나무에 부딪히면 0.15초 화면 흔들림(최대 4cm, 11-18)
+ {const k=sledPlay.shake?.()??0;if(k>0){camera.position.x+=(Math.random()-.5)*2*k;camera.position.y+=(Math.random()-.5)*2*k;}}
  lookAt.copy(cam.target);camera.lookAt(lookAt);
 }
 
@@ -261,7 +264,7 @@ function placeOrnament(slot,kind){const free=giftOrn>0;const r=treePlay.put(slot
 hud=createXmasHud({multi,treePlay,mobile,look,wardrobe:()=>profile.wardrobe,project:screenPos,act:{
  do:id=>doAction(id),
  aim:(dx,dy,done)=>snowfight.aimDrag(dx,dy,done),
- aimButton:(ph,dx,dy)=>snowfight.aimButton(ph,dx,dy),
+ aimButton:(ph,dx,dy,sx,sy)=>snowfight.aimButton(ph,dx,dy,sx,sy),
  hold:(id,on)=>{if(id.startsWith('sb:'))snowfight.hold(id,on);else sledPlay.hold?.(id,on);},
  inbox:()=>gifts.openInbox(),
  sound(){profile.sound=!profile.sound;saveProfile();saveShared({sound:profile.sound});audio.setMuted(!profile.sound);hud.setSound(!profile.sound);showCarol();hud.say(profile.sound?'소리를 켰어요':'소리를 껐어요',1.4,profile.sound?'c-sound':'c-sound-off');},
@@ -295,7 +298,7 @@ gifts=createGifts({root:hud.root,net,multi,player,mobile,hud,audio,village,
  treeBonus(){giftOrn++;},cocoa(n){campfire.addCocoa(n);}});
 campfire=createCampfire({player,poser,multi,net,hud,audio,onChange:resend});
 snowman=createSnowmanPlay({root:hud.root,world,toon,heightAt:H,village,player,net,multi,hud,audio,camera,mobile,onChange:resend});
-snowfight=createSnowfight({root:hud.root,world,toon,heightAt:H,player,poser,net,multi,hud,audio,camera,canvas:renderer.domElement,renderer,yaw:()=>cam.yaw,mobile,onChange:resend});
+snowfight=createSnowfight({root:hud.root,world,toon,heightAt:H,player,poser,net,multi,hud,audio,camera,canvas:renderer.domElement,renderer,yaw:()=>cam.yaw,setYaw:y=>{cam.yaw=y;},mobile,onChange:resend});
 fightUi=createFightUi({root:hud.root,world,toon,heightAt:H,player,net,multi,hud,audio,snowfight,mobile,onChange:resend});
 sledPlay=createSledPlay({root:hud.root,world,toon,heightAt:H,player,poser,net,multi,hud,audio,input,mobile,onChange:resend});
 if(village.course?.boardCanvas)sledPlay.setBoardCanvas(village.course.boardCanvas,village.course.boardTex);
@@ -323,6 +326,15 @@ async function travelTo(id){
  await travel.ui.fade(()=>{const p=collideXmas(spot.x,spot.z,cols);player.place(p.x,p.z,spot.heading);cam.yaw=spot.heading;resend();});
  hud.say(`${spot.label} 앞이에요`,1.4);return true;
 }
+// 썰매 경주 참가·마을 판에서 열기(11-18): 지도 이동과 같이 놀이를 그만두고 화면 어두워짐 뒤 출발대 줄로(sled-play.js가 fn 안에서 옮김)
+sledPlay.prep=async fn=>{
+ if(gondola.riding){hud.say('케이블카에서 내린 뒤에 참가할 수 있어요',1.8,'x-gondola');return false;}
+ if(document.documentElement.classList.contains('xf-match')){hud.say('눈싸움 한 판이 끝나면 참가할 수 있어요',1.8,'x-snowball');return false;}
+ if(deco.on)setDecorate(false);campfire.stand();carousel.act('mg:off');if(rink.inside)rink.act('rk:out');if(skyPlay.stop())hud.say('썰매를 정류장에 돌려보냈어요',1.4,'x-reindeer');
+ if(sledPlay.mode==='asking'||sledPlay.mode==='back')sledPlay.act(sledPlay.mode==='asking'?'sled:cancel':'sled:off');
+ const go=()=>{fn();cam.yaw=player.heading;resend();};if(travel)await travel.ui.fade(go);else go();return true;};
+// 회전목마·한 판 눈싸움 중이면 참가 카드 없이 배지만(설계 v2 §3-2)
+sledPlay.quiet=()=>carousel.riding||document.documentElement.classList.contains('xf-match');
 if(BIG_PLAZA&&village.festive){
  const spots=travelSpots({carousel:carousel.enabled,rink:rink.enabled,sky:skyPlay.enabled});
  travel={spots,ui:createTravelUi({spots,shapes:mapShapes({carousel:carousel.enabled,rink:rink.enabled}),mobile,

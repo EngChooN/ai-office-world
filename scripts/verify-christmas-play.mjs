@@ -3,7 +3,7 @@
 //  ① 선물: 하나 → 둘(사람 고르기·아이템·카드·보내기를 눌러서) → 둘 알림·📬·카드 열기·입어 보기 → 둘 모자가 하나 화면에도 / 광장 모두에게 → 모두의 카드 판
 //  ② 모닥불: 「앉기」 → 빈 자리로 걸어가 앉음, 봇이 앉은 자리는 피함, 손 녹이기가 상대 화면에 보임, 걷기 입력이면 일어남
 //  ③ 눈사람: 눈덩이 만들기 → W로 밀면 커지고 상대 화면에도 → 두 번째 눈덩이 올리기 → 꾸미기(눈·코) → 완성 → 전시가 두 화면에
-//  ④ 눈싸움: 하나 F로 던지면 둘이 맞음(두 화면 모두 눈투성이), 둘(휴대폰)은 ❄️ 단추 짧게 = 자동 조준으로 하나를 맞힘, 마당 밖이면 안 던져짐
+//  ④ 눈싸움: 하나 F로 던지면 둘이 맞음(두 화면 모두 눈투성이), 둘(휴대폰)은 ❄️ 톡 = 지금 고리 자리로 바로(11-18 자동 조준 없음), 마당 밖이면 안 던져짐
 //  ⑨ 케이블카(11-17 2차): 마을 승강장 「타고 올라가기」 → 객실이 올라감(둘 화면에서도 위치가 끊기지 않고 객실이 보임) → 건너뛰기 → 출발대 앞, 「내려가기」로 마을로. 휴대폰도 탭으로
 //  ⑤ 눈썰매: 새 코스(두 화면 같은 시드) · 하나 타기 → 둘 「둘이 타기」 → 하나 [같이 타요] → 출발 → 둘 화면에서 하나 썰매가 내려감 → 도착하면 내림, 휴대폰 ◀ ▶ 단추
 //  ⑥ 휴대폰 단추 44px 이상·화면 안, 페이지 오류 0, 서버가 꺼져도 화면이 깨지지 않음
@@ -163,9 +163,10 @@ try{
   const a0=(await st(A)).actions;check('④ 눈싸움 마당 단추: ❄️ 던지기·🤲 눈 뭉치기·웅크리기',a0[0]==='sb:throw'&&a0.includes('sb:pack')&&a0.includes('sb:crouch'),{a0});
   const ammo0=(await st(A)).fight.ammo;
   // 11-17 조준: F를 누르는 동안 점선·고리·게이지(0.1초 안), 떼면 던짐. 착탄 = 미리보기 고리(0.3m 안)
-  await A.keyboard.down('KeyF');await sleep(100);const pv=await st(A);
-  check('④ F 누름 0.1초 안 점선 포물선·착탄 고리·힘 게이지',pv.fight.aim?.dots&&pv.fight.aim?.ring&&await A.evaluate(()=>!document.querySelector('.xf-gauge').hidden),{aim:pv.fight.aim});
-  await sleep(150);const pv2=(await st(A)).fight.aim;await shot(A,'pc-snowball-aim');
+  // 11-18: F 톡(0.2초 안)은 가운데 고리로 바로, 누르고 있으면 게이지(0.2초부터 보임)로 거리
+  await A.keyboard.down('KeyF');await sleep(100);const pv=await st(A);await sleep(200);const gauge=await A.evaluate(()=>!document.querySelector('.xf-gauge').hidden);
+  check('④ F 누름 0.1초 안 점선 포물선·착탄 고리, 0.3초면 힘 게이지',pv.fight.aim?.dots&&pv.fight.aim?.ring&&gauge,{aim:pv.fight.aim,gauge});
+  const pv2=(await st(A)).fight.aim;await shot(A,'pc-snowball-aim');
   // 11-17 6차: 서버는 길(sb)을 먼저, 맞음(sbh)은 눈덩이가 지나갈 때. 고리가 사람 위면 맞은 자리(sbh), 아니면 길 끝(sb)과 비교
   const sbWait=A.evaluate(hit=>new Promise(r=>{const f=window.xmas.net;f.on(m=>{if(hit?m.t==='sbh':m.t==='sb')r(m);});}),!!pv2?.hit);
   await A.keyboard.up('KeyF');const sbm=await Promise.race([sbWait,sleep(3000).then(()=>null)]);
@@ -176,7 +177,7 @@ try{
   check('④ 손 눈덩이 3 → 2',ammo0===3&&(await st(A)).fight.ammo===2);
   await shot(B,'mobile-snowball-hit');
   await sleep(900);await B.tap('.xh-acts [data-act="sb:throw"]');
-  const hitA=await until(async()=>(await st(A)).fight.covers[aId]>=1,4000);check('④ 둘(휴대폰) ❄️ 짧게 = 자동 조준으로 하나를 맞힘',hitA,{cov:(await st(A)).fight.covers});
+  const hitA=await until(async()=>(await st(A)).fight.covers[aId]>=1,4000);check('④ 둘(휴대폰) ❄️ 톡 = 지금 고리 자리(하나 쪽)로 바로 던져 맞힘(자동 조준 없음)',hitA,{cov:(await st(A)).fight.covers});
   await sleep(300);await shot(A,'pc-snowball-hit');
   // 휴대폰 ❄️ 길게 누르고 위로 끌기 = 카메라가 보는 쪽으로 조준해 던짐(바닥 조준 고리)
   await sleep(900);const thrown0=(await st(B)).fight.ammo;

@@ -1,0 +1,80 @@
+{
+ "at": "2026-11-17T09:02:32.178Z",
+ "lag": 80,
+ "label": "dodge-phone",
+ "errors": [],
+ "phone": true,
+ "still": {
+  "label": "가만히 선 상대",
+  "throws": 5,
+  "hits": 5,
+  "showMs": [
+   5,
+   1,
+   1,
+   1,
+   1
+  ],
+  "gapAtLand": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "ghost": 0,
+  "miss": 0
+ },
+ "moving": {
+  "label": "옆으로 걷는 상대",
+  "throws": 5,
+  "hits": 2,
+  "showMs": [
+   1,
+   1,
+   1,
+   2,
+   1
+  ],
+  "gapAtLand": [
+   0.93,
+   0.65,
+   0.82,
+   0.81,
+   0.72
+  ],
+  "ghost": 1,
+  "miss": 0
+ },
+ "dodge": {
+  "label": "던진 뒤 비키는 상대",
+  "throws": 5,
+  "hits": 1,
+  "showMs": [
+   154,
+   155,
+   153,
+   154,
+   152
+  ],
+  "gapAtLand": [
+   0.26,
+   0.23,
+   0.22,
+   0.15,
+   0.22
+  ],
+  "ghost": 0,
+  "miss": 4
+ },
+ "react": {
+  "soft": false,
+  "hitMe": true,
+  "pushed": 0.35,
+  "splat": 1,
+  "covers": {
+   "nzqscvoc": 1
+  },
+  "stun": 0
+ }
+}

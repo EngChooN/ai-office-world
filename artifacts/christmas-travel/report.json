@@ -1,0 +1,447 @@
+{
+ "at": "2026-11-18T03:40:14.686Z",
+ "checks": {
+  "PC: 달리기 단추·지도 단추가 있음": {
+   "ok": true,
+   "travel": {
+    "open": false,
+    "run": false,
+    "runBlocked": false,
+    "pins": [
+     "tree",
+     "fire",
+     "mailbox",
+     "snowman",
+     "fight",
+     "carousel",
+     "rink",
+     "sky",
+     "gondola",
+     "sled",
+     "entrance"
+    ],
+    "dots": 0
+   }
+  },
+  "PC Shift 달리기 = 걷기 × 약 1.6": {
+   "ok": true,
+   "walk": 1.37,
+   "run": 2.19,
+   "ratio": 1.6
+  },
+  "상대(휴대폰) 화면에 달리는 몸": {
+   "ok": true
+  },
+  "휴대폰 「달리기」 누르면 켜짐": {
+   "ok": true,
+   "t": {
+    "open": false,
+    "run": true,
+    "runBlocked": false,
+    "pins": [
+     "tree",
+     "fire",
+     "mailbox",
+     "snowman",
+     "fight",
+     "carousel",
+     "rink",
+     "sky",
+     "gondola",
+     "sled",
+     "entrance"
+    ],
+    "dots": 0
+   }
+  },
+  "휴대폰 달리기 켠 채 걸으면 달림": {
+   "ok": true,
+   "v": 2.19
+  },
+  "링크에 들어가면 달리기 자동 해제(단추 흐림)": {
+   "ok": true,
+   "t": {
+    "open": false,
+    "run": false,
+    "runBlocked": true,
+    "pins": [
+     "tree",
+     "fire",
+     "mailbox",
+     "snowman",
+     "fight",
+     "carousel",
+     "rink",
+     "sky",
+     "gondola",
+     "sled",
+     "entrance"
+    ],
+    "dots": 0
+   }
+  },
+  "나오면 다시 켤 수 있음(꺼진 채)": {
+   "ok": true,
+   "t": {
+    "open": false,
+    "run": false,
+    "runBlocked": false,
+    "pins": [
+     "tree",
+     "fire",
+     "mailbox",
+     "snowman",
+     "fight",
+     "carousel",
+     "rink",
+     "sky",
+     "gondola",
+     "sled",
+     "entrance"
+    ],
+    "dots": 0
+   }
+  },
+  "회전목마 타면 달리기 자동 해제": {
+   "ok": true,
+   "t": {
+    "open": false,
+    "run": false,
+    "runBlocked": true,
+    "pins": [
+     "tree",
+     "fire",
+     "mailbox",
+     "snowman",
+     "fight",
+     "carousel",
+     "rink",
+     "sky",
+     "gondola",
+     "sled",
+     "entrance"
+    ],
+    "dots": 0
+   }
+  },
+  "Shift로 달리던 채 모닥불 앞 → 「앉기」 그대로": {
+   "ok": true,
+   "a": [
+    "fire:sit"
+   ]
+  },
+  "달리기 눌린 채 앉으면 달리기 막힘": {
+   "ok": true,
+   "t": {
+    "open": false,
+    "run": false,
+    "runBlocked": true,
+    "pins": [
+     "tree",
+     "fire",
+     "mailbox",
+     "snowman",
+     "fight",
+     "carousel",
+     "rink",
+     "sky",
+     "gondola",
+     "sled",
+     "entrance"
+    ],
+    "dots": 0
+   },
+   "p": {
+    "x": -14.61,
+    "z": 2.73,
+    "y": 0.086,
+    "heading": 0.92,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": true,
+    "arms": "none"
+   }
+  },
+  "휴대폰: 지도 단추 → 지도 창·핀 11개(하늘 썰매 포함)·다른 사람 점": {
+   "ok": true,
+   "t": {
+    "open": true,
+    "run": false,
+    "runBlocked": false,
+    "pins": [
+     "tree",
+     "fire",
+     "mailbox",
+     "snowman",
+     "fight",
+     "carousel",
+     "rink",
+     "sky",
+     "gondola",
+     "sled",
+     "entrance"
+    ],
+    "dots": 1
+   }
+  },
+  "앉아 있다가 지도로 가면 먼저 일어나서 트리 앞": {
+   "ok": true,
+   "p": {
+    "x": 0,
+    "z": 4,
+    "y": 0,
+    "heading": 0,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "a": [
+    "tree:deco"
+   ]
+  },
+  "하나: 지도 → tree 앞(「tree:deco」 단추) · 상대·서버도 그 자리": {
+   "ok": true,
+   "p": {
+    "x": 0,
+    "z": 4,
+    "y": 0,
+    "heading": 0,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "a": [
+    "tree:deco"
+   ],
+   "seen": true
+  },
+  "둘: 지도 → fire 앞(「fire:sit」 단추) · 상대·서버도 그 자리": {
+   "ok": true,
+   "p": {
+    "x": -13.15,
+    "z": 1.3,
+    "y": 0,
+    "heading": 1.57,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "a": [
+    "fire:sit"
+   ],
+   "seen": true
+  },
+  "하나: 지도 → mailbox 앞(「gift:send」 단추) · 상대·서버도 그 자리": {
+   "ok": true,
+   "p": {
+    "x": 14.4,
+    "z": -0.78,
+    "y": 0,
+    "heading": -1.57,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "a": [
+    "gift:send",
+    "gift:inbox"
+   ],
+   "seen": true
+  },
+  "둘: 지도 → snowman 앞(「snow:make」 단추) · 상대·서버도 그 자리": {
+   "ok": true,
+   "p": {
+    "x": 22.5,
+    "z": 2,
+    "y": 0,
+    "heading": -1.57,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "a": [
+    "snow:make"
+   ],
+   "seen": true
+  },
+  "하나: 지도 → fight 앞(「sb:pack」 단추) · 상대·서버도 그 자리": {
+   "ok": true,
+   "p": {
+    "x": -23,
+    "z": 2,
+    "y": 0,
+    "heading": 1.57,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "a": [
+    "sb:throw",
+    "sb:pack",
+    "sb:crouch"
+   ],
+   "seen": true
+  },
+  "하나: 눈싸움 마당에서 눈 뭉치기(마당 판정 그대로)": {
+   "ok": true,
+   "a0": 3,
+   "ammo": 3,
+   "inYard": true
+  },
+  "둘: 지도 → carousel 앞(「mg:ride」 단추) · 상대·서버도 그 자리": {
+   "ok": true,
+   "p": {
+    "x": 12.92,
+    "z": 22.69,
+    "y": 0,
+    "heading": -1.75,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "a": [
+    "mg:ride"
+   ],
+   "seen": true
+  },
+  "하나: 지도 → rink 앞(「rk:in」 단추) · 상대·서버도 그 자리": {
+   "ok": true,
+   "p": {
+    "x": -6.6,
+    "z": 30.5,
+    "y": 0.259,
+    "heading": 1.57,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "a": [
+    "rk:in"
+   ],
+   "seen": true
+  },
+  "둘: 지도 → gondola 앞(「gd:up」 단추) · 상대·서버도 그 자리": {
+   "ok": true,
+   "p": {
+    "x": 18.1,
+    "z": -23.4,
+    "y": 0,
+    "heading": -1.11,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "a": [
+    "gd:up"
+   ],
+   "seen": true
+  },
+  "하나: 지도 → sled 앞(「sled:board」 단추) · 상대·서버도 그 자리": {
+   "ok": true,
+   "p": {
+    "x": -27,
+    "z": -106,
+    "y": 25.778,
+    "heading": -1.57,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "a": [
+    "sled:board",
+    "sled:new",
+    "sled:records"
+   ],
+   "seen": true
+  },
+  "회전목마 타던 중 지도 → 내리고 입구로": {
+   "ok": true,
+   "c": {
+    "riding": false,
+    "seat": -1,
+    "kind": null,
+    "cheer": false,
+    "taken": [],
+    "near": false,
+    "y": 0.79,
+    "x": 0,
+    "z": 19.5
+   },
+   "p": {
+    "x": 0,
+    "z": 19.5,
+    "y": 0,
+    "heading": 0,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   }
+  },
+  "링크 안에서 지도 → 링크 나오고 트리 앞(얼음 아님)": {
+   "ok": true,
+   "r": {
+    "inside": false,
+    "onIce": false,
+    "v": 0,
+    "x": 0,
+    "z": 4
+   }
+  },
+  "시안 없는 화면: 달리기·지도 단추 없음": {
+   "ok": true,
+   "t": null
+  },
+  "페이지 오류 0": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": []
+}

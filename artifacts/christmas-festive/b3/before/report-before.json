@@ -1,0 +1,175 @@
+{
+ "now-pc": {
+  "frameMs": 16.7,
+  "colliders": 39,
+  "errors": []
+ },
+ "now-mobile": {
+  "frameMs": 16.7,
+  "colliders": 39,
+  "errors": []
+ },
+ "a-pc": {
+  "frameMs": 16.7,
+  "colliders": 64,
+  "errors": [],
+  "walk": {
+   "tree": [
+    10.5,
+    10.5
+   ],
+   "campfire": [
+    16.2,
+    16.2
+   ],
+   "mailbox": [
+    18.2,
+    18.2
+   ],
+   "snowmanYard": [
+    26.2,
+    26.2
+   ],
+   "snowballYard": [
+    26.6,
+    26.6
+   ],
+   "sledDeck": [
+    130.2,
+    130.2
+   ],
+   "gondolaBase": [
+    44.8,
+    44.8
+   ],
+   "gondolaTop": [
+    137.8,
+    137.8
+   ]
+  },
+  "extraColliders": 25
+ },
+ "a-mobile": {
+  "frameMs": 16.7,
+  "colliders": 56,
+  "errors": [],
+  "walk": {
+   "tree": [
+    10.5,
+    10.5
+   ],
+   "campfire": [
+    16.2,
+    16.2
+   ],
+   "mailbox": [
+    18.2,
+    18.2
+   ],
+   "snowmanYard": [
+    26.2,
+    26.2
+   ],
+   "snowballYard": [
+    26.6,
+    26.6
+   ],
+   "sledDeck": [
+    130.2,
+    130.2
+   ],
+   "gondolaBase": [
+    44.8,
+    44.8
+   ],
+   "gondolaTop": [
+    137.8,
+    137.8
+   ]
+  },
+  "extraColliders": 17
+ },
+ "b-pc": {
+  "frameMs": 16.7,
+  "colliders": 93,
+  "errors": [],
+  "walk": {
+   "tree": [
+    10.5,
+    10.5
+   ],
+   "campfire": [
+    16.2,
+    16.2
+   ],
+   "mailbox": [
+    18.2,
+    18.2
+   ],
+   "snowmanYard": [
+    26.2,
+    26.2
+   ],
+   "snowballYard": [
+    26.6,
+    26.6
+   ],
+   "sledDeck": [
+    130.2,
+    130.2
+   ],
+   "gondolaBase": [
+    44.8,
+    44.8
+   ],
+   "gondolaTop": [
+    137.8,
+    137.8
+   ]
+  },
+  "extraColliders": 54,
+  "seats": 8
+ },
+ "b-mobile": {
+  "frameMs": 16.7,
+  "colliders": 77,
+  "errors": [],
+  "walk": {
+   "tree": [
+    10.5,
+    10.5
+   ],
+   "campfire": [
+    16.2,
+    16.2
+   ],
+   "mailbox": [
+    18.2,
+    18.2
+   ],
+   "snowmanYard": [
+    26.2,
+    26.2
+   ],
+   "snowballYard": [
+    26.6,
+    26.6
+   ],
+   "sledDeck": [
+    130.2,
+    130.2
+   ],
+   "gondolaBase": [
+    44.8,
+    44.8
+   ],
+   "gondolaTop": [
+    137.8,
+    137.8
+   ]
+  },
+  "extraColliders": 38,
+  "seats": 8
+ },
+ "fails": []
+}

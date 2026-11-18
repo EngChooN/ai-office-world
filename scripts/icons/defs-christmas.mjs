@@ -1,4 +1,4 @@
-// 크리스마스 아이콘 42개(+썰매 2인 변형, 11-17 5차 이동 돕기 4개 x-run·x-map·x-carousel·x-skate, 11-18 루돌프 5개 x-reindeer·x-takeoff·x-land·x-fly-up·x-fly-down). 면 = 전나무 초록, 색이 곧 뜻인 것만 고유색(§4-1).
+// 크리스마스 아이콘 42개(+썰매 2인 변형, 11-17 5차 이동 돕기 4개 x-run·x-map·x-carousel·x-skate, 11-18 루돌프 5개 x-reindeer·x-takeoff·x-land·x-fly-up·x-fly-down, 11-18 눈싸움 취소 x-throw-cancel). 면 = 전나무 초록, 색이 곧 뜻인 것만 고유색(§4-1).
 import { head } from './kit.mjs';
 
 export const GROUP = 'christmas';
@@ -80,6 +80,8 @@ export const ICONS = {
   'x-downhill': { f: '<path d="M3 9v11.5h18z"/>', s: '<path d="M3 9v11.5h18zM11 3.5l7 7M18 6v4.5h-4.5"/>' },
   'x-skip': { f: '<path d="M4 6l7.5 6L4 18zM11.5 6l7.5 6-7.5 6z"/>', s: '<path d="M4 6l7.5 6L4 18zM11.5 6l7.5 6-7.5 6zM20.5 5.5v13"/>' },
   'x-new-course': { f: `<rect x="4" y="4" width="16" height="16" rx="3.5" ${WHITE}/>`, s: '<rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="8.5" cy="8.5" r="1.1"/><circle cx="15.5" cy="8.5" r="1.1"/><circle cx="12" cy="12" r="1.1"/><circle cx="8.5" cy="15.5" r="1.1"/><circle cx="15.5" cy="15.5" r="1.1"/>', color: true },
+  // 11-18 눈싸움 끌어 던지기 취소(휴대폰 ❄️ 끌다가 이 위에서 떼면 눈덩이를 안 씀): 눈덩이 + 안쪽 ✕. 공통 닫기(c-close, ✕만)와 실루엣이 다르게 둥근 테두리
+  'x-throw-cancel': { f: '<path d="M12 3.6c2.3-.1 4.2.9 5.6 2.5 1.6 1.6 2.6 3.5 2.4 5.9.1 2.4-.9 4.4-2.6 5.9-1.5 1.5-3.3 2.5-5.6 2.5-2.4 0-4.3-1-5.8-2.6C4.5 16.3 3.6 14.3 3.7 12c-.1-2.4 1-4.4 2.6-5.8 1.4-1.6 3.4-2.5 5.7-2.6z"/>', s: '<path d="M12 3.6c2.3-.1 4.2.9 5.6 2.5 1.6 1.6 2.6 3.5 2.4 5.9.1 2.4-.9 4.4-2.6 5.9-1.5 1.5-3.3 2.5-5.6 2.5-2.4 0-4.3-1-5.8-2.6C4.5 16.3 3.6 14.3 3.7 12c-.1-2.4 1-4.4 2.6-5.8 1.4-1.6 3.4-2.5 5.7-2.6z"/><path d="M9 9l6 6M15 9l-6 6"/>' },
   // 눈사람 부품
   'x-part-eyes': { f: '<circle cx="8" cy="12" r="3" style="fill:#2a2420"/><circle cx="16" cy="12" r="3" style="fill:#2a2420"/>', s: '<circle cx="8" cy="12" r="3"/><circle cx="16" cy="12" r="3"/>', color: true },
   'x-part-nose': { f: '<path d="M4 9.5c4-1 9.5 0 16.5 2.5-7 2.5-12.5 3.5-16.5 2.5z" style="fill:#e07b2e"/>', s: '<path d="M4 9.5c4-1 9.5 0 16.5 2.5-7 2.5-12.5 3.5-16.5 2.5zM8 9.5l.6 1.8M12 10.2l.6 1.6M7.5 14.4l1-1.3"/>', color: true },

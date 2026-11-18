@@ -1,0 +1,510 @@
+{
+ "at": "2026-11-18T03:56:22.514Z",
+ "checks": {
+  "① 마을 「썰매 경주」 판 앞 단추: 경주 열기": {
+   "ok": true,
+   "a0": [
+    "sled:village",
+    "sled:records"
+   ]
+  },
+  "① 열면 연 사람은 출발대 줄로 바로(케이블카 없이)·모집 중 1/4": {
+   "ok": true,
+   "sled": {
+    "ph": "wait",
+    "n": 1,
+    "host": "tbg1ejpu",
+    "mine": true
+   },
+   "p": {
+    "x": -29.5,
+    "z": -108.1
+   }
+  },
+  "① 마을 사람(PC·휴대폰) 화면에 참가 카드 「○○님이 썰매 경주를 열었어요 · n/4 · 초」": {
+   "ok": true,
+   "txt": "하나님이 썰매 경주를 열었어요 · 1/4 · 19초"
+  },
+  "① 참가 카드 화면 안·단추 44px 이상·겹침 없음(둘)": {
+   "ok": true,
+   "R": [
+    12,
+    176,
+    314,
+    236
+   ],
+   "btn": [
+    76,
+    44
+   ],
+   "inView": true,
+   "hit": 0
+  },
+  "① 참가 카드 화면 안·단추 44px 이상·겹침 없음(셋)": {
+   "ok": true,
+   "R": [
+    750,
+    152,
+    1170,
+    212
+   ],
+   "btn": [
+    76,
+    44
+   ],
+   "inView": true,
+   "hit": 0
+  },
+  "① 카드 「참가」 → 출발대 빈 줄로 바로(휴대폰·PC)": {
+   "ok": true,
+   "race": {
+    "ph": "wait",
+    "n": 3,
+    "host": "tbg1ejpu",
+    "mine": true
+   },
+   "b": "ready",
+   "c": "ready"
+  },
+  "① 5초 뒤 카드는 닫히고 지도 단추 옆 배지(n/4 · 남은 초)·화면 안·단추와 안 겹침": {
+   "ok": true,
+   "card": false,
+   "badge": true,
+   "t": "3/4 · 9",
+   "inView": true,
+   "h": 44,
+   "hit": 0
+  },
+  "① 모집 중 위 띠에 참가자 이름 칩(줄 색)": {
+   "ok": true,
+   "chips": [
+    "1 하나",
+    "3 셋",
+    "4 둘"
+   ]
+  },
+  "① 4명이 차면 모집 시간을 기다리지 않고 바로 3·2·1": {
+   "ok": true,
+   "race": {
+    "ph": "count",
+    "n": 4,
+    "host": "tbg1ejpu",
+    "mine": true
+   }
+  },
+  "① 네 사람 줄 1~4가 모두 다름": {
+   "ok": true,
+   "lanes": [
+    1,
+    4,
+    3,
+    2
+   ]
+  },
+  "② 4대가 같이 달리는 동안 겹침 0(앞뒤 1.3m·옆 0.56m 안에 두 썰매 없음)": {
+   "ok": true,
+   "samples": 271,
+   "overlap": 0,
+   "overlapAt": []
+  },
+  "② 출발 직선·좁은 길·헤어핀에서 4대 촬영": {
+   "ok": true,
+   "pairsAt": {
+    "start": [
+     {
+      "s": 6,
+      "off": -2.1,
+      "lane": 1
+     },
+     {
+      "s": 6,
+      "off": 2.1,
+      "lane": 4
+     },
+     {
+      "s": 6,
+      "off": 0.7,
+      "lane": 3
+     },
+     {
+      "s": 6.1,
+      "off": -0.7,
+      "lane": 2
+     }
+    ],
+    "narrow": [
+     {
+      "s": 81.5,
+      "off": -1.45,
+      "lane": 1
+     },
+     {
+      "s": 68.4,
+      "off": 1.75,
+      "lane": 4
+     },
+     {
+      "s": 76.4,
+      "off": 0.62,
+      "lane": 3
+     },
+     {
+      "s": 78,
+      "off": -0.46,
+      "lane": 2
+     }
+    ],
+    "hairpin": [
+     {
+      "s": 365.9,
+      "off": -2.1,
+      "lane": 1
+     },
+     {
+      "s": 365.5,
+      "off": 2.1,
+      "lane": 4
+     },
+     {
+      "s": 393.4,
+      "off": 0.71,
+      "lane": 3
+     },
+     {
+      "s": 399.6,
+      "off": -0.19,
+      "lane": 2
+     }
+    ]
+   },
+   "spots": [
+    {
+     "name": "start",
+     "s": 6,
+     "placed": true
+    },
+    {
+     "name": "narrow",
+     "s": 76.07,
+     "placed": true
+    },
+    {
+     "name": "hairpin",
+     "s": 392.0876694924103,
+     "placed": true
+    }
+   ],
+   "exit": null,
+   "t": 50793
+  },
+  "③ 4명 결승 → 네 화면 결과 순위가 같음(4줄)": {
+   "ok": true,
+   "ranks": [
+    [
+     "1넷55.41",
+     "2셋56.86",
+     "3둘58.82",
+     "4하나1:01.61"
+    ],
+    [
+     "1넷55.41",
+     "2셋56.86",
+     "3둘58.82",
+     "4하나1:01.61"
+    ],
+    [
+     "1넷55.41",
+     "2셋56.86",
+     "3둘58.82",
+     "4하나1:01.61"
+    ],
+    [
+     "1넷55.41",
+     "2셋56.86",
+     "3둘58.82",
+     "4하나1:01.61"
+    ]
+   ]
+  },
+  "③ 연 사람 결과 창에 「같은 사람과 한 번 더」": {
+   "ok": true
+  },
+  "④ 출발대에 앉으면 「경주 열기」(다른 사람이 마을에 있어도)": {
+   "ok": true,
+   "alone": [
+    "sled:go",
+    "sled:race",
+    "sled:off"
+   ],
+   "dbg": {
+    "race": {
+     "ph": "done",
+     "id": "r1"
+    },
+    "joined": true,
+    "state": "online"
+   }
+  },
+  "④ 「출발!」 숫자가 바뀌는 동안 누르고 떼도 「경주 열기」가 눌림": {
+   "ok": true,
+   "l0": "출발! 4E",
+   "l1": "출발! 3E"
+  },
+  "④ 혼자일 때는 「지금 출발」이 없음(2명부터)": {
+   "ok": true,
+   "noGo": [
+    "sled:off"
+   ],
+   "dbg": {
+    "race": {
+     "ph": "wait",
+     "n": 1,
+     "host": "tbg1ejpu",
+     "mine": true
+    },
+    "mode": "ready",
+    "toast": "경주를 열었어요 · 20초 동안 같이 할 사람을 기다려요"
+   }
+  },
+  "④ 2명이 되면 연 사람에게 「지금 출발」": {
+   "ok": true,
+   "lab": "지금 출발 · 2명E"
+  },
+  "④ 「지금 출발」 → 두 화면 3·2·1 뒤 출발": {
+   "ok": true
+  },
+  "⑤ 썰매 카메라(pc): 곧은 길 꿈틀 중 프레임마다 방향 변화 0.05° 이하·길 방향과 0.3° 안(썰매는 좌우로 돌아도)": {
+   "ok": true,
+   "frames": 181,
+   "straight": 181,
+   "maxStepDeg": 0,
+   "maxPathDiffDeg": 0,
+   "maxSledAngleDeg": 27
+  },
+  "⑤ 썰매 카메라(mobile): 곧은 길 꿈틀 중 프레임마다 방향 변화 0.05° 이하·길 방향과 0.3° 안(썰매는 좌우로 돌아도)": {
+   "ok": true,
+   "frames": 181,
+   "straight": 181,
+   "maxStepDeg": 0,
+   "maxPathDiffDeg": 0,
+   "maxSledAngleDeg": 27.7
+  },
+  "⑥ 마당 안에서 걷기만 하면 카메라 방향 그대로(PC 대각선 걷기 1초)": {
+   "ok": true,
+   "y0": -1.5708,
+   "y1": -1.5708
+  },
+  "⑥ 몸은 조준 방향(카메라 방향)을 봄": {
+   "ok": true,
+   "heading": -1.57,
+   "y1": -1.5708
+  },
+  "⑥ PC 휠 = 가운데 고리 거리 +1m(4~14m)": {
+   "ok": true,
+   "d0": 9,
+   "d1": 10
+  },
+  "⑥ 마당 안 늘 연한 고리(겨눈 자리)": {
+   "ok": true,
+   "idle": {
+    "tx": -20.68,
+    "tz": 0.97,
+    "hit": null
+   }
+  },
+  "⑥ 휴대폰 조이스틱 옆걸음 중에는 카메라 방향 그대로": {
+   "ok": true,
+   "yb0": 1.5708,
+   "yawWalk": 1.5708,
+   "moved": 0.67
+  },
+  "⑥ 휴대폰 옆걸음 + ❄️ 끌어 30° 돌림 → 착탄이 미리보기 고리 0.3m 안": {
+   "ok": true,
+   "turnedDeg": 30.1,
+   "landDiff": 0.022,
+   "walkYawChange": 0,
+   "aim": {
+    "src": "touch",
+    "dx": 86,
+    "dy": 0,
+    "t": 0.75,
+    "dots": true,
+    "ring": true,
+    "tx": -34.97,
+    "tz": -1.19,
+    "hit": null,
+    "target": null
+   },
+   "inYard": true,
+   "ammo": 3,
+   "stun": 0,
+   "pack": false,
+   "sb": true
+  },
+  "⑥ 끌다가 ✕(56px) 위에서 떼면 취소 — 눈덩이를 보내지 않음, ✕는 화면 안·단추와 안 겹침": {
+   "ok": true,
+   "shown": true,
+   "over": true,
+   "size": 56,
+   "inView": true,
+   "hit": 0,
+   "sent": 0
+  },
+  "⑥ 휴대폰 ❄️ 톡 = 지금 고리 자리로 바로(0.3m 안)": {
+   "ok": true,
+   "tapD": 0.17000000000000037,
+   "ring": {
+    "tx": -36.22,
+    "tz": 3.43,
+    "hit": null
+   }
+  },
+  "⑥ 눈싸움 단추 화면 안·겹침 없음(1920×1080)": {
+   "ok": true,
+   "n": 10,
+   "out": [],
+   "hit": [],
+   "throwW": 136
+  },
+  "⑥ 눈싸움 단추 화면 안·겹침 없음(390×844)": {
+   "ok": true,
+   "n": 10,
+   "out": [],
+   "hit": [],
+   "throwW": 96
+  },
+  "⑥ 눈싸움 단추 화면 안·겹침 없음(844×390)": {
+   "ok": true,
+   "n": 10,
+   "out": [],
+   "hit": [],
+   "throwW": 96
+  },
+  "페이지 오류 0": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": [],
+ "measure": {
+  "race4": {
+   "course": {
+    "seed": 1273429271,
+    "code": "RFQ9",
+    "narrow": 76.07,
+    "hair": [
+     5
+    ],
+    "finish": 441.65
+   },
+   "samples": 271,
+   "overlap": 0,
+   "overlapAt": [],
+   "maxSpread": 35.1,
+   "pairsAt": {
+    "start": [
+     {
+      "s": 6,
+      "off": -2.1,
+      "lane": 1
+     },
+     {
+      "s": 6,
+      "off": 2.1,
+      "lane": 4
+     },
+     {
+      "s": 6,
+      "off": 0.7,
+      "lane": 3
+     },
+     {
+      "s": 6.1,
+      "off": -0.7,
+      "lane": 2
+     }
+    ],
+    "narrow": [
+     {
+      "s": 81.5,
+      "off": -1.45,
+      "lane": 1
+     },
+     {
+      "s": 68.4,
+      "off": 1.75,
+      "lane": 4
+     },
+     {
+      "s": 76.4,
+      "off": 0.62,
+      "lane": 3
+     },
+     {
+      "s": 78,
+      "off": -0.46,
+      "lane": 2
+     }
+    ],
+    "hairpin": [
+     {
+      "s": 365.9,
+      "off": -2.1,
+      "lane": 1
+     },
+     {
+      "s": 365.5,
+      "off": 2.1,
+      "lane": 4
+     },
+     {
+      "s": 393.4,
+      "off": 0.71,
+      "lane": 3
+     },
+     {
+      "s": 399.6,
+      "off": -0.19,
+      "lane": 2
+     }
+    ]
+   }
+  },
+  "cam-pc": {
+   "frames": 181,
+   "straight": 181,
+   "maxStepDeg": 0,
+   "maxPathDiffDeg": 0,
+   "maxSledAngleDeg": 27
+  },
+  "cam-mobile": {
+   "frames": 181,
+   "straight": 181,
+   "maxStepDeg": 0,
+   "maxPathDiffDeg": 0,
+   "maxSledAngleDeg": 27.7
+  },
+  "mobileThrow": {
+   "turnedDeg": 30.1,
+   "landDiff": 0.022,
+   "walkYawChange": 0,
+   "aim": {
+    "src": "touch",
+    "dx": 86,
+    "dy": 0,
+    "t": 0.75,
+    "dots": true,
+    "ring": true,
+    "tx": -34.97,
+    "tz": -1.19,
+    "hit": null,
+    "target": null
+   },
+   "inYard": true,
+   "ammo": 3,
+   "stun": 0,
+   "pack": false,
+   "sb": true
+  }
+ }
+}

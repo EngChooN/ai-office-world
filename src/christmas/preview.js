@@ -16,6 +16,8 @@ import {TREE_LIGHT_STEPS,STAR_UNLOCK,SPAWN,CAMPFIRE,MAILBOX,SNOWMAN_YARD,SNOWBAL
 import {ORNAMENT_KINDS} from './props.js';
 import {createSleighRider} from './sleigh-rider.js';
 import {REINDEER_STATION} from './festive-layout.js';
+import {RACE_BOARD} from './sled-play.js';
+import {buildRaceBoardArt} from './race-board-art.js';
 
 const q=new URLSearchParams(location.search);
 const look=festiveLevel(location.search),XMAS_SKY=skyFor(look); // ?look=festive|festive-b = 「밝고 화려하게」 시안(festive.js)
@@ -40,6 +42,10 @@ const Ldir=new THREE.Vector3().fromArray(sunDirection(env.light.elevation,env.li
  scene.fog.color.setRGB(...env.fogColor,THREE.SRGBColorSpace).multiplyScalar(k);}
 
 const village=buildVillage({toon,scene,world,mobile,samples:true,look});
+// 마을 「썰매 경주」 판(11-18): 게임에서는 sled-play.js가 놓는다. ?race=wait|run|none|empty(기록 없음)
+const raceBoard=buildRaceBoardArt({tz:toon.toonify,mobile});
+{const B=RACE_BOARD,ph=q.get('race')??'wait';raceBoard.group.position.set(B.x,heightAt(B.x,B.z),B.z);raceBoard.group.rotation.y=B.heading;world.add(raceBoard.group);
+ raceBoard.paint({phase:ph==='empty'?'none':ph,n:2,max:4,left:15,online:true,top:ph==='empty'?[]:[{n:'눈사람장인',t:'0:58.21'},{n:'동동이',t:'1:01.07'},{n:'루돌프코',t:'1:03.90'}]});}
 // 동동이들: 옷 3종 줄·선물 옷 줄(옷 확인 장면) + 광장 곳곳(장면 분위기)
 const RIG=`${import.meta.env.BASE_URL}assets/toon/models/hiker/HikerRig.glb`;
 const avatars=[];
@@ -136,7 +142,18 @@ function jumpView(name){const C=village.course?.course;const j=C?.jumps?.[+(q.ge
  if(name==='jump')return [top.x-ux*3+nx*5.5,y+3.2,top.z-uz*3+nz*5.5,top.x-ux*1.4,y+.5,top.z-uz*1.4];
  if(name==='jump-ride')return [a.x-ux*9,C.profileH(j.s-j.len-9)+1.5,a.z-uz*9,top.x,y+.6,top.z];
  return [top.x-ux*24+nx*16,y+16,top.z-uz*24+nz*16,top.x,y,top.z];}
-function setView(name){const v=(name.startsWith('jump')&&jumpView(name))||VIEWS[name]||VIEWS.entry;state.view=name;
+// 썰매 경주 길 확인(11-18): race-start = 출발대 뒤 위(줄 색 판·7m 출발 직선) · race-hairpin = 첫 헤어핀 바깥 위 · race-hairpin-ride = 헤어핀 들어가는 썰매 눈높이
+//  · race-tunnel = 첫 터널 입구 · race-narrow = 첫 좁은 길 · race-board = 마을 「썰매 경주」 판 앞
+function raceView(name){const C=village.course?.course;if(!C)return null;
+ const dirAt=s=>{const a=C.xz(s);return {x:a.x,z:a.z,ux:Math.cos(a.th),uz:Math.sin(a.th),y:C.profileH(s)};};
+ if(name==='race-start'){const p=dirAt(-1.5);return [p.x-p.ux*7.5,p.y+4.2,p.z-p.uz*7.5,p.x+p.ux*5,p.y-.6,p.z+p.uz*5];}
+ if(name==='race-board'){const B=RACE_BOARD,y=heightAt(B.x,B.z),fx=-Math.sin(B.heading),fz=-Math.cos(B.heading);return [B.x-fx*4.6,y+1.9,B.z-fz*4.6,B.x,y+1.4,B.z];}
+ const sec=t=>C.sections.find(x=>x.type===t.type&&(!t.kind||x.kind===t.kind));
+ if(name.startsWith('race-hairpin')){const h=sec({type:'turn',kind:'hairpin'})??sec({type:'turn'});if(!h)return null;const m=(h.s0+h.s1)/2,p=dirAt(m),k=C.at(m).k,sd=k>0?-1:1,o=C.xz(m,sd*9);
+  if(name==='race-hairpin-ride'){const a=dirAt(h.s0-6);return [a.x-a.ux*2.6,a.y+1.6,a.z-a.uz*2.6,p.x,p.y+.3,p.z];}
+  return [o.x,p.y+9,o.z,p.x,p.y,p.z];}
+ const t=name==='race-tunnel'?C.tunnels[0]:name==='race-narrow'?C.narrows[0]:null;if(!t)return null;const a=dirAt(t.s0-8),b=dirAt(t.s0+2);return [a.x-a.ux*2+(-a.uz)*2.2,a.y+2.4,a.z-a.uz*2+a.ux*2.2,b.x,b.y+.8,b.z];}
+function setView(name){const v=(name.startsWith('jump')&&jumpView(name))||(name.startsWith('race-')&&raceView(name))||VIEWS[name]||VIEWS.entry;state.view=name;
  const narrow=innerWidth<innerHeight,dress=name.startsWith('outfits')||name==='gifts',k=narrow?(dress?2.4:1.3):1,ty=narrow&&!dress&&v[4]<5?v[4]*.75:v[4];
  camera.position.set(v[3]+(v[0]-v[3])*k,ty+(v[1]-v[4])*k,v[5]+(v[2]-v[5])*k);controls.target.set(v[3],ty,v[5]);camera.fov=dress?(narrow?30:22):(mobile?62:55);camera.updateProjectionMatrix();controls.update();
  // 그림자 범위를 보는 곳에 맞춘다
@@ -153,7 +170,7 @@ renderer.setAnimationLoop(()=>{const dt=Math.min(.05,clock.getDelta());updateDee
  const car=village.festive?.carousel;for(const r of riders){const p=car.seatPose(r.k);r.a.place(p.x,p.z,p.heading);}
  for(const a of avatars)a.update(dt,{moved:0});
  for(const r of riders){const p=car.seatPose(r.k);r.a.root.position.y+=p.y-SEAT_SIT_Y;}
- village.update(dt,{camera,viewHeight:renderer.domElement.height,snow:snowOn?1:0});
+ village.update(dt,{camera,viewHeight:renderer.domElement.height,snow:snowOn?1:0});raceBoard.update(dt);
  toon.updateSky(env,sunVec,moonVec);toon.pipeline.update(env);toon.pipeline.render(dt);frames++;});
 // 진단: ?hide=이름,이름 → 그 이름의 물체를 숨긴다
 for(const n of (q.get('hide')??'').split(',').filter(Boolean))scene.traverse(o=>{if(o.name===n)o.visible=false;});

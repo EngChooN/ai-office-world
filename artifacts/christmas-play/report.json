@@ -1,5 +1,5 @@
 {
- "at": "2026-11-17T09:12:45.603Z",
+ "at": "2026-11-18T03:32:38.965Z",
  "checks": {
   "① 우체통 옆 단추: 🎁 선물 보내기·📬 받은 선물": {
    "ok": true,
@@ -145,7 +145,7 @@
    "balls": [
     {
      "id": "b1",
-     "x": 26.01,
+     "x": 26.02,
      "z": 2,
      "r": [
       0.64,
@@ -191,43 +191,48 @@
     "sb:crouch"
    ]
   },
-  "④ F 누름 0.1초 안 점선 포물선·착탄 고리·힘 게이지": {
+  "④ F 누름 0.1초 안 점선 포물선·착탄 고리, 0.3초면 힘 게이지": {
    "ok": true,
    "aim": {
     "src": "key",
-    "t": 0.12,
+    "dx": 0,
+    "dy": 0,
+    "t": 0.1,
     "dots": true,
     "ring": true,
     "tx": -25,
     "tz": 6.5,
-    "hit": "gysjtpof",
-    "target": null
-   }
+    "hit": "t3rhr7e1",
+    "target": "t3rhr7e1"
+   },
+   "gauge": true
   },
   "④ 떼면 실제 착탄 = 미리보기 고리 안(0.3m)": {
    "ok": true,
    "pv2": {
     "src": "key",
-    "t": 0.27,
+    "dx": 0,
+    "dy": 0,
+    "t": 0.32,
     "dots": true,
     "ring": true,
     "tx": -25,
     "tz": 6.5,
-    "hit": "gysjtpof",
-    "target": null
+    "hit": "t3rhr7e1",
+    "target": "t3rhr7e1"
    },
    "sb": {
     "t": "sbh",
     "k": "1",
-    "id": "go4ko1k3",
+    "id": "rxo9iisz",
     "x": -29.65,
     "z": 6.5,
     "tx": -25,
     "tz": 6.5,
-    "hit": "gysjtpof",
+    "hit": "t3rhr7e1",
     "head": 1
    },
-   "aId": "go4ko1k3",
+   "aId": "rxo9iisz",
    "after": {
     "lastLand": null,
     "knock": false,
@@ -238,6 +243,14 @@
     "stun": 0,
     "flying": 1,
     "covers": {},
+    "aimDist": 9,
+    "ring": true,
+    "idle": {
+     "tx": -25,
+     "tz": 6.5,
+     "hit": "t3rhr7e1"
+    },
+    "camYaw": -1.5708,
     "aim": null,
     "match": null,
     "practice": null,
@@ -248,32 +261,34 @@
    "ok": true,
    "pv2": {
     "src": "key",
-    "t": 0.27,
+    "dx": 0,
+    "dy": 0,
+    "t": 0.32,
     "dots": true,
     "ring": true,
     "tx": -25,
     "tz": 6.5,
-    "hit": "gysjtpof",
-    "target": null
+    "hit": "t3rhr7e1",
+    "target": "t3rhr7e1"
    }
   },
   "④ 하나 F → 둘이 맞음(두 화면 모두 눈투성이)": {
    "ok": true,
    "covA": {
-    "gysjtpof": 1
+    "t3rhr7e1": 1
    },
    "covB": {
-    "gysjtpof": 1
+    "t3rhr7e1": 1
    }
   },
   "④ 손 눈덩이 3 → 2": {
    "ok": true
   },
-  "④ 둘(휴대폰) ❄️ 짧게 = 자동 조준으로 하나를 맞힘": {
+  "④ 둘(휴대폰) ❄️ 톡 = 지금 고리 자리(하나 쪽)로 바로 던져 맞힘(자동 조준 없음)": {
    "ok": true,
    "cov": {
-    "gysjtpof": 1,
-    "go4ko1k3": 1
+    "t3rhr7e1": 1,
+    "rxo9iisz": 1
    }
   },
   "④ 휴대폰 ❄️ 길게 누르고 끌기 → 조준 뒤 던짐": {
@@ -289,13 +304,15 @@
    "ok": true,
    "mv": {
     "src": "touch",
+    "dx": -8,
+    "dy": -70,
     "t": 0.7,
     "dots": true,
     "ring": true,
-    "tx": -33.98,
-    "tz": 7.57,
-    "hit": null,
-    "target": null
+    "tx": -30.7,
+    "tz": 6.8,
+    "hit": "rxo9iisz",
+    "target": "rxo9iisz"
    }
   },
   "④ 웅크리기 단추(누르는 동안) → act.cr 1·자세 웅크림": {
@@ -315,7 +332,8 @@
     "sl": 0,
     "sp": "",
     "gd": 0,
-    "mg": 0
+    "mg": 0,
+    "hs": 0
    },
    "arms": "crouch"
   },
@@ -385,27 +403,27 @@
   "④-2 혼자면 눈사람 과녁 연습(과녁 5개·60초)": {
    "ok": true,
    "p": {
-    "t": 60,
+    "t": 59.9,
     "score": 0,
     "targets": [
      {
-      "x": -32.17,
-      "z": 6.7
+      "x": -32.14,
+      "z": 6.71
      },
      {
       "x": -28.25,
-      "z": 1.81
+      "z": 1.79
      },
      {
-      "x": -26.84,
-      "z": 5.58
+      "x": -26.89,
+      "z": 5.55
      },
      {
-      "x": -26.9,
-      "z": -2.74
+      "x": -26.93,
+      "z": -2.79
      },
      {
-      "x": -25.43,
+      "x": -25.4,
       "z": 3
      }
     ]
@@ -414,24 +432,24 @@
   "④-2 과녁을 맞히면 점수": {
    "ok": true,
    "p": {
-    "t": 59.3,
+    "t": 59.2,
     "score": 1,
     "targets": [
      {
-      "x": -28.22,
-      "z": 1.41
+      "x": -28.24,
+      "z": 1.33
      },
      {
-      "x": -27.91,
-      "z": 4.94
+      "x": -28.09,
+      "z": 4.83
      },
      {
-      "x": -27.26,
-      "z": -3.52
+      "x": -27.29,
+      "z": -3.62
      },
      {
-      "x": -24.56,
-      "z": 3.15
+      "x": -24.39,
+      "z": 3.21
      }
     ]
    }
@@ -446,15 +464,15 @@
   },
   "⑤ 새 코스 → 두 화면 같은 코스(시드)·길이 400~500m": {
    "ok": true,
-   "s0": 1864097727,
+   "s0": 1947985822,
    "a": {
-    "seed": 2692235781,
-    "code": "7RKL",
-    "finish": 423.5
+    "seed": 4046016023,
+    "code": "RPUL",
+    "finish": 436.6
    },
    "b": {
-    "seed": 2692235781,
-    "code": "7RKL"
+    "seed": 4046016023,
+    "code": "RPUL"
    }
   },
   "⑤ 산 위 길 그림도 새 코스로 다시 그림": {
@@ -480,9 +498,9 @@
     "ghost": false,
     "sens": "normal",
     "best": null,
-    "seed": 2692235781,
-    "code": "7RKL",
-    "finish": 423.5,
+    "seed": 4046016023,
+    "code": "RPUL",
+    "finish": 436.6,
     "pending": null,
     "camFov": 0,
     "surface": null,
@@ -501,7 +519,7 @@
     "t": null,
     "splits": [],
     "finished": false,
-    "front": "go4ko1k3",
+    "front": "rxo9iisz",
     "partner": null,
     "remote": 1,
     "race": null,
@@ -510,9 +528,9 @@
     "ghost": false,
     "sens": "normal",
     "best": null,
-    "seed": 2692235781,
-    "code": "7RKL",
-    "finish": 423.5,
+    "seed": 4046016023,
+    "code": "RPUL",
+    "finish": 436.6,
     "pending": null,
     "camFov": 0,
     "surface": null,
@@ -529,24 +547,24 @@
   "⑤ 둘 화면에서 하나 썰매가 길을 따라 내려감(둘도 뒷자리로 같이)": {
    "ok": true,
    "pA": {
-    "x": -23.39,
-    "z": -104.5
+    "x": -23.64,
+    "z": -103.9
    },
    "bSelf": {
-    "x": -23.93,
-    "z": -104.5
+    "x": -24.18,
+    "z": -103.9
    },
    "sledA": {
     "mode": "ride",
     "lane": 4,
-    "s": 5.45,
-    "v": 4.48,
-    "off": 1.5,
-    "t": 2.62,
+    "s": 5.31,
+    "v": 4.5,
+    "off": 2.1,
+    "t": 2.57,
     "splits": [],
     "finished": false,
     "front": null,
-    "partner": "gysjtpof",
+    "partner": "t3rhr7e1",
     "remote": 0,
     "race": null,
     "board": 0,
@@ -554,11 +572,11 @@
     "ghost": false,
     "sens": "normal",
     "best": null,
-    "seed": 2692235781,
-    "code": "7RKL",
-    "finish": 423.5,
+    "seed": 4046016023,
+    "code": "RPUL",
+    "finish": 436.6,
     "pending": null,
-    "camFov": 65.1,
+    "camFov": 65.2,
     "surface": "snow",
     "banks": 0,
     "hits": 0
@@ -573,41 +591,41 @@
   },
   "⑤ 키를 누르면 0.25초에 걸쳐 꺾임(즉시 최대 아님)": {
    "ok": true,
-   "s": 6.82,
-   "off": 1.8
+   "s": 6.77,
+   "off": 2.37
   },
   "⑤ 결승 → 1초 뒤 결과 창(시간·구간 3개·별)": {
    "ok": true,
    "sled": {
     "mode": "result",
     "lane": 4,
-    "s": 435.06,
-    "v": 5.63,
-    "off": 1.72,
-    "t": 52.46,
+    "s": 443.81,
+    "v": 4.23,
+    "off": 2.09,
+    "t": 78.18,
     "splits": [
-     25.856,
-     40.649,
-     50.984
+     34.739,
+     59.269,
+     76.716
     ],
     "finished": true,
     "front": null,
-    "partner": "gysjtpof",
+    "partner": "t3rhr7e1",
     "remote": 0,
     "race": null,
     "board": 1,
     "result": true,
     "ghost": false,
     "sens": "normal",
-    "best": 50.984,
-    "seed": 2692235781,
-    "code": "7RKL",
-    "finish": 423.5,
+    "best": 76.716,
+    "seed": 4046016023,
+    "code": "RPUL",
+    "finish": 436.6,
     "pending": null,
-    "camFov": 67.6,
+    "camFov": 64.6,
     "surface": "snow",
-    "banks": 12,
-    "hits": 0
+    "banks": 42,
+    "hits": 1
    }
   },
   "⑤ 내리기 → 둘 다 내림": {
@@ -628,14 +646,14 @@
    "race": {
     "ph": "wait",
     "n": 2,
-    "host": "go4ko1k3",
+    "host": "rxo9iisz",
     "mine": true
    }
   },
   "⑤ 레이스 참가자는 같은 코스(시드)": {
    "ok": true,
-   "a": "5XJX",
-   "b": "5XJX"
+   "a": "6A4S",
+   "b": "6A4S"
   },
   "⑤ 바로 출발 → 두 화면 같은 카운트다운 뒤 출발": {
    "ok": true
@@ -643,7 +661,7 @@
   "⑤ 휴대폰 아래 절반 끌기 = 가상 핸들": {
    "ok": true,
    "shown": true,
-   "off": 0.6
+   "off": 0.8
   },
   "⑤ 위 띠 왼쪽 순위(n/2)": {
    "ok": true,
@@ -654,14 +672,14 @@
    "a": {
     "mode": "result",
     "lane": 2,
-    "s": 454.23,
-    "v": 4.37,
-    "off": 1.06,
-    "t": 63.4,
+    "s": 459,
+    "v": 1.87,
+    "off": -1.43,
+    "t": 85.71,
     "splits": [
-     32.773,
-     48.915,
-     61.47
+     34.076,
+     60.624,
+     81.615
     ],
     "finished": true,
     "front": null,
@@ -670,34 +688,34 @@
     "race": {
      "ph": "done",
      "n": 2,
-     "host": "go4ko1k3",
+     "host": "rxo9iisz",
      "mine": false
     },
     "board": 2,
     "result": true,
     "ghost": false,
     "sens": "normal",
-    "best": 61.47,
-    "seed": 3782011715,
-    "code": "5XJX",
-    "finish": 442.3,
+    "best": 81.615,
+    "seed": 2956765316,
+    "code": "6A4S",
+    "finish": 444.2,
     "pending": null,
-    "camFov": 64.9,
+    "camFov": 62,
     "surface": "snow",
-    "banks": 14,
-    "hits": 4
+    "banks": 45,
+    "hits": 0
    },
    "b": {
     "mode": "result",
     "lane": 3,
-    "s": 459.62,
-    "v": 0.25,
-    "off": 1.06,
-    "t": 60.83,
+    "s": 452.99,
+    "v": 3.72,
+    "off": -1.94,
+    "t": 85.5,
     "splits": [
-     26.906,
-     43.322,
-     56.047
+     34.816,
+     63.461,
+     83.607
     ],
     "finished": true,
     "front": null,
@@ -706,29 +724,29 @@
     "race": {
      "ph": "done",
      "n": 2,
-     "host": "go4ko1k3",
+     "host": "rxo9iisz",
      "mine": false
     },
     "board": 2,
     "result": true,
     "ghost": false,
     "sens": "normal",
-    "best": 56.047,
-    "seed": 3782011715,
-    "code": "5XJX",
-    "finish": 442.3,
+    "best": 83.607,
+    "seed": 2956765316,
+    "code": "6A4S",
+    "finish": 444.2,
     "pending": null,
-    "camFov": 62,
+    "camFov": 63.5,
     "surface": "snow",
-    "banks": 16,
-    "hits": 2
+    "banks": 51,
+    "hits": 0
    }
   },
   "⑤ 결과 창 순위 2줄(1·2등)": {
    "ok": true,
    "rows": [
-    "1둘56.05",
-    "2하나1:01.47"
+    "1하나1:21.61",
+    "2둘1:23.61"
    ]
   },
   "⑤ 오늘의 기록판에 기록": {
@@ -737,16 +755,16 @@
   },
   "⑤ 기록·고스트는 코스(시드)마다 따로 저장": {
    "ok": true,
-   "best1": 50.984,
+   "best1": 76.716,
    "best2": {
-    "ls": 61.47,
+    "ls": 81.615,
     "courses": 2,
-    "card": "2등\n\n2\n/ 2등\n\n1:01.47\n새 최고 기록!\n\n★★★\n\n코스 5XJX · 442m · ★★★ 1:00.20 · ★★ 1:10.20\n\n구간"
+    "card": "1등!\n\n1\n/ 2등\n\n1:21.61\n새 최고 기록!\n\n★★★\n\n코스 6A4S · 444m · ★★★ 55.90 · ★★ 1:10.50\n\n구간 "
    }
   },
   "⑤ 다시 타기(E) → 5초 안에 다시 출발": {
    "ok": true,
-   "ms": 3084
+   "ms": 3098
   },
   "⑨ 마을 승강장 가까이 → 「타고 올라가기」 단추": {
    "ok": true,
@@ -761,18 +779,18 @@
     "dir": 1,
     "progress": 0,
     "skipping": false,
-    "y": 0.12,
+    "y": 0,
     "remote": 0,
     "x": 20.5,
-    "z": -24.6
+    "z": -23.4
    }
   },
   "⑨ 둘 화면: 하나가 객실을 타고 이어서 움직임(한 프레임 1.5m 안, 사라졌다 나타나지 않음)·객실 보임": {
    "ok": true,
-   "n": 170,
-   "jump": 1.06,
-   "vmax": 64.4,
-   "moved": 31.4,
+   "n": 169,
+   "jump": 0.86,
+   "vmax": 50.2,
+   "moved": 31.5,
    "remote": 1
   },
   "⑨ 타는 동안 단추는 「건너뛰기」 하나·높이 올라감": {
@@ -783,17 +801,17 @@
    "g": {
     "mode": "ride",
     "dir": 1,
-    "progress": 0.392,
+    "progress": 0.384,
     "skipping": false,
-    "y": 21.68,
+    "y": 21.44,
     "remote": 0,
-    "x": -0.42,
-    "z": -55.54
+    "x": 0.06,
+    "z": -54.83
    }
   },
   "⑨ 건너뛰기 → 2초 남짓에 꼭대기, 출발대 앞에 내림(「타기」 단추)": {
    "ok": true,
-   "ms": 2660,
+   "ms": 2707,
    "p": {
     "x": -33,
     "z": -107,
@@ -822,8 +840,8 @@
     "skipping": false,
     "y": 23.36,
     "remote": 0,
-    "x": -5.68,
-    "z": -63.22
+    "x": -5.67,
+    "z": -63.21
    },
    "aSee": {
     "mode": "none",
@@ -910,22 +928,22 @@
   },
   "⑧ PC: 캐럴이 나옴(재생 중·시간 흐름·소리 크기)": {
    "ok": true,
-   "title": "Jingle Bells",
-   "time": 2.4,
-   "carolDb": -36.4,
-   "masterDb": -37.1
+   "title": "O Christmas Tree",
+   "time": 228.4,
+   "carolDb": -38.9,
+   "masterDb": -39.8
   },
   "⑧ 휴대폰: 캐럴이 나옴(재생 중·시간 흐름·소리 크기)": {
    "ok": true,
-   "title": "Jingle Bells",
-   "time": 4.1,
-   "carolDb": -28.7,
-   "masterDb": -29.6
+   "title": "O Christmas Tree",
+   "time": 230.1,
+   "carolDb": -40.6,
+   "masterDb": -41.4
   },
   "⑧ 두 화면이 같은 곡(같은 시계)": {
    "ok": true,
-   "ia": 0,
-   "ib": 0
+   "ia": 3,
+   "ib": 3
   },
   "⑧ 캐럴은 <audio>로 흘려 받음(fetch 아님)": {
    "ok": true,
@@ -935,7 +953,7 @@
   },
   "⑧ PC: 🎵 창에 지금 곡과 소리 출처(캐럴 8곡+바람·직접 만든 소리)": {
    "ok": true,
-   "now": "♪ 지금: Jingle Bells",
+   "now": "♪ 지금: O Christmas Tree",
    "n": 10
   },
   "⑧ PC: 캐럴 끄기 → 멈추고 받기를 뗌": {
@@ -957,7 +975,7 @@
   },
   "⑧ 휴대폰: 🎵 창에 지금 곡과 소리 출처(캐럴 8곡+바람·직접 만든 소리)": {
    "ok": true,
-   "now": "♪ 지금: Jingle Bells",
+   "now": "♪ 지금: O Christmas Tree",
    "n": 10
   },
   "⑧ 휴대폰: 캐럴 끄기 → 멈추고 받기를 뗌": {
@@ -986,14 +1004,14 @@
    "far": 0.24,
    "sit": 0.12,
    "fireGain": 0.958,
-   "carolDbFar": -34.7,
-   "carolDbSit": -41
+   "carolDbFar": -33.2,
+   "carolDbSit": -37.1
   },
   "⑧ 곡이 끝나면 다음 곡으로 이어짐(뒤 무음 건너뜀)": {
    "ok": true,
-   "before": 0,
-   "after": 1,
-   "title": "The First Noel"
+   "before": 3,
+   "after": 4,
+   "title": "Joy to the World"
   },
   "⑦ 서버가 꺼지면 놀이 요청은 보내지 않고 \"연결이 돌아오면 다시 눌러 주세요\"": {
    "ok": true,

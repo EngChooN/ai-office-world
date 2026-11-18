@@ -1,0 +1,87 @@
+{
+ "at": "2026-11-18T02:20:00.349Z",
+ "runs": [
+  {
+   "screen": "PC",
+   "people": 30,
+   "fpsAvg": 60,
+   "fpsMin": 59.9,
+   "calls": 789,
+   "tris": 3032821,
+   "shown": 29,
+   "bodies": {
+    "dongdong": 29
+   },
+   "rxKBps": 25.6,
+   "rxMsgPs": 37,
+   "txKBps": 0.07,
+   "heapMB": 193
+  },
+  {
+   "screen": "휴대폰",
+   "people": 30,
+   "fpsAvg": 54,
+   "fpsMin": 51.5,
+   "calls": 250,
+   "tris": 1200229,
+   "shown": 29,
+   "bodies": {
+    "dongdong": 6,
+    "lite": 23
+   },
+   "rxKBps": 25.4,
+   "rxMsgPs": 36,
+   "txKBps": 0.08,
+   "heapMB": 156
+  }
+ ],
+ "checks": {
+  "30명: 회전목마 빈 자리에 앉음(다른 사람 자리와 안 겹침)": {
+   "ok": true,
+   "seat": 14,
+   "taken": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ]
+  },
+  "30명: 같은 자리 고른 다른 사람은 ride:no": {
+   "ok": true
+  },
+  "30명: 자리가 다 차면 화면에서 타기 → 「다 찼어요」(안 탐)": {
+   "ok": true,
+   "taken": 16
+  },
+  "30명: 링크 들어가기(봇 8명이 얼음 위)": {
+   "ok": true,
+   "rink": {
+    "inside": true,
+    "onIce": true,
+    "v": 0,
+    "x": -8.3,
+    "z": 30.5
+   }
+  },
+  "봇 접속 모두 성공(정원 안)": {
+   "ok": true,
+   "full": 0
+  },
+  "페이지 오류 0": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": [],
+ "botRx": {
+  "avgKB": 310
+ }
+}

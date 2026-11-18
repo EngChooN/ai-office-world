@@ -3,6 +3,9 @@
 // 눈썰매-눈싸움-개선-v1 §1-2·§1-3:
 //  - 출발대 4줄. 「타기」 → 썰매에 앉아 기다림(5초 동안 둘이 타기 청할 수 있음) → 「출발!」 → 3·2·1·출발!(각 1초) → 출발 0.3초 안 밀기(W·↑·Space·밀기 단추) = 스타트 부스트, 일찍 밀면 0.5초 늦게.
 //  - 「레이스 열기」(다른 사람이 있을 때) → 10초 동안 「같이 하기」(최대 4명) → 같은 카운트다운. 썰매끼리 부딪힘 없음, 순위만.
+//  - 11-18 4명 경주(설계 v2 §3-2): 마을 케이블카 승강장 옆 「썰매 경주」 판에서도 열기(R), 열리면 마을 사람에게 참가 카드 5초 → 지도 단추 아래 배지(남은 초),
+//    「참가」 = 놀이를 그만두고 화면 어두워짐 뒤 빈 줄로 바로(prep, main.js). 모집 20초·2명부터 「지금 출발」·4명이면 바로·혼자면 「혼자 타기」/「20초 더」(한 번),
+//    줄 색(1 빨강·2 초록·3 파랑·4 노랑)은 위 띠 참가자 칩. 결과 창 「같은 사람과 한 번 더」(연 사람) → 지난 참가자에게 10초 참가 카드
 //  - 조작: PC A/D·←/→ 기울이기, Shift 드리프트, S·↓ 브레이크, R 길게 1초 = 처음부터. 휴대폰: 아래 절반 아무 곳이나 좌우로 끌기(60px = 최대),
 //    ◀ ▶ 88px, 드리프트 96px, 브레이크 64px, ↺ 56px(확인 한 번). 모든 키 동작은 화면 단추로도 된다. 일시정지 없음.
 //  - 위 기록 띠(순위·시간 0.01초·구간), 구간 통과 1.5초 구간 시간 + 내 최고와 차이, 왼쪽 세로 진행 막대(나·다른 썰매·고스트), ⚙ 조종 감도 3단계·고스트 끄기(이 기기 저장).
@@ -12,20 +15,27 @@
 import * as THREE from 'three';
 import * as P from './props.js';
 import {TARGETS} from './layout.js';
-import {createRide,SLED_RULES,SLED_SENS,laneOffset,headingOf,createGhostRecorder,ghostAt,starsOf,starTimes,sledFeel} from './sled.js';
+import {createRide,SLED_RULES,SLED_SENS,laneOffset,headingOf,createGhostRecorder,ghostAt,starsOf,starTimes,sledFeel,createSledCam,SLED_CAM,botSteer,turnRateAt} from './sled.js';
 import {makeCourse,dailySeed,normSeed,courseCode,skeletonAt} from './sled-course.js';
 import {RACE} from './sled-race.js';
 import {SLED_SEAT_Y} from './poses.js';
+import {buildRaceBoardArt} from './race-board-art.js';
 import {icon,iconText} from '../icons/icon.js';
 import {createCountdown,createTopBar,createResultCard,fmtTime,fmtDiff,esc} from './game-ui.js';
 
 export const SLED_TEXT=Object.freeze({busy:'앞 썰매가 출발하면 탈 수 있어요',asked:'같이 타자고 했어요. 앞사람이 수락하면 뒤에 앉아요',declined:'이번에는 혼자 탄대요',
  ask:n=>`${n}님이 같이 타고 싶어 해요`,offline:'연결이 돌아오면 다시 눌러 주세요',up:'썰매 산 출발대로 왔어요',bank:'쿵! 눈둑에 부딪혔어요',pile:'푹! 눈 더미',tree:'으악! 전나무',
  air:'와!',landOk:'착지 성공!',landBad:'휘청!',boost:'부스터!',start:'스타트 부스트!',mini:'드리프트 부스트!',early:'너무 일찍 밀었어요 · 0.5초 늦게 출발',end:'도착!',
- raceOpen:'레이스를 열었어요 · 10초 동안 같이 할 사람을 기다려요',raceFull:'레이스 자리가 꽉 찼어요',raceClosed:'이미 출발한 레이스예요',
+ raceOpen:'경주를 열었어요 · 20초 동안 같이 할 사람을 기다려요',raceFull:'레이스 자리가 꽉 찼어요',raceClosed:'이미 출발한 레이스예요',
  newCourse:c=>`새 코스 ${c} · 블록이 바뀌었어요`,courseBusy:'누가 썰매를 타는 중이라 지금은 코스를 바꿀 수 없어요',ice:'얼음 길! 미끄러워요',tunnel:'터널!'});
 const SETTINGS_KEY='xmas-sled:v2'; // 2차: 코스(시드)마다 최고 기록·고스트(bests)
 const LANES=SLED_RULES.lanes;
+// 줄 색(설계 v2 §3-2): 1 빨강 · 2 초록 · 3 파랑 · 4 노랑
+export const LANE_COLORS=Object.freeze(['#d8443a','#2f9a5a','#3a78d8','#e9b939']);
+// 마을 「썰매 경주」 판(케이블카 마을 승강장 옆, 설계 v2 §3-2). 가까이(r) 가면 「경주 열기」·「참가」
+export const RACE_BOARD=Object.freeze({x:16.2,z:-21.4,heading:-2.35,r:2.6});
+// 참가 알림: 카드 5초(같은 사람과 한 번 더면 10초), 그 뒤 배지
+export const RACE_NOTE=Object.freeze({cardSecs:5,reSecs:10});
 // 출발대 줄 자리(출발선 1.5m 뒤, 줄마다 1m)
 export const laneSpot=k=>{const c=skeletonAt(-1.5),o=laneOffset(k);return {x:c.x-Math.sin(c.th)*o,z:c.z+Math.cos(c.th)*o,heading:headingOf(c.th)};};
 const nearDeck=(x,z)=>Math.hypot(x-TARGETS.sledDeck.x,z-TARGETS.sledDeck.z)<TARGETS.sledDeck.r+1.2;
@@ -34,8 +44,10 @@ function loadSettings(){try{const p=JSON.parse(localStorage.getItem(SETTINGS_KEY
  return {sens:SLED_SENS[p.sens]?p.sens:'normal',ghost:p.ghost!==false,bests};}catch{return {sens:'normal',ghost:true,bests:{}};}}
 // 휴대폰 끌기 핸들: 8px 안은 무시(손 떨림), 64px에서 최대, 그 사이는 살짝 굽은 곡선(작게 끌면 섬세하게)
 export const DRAG=Object.freeze({dead:8,full:64,curve:1.35});
+// 점검용 자동 조종이 지킬 줄 자리: 줄 간격 1.4m, 좁은 곳은 쓸 수 있는 폭에 맞춰 줄임(sled-course MIN_RACE_W 규칙과 같은 식)
 export function dragSteer(dx,{dead=DRAG.dead,full=DRAG.full,curve=DRAG.curve}={}){const a=Math.abs(dx);if(a<=dead)return 0;const t=Math.min(1,(a-dead)/(full-dead));return Math.sign(dx)*Math.pow(t,curve);}
 
+const laneBiasOf=(lane,W)=>{const lim=W/2-SLED_RULES.edgeIn-.24;return ((lane||2)-2.5)*Math.min(1.4,2*lim/3);};
 // ctx: {doc,root,world,toon,heightAt,player,poser,net,multi,hud,audio,input,mobile,onChange()}
 export function createSledPlay({doc=document,root,world,toon,heightAt,player,poser,net,multi,hud,audio,input,mobile=false,onChange=()=>{}}){
  const tz=toon.toonify,cfg=loadSettings();
@@ -45,7 +57,8 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
  // 지금 코스(방 시드). 타는 중에 바뀌면 다 탄 뒤에 바꾼다
  let course=makeCourse(dailySeed()),pendingSeed=null;const courseCbs=[];
  const bestOf=()=>cfg.bests[course.seed]??null;
- function applyCourse(seed,{say=true}={}){const sd=normSeed(seed);pendingSeed=null;if(sd===course.seed)return false;course=makeCourse(sd);for(const f of courseCbs)f(course);if(say)hud?.say(SLED_TEXT.newCourse(course.code),2.2,'x-new-course');paintBoard();onChange();return true;}
+ // 새 코스 알림은 썰매 산·출발대에 있을 때만(마을 사람에게는 경주 카드만)
+ function applyCourse(seed,{say=true}={}){const sd=normSeed(seed);pendingSeed=null;if(sd===course.seed)return false;course=makeCourse(sd);for(const f of courseCbs)f(course);if(say&&(S.mode!=='none'||player.z<-24))hud?.say(SLED_TEXT.newCourse(course.code),2.2,'x-new-course');paintBoard();onChange();return true;}
  function setCourseSeed(seed,{force=false}={}){if(!force&&(S.mode==='ride'||S.mode==='count'||S.mode==='back'||(S.mode==='result'&&S.ride&&!S.ride.done))){pendingSeed=normSeed(seed);return false;}return applyCourse(seed);}
  const S={mode:'none',lane:0,wait:0,count:0,goAt:0,ride:null,front:null,partner:null,asked:null,askT:0,cheer:false,lastCount:-1,
   steerBtn:0,dragSteer:0,driftBtn:false,brakeBtn:false,pushBtn:false,early:false,race:null,board:[],rec:null,result:null,resT:0,restartHold:0,lastSplitNote:-1,air:0,lift:0,fov:60,camY:null,camYaw:null};
@@ -69,10 +82,12 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
  <button type="button" class="xh-mini" data-x="ghost" aria-pressed="true">${iconText('x-sled','고스트 켜짐')}</button></section>
 <section class="xl-confirm" hidden role="dialog" aria-label="처음부터"><p>처음부터 다시 탈까요?</p><div class="xh-row"><button type="button" class="xh-ok" data-x="restart-yes">처음부터</button><button type="button" class="xh-no" data-x="restart-no">계속 타기</button></div></section>
 <section class="xl-board" hidden role="dialog" aria-label="오늘의 기록판"><header><b>${iconText('x-trophy','오늘의 기록판')}</b><button type="button" class="xh-x" data-x="board-close" aria-label="닫기">✕</button></header><ol></ol></section>
+<section class="xl-note" hidden role="alertdialog" aria-label="썰매 경주 참가"><p></p><button type="button" class="xh-ok" data-x="race-join">${icon('x-race',{size:'s'})}<span>참가</span></button><button type="button" class="xh-x" data-x="note-close" aria-label="닫기">✕</button></section>
+<button type="button" class="xl-badge" data-x="race-join" hidden aria-label="썰매 경주 참가">${icon('x-sled',{size:'s'})}<b></b></button>
 <section class="xl-ask" hidden role="dialog" aria-label="같이 타기"><p></p><div class="xh-row"><button type="button" class="xh-ok" data-l="ok">같이 타요</button><button type="button" class="xh-no" data-l="no">혼자 탈게요</button></div></section>`;
  root.appendChild(ui);
  const $=s=>ui.querySelector(s);
- const steerEl=$('.xl-steer'),padsEl=$('.xl-pads'),pushEl=$('.xl-push'),dragEl=$('.xl-drag'),progEl=$('.xl-prog'),toolsEl=$('.xl-tools'),setEl=$('.xl-set'),confirmEl=$('.xl-confirm'),boardEl=$('.xl-board'),askEl=$('.xl-ask');
+ const noteEl=$('.xl-note'),badgeEl=$('.xl-badge'),steerEl=$('.xl-steer'),padsEl=$('.xl-pads'),pushEl=$('.xl-push'),dragEl=$('.xl-drag'),progEl=$('.xl-prog'),toolsEl=$('.xl-tools'),setEl=$('.xl-set'),confirmEl=$('.xl-confirm'),boardEl=$('.xl-board'),askEl=$('.xl-ask');
  const count=createCountdown(ui,doc),bar=createTopBar(ui,doc),card=createResultCard(ui,{doc,onPick:id=>pick(id)});
  // 누르고 있는 단추(◀ ▶ · 드리프트 · 브레이크 · 밀기)
  for(const b of ui.querySelectorAll('[data-steer],[data-hold]')){
@@ -94,6 +109,8 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
    case 'restart':if(mobile){confirmEl.hidden=false;}else restart();return;
    case 'restart-yes':confirmEl.hidden=true;restart();return;case 'restart-no':confirmEl.hidden=true;return;
    case 'board-close':boardEl.hidden=true;return;
+   case 'race-join':joinFromAnywhere();return;
+   case 'note-close':S.noteT=0;noteEl.hidden=true;return;
   }});
  askEl.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!S.asked)return;const id=S.asked;S.asked=null;askEl.hidden=true;
   if(b.dataset.l==='ok'){if(net.send({t:'sled:ok',to:id}))S.partner=id;}else net.send({t:'sled:no',to:id});});
@@ -108,11 +125,39 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
   list.slice(0,5).forEach((x,i)=>{const y=128+i*52;g.fillStyle=i===0?'#c8902a':'#4a3618';g.fillText(`${i+1}. ${x.n}`.slice(0,14),28,y);g.textAlign='right';g.fillText(fmtTime(x.ms/1000),cv.width-28,y);g.textAlign='left';});
   boardTex.needsUpdate=true;}
  let boardCanvas=null,boardTex=null;
+ // 마을 「썰매 경주」 판: 그림은 race-board-art.js(월드아트 11-18), 여기서는 자리와 지금 상태만 넘긴다. 0.5초마다 바뀐 것만 다시 씀
+ const villageBoard=(()=>{const art=buildRaceBoardArt({tz,doc,mobile}),g=art.group;
+  g.position.set(RACE_BOARD.x,heightAt(RACE_BOARD.x,RACE_BOARD.z),RACE_BOARD.z);g.rotation.y=RACE_BOARD.heading;world.add(g);
+  let last='',acc=0;
+  function paint(){const r=S.race,n=r?.r?.length??0,left=r?.ph==='wait'?Math.max(0,Math.ceil((r.leftAt-performance.now())/1000)):0;
+   const phase=!r||r.ph==='done'?'none':r.ph==='wait'?'wait':'run',online=multi.joined&&net.serverMode;
+   const list=(online?S.board:[]).slice(0,3),key=`${phase}|${n}|${left}|${online}|`+list.map(x=>`${x.n}|${x.ms}`).join(',');if(key===last)return;last=key;
+   art.paint({phase,n,max:RACE.max,left,online,top:list.map(x=>({n:x.n,t:fmtTime(x.ms/1000)}))});}
+  paint();
+  return {group:g,update(dt){art.update(dt);acc+=dt;if(acc<.5)return;acc=0;paint();},repaint(){last='';paint();}};})();
  const others=()=>multi.joined?multi.people().filter(p=>!p.muted&&p.sample):[];
  const takenLanes=()=>new Set(others().filter(p=>p.act?.sl>=1&&p.act.sl<=LANES).map(p=>p.act.sl));
  const meId=()=>multi.id??'me';
  const inRace=()=>!!S.race&&S.race.ph!=='none'&&S.race.ph!=='done'&&S.race.r?.some(x=>x.id===meId());
  const raceOpen=()=>S.race&&S.race.ph==='wait';
+ // 다른 곳에서 출발대로(main.js가 놀이 그만두기·화면 어두워짐을 넣음). fn 안에서 자리를 옮긴다
+ let prep=async fn=>{fn();return true;},quiet=()=>false;
+ // 점검용 자동 조종: 내 줄 자리(앞 5m 폭 기준), 앞 6m 장애물이 내 줄에 걸치면 그 장애물 바깥 가장자리로만 비킴
+ const autoPedal=r=>{const C=r.course,w=laneWant(r);let need=0;for(let d=0;d<=Math.max(6,r.v*1.2);d+=1){const a=C.at(r.s+d),k=Math.abs(a.k);if(k<.02)continue;const rad=1/k-Math.sign(a.k)*w;need=Math.max(need,1/Math.max(1.2,rad));}
+  return {brake:need>0&&r.v*need>turnRateAt(r.v)*1.15*.92,drift:Math.abs(C.at(r.s+1).k)>.12&&r.v>4};};
+ const laneWant=r=>{const C=r.course,W=Math.min(C.widthAt(r.s),C.widthAt(r.s+5));let w=laneBiasOf(S.lane,W);
+  for(const o of C.obstacles){if(o.s<r.s-.5||o.s>r.s+6)continue;const need=o.r+SLED_RULES.edgeIn;if(Math.abs(w-o.off)<need)w=o.off+(w>=o.off?1:-1)*need;}
+  const lim=W/2-SLED_RULES.edgeIn-.3;return Math.max(-lim,Math.min(lim,w));};
+ const nearRaceBoard=()=>Math.hypot(player.x-RACE_BOARD.x,player.z-RACE_BOARD.z)<RACE_BOARD.r;
+ const hostName=()=>S.race?(S.race.r?.find(x=>x.id===S.race.host)?.n??multi.nameOf?.(S.race.host)??'누군가'):'';
+ // 마을 판에서 열기: 출발대 빈 줄로 옮겨 앉은 뒤 sr:open
+ async function openFromVillage(){if(!multi.joined){hud?.say('함께하기에 들어오면 경주를 열 수 있어요',2);return false;}
+  if(S.race&&S.race.ph!=='done'){if(raceOpen())return joinFromAnywhere();hud?.say('다른 경주가 달리는 중이에요',2);return false;}
+  return prep(()=>{if(!board(1))return;openRace();});} // 연 사람은 1번 줄(비어 있으면)
+ // 카드·배지·판·출발대 어디서든 참가
+ async function joinFromAnywhere(){S.noteT=0;noteEl.hidden=true;if(!raceOpen()||inRace())return false;if((S.race.r?.length??0)>=RACE.max){hud?.say(SLED_TEXT.raceFull,2);return false;}
+  if(S.mode==='ready'){return joinRace();}
+  return prep(()=>{joinRace();});}
  function seat(){poser.setSit(true,SLED_SEAT_Y);}
  function unseat(){poser.setSit(false);poser.setArms('none');}
  function hideRideUi(){steerEl.hidden=padsEl.hidden=dragEl.hidden=progEl.hidden=toolsEl.hidden=pushEl.hidden=true;setEl.hidden=confirmEl.hidden=true;bar.hide();ghost.visible=false;document.documentElement.classList.remove('xh-sledding');}
@@ -122,15 +167,15 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
  function freeLane(pref=0){const taken=takenLanes();if(pref&&!taken.has(pref))return pref;
   const order=[1,2,3,4].sort((a,b)=>Math.hypot(laneSpot(a).x-player.x,laneSpot(a).z-player.z)-Math.hypot(laneSpot(b).x-player.x,laneSpot(b).z-player.z));
   for(const k of order)if(!taken.has(k))return k;return 0;}
- function board(){
-  const lane=freeLane();if(!lane){hud?.say(SLED_TEXT.busy,2.4);return false;}
+ function board(pref=0){
+  const lane=freeLane(pref);if(!lane){hud?.say(SLED_TEXT.busy,2.4);return false;}
   S.mode='ready';S.lane=lane;S.wait=SLED_RULES.inviteMs/1000;S.partner=null;card.close();
   placeLane(lane);onChange();return true;
  }
  // 카운트다운 시작(혼자: 지금, 레이스: 서버가 정한 출발 시각)
  function startCount(goInMs=SLED_RULES.countdown*1000){S.mode='count';S.goAt=performance.now()+goInMs;S.lastCount=-1;S.early=false;card.close();pushEl.hidden=false;bar.hide();onChange();}
  function go(){if(S.mode!=='ready')return;if(inRace()){if(S.race.host===meId())net.send({t:'sr:go'});return;}startCount();}
- function startRide(){const sens=SLED_SENS[cfg.sens]??1;S.mode='ride';S.ride=createRide({course,lane:S.lane||2,start:-1.5,sens,delay:S.early?SLED_RULES.earlyDelay:0});S.camY=null;S.camYaw=null;S.rec=createGhostRecorder();S.lastSplitNote=-1;S.result=null;
+ function startRide(){const sens=SLED_SENS[cfg.sens]??1;S.mode='ride';S.ride=createRide({course,lane:S.lane||2,start:-1.5,sens,delay:S.early?SLED_RULES.earlyDelay:0});S.camY=null;S.camYaw=null;S.cam=null;S.dip=0;sledCam.reset();S.rec=createGhostRecorder();S.lastSplitNote=-1;S.result=null;
   count.show('출발!');setTimeout(()=>{if(S.mode==='ride')count.hide();},800);audio?.play('go');
   steerEl.hidden=false;padsEl.hidden=false;dragEl.hidden=!mobile;progEl.hidden=false;toolsEl.hidden=false;pushEl.hidden=false;setTimeout(()=>{pushEl.hidden=true;},1200);
   document.documentElement.classList.add('xh-sledding');if(S.early)hud?.say(SLED_TEXT.early,1.6);onChange();}
@@ -139,8 +184,11 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
  function restart(){if(S.mode!=='ride'&&S.mode!=='result')return false;if(inRace())net.send({t:'sr:quit'});if(pendingSeed!==null)applyCourse(pendingSeed);const lane=freeLane(S.lane)||S.lane||2;S.lane=lane;S.ride=null;card.close();hideRideUi();placeLane(lane);startCount();return true;}
  function again(){ // 다시 타기(같은 코스): 바로 출발대로 + 카운트다운
   card.close();hideRideUi();if(pendingSeed!==null)applyCourse(pendingSeed);const lane=freeLane(S.lane)||freeLane();if(!lane){leave(SLED_TEXT.busy);return false;}S.lane=lane;placeLane(lane);startCount();return true;}
- function openRace(){if(!(S.mode==='ready'))return false;if(!net.send({t:'sr:open',lane:S.lane})){hud?.say(SLED_TEXT.offline);return false;}return true;}
- function joinRace(){if(!raceOpen())return false;const lane=freeLane();if(!lane){hud?.say(SLED_TEXT.busy,2);return false;}
+ function openRace(again=false){if(!(S.mode==='ready'))return false;if(!net.send({t:'sr:open',lane:S.lane,...(again?{again:1}:{})})){hud?.say(SLED_TEXT.offline);return false;}return true;}
+ // 같은 사람과 한 번 더(결과 창, 연 사람): 출발대 줄로 바로 + 새 경주(지난 참가자에게 10초 카드)
+ function rematch(){card.close();hideRideUi();if(pendingSeed!==null)applyCourse(pendingSeed);const lane=freeLane(S.lane)||freeLane();if(!lane){leave(SLED_TEXT.busy);return false;}
+  S.mode='ready';S.lane=lane;S.wait=99;S.ride=null;placeLane(lane);onChange();return openRace(true);}
+ function joinRace(){if(!raceOpen())return false;if(inRace())return true;const lane=freeLane();if(!lane){hud?.say(SLED_TEXT.busy,2);return false;}
   S.mode='ready';S.lane=lane;S.wait=99;placeLane(lane);onChange();if(!net.send({t:'sr:join',lane})){leave(SLED_TEXT.offline);return false;}return true;}
  function askRide(){
   let best=null;for(const p of others()){if(!(p.act?.sl>=1&&p.act.sl<=LANES))continue;if(others().some(q=>q.act?.sl===6&&q.act.sp===p.id))continue;const d=Math.hypot(p.sample.x-player.x,p.sample.z-player.z);if(d<3&&(!best||d<best.d))best={id:p.id,d};}
@@ -149,7 +197,7 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
  // 새 코스: 아무도 타고 있지 않을 때만(판정은 서버·혼자 모드 공용 sled-race.js)
  function newCourse(){if(S.mode==='ride'||S.mode==='count')return false;if(!net.send({t:'sc:new'})){hud?.say(SLED_TEXT.offline);return false;}return true;}
  function up(){const s=course.xz(-3.4,0);player.place(s.x,s.z,headingOf(s.th));hud?.say(SLED_TEXT.up,1.6);audio?.play('bank',{gain:.5});return true;}
- function pick(id){switch(id){case 'again':again();return;case 'new':card.close();S.againOnCourse=S.mode==='result';if(!newCourse())S.againOnCourse=false;return;case 'board':renderBoard();boardEl.hidden=false;return;case 'off':leave();return;}}
+ function pick(id){switch(id){case 'again':again();return;case 'rematch':rematch();return;case 'new':card.close();S.againOnCourse=S.mode==='result';if(!newCourse())S.againOnCourse=false;return;case 'board':renderBoard();boardEl.hidden=false;return;case 'off':leave();return;}}
  // ── 결과 창
  function showResult(){
   const r=S.result;if(!r)return;const me=meId(),race=r.race,rows=race?.r??[];
@@ -166,7 +214,7 @@ export function createSledPlay({doc=document,root,world,toon,heightAt,player,pos
 ${race?`<ol class="xg-rows">${rows.slice().sort((a,b)=>(a.rank??99)-(b.rank??99)).map(x=>`<li${x.id===me?' class="me"':''}><b>${x.rank??'–'}</b><span>${esc(x.n)}</span><em>${x.dnf?'완주 못 함':x.ms!=null?fmtTime(x.ms/1000):'달리는 중'}</em></li>`).join('')}</ol>`:''}
 ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p class="xh-sub">내 최고 ${fmtTime(best.t)}</p>`:''}`;
   card.show({title:rank===1?'1등!':race?`${rank??'-'}등`:'완주!',ic:rank===1?'x-crown':'x-race',ribbon:rank===1?'#e9b949':'#2f7a52',body,
-   buttons:[{id:'again',label:'같은 코스 다시',ic:'x-sled',key:'E',primary:true},...(race?[]:[{id:'new',label:'새 코스',ic:'x-new-course',key:'F'}]),...(net.serverMode?[{id:'board',label:'기록판 보기',ic:'x-trophy'}]:[]),{id:'off',label:'내리기',ic:'c-leave',key:'Q'}]});
+   buttons:[{id:'again',label:'같은 코스 다시',ic:'x-sled',key:'E',primary:true},...(race&&race.host===me&&rows.length>1?[{id:'rematch',label:'같은 사람과 한 번 더',ic:'x-race',key:'R'}]:[]),...(race?[]:[{id:'new',label:'새 코스',ic:'x-new-course',key:'F'}]),...(net.serverMode?[{id:'board',label:'기록판 보기',ic:'x-trophy'}]:[]),{id:'off',label:'내리기',ic:'c-leave',key:'Q'}]});
   if(rank===1)audio?.play('done');
  }
  function finish(t){
@@ -184,7 +232,11 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
     S.asked=m.id;askEl.querySelector('p').textContent=SLED_TEXT.ask(multi.nameOf(m.id));askEl.hidden=false;audio?.play('pop');return;}
    case 'sled:ok':if(S.mode==='asking'&&m.id===S.front){S.mode='back';seat();onChange();hud?.say('뒷자리에 앉았어요 · 만세를 눌러 보세요',2.4,'x-cheer');}return;
    case 'sled:no':if(S.mode==='asking'&&m.id===S.front){S.mode='none';S.front=null;hud?.say(SLED_TEXT.declined,2);}return;
-   case 'sr':{const was=S.race,mine=m.r?.some(x=>x.id===meId());S.race=m.ph==='none'?null:m;
+   case 'sr':{if(m.ph==='wait')m.leftAt=performance.now()+(m.left??0);const was=S.race,wasMine=!!was?.r?.some(x=>x.id===meId()),mine=m.r?.some(x=>x.id===meId());S.race=m.ph==='none'?null:m;
+    if(m.ph==='none'&&wasMine&&S.mode==='ready'){if(m.solo===meId()){hud?.say('혼자 타요 · 곧 출발해요',1.6,'x-sled');startCount();}else{S.wait=5;}}
+    if(m.ph==='wait'&&!mine&&(!was||was.id!==m.id||(!was.re&&m.re)))noteRace(m);
+    if(m.ph!=='wait'){S.noteT=0;noteEl.hidden=true;}
+    if(mine&&m.ph==='wait'&&m.lone&&!was?.lone&&m.host===meId())hud?.say('아직 혼자예요 · 혼자 탈까요, 20초 더 기다릴까요?',3,'x-race');
     if(mine&&m.ph==='wait'&&(!was||was.id!==m.id))hud?.say(m.host===meId()?SLED_TEXT.raceOpen:'레이스에 들어왔어요 · 곧 출발해요',2.4,'x-race');
     if(mine&&m.seed&&(m.ph==='wait'||m.ph==='count')&&S.mode==='ready')setCourseSeed(m.seed,{force:true}); // 레이스 코스 = 방 코스
     if(mine&&m.ph==='count'&&S.mode==='ready')startCount(m.go);
@@ -194,7 +246,7 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
    case 'sr:board':if(m.seed&&normSeed(m.seed)!==course.seed&&pendingSeed===null)setCourseSeed(m.seed);S.board=Array.isArray(m.b)?m.b:[];paintBoard();if(!boardEl.hidden)renderBoard();return;
    case 'sc':setCourseSeed(m.seed);if(S.againOnCourse){S.againOnCourse=false;again();}return;
    case 'sc:no':hud?.say(SLED_TEXT.courseBusy,2.2);if(S.againOnCourse){S.againOnCourse=false;showResult();}return;
-   case 'sr:no':{const t={open:'이미 열린 레이스가 있어요 · 「같이 하기」를 눌러 주세요',busy:'다른 레이스가 진행 중이에요',closed:SLED_TEXT.raceClosed,full:SLED_TEXT.raceFull}[m.reason];if(t)hud?.say(t,2);
+   case 'sr:no':{const t={few:'2명부터 출발할 수 있어요',open:'이미 열린 경주가 있어요 · 「참가」를 눌러 주세요',busy:'다른 레이스가 진행 중이에요',closed:SLED_TEXT.raceClosed,full:SLED_TEXT.raceFull}[m.reason];if(t)hud?.say(t,2);
     if(S.mode==='ready'&&!inRace()&&(m.reason==='closed'||m.reason==='full'))leave();return;}
   }
  });
@@ -206,22 +258,30 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
   get ride(){return S.ride;},get race(){return S.race;},get board(){return S.board;},get settings(){return {sens:cfg.sens,ghost:cfg.ghost,best:bestOf()?{t:bestOf().t}:null,courses:Object.keys(cfg.bests).length};},
   get course(){return course;},onCourse(f){courseCbs.push(f);f(course);},resetCourse(){applyCourse(dailySeed(),{say:false});},setSeed:seed=>setCourseSeed(seed),
   setBoardCanvas(cv,tex){boardCanvas=cv;boardTex=tex;paintBoard();},
+  set prep(f){prep=f;},set autopilot(v){S.autopilot=!!v;},set quiet(f){quiet=f;},get raceBoard(){return villageBoard;},
   actFields(){const sl=S.mode==='ready'||S.mode==='count'?S.lane:S.mode==='ride'||S.mode==='result'?5:S.mode==='back'?6:0;return {sl,sp:S.mode==='back'?S.front??'':'',...(sl===6?{wm:S.cheer?1:0}:{})};},
   actions(){
    const raceN=S.race?.r?.length??0;
    switch(S.mode){
     case 'ready':{
-     if(inRace()){const host=S.race.host===meId();return [...(host?[{id:'sled:go',ic:'x-race',label:`바로 출발 · ${Math.ceil((S.race.left??0)/1000)}`,key:'E'}]:[]),{id:'sled:off',ic:'c-leave',label:'내리기',key:'Q'}];}
-     const canRace=multi.joined&&others().length>0&&!S.race;
+     if(inRace()){const host=S.race.host===meId(),n=S.race.r?.length??0,ph=S.race.ph;
+      if(host&&ph==='wait'&&S.race.lone)return [{id:'sled:solo',ic:'x-sled',label:'혼자 타기',key:'E'},...(S.race.more?[]:[{id:'sled:more',ic:'x-race',label:'20초 더 기다리기',key:'R'}]),{id:'sled:off',ic:'c-leave',label:'빠지기',key:'Q'}];
+      return [...(host&&ph==='wait'&&n>=RACE.min?[{id:'sled:go',ic:'x-race',label:`지금 출발 · ${n}명`,key:'E'}]:[]),{id:'sled:off',ic:'c-leave',label:'빠지기',key:'Q'}];}
+     // 끝난 경주(done)는 서버가 조용히 지우므로 새로 열 수 있음
+     const canRace=multi.joined&&(!S.race||S.race.ph==='done');
      // 행동 단추는 화면에 3개까지: 다른 사람이 있으면 「레이스 열기」, 혼자면 「새 코스」
-     return [{id:'sled:go',ic:'x-sled',label:`출발! ${Math.ceil(S.wait)}`,key:'E'},canRace?{id:'sled:race',ic:'x-race',label:'레이스 열기',key:'R'}:{id:'sled:new',ic:'x-new-course',label:'새 코스',key:'F'},{id:'sled:off',ic:'c-leave',label:'내리기',key:'Q'}];}
+     return [{id:'sled:go',ic:'x-sled',label:`출발! ${Math.ceil(S.wait)}`,key:'E'},canRace?{id:'sled:race',ic:'x-race',label:'경주 열기',key:'R'}:{id:'sled:new',ic:'x-new-course',label:'새 코스',key:'F'},{id:'sled:off',ic:'c-leave',label:'내리기',key:'Q'}];}
     case 'count':case 'ride':return [];
     case 'result':return [];
     case 'back':return [{id:'sled:cheer',ic:'x-cheer',label:S.cheer?'만세 내리기':'만세',key:'E'},...(S.frontRiding?[]:[{id:'sled:off',ic:'c-leave',label:'내리기',key:'Q'}])];
     case 'asking':return [{id:'sled:cancel',ic:'c-leave',label:'그만',key:'Q'}];
    }
+   if(nearRaceBoard()&&multi.joined){
+    if(raceOpen()&&!inRace())return [{id:'sled:join',ic:'x-race',label:`참가 ${raceN}/${RACE.max}`,key:'E'},...(net.serverMode?[{id:'sled:records',ic:'x-trophy',label:'기록판',key:'Q'}]:[])];
+    if(!S.race||S.race.ph==='done')return [{id:'sled:village',ic:'x-race',label:'경주 열기',key:'R'},...(net.serverMode?[{id:'sled:records',ic:'x-trophy',label:'기록판',key:'Q'}]:[])];
+    return net.serverMode?[{id:'sled:records',ic:'x-trophy',label:'기록판',key:'Q'}]:[];}
    if(nearDeck(player.x,player.z)){const out=[];
-    if(raceOpen()&&raceN<RACE.max&&!inRace())out.push({id:'sled:join',ic:'x-race',label:`같이 하기 ${raceN}/${RACE.max}`,key:'E'});
+    if(raceOpen()&&raceN<RACE.max&&!inRace())out.push({id:'sled:join',ic:'x-race',label:`참가 ${raceN}/${RACE.max}`,key:'E'});
     out.push({id:'sled:board',ic:'x-sled',label:'타기',key:out.length?'R':'E'});
     if(!raceOpen())out.push({id:'sled:new',ic:'x-new-course',label:`새 코스`,key:'F'});
     const waiting=others().some(p=>p.act?.sl>=1&&p.act.sl<=LANES&&Math.hypot(p.sample.x-player.x,p.sample.z-player.z)<3&&!others().some(q=>q.act?.sl===6&&q.act.sp===p.id));
@@ -233,7 +293,8 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
   act(id){
    switch(id){
     case 'sled:board':return board();case 'sled:go':go();return true;case 'sled:off':leave();return true;case 'sled:ask':return askRide();
-    case 'sled:race':return openRace();case 'sled:join':return joinRace();case 'sled:records':renderBoard();boardEl.hidden=false;return true;
+    case 'sled:race':return openRace();case 'sled:join':joinFromAnywhere();return true;case 'sled:village':openFromVillage();return true;
+    case 'sled:solo':return net.send({t:'sr:solo'});case 'sled:more':return net.send({t:'sr:more'});case 'sled:records':renderBoard();boardEl.hidden=false;return true;
     case 'sled:cancel':S.mode='none';S.front=null;return true;case 'sled:up':return up();
     case 'sled:cheer':S.cheer=!S.cheer;onChange();return true;
     case 'sled:new':return newCourse();
@@ -243,20 +304,21 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
   },
   hold(id,on){hold(id.replace('sled:',''),on);},
   // 결과 창 단추를 키로(E 다시 타기 · Q 내리기)
-  key(k){if(!card.open)return false;if(k==='E'){again();return true;}if(k==='Q'){leave();return true;}if(k==='F'&&!S.result?.race){pick('new');return true;}return false;},
+  key(k){if(!card.open)return false;if(k==='E'){again();return true;}if(k==='R'&&S.result?.race?.host===meId()&&(S.result.race.r?.length??0)>1){rematch();return true;}if(k==='Q'){leave();return true;}if(k==='F'&&!S.result?.race){pick('new');return true;}return false;},
   // 걷기 대신 썰매가 몸을 움직이면 true(main.js는 걷기를 건너뜀). steer = 키·조이스틱 좌우, drift = Shift, brake = 뒤로, push = 앞으로
   update(dt,{steer=0,moveInput=false,drift=false,brake=false,push=false}={}){
-   bar.update(dt);card.update(dt);
+   bar.update(dt);card.update(dt);updateNote(dt);villageBoard.update(dt);
    // 다른 사람 썰매(출발대 대기·타는 중). 뒷자리 사람은 앞사람 썰매를 같이 탄다
    const seen=new Set();
-   for(const p of others()){const sl=p.act?.sl;if(!(sl>=1&&sl<=5))continue;seen.add(p.id);let g=remote.get(p.id);if(!g){g=P.buildSled(tz);world.add(g);remote.set(p.id,g);}
+   for(const p of others()){const sl=p.act?.sl;if(!(sl>=1&&sl<=5))continue;seen.add(p.id);let g=remote.get(p.id);if(!g){g=P.buildSled(tz);ownMaterials(g);world.add(g);remote.set(p.id,g);}
     const f=fwd(p.sample.heading);g.position.set(p.sample.x-f.x*.24,heightAt(p.sample.x,p.sample.z)+.11,p.sample.z-f.z*.24);g.rotation.y=p.sample.heading+Math.PI;g.visible=true;}
    for(const [id,g] of remote)if(!seen.has(id)){world.remove(g);remote.delete(id);}
+   fadeBehind();
    if(S.askT>0){S.askT-=dt;if(S.askT<=0&&S.mode==='asking'){S.mode='none';S.front=null;hud?.say(SLED_TEXT.declined,2);}}
    switch(S.mode){
     case 'none':case 'asking':return false;
     case 'ready':{if(moveInput){leave();return false;}if(!inRace()){S.wait-=dt;if(S.wait<=0)go();}
-     else bar.set({left:iconText('x-race',`레이스 ${S.race.r.length}/${RACE.max}`),center:`${Math.ceil((S.race.left??0)/1000)}`,right:`코스 ${course.code}`,cls:'wait'});
+     else bar.set({left:iconText('x-race',`경주 ${S.race.r.length}/${RACE.max}`),center:S.race.ph==='wait'?`${Math.max(0,Math.ceil((S.race.leftAt-performance.now())/1000))}`:'',right:`<span class="xl-chips">${S.race.r.slice().sort((a,b)=>a.lane-b.lane).map(laneChip).join('')}</span>`,cls:'wait race'});
      if(!inRace())bar.set({left:iconText('x-new-course',`코스 ${course.code}`,{size:'xs'}),center:`${Math.round(course.finish)}m`,right:bestOf()?`내 최고 ${fmtTime(bestOf().t)}`:'첫 기록에 도전',cls:'wait'});
      placeSled();player.update(dt,{moved:0});return true;}
     case 'count':{const left=(S.goAt-performance.now())/1000,n=Math.ceil(left);
@@ -266,10 +328,12 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
     case 'ride':case 'result':{
      const r=S.ride;if(!r){leave();return false;}
      if(S.mode==='result'&&r.done&&moveInput&&!card.open){leave();return false;}
-     const st=Math.max(-1,Math.min(1,steer+S.steerBtn+S.dragSteer));
+     const st=S.autopilot&&S.mode==='ride'?botSteer(r,{want:laneWant(r)}):Math.max(-1,Math.min(1,steer+S.steerBtn+S.dragSteer)); // autopilot = 점검 스크립트용 자동 조종(화면에 단추 없음)
      const pushNowIn=!!(S.pushQueued||push);S.pushQueued=false;
-     const ev=r.step(dt,{steer:S.mode==='result'?0:st,drift:(drift||S.driftBtn)&&S.mode==='ride',brake:brake||S.brakeBtn,push:pushNowIn});
-     const p=r.pose();sprayFrom(r,dt);
+     // 점검용 자동 조종: 굽이 앞에서 그 줄이 돌 수 있는 빠르기보다 빠르면 브레이크, 굽은 곳에서는 드리프트(사람이 줄을 지키며 타는 방식)
+     const ap=S.autopilot&&S.mode==='ride'?autoPedal(r):null;
+     const ev=r.step(dt,{steer:S.mode==='result'?0:st,drift:ap?ap.drift:(drift||S.driftBtn)&&S.mode==='ride',brake:ap?ap.brake:brake||S.brakeBtn,push:pushNowIn});
+     const p=r.pose();sprayFrom(r,dt);S.cam=sledCam.update(r,dt);if(S.dip>0)S.dip=Math.max(0,S.dip-dt);
      player.x=p.x;player.z=p.z;player.heading=p.heading;player.speed=p.speed;S.lift=p.y-heightAt(p.x,p.z);placeSled();player.update(dt,{moved:0});
      if(S.mode==='ride')S.rec.add(dt,p);
      for(const e of ev)event(e);
@@ -289,35 +353,45 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
    }
    return false;
   },
-  // 타는 동안 카메라(2차): 썰매 뒤 4.6m·높이, 빠를수록 시야 62°→74°(부스트 +4°), 진행 방향 앞·굽이 안쪽을 조금 더 봄,
-  //  드리프트로 몸이 돌아도 카메라는 진행 방향(흔들림 없음), 점프 때 높이는 천천히 따라감(착지 덜컹 없음), 터널 안은 낮고 가깝게
+  // 타는 동안 카메라(11-18 설계 v2 §2): 썰매 뒤 4.6m·높이, 방향은 길 방향만(썰매 각도·드리프트 몸 돌림 없음 → 좌우 흔들림 없음),
+  //  보는 자리는 썰매 옆 위치를 0.5초에 걸쳐 따라감(sled.js createSledCam). 빠를수록 시야 62°→80°(부스트 +5°), 점프 때 높이는 천천히 따라감, 터널 안은 낮고 가깝게.
+  //  흔들림은 전나무(0.15초·최대 4cm)와 큰 점프 착지(0.08m 꺼졌다 0.2초에 복귀)만
   camera(){if(!(S.mode==='ride'||S.mode==='result'||S.mode==='count')&&!(S.mode==='back'&&S.frontRiding))return null;const two=!!S.partner||S.mode==='back';
    const r=S.ride,v=r?.v??0;
    if(!r||S.mode==='count'||S.mode==='back')return {yaw:player.heading,pitch:two?.42:.36,dist:two?4.9:4.5,lift:.2,fov:62,lag:.3};
-   const p=r.pose(),C=r.course,ahead=C.at(r.s+Math.max(5,v*.9)),tunnel=C.at(r.s).tun||C.at(r.s+3).tun;
-   let yaw=headingOf(C.at(r.s).th*.45+ahead.th*.55+r.psi*.6);
-   const ground=C.profileH(r.s)+(p.air?0:C.rampH(r.s)),y=p.y;S.camY=S.camY==null?y:S.camY+(y-S.camY)*(1-Math.exp(-(p.air?2.2:9)*(1/60)));
-   void ground;
-   const fx=-Math.sin(p.travel),fz=-Math.cos(p.travel),lat=Math.max(-1,Math.min(1,ahead.k*4))*.6;
-   return {yaw,pitch:tunnel?.2:two?.4:.33,dist:tunnel?3.4:two?4.9:4.6,lift:.2,fov:sledFeel()===2?62+18*Math.max(0,Math.min(1,(v-3)/8.5))+(r.boosting?5:0):62+12*Math.max(0,Math.min(1,(v-4)/8))+(r.boosting?4:0),lag:.22,
-    y:S.camY,ahead:{x:fx*1.2+(-fz)*lat,z:fz*1.2+fx*lat}};},
+   const p=r.pose(),C=r.course,tunnel=C.at(r.s).tun||C.at(r.s+3).tun,c=S.cam??sledCam.update(r,0);
+   S.camY=S.camY==null?p.y:S.camY+(p.y-S.camY)*(1-Math.exp(-(p.air?2.2:9)*(1/60)));
+   const dip=S.dip>0?-SLED_CAM.dip*(S.dip/SLED_CAM.dipSecs):0;
+   return {yaw:c.yaw,pitch:tunnel?.2:two?.4:.33,dist:tunnel?3.4:two?4.9:4.6,lift:.2,fov:sledFeel()>=2?62+18*Math.max(0,Math.min(1,(v-3)/8.5))+(r.boosting?5:0):62+12*Math.max(0,Math.min(1,(v-4)/8))+(r.boosting?4:0),lag:.22,
+    y:S.camY+dip,x:c.x,z:c.z,ahead:c.ahead};},
   // 썰매가 내 몸 높이에 더할 값(점프대·공중)
   get lift(){return S.mode==='ride'||S.mode==='result'?S.lift??0:0;},
   status(){const r=S.ride;return {mode:S.mode,lane:S.lane,s:r?+r.s.toFixed(2):null,v:r?+r.v.toFixed(2):null,off:r?+r.off.toFixed(2):null,t:r?+r.t.toFixed(2):null,splits:r?.splits??[],finished:!!r?.finished,
    front:S.front,partner:S.partner,remote:remote.size,race:S.race?{ph:S.race.ph,n:S.race.r?.length??0,host:S.race.host,mine:inRace()}:null,board:S.board.length,result:card.open,ghost:ghost.visible,sens:cfg.sens,best:bestOf()?.t??null,seed:course.seed,code:course.code,finish:+course.finish.toFixed(1),pending:pendingSeed,camFov:+(api.camera()?.fov??0).toFixed(1),surface:r?.surface??null,banks:r?.banks??0,hits:r?.hits??0};},
  };
+ // 참가 알림 카드(5초, 지난 참가자면 10초) → 배지. 회전목마·한 판 눈싸움 중이면 배지만(quiet)
+ function noteRace(m){if(!multi.joined||multi.isMuted?.(m.host))return;const re=Array.isArray(m.re)&&m.re.includes(meId());
+  S.noteT=quiet()?0:re?RACE_NOTE.reSecs:RACE_NOTE.cardSecs;if(S.noteT>0)audio?.play('pop',{gain:.5});}
+ function updateNote(dt){const open=raceOpen()&&!inRace()&&multi.joined&&!multi.isMuted?.(S.race.host)&&S.mode!=='ride'&&S.mode!=='count'&&S.mode!=='result';
+  if(!open){S.noteT=0;noteEl.hidden=true;badgeEl.hidden=true;return;}
+  const n=S.race.r?.length??0,left=Math.ceil((S.race.leftAt-performance.now())/1000);
+  if(S.noteT>0){S.noteT-=dt;const txt=`${hostName()}님이 썰매 경주를 열었어요 · ${n}/${RACE.max} · ${Math.max(0,left)}초`;const p=noteEl.querySelector('p');if(p.textContent!==txt)p.textContent=txt;noteEl.hidden=false;}else noteEl.hidden=true;
+  badgeEl.hidden=!noteEl.hidden;if(!badgeEl.hidden){const t=`${n}/${RACE.max} · ${Math.max(0,left)}`;const b=badgeEl.querySelector('b');if(b.textContent!==t)b.textContent=t;
+   // 지도 단추 바로 왼쪽(위 오른쪽 둥근 단추 줄·휴대폰 세로 기둥 모두 맨 앞이 지도 단추). 지도 단추가 없으면 CSS 기본 자리
+   const m=doc.querySelector('.xt-map-btn');if(m&&m.offsetParent!==null){const r=m.getBoundingClientRect(),bw=badgeEl.offsetWidth||96;badgeEl.style.left=`${Math.round(r.left-8-bw)}px`;badgeEl.style.top=`${Math.round(r.top+r.height/2-22)}px`;badgeEl.style.right='auto';}}}
+ const laneChip=x=>`<i class="xl-chip" style="--lane:${LANE_COLORS[(x.lane||1)-1]}">${x.lane||'·'} ${esc(x.n)}</i>`;
  function event(e){
   switch(e.type){
-   case 'bank':audio?.play('bank',{gain:e.hard?1:.45});if(e.hard){hud?.say(SLED_TEXT.bank,.9);shake(.12);}break;
+   case 'bank':audio?.play('bank',{gain:e.hard?1:.45});if(e.hard)hud?.say(SLED_TEXT.bank,.9);break; // 11-18: 눈둑은 화면 흔들림 없음
    case 'ice':bar.note(SLED_TEXT.ice,1.2);break;
    case 'tunnel':bar.note(SLED_TEXT.tunnel,.8);break;
    case 'pile':audio?.play('bank');hud?.say(SLED_TEXT.pile,.8);break;
-   case 'tree':audio?.play('hit');hud?.say(SLED_TEXT.tree,1);shake(.18);break;
+   case 'tree':audio?.play('hit');hud?.say(SLED_TEXT.tree,1);shake(SLED_CAM.shakeSecs);break;
    case 'boost':audio?.play('boost');bar.note(iconText('x-boost',SLED_TEXT.boost,{size:'xs'}),1);break;
    case 'start':audio?.play('boost');bar.note(iconText('x-boost',SLED_TEXT.start,{size:'xs'}),1.2);break;
    case 'mini':audio?.play('boost');bar.note(iconText('x-drift',SLED_TEXT.mini,{size:'xs'}),1);break;
-   case 'air':hud?.say(SLED_TEXT.air,.6);break;
-   case 'land':bar.note(e.good?SLED_TEXT.landOk:SLED_TEXT.landBad,1);if(e.good)audio?.play('pop');if(sledFeel()===2){landPuff(S.ride);shake(e.good?.08:.16);audio?.play('bank',{gain:.5});}break;
+   case 'air':hud?.say(SLED_TEXT.air,.6);S.bigAir=!!e.big;break;
+   case 'land':bar.note(e.good?SLED_TEXT.landOk:SLED_TEXT.landBad,1);if(e.good)audio?.play('pop');if(sledFeel()>=2){landPuff(S.ride);if(S.bigAir)S.dip=SLED_CAM.dipSecs;audio?.play('bank',{gain:.5});}S.bigAir=false;break; // 큰 점프 착지만 살짝 꺼짐
    case 'drift':padsEl.querySelector('.xl-drift').dataset.lv=String(e.lv);break;
    case 'cp':{const CP=S.ride.course.checkpoints,B=bestOf();if(e.i<CP.length-1){const prev=e.i?S.ride.splits[e.i-1]:0,seg=e.t-prev,b=B?.splits?.[e.i],bseg=b!=null?b-(e.i?B.splits[e.i-1]:0):null;
      bar.note(`구간 ${e.i+1} ${fmtTime(seg)}${bseg!=null?` <em class="${seg-bseg>0?'up':'down'}">${fmtDiff(seg-bseg)}</em>`:''}`,1.5);audio?.play('pop');}break;}
@@ -327,6 +401,7 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
   if(e.type!=='drift')padsEl.querySelector('.xl-drift').dataset.lv=String(S.ride?.driftLv??0);
  }
  let shakeT=0;function shake(t){shakeT=t;}
+ const sledCam=createSledCam();
  // 눈가루(조작감 2, 5차): 달리는 썰매 뒤 양옆으로 튀는 흰 가루(빠를수록·드리프트면 많이) + 착지 때 한 번 퍼짐. 모양·재질 하나를 돌려 씀, 휴대폰 10개·PC 24개까지
  const sprayGeo=new THREE.SphereGeometry(.07,6,5),sprayMat=new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.8,depthWrite:false});
  const SPRAY_N=mobile?10:24,spray=[],sprayPool=[];let sprayAcc=0;
@@ -335,15 +410,16 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
  function sprayFrom(r,dt){
   for(let i=spray.length-1;i>=0;i--){const q=spray[i];q.t+=dt;q.vy-=5*dt;q.m.position.x+=q.vx*dt;q.m.position.y+=q.vy*dt;q.m.position.z+=q.vz*dt;q.m.scale.setScalar(q.sc*(1+q.t*2.4));
    if(q.t>.42){q.m.visible=false;sprayPool.push(q.m);spray.splice(i,1);}}
-  if(!r||sledFeel()!==2||r.air||r.done)return;
+  if(!r||sledFeel()<2||r.air||r.done)return;
   const p=r.pose(),v=r.v,drifting=r.driftT>0;if(v<5&&!drifting)return;
   sprayAcc+=dt*(v/11*14+(drifting?10:0));
   const f={x:-Math.sin(p.heading),z:-Math.cos(p.heading)},side={x:-f.z,z:f.x};
   while(sprayAcc>=1){sprayAcc-=1;const sd=Math.random()<.5?-1:1,back=.55,w=.28;
    puff(p.x-f.x*back+side.x*sd*w,p.y+.05,p.z-f.z*back+side.z*sd*w,(side.x*sd*1.2-f.x*v*.15)+(Math.random()-.5)*.6,1.2+Math.random()*.8,(side.z*sd*1.2-f.z*v*.15)+(Math.random()-.5)*.6,.8+Math.random()*.5);}
  }
- function landPuff(r){if(!r||sledFeel()!==2)return;const p=r.pose();for(let i=0;i<10;i++){const a=i/10*Math.PI*2;puff(p.x,p.y+.05,p.z,Math.cos(a)*2,1+Math.random(),Math.sin(a)*2,1.1);}}
- api.shake=()=>{if(shakeT<=0)return 0;shakeT=Math.max(0,shakeT-1/60);return shakeT;};
+ function landPuff(r){if(!r||sledFeel()<2)return;const p=r.pose();for(let i=0;i<10;i++){const a=i/10*Math.PI*2;puff(p.x,p.y+.05,p.z,Math.cos(a)*2,1+Math.random(),Math.sin(a)*2,1.1);}}
+ // 화면 흔들림 크기(m): 전나무 0.15초 동안 4cm → 0(main.js가 카메라 자리에 ±값으로 더함)
+ api.shake=()=>{if(shakeT<=0)return 0;shakeT=Math.max(0,shakeT-1/60);return SLED_CAM.shake*shakeT/SLED_CAM.shakeSecs;};
  // 타는 동안 위 기록 띠·진행 막대·고스트
  function hudRide(dt){
   const r=S.ride,me=meId(),race=inRace()?S.race:null;
@@ -362,6 +438,13 @@ ${bpos?`<p class="xh-sub">오늘의 기록판 ${bpos}위</p>`:best&&!newBest?`<p
   const have=progEl.querySelectorAll('.dot');if(have.length!==dots.length){have.forEach(x=>x.remove());for(const d of dots){const b=doc.createElement('b');b.className=`dot ${d.cls}`;progEl.appendChild(b);}}
   progEl.querySelectorAll('.dot').forEach((b,i)=>{b.style.bottom=`${(k(dots[i].s)*100).toFixed(1)}%`;});
  }
+ // 썰매끼리는 부딪히지 않고 통과(순위만) — 같은 자리에 겹쳐 보이면 뒤 썰매를 반투명 70%로(설계 v2 §3-1). 다른 사람 썰매만 재질을 따로 가짐
+ function ownMaterials(g){g.traverse(m=>{if(m.isMesh&&m.material&&!m.material.isShaderMaterial){m.material=m.material.clone();m.userData.op=m.material.opacity??1;}});g.userData.faded=false;}
+ function setFaded(g,on){if(g.userData.faded===on)return;g.userData.faded=on;g.traverse(m=>{if(m.isMesh&&m.material&&m.userData.op!=null){m.material.transparent=on||m.userData.op<1;m.material.opacity=on?.7*m.userData.op:m.userData.op;m.material.needsUpdate=true;}});}
+ function fadeBehind(){const list=[...remote.values()].filter(g=>g.visible);if(!list.length)return;const mine=mySled.visible?mySled:null;
+  for(const g of list){let behind=false;const fx=Math.sin(g.rotation.y),fz=Math.cos(g.rotation.y); // 썰매 그림 앞 = rotation.y + π 쪽이라 sin·cos 그대로가 진행 방향
+   for(const o of mine?[mine,...list]:list){if(o===g)continue;const dx=o.position.x-g.position.x,dz=o.position.z-g.position.z;if(dx*dx+dz*dz>1.0)continue;if(dx*fx+dz*fz>0){behind=true;break;}}
+   setFaded(g,behind);}}
  function placeSled(){const f=fwd(player.heading);mySled.visible=['ready','count','ride','result'].includes(S.mode);
   mySled.position.set(player.x-f.x*.24,heightAt(player.x,player.z)+.11+(S.mode==='ride'||S.mode==='result'?S.lift:0),player.z-f.z*.24);mySled.rotation.y=player.heading+Math.PI;}
  renderSet();

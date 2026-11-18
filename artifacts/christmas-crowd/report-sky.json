@@ -1,0 +1,115 @@
+{
+ "at": "2026-11-18T02:22:15.572Z",
+ "runs": [
+  {
+   "screen": "PC",
+   "people": 30,
+   "mode": "하늘 썰매 전원(나는 땅)",
+   "fpsAvg": 59.9,
+   "fpsMin": 59.1,
+   "calls": 758,
+   "tris": 3519207,
+   "shown": 29,
+   "bodies": {
+    "dongdong": 29
+   },
+   "rxKBps": 26.9,
+   "rxMsgPs": 31,
+   "txKBps": 0.08,
+   "heapMB": 218
+  },
+  {
+   "screen": "PC",
+   "people": 30,
+   "mode": "하늘 썰매 전원(나도 비행)",
+   "fpsAvg": 60,
+   "fpsMin": 59.9,
+   "calls": 778,
+   "tris": 3535109,
+   "shown": 29,
+   "bodies": {
+    "dongdong": 29
+   },
+   "rxKBps": 26.9,
+   "rxMsgPs": 24,
+   "txKBps": 0.09,
+   "heapMB": 196,
+   "sky": {
+    "remotes": 29,
+    "stars": 352,
+    "degrade": 0,
+    "fleet": 31
+   }
+  },
+  {
+   "screen": "휴대폰",
+   "people": 30,
+   "mode": "하늘 썰매 전원(나는 땅)",
+   "fpsAvg": 39.4,
+   "fpsMin": 36,
+   "calls": 241,
+   "tris": 1293267,
+   "shown": 29,
+   "bodies": {
+    "lite": 23,
+    "dongdong": 6
+   },
+   "rxKBps": 25.9,
+   "rxMsgPs": 31,
+   "txKBps": 0.08,
+   "heapMB": 154
+  },
+  {
+   "screen": "휴대폰",
+   "people": 30,
+   "mode": "하늘 썰매 전원(나도 비행)",
+   "fpsAvg": 36.9,
+   "fpsMin": 33.6,
+   "calls": 286,
+   "tris": 1313133,
+   "shown": 29,
+   "bodies": {
+    "lite": 23,
+    "dongdong": 6
+   },
+   "rxKBps": 26.3,
+   "rxMsgPs": 32,
+   "txKBps": 0.09,
+   "heapMB": 157,
+   "sky": {
+    "remotes": 29,
+    "stars": 41,
+    "degrade": 1,
+    "fleet": 31
+   }
+  }
+ ],
+ "checks": {
+  "PC: 30명 하늘 썰매가 모두 그려짐": {
+   "ok": true,
+   "remotes": 29,
+   "stars": 352,
+   "degrade": 0,
+   "fleet": 31
+  },
+  "휴대폰: 30명 하늘 썰매가 모두 그려짐": {
+   "ok": true,
+   "remotes": 29,
+   "stars": 41,
+   "degrade": 1,
+   "fleet": 31
+  },
+  "봇 접속 모두 성공(정원 안)": {
+   "ok": true,
+   "full": 0
+  },
+  "페이지 오류 0": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": [],
+ "botRx": {
+  "avgKB": 884
+ }
+}

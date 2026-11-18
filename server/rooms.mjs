@@ -301,7 +301,7 @@ export function createRooms(opts={}){
     stats.tree++;
     toRoom(room,m.t==='tree:put'?{t:'tree:set',slot:r.slot,k:r.kind,n:r.name,id:c.id,...(free?{g:1}:{})}:m.t==='tree:undo'?{t:'tree:del',slot:r.slot}:{t:'tree:star',n:r.name,id:c.id});return;}
    case 'gift:send':case 'snow:make':case 'snow:push':case 'snow:stack':case 'snow:deco':case 'snow:finish':case 'sb:throw':case 'sled:ask':case 'sled:ok':case 'sled:no':
-   case 'sr:open':case 'sr:join':case 'sr:go':case 'sr:quit':case 'sr:fin':case 'sr:rec':case 'sc:new':case 'sbm:join':case 'sbm:leave':case 'sbm:go':
+   case 'sr:open':case 'sr:join':case 'sr:go':case 'sr:more':case 'sr:solo':case 'sr:quit':case 'sr:fin':case 'sr:rec':case 'sc:new':case 'sbm:join':case 'sbm:leave':case 'sbm:go':
     stats.play++;xmasOf(room).play.handle(member(c),m,t,playCtx(room));return;
    case 'g':if(GESTURES[m.k]){stats.relayed++;toRoom(room,{t:'g',id:c.id,k:m.k},c);}return;
    case 'a':{ // 동물 놀람 {zone,slot,i,kind,at,x?,z?}

@@ -38,7 +38,7 @@ test('내려앉기: 0.75에서 발굽이 땅(몸 높이 0일 때)에 닿고, 비
 test('무리: 최대 수까지만 빌려 주고, 끈 고리·굴레 고리·코·별 자리는 루돌프를 따라 움직임', ()=>{
  const herd=createReindeerHerd({max:3});const a=herd.spawn(),b=herd.spawn(),c=herd.spawn();assert.ok(a&&b&&c);assert.equal(herd.spawn(),null);
  c.release();assert.equal(herd.live,2);
- a.set(10,2,-5,Math.PI/2);a.mode='stand';herd.update(1/60);
+ a.set(10,2,-5,Math.PI/2);a.mode='stand';a._t=0;herd.update(1/60); // 서 있을 때 고개 흔들기 시작 시각은 무작위라 0으로 고정(가끔 코 높이가 범위를 벗어나던 시험 흔들림, 11-18)
  // heading π/2 = 서쪽(−X)을 봄: 코·굴레 고리는 앞(−X), 끈 고리는 몸 양옆·코보다 뒤, 별은 뒤
  const n=a.nose(V()),bit=a.bit(0,V()),t0=a.trace(0,V()),t1=a.trace(1,V()),tp=a.trailPoint(V());
  assert.ok(n.x<9.6&&bit.x<9.8,'코·굴레는 앞');assert.ok(t0.x>n.x+.3&&Math.abs(t0.z-t1.z)>.3,'끈 고리 양옆');assert.ok(tp.x>10,'별은 뒤');

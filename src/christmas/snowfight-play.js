@@ -1,20 +1,21 @@
 // 눈싸움 화면(월드개발, 2026-11-16 · 11-17 조준 개편). 규칙은 snowfight.js, 판정은 room-play.js(서버·혼자 모드 공용).
-//  11-17 조준(눈썰매-눈싸움-개선-v1 §2-1): 누르고 있는 동안 조준, 떼면 던짐.
-//   - PC: 마당 안에서 마우스 왼쪽 누름(마우스 자리 = 방향·거리, 게이지는 빠르기만 +20%) 또는 F 누름(카메라 정면, 거리 = 게이지).
-//   - 휴대폰: ❄️ 단추를 누른 채 끌기(끈 쪽으로 던짐, 20~120px = 4~14m, 짧으면 게이지), 0.2초 안 톡 = 자동 조준(앞 60°·12m 가장 가까운 사람).
-//   - 점선 포물선(점 12개, 화면 6px 고정, 흰색 + 잉크 테두리, 벽에 막히면 그곳까지·끝 회색) + 바닥 고리(0.8→1.2m, 사람 위면 빨강 + 머리 위 과녁)
-//     + 캐릭터 옆 둥근 힘 게이지(48px, 1초에 가득, 가득 찬 뒤 0.5초 넘으면 깜빡임). 고리 0.5m 안 사람 쪽으로 최대 0.4m 끌어당김(조준 보정).
-//   - 미리보기 = 서버와 같은 planThrow/resolveThrow 식. 조준 중 걷기 50%, 카메라가 어깨 뒤로 당겨짐(main.js가 camHint를 읽음).
+//  11-18 직접 겨냥(눈썰매-경주-조작-눈싸움-던지기-설계-v2 §4): 자동 조준·끌어당김·휘어짐을 모두 없앰.
+//   - 마당 안에서는 늘 땅에 연한 고리(화면 가운데 방향 + 겨냥 거리, 처음 9m, 4~14m, 마당을 나갈 때까지 기억). 몸은 늘 조준 방향(카메라 방향)을 보고,
+//     걸어도 카메라가 몸 방향으로 저절로 돌지 않음(main.js). 이동은 카메라 기준 앞뒤·옆걸음, 조준 중 걷기 85%.
+//   - PC: 마우스 왼쪽 누름 = 마우스 자리 땅에 고리·포물선, 떼면 던짐 · F 톡 = 가운데 고리로 바로 · F 누르는 동안 = 게이지로 거리 · 휠 = 가운데 고리 거리 ±1m.
+//   - 휴대폰: ❄️ 톡 = 지금 고리로 바로 · 누른 채 끌기 = 좌우는 시야·조준 회전(1px 0.35°, 90px 넘게 대고 있으면 계속 돎), 위아래는 거리(위로 1px +0.08m), 떼면 던짐 ·
+//     끌다가 ✕(누른 곳 왼쪽 위) 위에서 떼면 취소.
+//   - 점선 포물선(점 12개) + 바닥 고리(0.8→1.2m, 미리보기 선이 사람에 닿으면 빨강 + 머리 위 과녁 = 정보 표시만) + 힘 게이지(F 누를 때).
+//   - 미리보기 = 서버와 같은 planThrow/resolveThrow 식. 조준 중 카메라가 어깨 뒤로 당겨짐(main.js가 camHint를 읽음).
 //  §2-2 맞음: 맞힌 쪽 "명중!"/"헤드샷!"(+점수는 한 판 중만), 맞은 쪽 화면 가장자리 눈 얼룩 1.5초·움찔 0.15초·0.6초 못 던짐, 웅크리기(C·Ctrl / 단추, 누르는 동안).
 //  - 손에 3개, 눈 뭉치기(R, 1초 웅크림)로 1개, 가만히 있어도 3초마다 1개. 0.8초 간격. 날아가는 눈덩이는 서버가 정한 끝점까지 같은 포물선, 흰 꼬리 0.3초, 땅 자국 3초.
 //  - 맞은 사람은 머리·몸에 눈이 쌓이는 겉모습(최대 3단계, 5초 안 맞으면 털어냄). 집중 공격(soft)이면 연출을 작게. 음소거한 사람의 눈덩이는 아예 안 보인다.
 import * as THREE from 'three';
 import * as P from './props.js';
-import {FIGHT,FIGHT_TEXT,inFightYard,autoAim,createAmmo,planThrow,arcDots,arcHeight,ringDiameter,gaugeOf,gaugeDist,dragDist,DRAG,resolveThrow} from './snowfight.js';
+import {FIGHT,FIGHT_TEXT,inFightYard,createAmmo,planThrow,arcDots,arcHeight,ringDiameter,gaugeOf,gaugeDist,DRAG,AIM,dragTurn,dragDistFrom,dragSpin,overCancel,resolveThrow} from './snowfight.js';
 // 11-17 5차 손맛(월드개발): ① 누르면 서버 답을 기다리지 않고 내 화면에 바로 눈덩이(같은 식으로 미리 계산) → 답이 오면 끝점을 0.15초에 걸쳐 서버 값으로
-//  ② 맞은 눈덩이는 날아가는 동안 맞은 사람의 지금 몸 쪽으로 휘어 들어감(서버는 던진 순간 자리로 판정 — 걷는 사람 옆에 떨어지던 「맞았는데 빗나가 보임」)
-//  ③ 맞은 사람은 0.35m 밀림(0.18초) ④ PC F 톡(0.2초 안) = 자동 조준(전에는 4m 앞에 떨어짐)
-export const FEEL=Object.freeze({blendSecs:.15,homing:9,knock:.35,knockSecs:.18,pendSecs:3});
+//  ③ 맞은 사람은 0.35m 밀림(0.18초). (②맞은 눈덩이 휘어 들어감·④F 톡 자동 조준은 11-18에 없앰 — 맞은 눈덩이는 서버가 정한 맞은 자리까지 곧게)
+export const FEEL=Object.freeze({blendSecs:.15,knock:.35,knockSecs:.18,pendSecs:3});
 // 동시에 그리는 수 상한(30명이 한꺼번에 던져도 휴대폰이 멈추지 않게, 5차): 눈덩이·눈 터짐·땅 자국은 미리 만든 것을 돌려 쓰고, 넘치면 그림만 건너뜀(판정·맞음 연출은 그대로).
 // far = 내게서 이보다 먼 눈덩이·터짐은 그리지 않음(m)
 export const SNOW_FX=Object.freeze({mobile:Object.freeze({balls:10,bursts:4,marks:6,far:28}),desktop:Object.freeze({balls:32,bursts:12,marks:20,far:45})});
@@ -24,7 +25,7 @@ import {icon} from '../icons/icon.js';
 
 const PACK_SECS=FIGHT.packMs/1000;
 // ctx: {doc,root,world,toon,heightAt,player,poser(내 자세),net,multi,hud,audio,camera,canvas,mobile,onChange()}
-export function createSnowfight({doc=document,root,world,toon,heightAt,player,poser,net,multi,hud,audio,camera,canvas,renderer=null,yaw=null,mobile=false,onChange=()=>{}}){
+export function createSnowfight({doc=document,root,world,toon,heightAt,player,poser,net,multi,hud,audio,camera,canvas,renderer=null,yaw=null,setYaw=null,mobile=false,onChange=()=>{}}){
  const tz=toon.toonify,ammo=createAmmo();
  const flying=[],bursts=[],marks=[],covers=new Map();
  const FX=mobile?SNOW_FX.mobile:SNOW_FX.desktop;
@@ -36,7 +37,7 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
   if(!v){v={g:P.thrownSnowball(tz),trail:trailGeo.map((g,i)=>new THREE.Mesh(g,trailMat[i]))};world.add(v.g);v.trail.forEach(t=>world.add(t));}
   v.g.visible=true;v.trail.forEach(t=>t.visible=true);used.balls++;return v;}
  function dropBall(v){if(!v)return;v.g.visible=false;v.trail.forEach(t=>t.visible=false);pool.balls.push(v);used.balls--;}
- const S={pack:0,aim:null,inYard:false,crouch:false,crouchKey:false,crouchBtn:false,stun:0,splat:0,flinch:0,lastPlan:null,knock:null};
+ const S={aimDist:AIM.dist0,pack:0,aim:null,inYard:false,crouch:false,crouchKey:false,crouchBtn:false,stun:0,splat:0,flinch:0,lastPlan:null,knock:null};
  const pending=[]; // 내가 던져 미리 그린 눈덩이(서버 답 기다림, 보낸 순서)
  // ── 조준 그림: 고리·점선·과녁
  const ringMat=new THREE.MeshBasicMaterial({color:'#fff3b0',transparent:true,opacity:.9,depthWrite:false,depthTest:false});
@@ -50,6 +51,8 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
  const ammoEl=doc.createElement('div');ammoEl.className='xf-ammo';ammoEl.hidden=true;ammoEl.setAttribute('role','status');ammoEl.setAttribute('aria-label','손에 든 눈덩이');root.appendChild(ammoEl);
  const gaugeEl=doc.createElement('div');gaugeEl.className='xf-gauge';gaugeEl.hidden=true;gaugeEl.setAttribute('aria-hidden','true');gaugeEl.innerHTML='<i></i>';root.appendChild(gaugeEl);
  const targetEl=doc.createElement('div');targetEl.className='xf-target';targetEl.hidden=true;targetEl.innerHTML=icon('x-target',{size:'m'});root.appendChild(targetEl);
+ // 끌기 취소 ✕(휴대폰, 누른 곳 왼쪽 위 120px, 지름 56px)
+ const cancelEl=doc.createElement('div');cancelEl.className='xf-cancel';cancelEl.hidden=true;cancelEl.setAttribute('aria-hidden','true');cancelEl.innerHTML=icon('x-throw-cancel',{size:'m'});root.appendChild(cancelEl);
  const splatEl=doc.createElement('div');splatEl.className='xf-splat';splatEl.hidden=true;splatEl.setAttribute('aria-hidden','true');root.appendChild(splatEl);
  const floats=[];
  const people=()=>multi.joined?multi.people().filter(p=>p.sample&&!p.muted).map(p=>({id:p.id,x:p.sample.x,z:p.sample.z,crouch:p.act?.cr===1})):[];
@@ -73,31 +76,35 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
    const f=spawn({id:me,x:r.x,z:r.z,tx:r.tx,tz:r.tz,d0:r.d0,ms:r.ms,hit:null},{pred:true});f.at=performance.now()/1000;pending.push(f);}
   ammo.take();player.heading=Math.atan2(-dx,-dz);poser.throw();audio?.play('throw');return true;
  }
- const forward=()=>{const y=camYaw();return throwDir(-Math.sin(y),-Math.cos(y),FIGHT.forward);};
- const auto=()=>{const a=autoAim(player,player.heading,allTargets());return throwDir(a.dx,a.dz,a.dist);};
+ // 가운데 고리(화면 가운데 방향 + 겨냥 거리) 자리
+ const centerPoint=(dist=S.aimDist)=>{const y=camYaw(),fx=-Math.sin(y),fz=-Math.cos(y);return {x:player.x+fx*(dist+FIGHT.hand),z:player.z+fz*(dist+FIGHT.hand)};};
+ // 지금 고리 자리로 바로 던짐(휴대폰 톡·PC F 톡·던지기 단추)
+ const atRing=()=>{const p=centerPoint();const pl=planThrow(player,p.x,p.z,allTargets());return throwDir(pl.dx,pl.dz,pl.dist);};
+ const forward=atRing;
  // 화면 점 → 바닥 자리(마당 높이 평면)
  const ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),0),hitV=new THREE.Vector3();
  function groundAt(px,py){ndc.set(px/innerWidth*2-1,-(py/innerHeight)*2+1);ray.setFromCamera(ndc,camera);plane.constant=-heightAt(player.x,player.z);return ray.ray.intersectPlane(plane,hitV)?hitV.clone():null;}
  function toward(p){if(!p)return false;const pl=planThrow(player,p.x,p.z,allTargets());return throwDir(pl.dx,pl.dz,pl.dist);}
  // ── 조준 상태: src 'mouse'(PC 마우스) · 'key'(F·PC 단추) · 'touch'(휴대폰 ❄️)
  function canAim(){return S.inYard&&!document.documentElement.classList.contains('xh-decorating')&&S.pack<=0;}
- function aimStart(src,extra={}){if(!canAim())return false;S.aim={src,t:0,px:extra.px??null,py:extra.py??null,dx:0,dy:0,moved:false};onChange();return true;}
+ function aimStart(src,extra={}){if(!canAim())return false;S.aim={src,t:0,px:extra.px??null,py:extra.py??null,dx:0,dy:0,moved:false,yaw0:camYaw(),spin:0,d0:S.aimDist,sx:extra.sx??null,sy:extra.sy??null};
+  if(src==='touch'&&S.aim.sx!=null){cancelEl.style.transform=`translate(${Math.round(S.aim.sx+AIM.cancelDx)}px,${Math.round(S.aim.sy+AIM.cancelDy)}px) translate(-50%,-50%)`;cancelEl.hidden=false;cancelEl.classList.remove('over');}
+  onChange();return true;}
  // 지금 조준이 겨눈 땅 점(가장 최근 프레임)
  function aimPoint(){
   const a=S.aim;if(!a)return null;const g=gaugeOf(a.t);
   if(a.src==='mouse'&&a.px!=null){const p=groundAt(a.px,a.py);if(p)return {x:p.x,z:p.z,g};}
-  const y=camYaw();let fx=-Math.sin(y),fz=-Math.cos(y),dist=gaugeDist(g);
-  if(a.src==='touch'){const len=Math.hypot(a.dx,a.dy);
-   if(len>=DRAG.min){const rx=Math.cos(y),rz=-Math.sin(y),f=-a.dy/len,s=a.dx/len;fx=fx*f+rx*s;fz=fz*f+rz*s;const l=Math.hypot(fx,fz)||1;fx/=l;fz/=l;}
-   dist=dragDist(len,g);}
-  // 손 몫(0.35m)을 더해 끝점이 거리만큼 떨어지게
-  return {x:player.x+fx*(dist+FIGHT.hand),z:player.z+fz*(dist+FIGHT.hand),g};
+  // F·던지기 단추: 톡 동안은 가운데 고리 거리, 누르고 있으면 게이지로 거리 / ❄️ 끌기: 시작 거리 + 위아래 끈 만큼(방향은 돌린 시야 = 화면 가운데)
+  const dist=a.src==='touch'?dragDistFrom(a.d0,a.dy):a.t<DRAG.tapMs/1000?S.aimDist:gaugeDist(g);
+  return {...centerPoint(dist),g,dist};
  }
- function aimEnd(cancel=false){const a=S.aim;if(!a)return false;S.aim=null;onChange();if(cancel)return false;
-  // 휴대폰 톡(0.2초 안·거의 안 끔) = 자동 조준
-  if(a.src==='touch'&&a.t<DRAG.tapMs/1000&&Math.hypot(a.dx,a.dy)<12)return auto();
-  if(a.src==='key'&&a.t<DRAG.tapMs/1000)return auto(); // PC F·던지기 단추 톡 = 자동 조준(5차)
+ function aimEnd(cancel=false){const a=S.aim;if(!a)return false;S.aim=null;cancelEl.hidden=true;onChange();if(cancel)return false;
+  // 휴대폰: ✕ 위에서 떼면 취소(눈덩이 안 씀) · 톡(0.2초·12px 안) = 지금 고리로 바로
+  if(a.src==='touch'&&overCancel(a.dx,a.dy)){hud?.say('던지기 취소',.8);return false;}
+  if(a.src==='touch'&&a.t<AIM.tapMs/1000&&Math.hypot(a.dx,a.dy)<AIM.tapPx)return atRing();
+  if(a.src==='key'&&a.t<DRAG.tapMs/1000)return atRing(); // PC F·던지기 단추 톡 = 가운데 고리로 바로
   const p=aimPoint.call(null,S.aim=a);S.aim=null;if(!p)return false;
+  if(a.src==='touch'&&p.dist)S.aimDist=p.dist; // 끌어서 바꾼 거리는 마당을 나갈 때까지 기억
   const pl=planThrow(player,p.x,p.z,allTargets());
   return throwDir(pl.dx,pl.dz,pl.dist,{power:a.src==='mouse'?gaugeOf(a.t):0});
  }
@@ -108,9 +115,14 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
   addEventListener('pointerup',e=>{if(e.button===0&&S.aim?.src==='mouse')aimEnd();});
  }
  // 휴대폰 ❄️ 단추(hud가 부른다): 누름 → 끌기(dx,dy px) → 뗌
- const touchAim={start:()=>aimStart('touch'),move:(dx,dy)=>{if(S.aim?.src==='touch'){S.aim.dx=dx;S.aim.dy=dy;}},end:(dx,dy)=>{if(S.aim?.src==='touch'){S.aim.dx=dx;S.aim.dy=dy;}return aimEnd();},cancel:()=>aimEnd(true)};
+ // 끌기 좌우 = 시야·조준 회전(카메라 yaw를 직접 돌림), 위아래 = 거리
+ const turnTo=a=>{if(setYaw)setYaw(a.yaw0+dragTurn(a.dx)+a.spin);};
+ const touchAim={start:(sx,sy)=>aimStart('touch',{sx,sy}),move:(dx,dy)=>{const a=S.aim;if(a?.src==='touch'){a.dx=dx;a.dy=dy;a.moved||=Math.hypot(dx,dy)>=AIM.tapPx;turnTo(a);cancelEl.classList.toggle('over',overCancel(dx,dy));}},
+  end:(dx,dy)=>{const a=S.aim;if(a?.src==='touch'){a.dx=dx;a.dy=dy;turnTo(a);}return aimEnd();},cancel:()=>aimEnd(true)};
  // 옛 길(시험 스크립트·이전 hud): 끌기 한 번에 조준·던지기
- function aimDrag(dx,dy,done){if(!S.aim)aimStart('touch');if(!S.aim)return false;S.aim.dx=dx;S.aim.dy=dy;S.aim.t=Math.max(S.aim.t,.25);if(done)return aimEnd();return true;}
+ function aimDrag(dx,dy,done){if(!S.aim)aimStart('touch');if(!S.aim)return false;S.aim.dx=dx;S.aim.dy=dy;S.aim.t=Math.max(S.aim.t,.25);turnTo(S.aim);if(done)return aimEnd();return true;}
+ // PC 휠: 마당 안이면 가운데 고리 거리 ±1m(k < 1 = 휠 위 = 멀리)
+ function wheel(k){if(!S.inYard||k===1)return false;S.aimDist=Math.max(FIGHT.aimMin,Math.min(FIGHT.aimMin+FIGHT.aimRange,S.aimDist+(k<1?1:-1)));return true;}
  function pack(){if(!inFightYard(player.x,player.z,-.3)||S.pack>0)return false;if(ammo.n>=FIGHT.ammo){hud?.say('손에 눈덩이가 가득해요',1.4,'x-snowball');return false;}S.aim=null;S.pack=PACK_SECS;onChange();audio?.play('roll');return true;}
  // ── 눈투성이(사람마다 머리 위 눈 덩어리 + 몸 얼룩): 겉모습 그룹 하나를 머리 자리에 붙인다
  let coverGeo=null,coverMat=null;
@@ -211,25 +223,25 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
  addEventListener('keyup',e=>{if(e.code==='KeyC'||e.code==='ControlLeft'||e.code==='ControlRight')setCrouch(false,'key');if(e.code==='KeyF'&&S.aim?.src==='key')aimEnd();});
  addEventListener('blur',()=>{S.crouchKey=false;S.crouchBtn=false;if(S.aim)aimEnd(true);});
  return {
-  forward,auto,toward,aimDrag,pack,throwDir,touchAim,aimStart,aimEnd,setCrouch,receiveBall,
+  forward,atRing,toward,aimDrag,wheel,pack,throwDir,touchAim,aimStart,aimEnd,setCrouch,receiveBall,get aimDist(){return S.aimDist;},
   resetAmmo(){ammo.reset();},
   set extraTargets(f){extraTargets=f??(()=>[]);},set localThrow(f){localThrow=f;},set onLand(f){onLand=f;},
   get ammo(){return ammo.n;},get packing(){return S.pack>0;},get inYard(){return S.inYard;},get aiming(){return !!S.aim;},get crouching(){return S.crouch;},
-  // 걷기 빠르기 배수(조준 50%·웅크림 40%)
-  get moveMul(){return S.crouch?.4:S.aim?.5:1;},
-  // 조준 중이면 몸이 겨눈 쪽을 본다
-  get aimHeading(){const p=S.aim?S.lastPlan:null;return p?Math.atan2(-p.dx,-p.dz):null;},
+  // 걷기 빠르기 배수(조준 85%·웅크림 40%)
+  get moveMul(){return S.crouch?.4:S.aim?AIM.walkMul:1;},
+  // 마당 안에서는 몸이 늘 조준 방향을 본다(마우스로 겨누는 중이면 겨눈 쪽, 아니면 카메라 방향)
+  get aimHeading(){if(!S.inYard||S.pack>0)return null;const p=S.aim?.src==='mouse'?S.lastPlan:null;return p?Math.atan2(-p.dx,-p.dz):camYaw();},
   // 카메라: 조준 중 어깨 뒤로(main.js)
   get camHint(){return S.aim?{dist:.78,side:.35}:null;},
   actFields(){return {pk:S.pack>0?1:0,cr:S.crouch?1:0};},
   actions(){if(!S.inYard)return [];return [{id:'sb:throw',ic:'x-snowball',label:'던지기',key:'F',aim:true},{id:'sb:pack',ic:'x-scoop',label:'눈 뭉치기',key:'R'},{id:'sb:crouch',ic:'x-crouch',label:'웅크리기',key:'C',hold:true}];},
-  act(id){if(id==='sb:throw')return mobile?auto():forward();if(id==='sb:pack')return pack();if(id==='sb:crouch'){setCrouch(!S.crouchBtn);return true;}return false;},
+  act(id){if(id==='sb:throw')return atRing();if(id==='sb:pack')return pack();if(id==='sb:crouch'){setCrouch(!S.crouchBtn);return true;}return false;},
   hold(id,on){if(id==='sb:crouch')setCrouch(on,'btn');},
   // 조준 단추(PC 단추·휴대폰 ❄️) 누름·끌기·뗌
-  aimButton(phase,dx=0,dy=0){if(phase==='down')return mobile?touchAim.start():aimStart('key');if(phase==='move')return touchAim.move(dx,dy);if(phase==='up'){if(S.aim?.src==='touch')return touchAim.end(dx,dy);if(S.aim?.src==='key')return aimEnd();}if(phase==='cancel')return aimEnd(true);return false;},
+  aimButton(phase,dx=0,dy=0,sx=null,sy=null){if(phase==='down')return mobile?touchAim.start(sx,sy):aimStart('key');if(phase==='move')return touchAim.move(dx,dy);if(phase==='up'){if(S.aim?.src==='touch')return touchAim.end(dx,dy);if(S.aim?.src==='key')return aimEnd();}if(phase==='cancel')return aimEnd(true);return false;},
   update(dt,{moveInput=false}={}){
    const inside=inFightYard(player.x,player.z,-.3);
-   if(inside!==S.inYard){S.inYard=inside;if(!inside){if(S.aim)aimEnd(true);S.crouchKey=S.crouchBtn=false;if(S.pack>0){S.pack=0;onChange();}}}
+   if(inside!==S.inYard){S.inYard=inside;if(!inside){if(S.aim)aimEnd(true);S.aimDist=AIM.dist0;S.crouchKey=S.crouchBtn=false;if(S.pack>0){S.pack=0;onChange();}}}
    if(S.pack>0){if(moveInput){S.pack=0;onChange();}else{S.pack-=dt;if(S.pack<=0){S.pack=0;ammo.pack();onChange();}}}
    if(S.stun>0)S.stun=Math.max(0,S.stun-dt);
    const crouch=S.inYard&&(S.crouchKey||S.crouchBtn)&&S.pack<=0;if(crouch!==S.crouch){S.crouch=crouch;onChange();}
@@ -240,7 +252,10 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
    ammoEl.hidden=!inside;if(inside){const n=ammo.n,k=String(n);if(ammoEl.dataset.n!==k){ammoEl.dataset.n=k;ammoEl.setAttribute('aria-label',`손에 든 눈덩이 ${n}개`);ammoEl.innerHTML=icon('x-snowball',{size:'s'}).repeat(n)+'<i class="xf-empty" aria-hidden="true"></i>'.repeat(FIGHT.ammo-n);}}
    // 조준: 게이지·점선·고리·과녁
    let plan=null;
-   if(S.aim&&inside){S.aim.t+=dt;const p=aimPoint();if(p){plan=planThrow(player,p.x,p.z,allTargets());plan.g=p.g;}}
+   if(S.aim&&inside){S.aim.t+=dt;
+    // 끌어서 좌우 끝에 대고 있으면 계속 돎(뒤돌기)
+    if(S.aim.src==='touch'){const w=dragSpin(S.aim.dx);if(w){S.aim.spin+=w*dt;turnTo(S.aim);}}
+    const p=aimPoint();if(p){plan=planThrow(player,p.x,p.z,allTargets());plan.g=p.g;}}
    else if(S.aim&&!inside)aimEnd(true);
    S.lastPlan=plan;
    if(plan){
@@ -249,12 +264,19 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
      if(i&&q.ok){el.style.transform=`translate(${q.x.toFixed(1)}px,${q.y.toFixed(1)}px)`;el.classList.toggle('grey',!!d.blocked);}});
     dots.visible=true;
     const s=ringDiameter(r.d0)/.8;ring.scale.setScalar(s);ring.position.set(r.tx,heightAt(r.tx,r.tz)+.05,r.tz);ring.visible=true;
-    const on=r.hit??plan.target;ringMat.color.set(on?'#ff4a3d':r.wall?'#cfd6df':'#fff3b0');
+    const on=r.hit;ringMat.color.set(on?'#ff4a3d':r.wall?'#cfd6df':'#fff3b0');ringMat.opacity=.9;
     if(on){const h=headOf(on);if(h){const q=toScreen(h.p.clone().add({x:0,y:.32,z:0}));targetEl.hidden=!q.ok;targetEl.style.transform=`translate(${Math.round(q.x)}px,${Math.round(q.y)}px) translate(-50%,-50%)`;}else targetEl.hidden=true;}else targetEl.hidden=true;
     // 힘 게이지: 캐릭터 오른쪽 옆(화면)
     const q=toScreen(new THREE.Vector3(player.x,gy+.62,player.z));const g=plan.g,full=S.aim.t>FIGHT.gaugeSecs+.5;
-    gaugeEl.hidden=!q.ok;gaugeEl.style.transform=`translate(${Math.round(q.x+46)}px,${Math.round(q.y)}px) translate(-50%,-50%)`;gaugeEl.style.setProperty('--g',String(g));gaugeEl.classList.toggle('full',full);
-   }else{dots.visible=false;ring.visible=false;targetEl.hidden=true;gaugeEl.hidden=true;}
+    const showGauge=S.aim.src!=='touch'&&S.aim.t>=DRAG.tapMs/1000; // 게이지는 F·마우스를 누르고 있을 때만(휴대폰 끌기는 위아래가 거리)
+    gaugeEl.hidden=!q.ok||!showGauge;gaugeEl.style.transform=`translate(${Math.round(q.x+46)}px,${Math.round(q.y)}px) translate(-50%,-50%)`;gaugeEl.style.setProperty('--g',String(g));gaugeEl.classList.toggle('full',full);
+   }else if(inside&&S.pack<=0){
+    // 마당 안 기본: 연한 흰 고리(지름 0.8m, 40%)가 지금 겨눈 자리. 미리보기 선이 사람에 닿으면 빨강 + 과녁(정보만)
+    const p=centerPoint(),pl=planThrow(player,p.x,p.z,allTargets()),r=pl.r;S.idle=r;
+    dots.visible=false;gaugeEl.hidden=true;ring.scale.setScalar(1);ring.position.set(r.tx,heightAt(r.tx,r.tz)+.05,r.tz);ring.visible=true;
+    ringMat.color.set(r.hit?'#ff4a3d':'#ffffff');ringMat.opacity=r.hit?.75:.4;
+    if(r.hit){const h=headOf(r.hit);if(h){const q=toScreen(h.p.clone().add({x:0,y:.32,z:0}));targetEl.hidden=!q.ok;targetEl.style.transform=`translate(${Math.round(q.x)}px,${Math.round(q.y)}px) translate(-50%,-50%)`;}else targetEl.hidden=true;}else targetEl.hidden=true;
+   }else{dots.visible=false;ring.visible=false;targetEl.hidden=true;gaugeEl.hidden=true;S.idle=null;}
    // 맞은 쪽 화면 가장자리 눈 얼룩(1.5초, 가운데 70%는 비움)
    if(S.splat>0){S.splat=Math.max(0,S.splat-dt);splatEl.hidden=false;splatEl.style.opacity=String(Math.min(1,S.splat/.5));}else splatEl.hidden=true;
    // 날아가는 눈덩이(포물선 = 판정과 같은 식) + 흰 꼬리
@@ -264,8 +286,6 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
    for(let i=flying.length-1;i>=0;i--){const f=flying[i];f.t+=dt;
     // 서버 답이 오면 끝점을 0.15초에 걸쳐 서버 값으로
     if(f.from&&f.blend<1){f.blend=Math.min(1,f.blend+dt/FEEL.blendSecs);const b=f.blend;f.tx=f.from.tx+(f.m.tx-f.from.tx)*b;f.tz=f.from.tz+(f.m.tz-f.from.tz)*b;}
-    // 맞은 눈덩이: 맞은 사람의 지금 몸 쪽으로 휘어 들어감
-    if(!f.pred&&f.m.hit&&(!f.from||f.blend>=1)){const q=f.m.hit===(multi.id??'me')?{x:player.x,z:player.z}:headOf(f.m.hit)?.p;if(q){const a=Math.min(1,dt*FEEL.homing);f.tx+=(q.x-f.tx)*a;f.tz+=(q.z-f.tz)*a;}}
     f.d=Math.hypot(f.tx-f.x,f.tz-f.z);
     const k=Math.min(1,f.t/f.dur),s=f.d*k;
     const x=f.x+(f.tx-f.x)*k,z=f.z+(f.tz-f.z)*k,y=heightAt(x,z)+arcHeight(Math.min(1,s/f.d0));
@@ -290,6 +310,7 @@ export function createSnowfight({doc=document,root,world,toon,heightAt,player,po
   },
   coverOf:id=>covers.get(id)?.level??0,
   status(){const p=S.lastPlan;return {lastLand:S.lastLand??null,knock:!!S.knock,inYard:S.inYard,ammo:ammo.n,packing:S.pack>0,crouch:S.crouch,stun:+S.stun.toFixed(2),flying:flying.length,covers:Object.fromEntries([...covers].map(([k,v])=>[k,v.level])),
-   aim:S.aim?{src:S.aim.src,t:+S.aim.t.toFixed(2),dots:dots.visible,ring:ring.visible,tx:p?+p.r.tx.toFixed(2):null,tz:p?+p.r.tz.toFixed(2):null,hit:p?.r.hit??null,target:p?.target??null}:null};},
+   aimDist:S.aimDist,ring:ring.visible,idle:S.idle?{tx:+S.idle.tx.toFixed(2),tz:+S.idle.tz.toFixed(2),hit:S.idle.hit??null}:null,camYaw:+camYaw().toFixed(4),
+   aim:S.aim?{src:S.aim.src,dx:S.aim.dx,dy:S.aim.dy,t:+S.aim.t.toFixed(2),dots:dots.visible,ring:ring.visible,tx:p?+p.r.tx.toFixed(2):null,tz:p?+p.r.tz.toFixed(2):null,hit:p?.r.hit??null,target:p?.target??null}:null};},
  };
 }

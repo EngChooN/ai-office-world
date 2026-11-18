@@ -1,7 +1,10 @@
-// 눈싸움 조준·맞음(월드개발, 2026-11-17, 눈썰매-눈싸움-개선-v1 §2-1·§2-2): 힘 게이지·끌기 거리·고리 크기·조준 보정·미리보기 = 판정·웅크림·머리 맞힘·무적.
+// 눈싸움 조준·맞음(월드개발, 2026-11-17, 눈썰매-눈싸움-개선-v1 §2-1·§2-2): 힘 게이지·끌기 거리·고리 크기·미리보기 = 판정·웅크림·머리 맞힘·무적.
+// 11-18(설계 v2 §4): 자동 조준·끌어당김·휘어짐 없음(사람 0.4m 옆을 겨누면 빗나감), 휴대폰 ❄️ 끌기 = 좌우 시야 회전·위아래 거리·✕ 취소.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {FIGHT,resolveThrow,planThrow,arcDots,arcHeight,ringDiameter,gaugeOf,gaugeDist,dragDist,assistPoint,DRAG,inWall} from '../src/christmas/snowfight.js';
+import {readFileSync} from 'node:fs';
+import * as SF from '../src/christmas/snowfight.js';
+import {FIGHT,resolveThrow,planThrow,arcDots,arcHeight,ringDiameter,gaugeOf,gaugeDist,DRAG,AIM,dragTurn,dragDistFrom,dragSpin,overCancel,inWall} from '../src/christmas/snowfight.js';
 import {createRoomPlay} from '../src/christmas/room-play.js';
 import * as L from '../src/christmas/layout.js';
 
@@ -11,18 +14,25 @@ test('힘 게이지: 0~1초 → 4~14m, 가득 찬 뒤에도 손해 없음',()=>{
  assert.equal(gaugeOf(0),0);assert.equal(gaugeOf(.5),.5);assert.equal(gaugeOf(1),1);assert.equal(gaugeOf(3),1);
  assert.equal(gaugeDist(0),4);assert.equal(gaugeDist(1),FIGHT.maxDist);assert.equal(gaugeDist(.5),9);
 });
-test('휴대폰 끌기: 20~120px = 4~14m, 40px 아래는 게이지, 톡 = 0.2초',()=>{
- assert.equal(dragDist(10,.3),gaugeDist(.3));assert.equal(dragDist(120,0),14);assert.equal(dragDist(500,0),14);
- assert.ok(Math.abs(dragDist(70,0)-9)<1e-9);assert.equal(DRAG.tapMs,200);
+test('휴대폰 ❄️ 끌기(11-18): 좌우 1px = 0.35° 회전(오른쪽으로 끌면 오른쪽), 위로 1px = +0.08m(4~14m), 90px 넘게 대고 있으면 계속 돎(최대 120°/s), ✕ 위에서 떼면 취소, 톡 = 0.2초·12px',()=>{
+ assert.ok(Math.abs(dragTurn(100)+35*Math.PI/180)<1e-9,'100px ≈ 35°, 오른쪽 = yaw 감소');assert.ok(Math.abs(dragTurn(0))<1e-12);
+ assert.equal(dragDistFrom(9,0),9);assert.ok(Math.abs(dragDistFrom(9,-25)-11)<1e-9,'위로 25px = +2m');assert.equal(dragDistFrom(9,-500),14);assert.equal(dragDistFrom(9,500),4);
+ assert.equal(dragSpin(80),0);assert.ok(dragSpin(200)<0&&Math.abs(dragSpin(200))<=120*Math.PI/180+1e-9);assert.ok(dragSpin(-200)>0);
+ assert.ok(overCancel(AIM.cancelDx,AIM.cancelDy));assert.ok(!overCancel(0,0));assert.ok(!overCancel(-30,-120),'위로만 길게 끈 것은 취소 아님');
+ assert.ok(Math.abs(Math.hypot(AIM.cancelDx,AIM.cancelDy)-120)<1,'누른 곳 왼쪽 위 120px');assert.equal(AIM.cancelR*2,56);
+ assert.equal(DRAG.tapMs,200);assert.equal(AIM.tapPx,12);assert.equal(AIM.dist0,9);assert.equal(AIM.walkMul,.85);
 });
 test('고리 지름: 가까우면 0.8m, 14m면 1.2m(멀수록 커짐)',()=>{
  assert.equal(ringDiameter(2),.8);assert.ok(Math.abs(ringDiameter(14)-1.2)<1e-9);assert.ok(ringDiameter(9)>.8&&ringDiameter(9)<1.2);
 });
-test('조준 보정: 고리 0.5m 안 사람 쪽으로 최대 0.4m만 끌어당김(자동 조준 아님)',()=>{
- const a=assistPoint(0,0,[{id:'p',x:.45,z:0}]);assert.equal(a.target,'p');assert.ok(Math.abs(a.x-.4)<1e-9);
- const b=assistPoint(0,0,[{id:'p',x:.2,z:0}]);assert.ok(Math.abs(b.x-.2)<1e-9,'0.4m보다 가까우면 그 사람 자리');
- assert.equal(assistPoint(0,0,[{id:'p',x:.8,z:0}]).target,null);
- assert.equal(assistPoint(0,0,[{id:'p',x:.3,z:0,safe:true}]).target,null,'무적 중인 사람은 끌어당기지 않음');
+test('자동 조준 없음(11-18): 코드에 자동 조준·끌어당김·휘어짐이 없고, 사람 0.4m 옆(몸 판정 0.42m 밖으로 0.5m)을 겨누면 빗나감',()=>{
+ assert.equal(SF.autoAim,undefined);assert.equal(SF.assistPoint,undefined);assert.equal(FIGHT.assistR,undefined);assert.equal(FIGHT.autoCone,undefined);
+ const play=readFileSync(new URL('../src/christmas/snowfight-play.js',import.meta.url),'utf8');
+ assert.ok(!/autoAim|assistPoint|homing/.test(play),'화면 코드에 자동 조준·휘어짐 없음');
+ const me={x:FY.x-4,z:FY.z+5},b={id:'b',x:me.x+6,z:me.z};
+ // 사람 바로 옆 0.5m(예전 보정이면 맞던 거리)를 겨누면 빗나감, 겨눈 자리에 떨어짐
+ const pl=planThrow(me,b.x,b.z+.5,[b]);assert.equal(pl.r.hit,null);assert.equal(pl.target,null);assert.ok(Math.hypot(pl.r.tx-b.x,pl.r.tz-(b.z+.5))<.3);
+ const ok=planThrow(me,b.x,b.z,[b]);assert.equal(ok.r.hit,'b','바로 겨누면 맞음');
 });
 test('미리보기 = 판정: planThrow가 보낸 값으로 서버가 다시 판정해도 끝점이 같다(0.3m 안)',()=>{
  const me={x:FY.x-4,z:FY.z+5};

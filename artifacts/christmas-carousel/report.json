@@ -1,0 +1,256 @@
+{
+ "at": "2026-11-18T03:39:41.365Z",
+ "checks": {
+  "시안 B에 회전목마가 있음": {
+   "ok": true
+  },
+  "가까이 가면 「회전목마 타기」 단추": {
+   "ok": true
+  },
+  "타면 루돌프에 앉음": {
+   "ok": true,
+   "riding": true,
+   "seat": 2,
+   "kind": "deer",
+   "cheer": false,
+   "taken": [],
+   "near": false,
+   "y": 1,
+   "x": 14.65,
+   "z": 23.39
+  },
+  "타는 동안 함께 돎(반지름 그대로, 위치가 바뀜)": {
+   "ok": true,
+   "moved": 2.07,
+   "r0": 2.85,
+   "r1": 2.85
+  },
+  "루돌프와 함께 오르내림": {
+   "ok": true,
+   "range": 0.157
+  },
+  "act에 루돌프 번호": {
+   "ok": true,
+   "act": {
+    "o": "santa",
+    "hat": "santa",
+    "sc": 0,
+    "d": 0,
+    "st": 0,
+    "wm": 0,
+    "cc": 0,
+    "pu": 0,
+    "pk": 0,
+    "cr": 0,
+    "tm": 0,
+    "sl": 0,
+    "sp": "",
+    "gd": 0,
+    "mg": 3,
+    "hs": 0
+   }
+  },
+  "타는 중 단추 = 내리기·만세": {
+   "ok": true,
+   "a": [
+    "mg:off",
+    "mg:cheer"
+   ]
+  },
+  "둘 화면: 하나가 같은 번호 루돌프 위에 앉음": {
+   "ok": true,
+   "mg": 3,
+   "gap": 0.108,
+   "dy": 0.167,
+   "sit": true,
+   "arms": "none"
+  },
+  "둘도 타면 다른 루돌프": {
+   "ok": true,
+   "a": 2,
+   "b": 1
+  },
+  "하나 화면: 둘도 루돌프 위": {
+   "ok": true,
+   "mg": 2,
+   "gap": 0.014,
+   "dy": 0.031,
+   "sit": true,
+   "arms": "none"
+  },
+  "만세가 둘 화면에도": {
+   "ok": true,
+   "mg": 3,
+   "gap": 0.107,
+   "dy": 0.169,
+   "sit": true,
+   "arms": "cheer"
+  },
+  "내리면 계단 앞(내리는 곳)에 섬": {
+   "ok": true,
+   "d": 0
+  },
+  "둘 화면: 하나가 내려옴": {
+   "ok": true
+  },
+  "걷기 입력이면 내림": {
+   "ok": true
+  },
+  "휴대폰 「내리기」 탭": {
+   "ok": true
+  },
+  "자리가 다 차면 안 탐": {
+   "ok": true,
+   "taken": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+   ]
+  },
+  "휴대폰 타기 단추 44px 이상·화면 안": {
+   "ok": true,
+   "x": 214.75,
+   "y": 758,
+   "width": 157.25,
+   "height": 64
+  },
+  "밖에서는 울타리를 넘지 못함": {
+   "ok": true,
+   "x": -6.89,
+   "z": 28.47,
+   "y": 0.17,
+   "heading": 0.15,
+   "look": {
+    "outfit": "santa",
+    "hat": "santa",
+    "scarf": null
+   },
+   "sitting": false,
+   "arms": "none"
+  },
+  "문 밖 「스케이트장 들어가기」": {
+   "ok": true,
+   "a": [
+    "rk:in"
+   ]
+  },
+  "들어가면 얼음 위·얼음 높이": {
+   "ok": true,
+   "rink": {
+    "inside": true,
+    "onIce": true,
+    "v": 0,
+    "x": -8.3,
+    "z": 30.5
+   },
+   "y": 0.47
+  },
+  "얼음 위를 걸어 다님(섬은 못 지나감)": {
+   "ok": true,
+   "p": {
+    "x": -12.4,
+    "z": 30.5,
+    "y": 0.47,
+    "heading": 1.57,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   }
+  },
+  "손 떼면 조금 미끄러져 섬(너무 미끄럽지 않게)": {
+   "ok": true,
+   "glide": 0.89,
+   "v0": 1.5,
+   "v1": 0
+  },
+  "울타리 밖으로 못 나감": {
+   "ok": true,
+   "p": {
+    "x": -19.48,
+    "z": 34.15,
+    "y": 0.47,
+    "heading": 5.78,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   }
+  },
+  "둘 화면: 하나가 얼음 높이에 보임": {
+   "ok": true
+  },
+  "문 안쪽 「스케이트장 나가기」": {
+   "ok": true,
+   "a": [
+    "rk:out"
+   ]
+  },
+  "나가면 문 밖·땅 높이": {
+   "ok": true,
+   "p": {
+    "x": -6.6,
+    "z": 30.5,
+    "y": 0.259,
+    "heading": -1.57,
+    "look": {
+     "outfit": "santa",
+     "hat": "santa",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   }
+  },
+  "휴대폰 들어가기 탭": {
+   "ok": true
+  },
+  "휴대폰 나가기 탭": {
+   "ok": true
+  },
+  "시안 없는 화면: 회전목마·링크 단추·act 칸 없음": {
+   "ok": true,
+   "actions": [],
+   "act": {
+    "o": "santa",
+    "hat": "santa",
+    "sc": 0,
+    "d": 0,
+    "st": 0,
+    "wm": 0,
+    "cc": 0,
+    "pu": 0,
+    "pk": 0,
+    "cr": 0,
+    "tm": 0,
+    "sl": 0,
+    "sp": "",
+    "gd": 0
+   }
+  },
+  "페이지 오류 0": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": []
+}

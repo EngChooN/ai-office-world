@@ -1,0 +1,751 @@
+{
+ "at": "2026-11-17T08:34:15.023Z",
+ "checks": {
+  "④ 눈싸움 마당 단추: ❄️ 던지기·🤲 눈 뭉치기·웅크리기": {
+   "ok": true,
+   "a0": [
+    "sb:throw",
+    "sb:pack",
+    "sb:crouch"
+   ]
+  },
+  "④ F 누름 0.1초 안 점선 포물선·착탄 고리·힘 게이지": {
+   "ok": true,
+   "aim": {
+    "src": "key",
+    "t": 0.15,
+    "dots": true,
+    "ring": true,
+    "tx": -25,
+    "tz": 6.5,
+    "hit": "nc1gxoop",
+    "target": null
+   }
+  },
+  "④ 떼면 실제 착탄 = 미리보기 고리 안(0.3m)": {
+   "ok": true,
+   "pv2": {
+    "src": "key",
+    "t": 0.33,
+    "dots": true,
+    "ring": true,
+    "tx": -25,
+    "tz": 6.5,
+    "hit": "nc1gxoop",
+    "target": null
+   },
+   "sb": {
+    "t": "sb",
+    "id": "fj2knswn",
+    "x": -29.65,
+    "z": 6.5,
+    "tx": -25,
+    "tz": 6.5,
+    "d0": 9.81,
+    "ms": 478,
+    "hit": "nc1gxoop",
+    "head": 1
+   },
+   "aId": "fj2knswn",
+   "after": {
+    "lastLand": null,
+    "knock": false,
+    "inYard": true,
+    "ammo": 2,
+    "packing": false,
+    "crouch": false,
+    "stun": 0,
+    "flying": 1,
+    "covers": {},
+    "aim": null,
+    "match": null,
+    "practice": null,
+    "result": false
+   }
+  },
+  "④ 고리가 사람 위면 빨강·과녁(조준 대상 = 둘)": {
+   "ok": true,
+   "pv2": {
+    "src": "key",
+    "t": 0.33,
+    "dots": true,
+    "ring": true,
+    "tx": -25,
+    "tz": 6.5,
+    "hit": "nc1gxoop",
+    "target": null
+   }
+  },
+  "④ 하나 F → 둘이 맞음(두 화면 모두 눈투성이)": {
+   "ok": true,
+   "covA": {
+    "nc1gxoop": 1
+   },
+   "covB": {
+    "nc1gxoop": 1
+   }
+  },
+  "④ 손 눈덩이 3 → 2": {
+   "ok": true
+  },
+  "④ 둘(휴대폰) ❄️ 짧게 = 자동 조준으로 하나를 맞힘": {
+   "ok": true,
+   "cov": {
+    "nc1gxoop": 1,
+    "fj2knswn": 1
+   }
+  },
+  "④ 휴대폰 ❄️ 길게 누르고 끌기 → 조준 뒤 던짐": {
+   "ok": true,
+   "aim": {
+    "aiming": true,
+    "ring": {
+     "lastLand": {
+      "x": -29.98,
+      "z": 6.5,
+      "me": true
+     },
+     "knock": false,
+     "inYard": true,
+     "ammo": 2,
+     "packing": false,
+     "crouch": false,
+     "stun": 0,
+     "flying": 0,
+     "covers": {
+      "nc1gxoop": 1,
+      "fj2knswn": 1
+     },
+     "aim": {
+      "src": "touch",
+      "t": 0.65,
+      "dots": true,
+      "ring": true,
+      "tx": -30.35,
+      "tz": 6.5,
+      "hit": "fj2knswn",
+      "target": null
+     }
+    }
+   },
+   "ammo": 1,
+   "thrown0": 2
+  },
+  "④ 휴대폰 ❄️ 누른 채 끌기 → 점선·고리(캐릭터 앞 월드에)": {
+   "ok": true,
+   "mv": {
+    "src": "touch",
+    "t": 0.7,
+    "dots": true,
+    "ring": true,
+    "tx": -33.98,
+    "tz": 7.57,
+    "hit": null,
+    "target": null
+   }
+  },
+  "④ 웅크리기 단추(누르는 동안) → act.cr 1·자세 웅크림": {
+   "ok": true,
+   "act": {
+    "o": "elf",
+    "hat": "elf",
+    "sc": 0,
+    "d": 0,
+    "st": 0,
+    "wm": 0,
+    "cc": 0,
+    "pu": 0,
+    "pk": 0,
+    "cr": 1,
+    "tm": 0,
+    "sl": 0,
+    "sp": "",
+    "gd": 0,
+    "mg": 0
+   },
+   "arms": "crouch"
+  },
+  "④ 눈 뭉치기(1초) → 손 눈덩이 +1": {
+   "ok": true,
+   "ammo": 3
+  },
+  "④ 마당 밖에서는 F를 눌러도 안 던져짐(모닥불 쪽 안전)": {
+   "ok": true
+  },
+  "④-2 한 판 하기 → 두 사람 대기(빨강·초록 팀)": {
+   "ok": true,
+   "m": {
+    "ph": "wait",
+    "rd": 0,
+    "sc": [
+     0,
+     0
+    ],
+    "wins": [
+     0,
+     0
+    ],
+    "n": 2,
+    "team": 1
+   }
+  },
+  "④-2 바로 시작 → 1라운드, 두 사람이 서로 다른 진영 끝으로": {
+   "ok": true,
+   "a": {
+    "x": -33.5,
+    "t": 1
+   },
+   "b": {
+    "x": -22.5,
+    "t": 2
+   }
+  },
+  "④-2 위 경기 띠(남은 시간·팀 점수·라운드 점)": {
+   "ok": true,
+   "barA": "01:280"
+  },
+  "④-2 경기 중 💬 단추 접힘(휴대폰)": {
+   "ok": true
+  },
+  "④-2 맞히면 팀 점수 +1(또는 머리 +2)": {
+   "ok": true,
+   "m": {
+    "ph": "round",
+    "rd": 1,
+    "sc": [
+     1,
+     0
+    ],
+    "wins": [
+     0,
+     0
+    ],
+    "n": 2,
+    "team": 1
+   }
+  },
+  "④-2 상대가 나가면 결과 창(이긴 팀·라운드·개인 표·칭호)": {
+   "ok": true,
+   "resTxt": "빨강 팀 승리!\n\n0 : 0\n\n명사수\n하나\n맞힘 최다\n눈사람\n둘\n가장 많이 맞음\n저격수\n하나\n가장 먼 명중 10.6m\n하나\n맞힘 1 · 머리 0 · 맞음 0\n둘 (나감)\n맞힘 0 · 머리 0 · 맞음 1\n한 판 더\nE\n마당 나가기\nQ"
+  },
+  "④-2 혼자면 눈사람 과녁 연습(과녁 5개·60초)": {
+   "ok": true,
+   "p": {
+    "t": 60,
+    "score": 0,
+    "targets": [
+     {
+      "x": -32.17,
+      "z": 6.7
+     },
+     {
+      "x": -28.25,
+      "z": 1.81
+     },
+     {
+      "x": -26.84,
+      "z": 5.58
+     },
+     {
+      "x": -26.9,
+      "z": -2.74
+     },
+     {
+      "x": -25.43,
+      "z": 3
+     }
+    ]
+   }
+  },
+  "④-2 과녁을 맞히면 점수": {
+   "ok": true,
+   "p": {
+    "t": 59.3,
+    "score": 1,
+    "targets": [
+     {
+      "x": -28.22,
+      "z": 1.41
+     },
+     {
+      "x": -27.91,
+      "z": 4.94
+     },
+     {
+      "x": -27.26,
+      "z": -3.52
+     },
+     {
+      "x": -24.56,
+      "z": 3.16
+     }
+    ]
+   }
+  },
+  "⑤ 출발대 단추: 🛷 타기·새 코스": {
+   "ok": true,
+   "a0": [
+    "sled:board",
+    "sled:new",
+    "sled:records"
+   ]
+  },
+  "⑤ 새 코스 → 두 화면 같은 코스(시드)·길이 400~500m": {
+   "ok": true,
+   "s0": 1864097727,
+   "a": {
+    "seed": 504102300,
+    "code": "WEXJ",
+    "finish": 428.4
+   },
+   "b": {
+    "seed": 504102300,
+    "code": "WEXJ"
+   }
+  },
+  "⑤ 산 위 길 그림도 새 코스로 다시 그림": {
+   "ok": true
+  },
+  "⑤ 타기 → 썰매에 앉아 기다림(줄 1~4)": {
+   "ok": true,
+   "sled": {
+    "mode": "ready",
+    "lane": 4,
+    "s": null,
+    "v": null,
+    "off": null,
+    "t": null,
+    "splits": [],
+    "finished": false,
+    "front": null,
+    "partner": null,
+    "remote": 0,
+    "race": null,
+    "board": 0,
+    "result": false,
+    "ghost": false,
+    "sens": "normal",
+    "best": null,
+    "seed": 504102300,
+    "code": "WEXJ",
+    "finish": 428.4,
+    "pending": null,
+    "camFov": 0,
+    "surface": null,
+    "banks": 0,
+    "hits": 0
+   }
+  },
+  "⑤ 둘이 타기 → 앞사람 수락 → 둘이 뒷자리": {
+   "ok": true,
+   "b": {
+    "mode": "back",
+    "lane": 0,
+    "s": null,
+    "v": null,
+    "off": null,
+    "t": null,
+    "splits": [],
+    "finished": false,
+    "front": "fj2knswn",
+    "partner": null,
+    "remote": 1,
+    "race": null,
+    "board": 0,
+    "result": false,
+    "ghost": false,
+    "sens": "normal",
+    "best": null,
+    "seed": 504102300,
+    "code": "WEXJ",
+    "finish": 428.4,
+    "pending": null,
+    "camFov": 0,
+    "surface": null,
+    "banks": 0,
+    "hits": 0
+   }
+  },
+  "⑤ 출발! → 큰 숫자 3·2·1": {
+   "ok": true
+  },
+  "⑤ 3·2·1 뒤 내려감": {
+   "ok": true
+  },
+  "⑤ 둘 화면에서 하나 썰매가 길을 따라 내려감(둘도 뒷자리로 같이)": {
+   "ok": true,
+   "pA": {
+    "x": -23.57,
+    "z": -104.5
+   },
+   "bSelf": {
+    "x": -24.19,
+    "z": -104.5
+   },
+   "sledA": {
+    "mode": "ride",
+    "lane": 4,
+    "s": 5.37,
+    "v": 4.41,
+    "off": 1.5,
+    "t": 2.62,
+    "splits": [],
+    "finished": false,
+    "front": null,
+    "partner": "nc1gxoop",
+    "remote": 0,
+    "race": null,
+    "board": 0,
+    "result": false,
+    "ghost": false,
+    "sens": "normal",
+    "best": null,
+    "seed": 504102300,
+    "code": "WEXJ",
+    "finish": 428.4,
+    "pending": null,
+    "camFov": 65,
+    "surface": "snow",
+    "banks": 0,
+    "hits": 0
+   }
+  },
+  "⑤ 탈 때 ◀ ▶·드리프트·브레이크 단추 + 위 기록 띠(0.01초)": {
+   "ok": true,
+   "steer": true,
+   "drift": true,
+   "brake": true,
+   "bar": true
+  },
+  "⑤ 키를 누르면 0.25초에 걸쳐 꺾임(즉시 최대 아님)": {
+   "ok": true,
+   "s": 6.72,
+   "off": 1.79
+  },
+  "⑤ 결승 → 1초 뒤 결과 창(시간·구간 3개·별)": {
+   "ok": true,
+   "sled": {
+    "mode": "result",
+    "lane": 4,
+    "s": 437.44,
+    "v": 5.06,
+    "off": 1.07,
+    "t": 58.9,
+    "splits": [
+     25.68,
+     44.29,
+     57.441
+    ],
+    "finished": true,
+    "front": null,
+    "partner": "nc1gxoop",
+    "remote": 0,
+    "race": null,
+    "board": 1,
+    "result": true,
+    "ghost": false,
+    "sens": "normal",
+    "best": 57.441,
+    "seed": 504102300,
+    "code": "WEXJ",
+    "finish": 428.4,
+    "pending": null,
+    "camFov": 66.4,
+    "surface": "snow",
+    "banks": 13,
+    "hits": 1
+   }
+  },
+  "⑤ 내리기 → 둘 다 내림": {
+   "ok": true,
+   "a": "none",
+   "b": "none"
+  },
+  "⑤ 레이스 열기 → 다른 사람 화면에 「같이 하기」": {
+   "ok": true,
+   "acts": [
+    "sled:join",
+    "sled:board",
+    "sled:ask"
+   ]
+  },
+  "⑤ 같이 하기 → 레이스 2명": {
+   "ok": true,
+   "race": {
+    "ph": "wait",
+    "n": 2,
+    "host": "fj2knswn",
+    "mine": true
+   }
+  },
+  "⑤ 레이스 참가자는 같은 코스(시드)": {
+   "ok": true,
+   "a": "9MW9",
+   "b": "9MW9"
+  },
+  "⑤ 바로 출발 → 두 화면 같은 카운트다운 뒤 출발": {
+   "ok": true
+  },
+  "⑤ 휴대폰 아래 절반 끌기 = 가상 핸들": {
+   "ok": true,
+   "shown": true,
+   "off": 0.6
+  },
+  "⑤ 위 띠 왼쪽 순위(n/2)": {
+   "ok": true,
+   "rk": "1/2"
+  },
+  "⑤ 둘 다 완주 → 레이스 끝·두 화면 결과 창": {
+   "ok": true,
+   "a": {
+    "mode": "result",
+    "lane": 2,
+    "s": 450.34,
+    "v": 4.44,
+    "off": 1.88,
+    "t": 69.26,
+    "splits": [
+     33.228,
+     55.056,
+     67.37
+    ],
+    "finished": true,
+    "front": null,
+    "partner": null,
+    "remote": 1,
+    "race": {
+     "ph": "done",
+     "n": 2,
+     "host": "fj2knswn",
+     "mine": false
+    },
+    "board": 2,
+    "result": true,
+    "ghost": false,
+    "sens": "normal",
+    "best": 67.37,
+    "seed": 2146689575,
+    "code": "9MW9",
+    "finish": 438.4,
+    "pending": null,
+    "camFov": 65,
+    "surface": "snow",
+    "banks": 12,
+    "hits": 3
+   },
+   "b": {
+    "mode": "result",
+    "lane": 3,
+    "s": 455.78,
+    "v": 0.24,
+    "off": 1.92,
+    "t": 67.46,
+    "splits": [
+     30.869,
+     50.636,
+     62.756
+    ],
+    "finished": true,
+    "front": null,
+    "partner": null,
+    "remote": 1,
+    "race": {
+     "ph": "done",
+     "n": 2,
+     "host": "fj2knswn",
+     "mine": false
+    },
+    "board": 2,
+    "result": true,
+    "ghost": false,
+    "sens": "normal",
+    "best": 62.756,
+    "seed": 2146689575,
+    "code": "9MW9",
+    "finish": 438.4,
+    "pending": null,
+    "camFov": 62,
+    "surface": "snow",
+    "banks": 8,
+    "hits": 2
+   }
+  },
+  "⑤ 결과 창 순위 2줄(1·2등)": {
+   "ok": true,
+   "rows": [
+    "1둘1:02.76",
+    "2하나1:07.37"
+   ]
+  },
+  "⑤ 오늘의 기록판에 기록": {
+   "ok": true,
+   "board": 2
+  },
+  "⑤ 기록·고스트는 코스(시드)마다 따로 저장": {
+   "ok": true,
+   "best1": 57.441,
+   "best2": {
+    "ls": 67.37,
+    "courses": 2,
+    "card": "2등\n\n2\n/ 2등\n\n1:07.37\n새 최고 기록!\n\n★★★\n\n코스 9MW9 · 438m · ★★★ 55.90 · ★★ 1:05.90\n\n구간 1"
+   }
+  },
+  "⑤ 다시 타기(E) → 5초 안에 다시 출발": {
+   "ok": true,
+   "ms": 3091
+  },
+  "⑨ 마을 승강장 가까이 → 「타고 올라가기」 단추": {
+   "ok": true,
+   "ga": [
+    "gd:up"
+   ]
+  },
+  "⑨ 누르면 객실이 출발": {
+   "ok": true,
+   "g": {
+    "mode": "ride",
+    "dir": 1,
+    "progress": 0,
+    "skipping": false,
+    "y": 0,
+    "remote": 0,
+    "x": 20.5,
+    "z": -23.4
+   }
+  },
+  "⑨ 둘 화면: 하나가 객실을 타고 이어서 움직임(한 프레임 1.5m 안, 사라졌다 나타나지 않음)·객실 보임": {
+   "ok": true,
+   "n": 170,
+   "jump": 0.96,
+   "vmax": 56.5,
+   "moved": 31.3,
+   "remote": 1
+  },
+  "⑨ 타는 동안 단추는 「건너뛰기」 하나·높이 올라감": {
+   "ok": true,
+   "acts": [
+    "gd:skip"
+   ],
+   "g": {
+    "mode": "ride",
+    "dir": 1,
+    "progress": 0.384,
+    "skipping": false,
+    "y": 21.45,
+    "remote": 0,
+    "x": 0.05,
+    "z": -54.84
+   }
+  },
+  "⑨ 건너뛰기 → 2초 남짓에 꼭대기, 출발대 앞에 내림(「타기」 단추)": {
+   "ok": true,
+   "ms": 2706,
+   "p": {
+    "x": -33,
+    "z": -107,
+    "y": 26,
+    "heading": -1.57,
+    "look": {
+     "outfit": "elf",
+     "hat": "elf",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   },
+   "acts": [
+    "sled:board",
+    "sled:new",
+    "sled:records"
+   ]
+  },
+  "⑨ 휴대폰도 탭으로 탐·하나 화면에 둘의 객실": {
+   "ok": true,
+   "bUp": {
+    "mode": "ride",
+    "dir": 1,
+    "progress": 0.476,
+    "skipping": false,
+    "y": 23.36,
+    "remote": 0,
+    "x": -5.68,
+    "z": -63.22
+   },
+   "aSee": {
+    "mode": "none",
+    "dir": 0,
+    "progress": null,
+    "skipping": false,
+    "y": 26.12,
+    "remote": 1,
+    "x": -33,
+    "z": -107
+   }
+  },
+  "⑨ 꼭대기 승강장 → 「케이블카로 내려가기」": {
+   "ok": true,
+   "ad": [
+    "gd:down"
+   ]
+  },
+  "⑨ 내려가기 → 7.5초 뒤 마을 승강장 앞": {
+   "ok": true,
+   "p": {
+    "x": 19.3,
+    "z": -22,
+    "y": 0,
+    "heading": 2.45,
+    "look": {
+     "outfit": "elf",
+     "hat": "elf",
+     "scarf": null
+    },
+    "sitting": false,
+    "arms": "none"
+   }
+  },
+  "⑥ 휴대폰 단추가 모두 44px 이상·화면 안": {
+   "ok": true,
+   "r": [
+    {
+     "c": "xh-round xt-map-btn",
+     "w": 48,
+     "h": 48,
+     "in": true
+    },
+    {
+     "c": "xh-round",
+     "w": 48,
+     "h": 48,
+     "in": true
+    },
+    {
+     "c": "xh-round",
+     "w": 48,
+     "h": 48,
+     "in": true
+    },
+    {
+     "c": "xh-round",
+     "w": 48,
+     "h": 48,
+     "in": true
+    },
+    {
+     "c": "xh-round",
+     "w": 48,
+     "h": 48,
+     "in": true
+    }
+   ]
+  },
+  "⑥ 휴대폰 가로에서도 단추가 화면 안": {
+   "ok": true
+  },
+  "페이지 오류 없음": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": []
+}

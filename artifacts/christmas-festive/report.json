@@ -1,0 +1,229 @@
+{
+ "now-pc": {
+  "frameMs": 16.7,
+  "colliders": 39,
+  "calls": 305,
+  "tris": 887047,
+  "plaza": 17,
+  "errors": []
+ },
+ "now-mobile": {
+  "frameMs": 16.7,
+  "colliders": 39,
+  "calls": 178,
+  "tris": 558599,
+  "plaza": 17,
+  "errors": []
+ },
+ "a-pc": {
+  "frameMs": 16.7,
+  "colliders": 64,
+  "calls": 314,
+  "tris": 1153831,
+  "plaza": 17,
+  "errors": [],
+  "walk": {
+   "tree": [
+    10.5,
+    10.5
+   ],
+   "campfire": [
+    16.2,
+    16.2
+   ],
+   "mailbox": [
+    18.2,
+    18.2
+   ],
+   "snowmanYard": [
+    26.2,
+    26.2
+   ],
+   "snowballYard": [
+    26.6,
+    26.6
+   ],
+   "sledDeck": [
+    130.2,
+    130.2
+   ],
+   "gondolaBase": [
+    44.8,
+    44.8
+   ],
+   "gondolaTop": [
+    137.8,
+    137.8
+   ]
+  },
+  "extraColliders": 25
+ },
+ "a-mobile": {
+  "frameMs": 16.7,
+  "colliders": 56,
+  "calls": 186,
+  "tris": 705999,
+  "plaza": 17,
+  "errors": [],
+  "walk": {
+   "tree": [
+    10.5,
+    10.5
+   ],
+   "campfire": [
+    16.2,
+    16.2
+   ],
+   "mailbox": [
+    18.2,
+    18.2
+   ],
+   "snowmanYard": [
+    26.2,
+    26.2
+   ],
+   "snowballYard": [
+    26.6,
+    26.6
+   ],
+   "sledDeck": [
+    130.2,
+    130.2
+   ],
+   "gondolaBase": [
+    44.8,
+    44.8
+   ],
+   "gondolaTop": [
+    137.8,
+    137.8
+   ]
+  },
+  "extraColliders": 17
+ },
+ "b-pc": {
+  "frameMs": 16.7,
+  "colliders": 93,
+  "calls": 311,
+  "tris": 1421039,
+  "plaza": 22,
+  "errors": [],
+  "walk": {
+   "tree": [
+    15.6,
+    15.6
+   ],
+   "campfire": [
+    21.9,
+    21.9
+   ],
+   "mailbox": [
+    24.9,
+    24.9
+   ],
+   "snowmanYard": [
+    28.4,
+    28.4
+   ],
+   "snowballYard": [
+    28.9,
+    28.9
+   ],
+   "sledDeck": [
+    135.3,
+    135.3
+   ],
+   "gondolaBase": [
+    49.9,
+    49.9
+   ],
+   "gondolaTop": [
+    142.9,
+    142.9
+   ],
+   "carouselBoard": [
+    null,
+    12.8
+   ],
+   "rinkGate": [
+    null,
+    12.5
+   ]
+  },
+  "wide": {
+   "tree": 16.1,
+   "campfire": 22.7,
+   "mailbox": 24.9,
+   "snowmanYard": 28.4,
+   "snowballYard": 30,
+   "gondolaBase": 49.9,
+   "carouselBoard": 12.5,
+   "rinkGate": 12.1
+  },
+  "extraColliders": 58,
+  "seats": 16
+ },
+ "b-mobile": {
+  "frameMs": 16.7,
+  "colliders": 77,
+  "calls": 189,
+  "tris": 827913,
+  "plaza": 22,
+  "errors": [],
+  "walk": {
+   "tree": [
+    15.6,
+    15.6
+   ],
+   "campfire": [
+    21.9,
+    21.9
+   ],
+   "mailbox": [
+    24.9,
+    24.9
+   ],
+   "snowmanYard": [
+    28.4,
+    28.4
+   ],
+   "snowballYard": [
+    28.9,
+    28.9
+   ],
+   "sledDeck": [
+    135.3,
+    135.3
+   ],
+   "gondolaBase": [
+    49.9,
+    49.9
+   ],
+   "gondolaTop": [
+    142.9,
+    142.9
+   ],
+   "carouselBoard": [
+    null,
+    12.8
+   ],
+   "rinkGate": [
+    null,
+    12.5
+   ]
+  },
+  "wide": {
+   "tree": 16.1,
+   "campfire": 22.7,
+   "mailbox": 24.9,
+   "snowmanYard": 28.4,
+   "snowballYard": 30,
+   "gondolaBase": 49.9,
+   "carouselBoard": 12.5,
+   "rinkGate": 12.1
+  },
+  "extraColliders": 42,
+  "seats": 16
+ },
+ "fails": []
+}

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createGiftLimiter,parseGiftSend,cleanCardText,sanitizeGift,GIFT_RULES,GIFT_ITEMS,GIFT_INFO,giftDeniedText} from '../src/christmas/gift-state.js';
 import {createSnowmanState,ballStage,coopMul,SNOWMAN_RULES,inYard,sanitizeBallRow,namesText} from '../src/christmas/snowman-state.js';
-import {resolveThrow,autoAim,createAmmo,createHarassGuard,inFightYard,inWall,FIGHT} from '../src/christmas/snowfight.js';
+import {resolveThrow,createAmmo,createHarassGuard,inFightYard,inWall,FIGHT} from '../src/christmas/snowfight.js';
 import {createRide,SLED_RULES,runAt,defaultCourse} from '../src/christmas/sled.js';
 import {createRoomPlay,XMAS_PLAY_MESSAGES} from '../src/christmas/room-play.js';
 import {nearestSeat,nearFire} from '../src/christmas/campfire.js';
@@ -154,10 +154,7 @@ test('눈싸움: 마당 안 사람만 맞고, 가장 먼저 닿는 사람·눈�
  assert.equal(w.hit,null);assert.ok(w.wall);
  assert.ok(r.ms>100&&r.ms<1500);
 });
-test('눈싸움: 자동 조준(앞 60°·12m)·손에 3개·3초마다 1개·0.8초 간격·집중 공격 완화',()=>{
- const a=autoAim({x:FY.x,z:FY.z},0,[{id:'front',x:FY.x+1,z:FY.z-5},{id:'back',x:FY.x,z:FY.z+3}]);
- assert.equal(a.target,'front');
- assert.equal(autoAim({x:FY.x,z:FY.z},0,[{id:'side',x:FY.x+5,z:FY.z}]).target,null);
+test('눈싸움: 손에 3개·3초마다 1개·0.8초 간격·집중 공격 완화(자동 조준은 11-18에 없앰)',()=>{
  let t=0;const am=createAmmo({now:()=>t});
  assert.ok(am.take());assert.equal(am.take(),false);t=800;assert.ok(am.take());t=1600;assert.ok(am.take());t=2400;assert.equal(am.take(),false);
  assert.equal(am.n,0);t=3000;assert.equal(am.n,1);am.pack();assert.equal(am.n,2);t=6000;assert.equal(am.n,3);

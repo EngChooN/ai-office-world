@@ -82,7 +82,7 @@ export const SLED_RUN=Object.freeze({
  path:Object.freeze(RUN0.points.filter((p,i)=>p.s>=0&&(i%4===0)).map(p=>Object.freeze([+p.x.toFixed(3),+p.z.toFixed(3)]))),
  width:COURSE_W,
  // 출발대: 출발선 뒤 평평한 4m(가로 = 진행 방향 x, 세로 = 길 폭). 4줄. 시드와 상관없이 같은 자리
- deck:Object.freeze({x:skeletonAt(-2).x,z:skeletonAt(-2).z,w:3.6,d:4.4,lanes:4,heading:-Math.PI/2}),stop:Object.freeze({x:+stopAt.x.toFixed(2),z:+stopAt.z.toFixed(2),r:3}),
+ deck:Object.freeze({x:skeletonAt(-2).x,z:skeletonAt(-2).z,w:3.6,d:7,lanes:4,heading:-Math.PI/2}),stop:Object.freeze({x:+stopAt.x.toFixed(2),z:+stopAt.z.toFixed(2),r:3}),
  stairs:Object.freeze([]),
 });
 export {GONDOLA};

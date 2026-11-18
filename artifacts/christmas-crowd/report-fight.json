@@ -1,0 +1,55 @@
+{
+ "at": "2026-11-17T08:42:49.602Z",
+ "runs": [
+  {
+   "screen": "PC",
+   "people": 30,
+   "mode": "눈싸움 전원",
+   "fpsAvg": 60,
+   "fpsMin": 59.9,
+   "calls": 939,
+   "tris": 2581269,
+   "shown": 29,
+   "bodies": {
+    "dongdong": 19,
+    "lite": 10
+   },
+   "rxKBps": 27.9,
+   "rxMsgPs": 57,
+   "txKBps": 0.1,
+   "heapMB": 182
+  },
+  {
+   "screen": "휴대폰",
+   "people": 30,
+   "mode": "눈싸움 전원",
+   "fpsAvg": 38,
+   "fpsMin": 35.2,
+   "calls": 358,
+   "tris": 1237005,
+   "shown": 29,
+   "bodies": {
+    "lite": 23,
+    "dongdong": 6
+   },
+   "rxKBps": 27.7,
+   "rxMsgPs": 56,
+   "txKBps": 0.12,
+   "heapMB": 135
+  }
+ ],
+ "checks": {
+  "봇 접속 모두 성공(정원 안)": {
+   "ok": true,
+   "full": 0
+  },
+  "페이지 오류 0": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": [],
+ "botRx": {
+  "avgKB": 354
+ }
+}

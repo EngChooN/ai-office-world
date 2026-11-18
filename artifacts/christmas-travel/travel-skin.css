@@ -1,0 +1,72 @@
+/* 넓힌 광장 이동 돕기 — 월드아트 디자인 v1(11-17 5차, 대표 미확인 시안)
+   월드개발 travel-ui.css 위에 덮어 쓰는 모양값. 구조(클래스·data-go)는 travel-ui.js 그대로, 수첩 톤 변수(--paper·--ink·--stamp·--gold·--pine)를 따른다.
+   아이콘: 달리기 x-run · 지도 단추 x-map · 회전목마 x-carousel · 스케이트장 x-skate(public/icons/sprite.svg). 지도 그림: public/christmas/map/plaza-map-b.svg */
+
+/* ── 달리기: 오른쪽 가장자리, 행동 단추 줄·눈덩이 개수 표시보다 위(엄지 오른손 자리).
+      조이스틱은 화면 왼쪽 절반 어디든 손가락을 대면 생기므로 왼쪽 아래(엄지가 처음 닿는 곳)에는 단추를 두지 않는다. */
+.xt{--xt-run:60px;--xt-run-bottom:262px}
+.xt-run{left:auto;right:calc(var(--sr,0px) + 16px);bottom:calc(var(--sb,0px) + var(--xt-run-bottom));width:var(--xt-run);height:var(--xt-run);padding:0;border-radius:50%;
+ flex-direction:column;justify-content:center;gap:0;font-size:11px;letter-spacing:-.2px;background:var(--paper);color:var(--ink);box-shadow:var(--lift),var(--soft)}
+.xt-run i{line-height:0}.xt-run .ic{width:26px;height:26px}
+.xt-run span{margin-top:1px;line-height:1}
+/* PC: Shift 표시는 단추 아래 작은 꼬리표 */
+.xt-run kbd{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);font:800 10px/1 ui-monospace,Menlo,monospace;padding:3px 5px;border-radius:5px;background:var(--paper2);color:var(--ink2);box-shadow:0 1px 0 var(--edge)}
+/* 켜짐: 빨간 도장 + 금빛 테 + 바람 줄 3개가 뒤로 흐름 */
+.xt-run.on{background:var(--stamp);color:#fff;box-shadow:0 0 0 3px var(--gold),1px 3px 0 var(--stamp-d),0 0 18px rgba(255,214,110,.55)}
+.xt-run.on kbd{background:var(--gold);color:var(--ink);box-shadow:none}
+.xt-run::before{content:'';position:absolute;right:calc(100% + 6px);top:50%;width:18px;height:14px;margin-top:-7px;opacity:0;pointer-events:none;
+ background:linear-gradient(var(--gold),var(--gold)) 0 0/14px 3px no-repeat,linear-gradient(var(--gold),var(--gold)) 5px 50%/13px 3px no-repeat,linear-gradient(var(--gold),var(--gold)) 2px 100%/11px 3px no-repeat;border-radius:2px}
+.xt-run.on::before{opacity:1}
+@media (prefers-reduced-motion:no-preference){.xt-run.on::before{animation:xt-wind .6s linear infinite}@keyframes xt-wind{from{transform:translateX(6px);opacity:.2}50%{opacity:1}to{transform:translateX(-6px);opacity:0}}}
+.xt-run[data-off]{opacity:.4;filter:grayscale(.6)}
+/* 높이가 낮은 가로 화면(위 단추 줄 아래 ~ 행동 단추 위 사이에 들어가도록 조금 작게) */
+@media (orientation:landscape) and (max-height:540px){.xt{--xt-run:56px;--xt-run-bottom:258px}.xt-run .ic{width:24px;height:24px}}
+
+/* ── 지도 단추(위 오른쪽 둥근 단추 줄 맨 앞): 켜지면 빨간 테 */
+.xt-map-btn[aria-pressed="true"]{background:var(--paper);box-shadow:var(--lift),var(--soft),inset 0 0 0 3px var(--stamp)}
+.xt-map-btn[aria-pressed="true"] .ic{color:var(--stamp)}
+/* 가로 휴대폰: 위 오른쪽 둥근 단추가 5개(지도 단추 추가)로 길어져 가운데 칩(장소·트리 진행)과 닿으므로 칩 줄을 왼쪽에 붙인다(hud.css .xh-top 덮음) */
+@media (orientation:landscape) and (max-height:540px){.xh-top{left:calc(var(--sl,0px) + 12px);transform:none;max-width:calc(100vw - 300px - var(--sl,0px) - var(--sr,0px))}}
+
+/* ── 지도 창: 종이 카드 + 「바로 가기」 도장 제목 */
+.xt-map{padding:10px 12px 12px;border-radius:16px;background:var(--paper);box-shadow:0 0 0 2px var(--edge),0 12px 34px rgba(10,14,30,.55)}
+.xt-map header b{font-size:16px;font-weight:900}
+.xt-map header b .ic{color:var(--stamp)}
+.xt-board{border-radius:12px;box-shadow:inset 0 0 0 2px var(--rule),0 0 0 1px var(--edge)}
+.xt-art{display:none}
+.xt-board{background:#eef3fa url(/christmas/map/plaza-map-b.svg) center/100% 100% no-repeat}
+
+/* 핀: 동그란 도장(36px, 누르는 곳 44px) + 이름 꼬리표. 색 테 = 종류(광장 놀이 빨강 · 탈것 금빛 · 산·케이블카 초록) */
+.xt-pin{--ring:var(--stamp)}
+.xt-pin i{width:34px;height:34px;background:var(--paper);box-shadow:0 0 0 2.5px var(--ring),0 3px 0 rgba(74,54,24,.35),0 4px 10px rgba(10,14,30,.25)}
+.xt-pin i .ic{width:20px;height:20px}
+.xt-pin span{position:absolute;top:calc(50% + 19px);left:50%;transform:translateX(-50%);font-size:11px;font-weight:900;padding:2px 6px;border-radius:7px;background:var(--paper);box-shadow:0 1px 0 var(--edge);color:var(--ink)}
+.xt-pin[data-go=carousel],.xt-pin[data-go=rink],.xt-pin[data-go=sled]{--ring:var(--gold)}
+.xt-pin[data-go=gondola],.xt-pin[data-go=sled].xt-edge{--ring:var(--pine)}
+.xt-pin[data-go=entrance]{--ring:var(--ink2)}
+.xt-pin[data-go=entrance] i{width:28px;height:28px}
+/* 이름 꼬리표 자리: 가까운 핀끼리 글이 겹치지 않게 위·아래·옆으로 나눔 */
+.xt-pin[data-go=snowman] span,.xt-pin[data-go=fight] span{top:auto;bottom:calc(50% + 19px)}
+.xt-pin[data-go=gondola] span{top:50%;left:calc(50% + 21px);transform:translateY(-50%)}
+.xt-pin[data-go=tree] span{top:auto;bottom:calc(50% + 19px)}
+.xt-pin:active i,.xt-pin:hover i{transform:scale(1.12);box-shadow:0 0 0 3px var(--ring),0 0 0 7px color-mix(in srgb,var(--ring) 30%,transparent),0 4px 10px rgba(10,14,30,.3)}
+
+/* 내 자리: 금빛 화살(보는 방향) + 흰 테 + 퍼지는 빨간 고리 */
+.xt-me{width:20px;height:24px;border:0;background:var(--gold);clip-path:polygon(50% 0,100% 100%,50% 76%,0 100%);filter:drop-shadow(0 0 0 #fff) drop-shadow(0 0 1.5px #4a3618) drop-shadow(0 0 1.5px #4a3618);z-index:3}
+.xt-board::after{content:none}
+.xt-me-ring{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2.5px solid var(--stamp);pointer-events:none;z-index:2}
+@media (prefers-reduced-motion:no-preference){.xt-me-ring{animation:xt-ping 1.6s ease-out infinite}@keyframes xt-ping{from{transform:scale(.55);opacity:1}to{transform:scale(1.5);opacity:0}}}
+/* 다른 사람: 흰 점 + 초록 테(9px). 내 자리보다 아래에 그림 */
+.xt-dots i{width:9px;height:9px;margin:-4.5px 0 0 -4.5px;background:#fff;box-shadow:0 0 0 2px var(--pine),0 1px 2px rgba(10,14,30,.35);z-index:1}
+
+/* 가로 휴대폰: 제목 줄을 왼쪽 세로 띠로 옮겨 판을 높이 가득 키움, 핀·글을 조금 작게 */
+@media (orientation:landscape) and (max-height:540px){
+ .xt-map{flex-direction:row;align-items:stretch;padding:8px;gap:8px}
+ .xt-map header{flex-direction:column;align-items:flex-start;width:92px;gap:6px}
+ .xt-map header b{font-size:14px}.xt-sub{font-size:11px;flex:0}
+ .xt-x{margin:auto 0 0}
+ .xt-board{height:calc(100dvh - var(--st,0px) - var(--sb,0px) - 28px)!important}
+ .xt-pin i{width:28px;height:28px}.xt-pin i .ic{width:17px;height:17px}
+ .xt-pin span{font-size:10px;padding:1px 4px;top:calc(50% + 15px)}
+ .xt-pin[data-go=snowman] span,.xt-pin[data-go=fight] span,.xt-pin[data-go=tree] span{bottom:calc(50% + 15px)}
+}

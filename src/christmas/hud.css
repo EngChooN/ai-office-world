@@ -20,6 +20,7 @@
 .xh-round{pointer-events:auto;display:grid;place-items:center;width:48px;height:48px;padding:0;border:0;border-radius:50%;background:var(--paper);box-shadow:var(--lift),var(--soft);font-size:22px}
 /* 행동 단추 줄(오른쪽 아래, 엄지 자리): 큰 단추 하나 + 보조 단추 최대 2개(위로 쌓임) */
 .xh-acts{position:absolute;right:calc(var(--sr) + 18px);bottom:calc(var(--sb) + 22px);display:flex;flex-direction:column-reverse;align-items:flex-end;gap:10px}
+.xh-acts button>*{pointer-events:none} /* 누르는 대상은 늘 단추(안쪽 글자가 바뀌어도 눌림 유지) */
 .xh-sub-act{pointer-events:auto;position:relative;display:flex;align-items:center;gap:6px;min-height:48px;padding:0 14px 0 10px;border:0;border-radius:24px;background:var(--paper);box-shadow:var(--lift),var(--soft);font-size:14px;font-weight:900}
 .xh-sub-act em{font-style:normal;font-size:20px}
 .xh-sub-act kbd{font:700 11px ui-monospace,Menlo,monospace;padding:2px 5px;border-radius:4px;background:var(--paper2)}
@@ -290,3 +291,20 @@ html.xf-match .hc-btn,html.xf-match .xc-chat{display:none!important}
 @media (orientation:landscape) and (max-height:540px){.xh.touch .xfm-leave{top:calc(var(--st) + 64px)}}
 html.xf-match .xh-top{display:none}
 .xh.touch .xfm-leave{top:calc(var(--st) + 64px)}
+/* 11-18 썰매 경주 참가 알림(설계 v2 §3-2): 위 띠 아래 카드 5초 → 지도 단추 아래 배지(남은 초), 위 띠 참가자 줄 색 칩 */
+.xl-note{pointer-events:auto;position:absolute;left:50%;top:calc(var(--st) + 152px);transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:8px;width:min(420px,calc(100vw - 24px - var(--sl) - var(--sr)));box-sizing:border-box;padding:8px 8px 8px 14px;border-radius:14px;background:var(--paper);box-shadow:var(--lift),var(--soft)}
+.xl-note p{flex:1;margin:0;font-size:14px;font-weight:900;line-height:1.3}
+.xl-note .xh-ok{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 14px;white-space:nowrap}
+.xl-note .xh-x{min-width:44px;min-height:44px}
+.xl-badge{pointer-events:auto;position:absolute;right:calc(var(--sr) + 14px);top:calc(var(--st) + 64px);z-index:4;display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 12px 0 8px;border:0;border-radius:22px;background:var(--gold);color:var(--ink);font:900 13px var(--nb-font);box-shadow:var(--lift),var(--soft);font-variant-numeric:tabular-nums}
+.xl-chips{display:inline-flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.xl-chip{font-style:normal;display:inline-block;max-width:7.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:1px 7px;border-radius:9px;background:var(--lane);color:#fff;font-size:12px;font-weight:900;text-shadow:0 1px 0 rgba(0,0,0,.25)}
+/* 11-18 눈싸움 끌기 취소 ✕(휴대폰): 누른 곳 왼쪽 위, 지름 56px, 손가락이 위에 오면 빨강 */
+.xf-cancel{position:absolute;left:0;top:0;z-index:5;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;background:rgba(251,243,223,.9);box-shadow:var(--lift),var(--soft);pointer-events:none}
+.xf-cancel.over{background:var(--stamp);color:#fff;transform-origin:center}
+.xf-cancel .ic{width:28px;height:28px;--ic-point:#cfe0f2}
+/* 월드아트 11-18: 전용 아이콘 x-throw-cancel(눈덩이 + ✕). 손가락이 위에 오면 빨강 바탕에 흰 선, 눈덩이 면은 반투명 흰색 */
+.xf-cancel.over .ic{--ic-point:rgba(255,255,255,.28)}
+/* 알림 말(.xh-toast, 위 104px) 아래에 카드. 휴대폰 세로는 오른쪽 둥근 단추 기둥을 비켜 왼쪽 정렬, 가로는 알림 말이 60px라 그 아래 */
+.xh.touch .xl-note{left:calc(var(--sl) + 12px);transform:none;width:calc(100vw - var(--sl) - var(--sr) - 88px);top:calc(var(--st) + 176px)} /* 휴대폰 세로는 알림 말이 두 줄이 되기도 해서 더 아래 */
+@media (orientation:landscape) and (max-height:540px){.xl-note,.xh.touch .xl-note{top:calc(var(--st) + 108px);left:50%;transform:translateX(-50%);width:min(420px,calc(100vw - 24px - var(--sl) - var(--sr) - 140px))}}
