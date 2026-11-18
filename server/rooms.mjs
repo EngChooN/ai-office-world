@@ -33,6 +33,7 @@ export const ROOM_DEFAULTS=Object.freeze({
  sledMaxSpeed:14,         // m/s. 크리스마스 썰매 타는 중(act.sl 5·6, 부스터 포함 최고 12m/s)에만(11-17)
  gondolaMaxSpeed:90,      // m/s. 크리스마스 케이블카 타는 중(act.gd 1·2)에만: 보통 최고 약 16m/s, 「건너뛰기」로 남은 길을 2초에 감을 때 약 70m/s(11-17 2차)
  slack:2,                 // m. 지연으로 몰려 들어온 메시지 여유
+ maxAlt:30,               // m. 위치 메시지 a(땅 위 높이) 상한 — 크리스마스 하늘 썰매(땅 위 6~20m, 11-18)
  jumpCooldownMs:1000,     // 구간 이동 표시를 붙인 순간이동 허용 간격
  resyncMs:3000,           // 표시 없는 순간이동을 이만큼 계속 고집하면(정상 클라이언트가 놓친 경우) 받아 준다
  resumeMs:60000,          // 끊긴 뒤 이 시간 안에 다시 붙으면 같은 ID·같은 방
@@ -240,6 +241,7 @@ export function createRooms(opts={}){
   if(!bucket(c.stateTimes,t,o.stateRate)){stats.rateDropped++;return false;}
   if(!finite(m.x)||!finite(m.y)||!finite(m.h)||Math.abs(m.x)>1e5||Math.abs(m.y)>1e5||![0,1,2].includes(m.z)){stats.invalid++;return false;}
   const flags=(m.f|0)&0xff,s={t:'s',id:c.id,q:(m.q|0)&0xffff,z:m.z,x:m.x,y:m.y,h:m.h,v:finite(m.v)?Math.max(0,Math.min(20,m.v)):0,f:flags};
+  if(finite(m.a)&&m.a>0)s.a=Math.round(Math.min(o.maxAlt,m.a)*10)/10; // 크리스마스 하늘 썰매 높이(땅 위 m, 하늘에 있을 때만 옴, 11-18)
   const L=c.last;
   if(L){
    const dt=Math.max(0,(t-L.at)/1000),d=Math.hypot(s.x-L.x,s.y-L.y),limit=o.slack+(c.act?.gd?o.gondolaMaxSpeed:c.act?.sl>=5?o.sledMaxSpeed:o.maxSpeed)*dt+(s.z!==L.z?10:0);

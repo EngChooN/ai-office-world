@@ -25,7 +25,9 @@ const until=async(fn,ms=15000,step=150)=>{const end=Date.now()+ms;while(Date.now
 // 봇 역할: 회전목마(자리 수 −1명, mg 1~), 링크 8명, 눈싸움 6명, 나머지 광장 걷기(자리 수는 festive-layout.js)
 // FIGHT_ALL=1: 모두 눈싸움 마당에서 0.9초마다 던짐(30명 동시 눈덩이), 재는 화면도 마당 안
 const FIGHT_ALL=process.env.FIGHT_ALL==='1',THROW_MS=FIGHT_ALL?900:1500;
-const MG=Math.min(CAROUSEL_SEATS.length-1,12),ROLE=i=>FIGHT_ALL?'fight':i<MG?'carousel':i<MG+8?'rink':i<MG+14?'fight':'walk';
+// SKY_ALL=1(11-18 하늘 썰매): 봇 모두 하늘 썰매로 광장 위를 돎(act.hs 3, 땅 위 8~18m, 6m/s, 위치 메시지 a칸) + 재는 화면도 타고 날아서 한 번 더 잼
+const SKY_ALL=process.env.SKY_ALL==='1';
+const MG=Math.min(CAROUSEL_SEATS.length-1,12),ROLE=i=>SKY_ALL?'sky':FIGHT_ALL?'fight':i<MG?'carousel':i<MG+8?'rink':i<MG+14?'fight':'walk';
 function bot(i){
  const ws=new WebSocket(wsUrl),b={i,ws,got:[],id:null,full:false,role:ROLE(i),bytes:0,msgs:0};
  let t=i*.7,seq=0,timer=null,thrower=null;
@@ -34,14 +36,15 @@ function bot(i){
   switch(b.role){
    case 'carousel':{const a=CAROUSEL.step.a+(i+1)*.6;return {x:CAROUSEL.x+Math.sin(a)*1.5,z:CAROUSEL.z+Math.cos(a)*1.5,h:0,v:0};}
    case 'rink':{const a=t*.5+i,rx=RINK.w/2-1.2,rz=RINK.d/2-1;return {x:RINK.x+Math.sin(a)*rx*(.6+.4*(i%2)),z:RINK.z+Math.cos(a)*rz*(.6+.4*(i%2)),h:a+Math.PI/2,v:1.5};}
+   case 'sky':{const r=9+(i%7)*4,w=6/r,a=t*w*(i%2?1:-1)+i*1.3;return {x:Math.sin(a)*r,z:Math.cos(a)*r,h:a+(i%2?-1:1)*Math.PI/2,v:6,alt:8+(i%6)*2};}
    case 'fight':{const Y=SNOWBALL_YARD,a=t*.3+i,r=FIGHT_ALL?.15+(i%5)*.07:.3;return {x:Y.x+Math.sin(a)*Y.w*r,z:Y.z+Math.cos(a)*Y.d*r,h:a,v:1};}
    default:{const a=t*.2+i,r=5+i%6*1.8;return {x:Math.sin(a)*r,z:4+Math.cos(a)*r*.7,h:a+Math.PI/2,v:1.4};}
   }};
  ws.onopen=()=>send({t:'hello',exp:'christmas',room,name:`봇${i}`});
  ws.onmessage=e=>{b.bytes+=e.data.length;b.msgs++;const m=JSON.parse(e.data);b.got.push(m.t);if(b.got.length>200)b.got.shift();
   if(m.t==='welcome'){b.id=m.id;
-   send({t:'act',a:{o:['santa','sweater','elf'][i%3],hat:['','santa','antlers','beanie'][i%4],sc:i%2,d:0,...(b.role==='carousel'?{mg:i+1}:{})}});
-   const pos=()=>{const p=where();seq=(seq+1)&0xffff;send({t:'s',q:seq,z:0,x:+p.x.toFixed(2),y:+p.z.toFixed(2),h:+p.h.toFixed(2),v:p.v,f:0});};
+   send({t:'act',a:{o:['santa','sweater','elf'][i%3],hat:['','santa','antlers','beanie'][i%4],sc:i%2,d:0,...(b.role==='carousel'?{mg:i+1}:{}),...(b.role==='sky'?{hs:3}:{})}});
+   const pos=()=>{const p=where();seq=(seq+1)&0xffff;send({t:'s',q:seq,z:0,x:+p.x.toFixed(2),y:+p.z.toFixed(2),h:+p.h.toFixed(2),v:p.v,f:0,...(p.alt?{a:p.alt}:{})});};
    pos();timer=setInterval(()=>{t+=.1;pos();},100);
    b.j=setInterval(()=>send({t:'j'}),3000);
    if(b.role==='fight')thrower=setInterval(()=>{const p=where();send({t:'sb:throw',x:p.x,z:p.z,dx:Math.sin(t+i),dz:Math.cos(t+i),d:8});},THROW_MS);}
@@ -93,12 +96,25 @@ try{
    if(process.env.PROFILE&&mobile){const cdp=await p.ctx.newCDPSession(p);await cdp.send('Profiler.enable');await cdp.send('Profiler.start');await sleep(4000);const {profile}=await cdp.send('Profiler.stop');
     const self=new Map(),byId=new Map(profile.nodes.map(n=>[n.id,n]));const dt=profile.timeDeltas;let tot=0;
     profile.samples.forEach((id,i)=>{const n=byId.get(id),f=n.callFrame,k=`${f.functionName||'(익명)'} ${f.url.split('/').slice(-2).join('/')}:${f.lineNumber}`;self.set(k,(self.get(k)??0)+(dt[i]??0));tot+=dt[i]??0;});
-    console.log('PROFILE',JSON.stringify([...self].sort((a,b)=>b[1]-a[1]).slice(0,22).map(([k,v])=>[k,+(v/tot*100).toFixed(1)])));}
-   const r={screen:label,people:n,...(FIGHT_ALL?{mode:'눈싸움 전원'}:{}),...await sample(p)};out.runs.push(r);console.log(JSON.stringify(r));
-   if(n===Math.max(...SIZES))await p.screenshot({path:`${dir}/${mobile?'mobile':'pc'}-${n}${FIGHT_ALL?'-fight':''}.png`});
+    console.log('PROFILE',JSON.stringify([...self].sort((a,b)=>b[1]-a[1]).slice(0,22).map(([k,v])=>[k,+(v/tot*100).toFixed(1)])));
+    // 포함 시간(자식 포함): 우리 코드(src/) 함수만
+    const parent=new Map();for(const n of profile.nodes)for(const c of n.children??[])parent.set(c,n.id);const inc=new Map();
+    profile.samples.forEach((id,i)=>{const seen=new Set();for(let k=id;k!==undefined;k=parent.get(k)){const f=byId.get(k).callFrame;if(!/\/src\//.test(f.url))continue;const key=`${f.functionName||'(익명)'} ${f.url.split('/').slice(-2).join('/')}:${f.lineNumber}`;if(seen.has(key))continue;seen.add(key);inc.set(key,(inc.get(key)??0)+(dt[i]??0));}});
+    console.log('PROFILE',JSON.stringify([...inc].sort((a,b)=>b[1]-a[1]).slice(0,30).map(([k,v])=>[k,+(v/tot*100).toFixed(1)])));}
+   const r={screen:label,people:n,...(FIGHT_ALL?{mode:'눈싸움 전원'}:SKY_ALL?{mode:'하늘 썰매 전원(나는 땅)'}:{}),...await sample(p)};out.runs.push(r);console.log(JSON.stringify(r));
+   if(n===Math.max(...SIZES))await p.screenshot({path:`${dir}/${mobile?'mobile':'pc'}-${n}${FIGHT_ALL?'-fight':SKY_ALL?'-sky':''}.png`});
+   // 하늘 썰매 전원: 나도 타고 날아서(광장 위 12m) 다시 잰다 — 다른 사람 썰매·별 흔적이 가장 많이 보이는 때
+   if(SKY_ALL&&n===Math.max(...SIZES)){
+    await p.evaluate(()=>{window.xmas.sky.goTo();});await sleep(300);await p.evaluate(()=>window.xmas.doAction('hs:board'));await sleep(900);
+    await p.evaluate(()=>window.xmas.doAction('hs:up'));await until(()=>p.evaluate(()=>window.xmas.sky.mode==='fly'),8000);
+    await p.evaluate(()=>{const x=window.xmas;x.sky.debugMove(0,22,0);x.cam.yaw=0;x.cam.pitch=.42;x.cam.dist=10;});await sleep(2500);
+    const r2={screen:label,people:n,mode:'하늘 썰매 전원(나도 비행)',...await sample(p),sky:await p.evaluate(()=>{const s=window.xmas.sky.status();return {remotes:s.remotes,stars:s.stars,degrade:s.degrade,fleet:s.fleet};})};out.runs.push(r2);console.log(JSON.stringify(r2));
+    await p.screenshot({path:`${dir}/${mobile?'mobile':'pc'}-${n}-sky-fly.png`});
+    check(`${label}: 30명 하늘 썰매가 모두 그려짐`,r2.sky.remotes>=n-1,r2.sky);
+    await p.evaluate(()=>window.xmas.sky.stop());await sleep(500);}
   }
   // 놀이 확인(가장 큰 인원): 회전목마 빈 자리에 앉음 · 같은 자리를 고른 다른 사람은 ride:no · 남은 자리를 봇이 다 채우면 「다 찼어요」 · 링크
-  if(label==='PC'&&Math.max(...SIZES)>=9&&!FIGHT_ALL){
+  if(label==='PC'&&Math.max(...SIZES)>=9&&!FIGHT_ALL&&!SKY_ALL){
    await p.evaluate(()=>window.xmas.carousel.goTo());await sleep(400);
    await p.evaluate(()=>window.xmas.doAction('mg:ride'));await sleep(1200);
    const s=await st(p),mine=s.carousel.seat;check('30명: 회전목마 빈 자리에 앉음(다른 사람 자리와 안 겹침)',s.carousel.riding&&!s.carousel.taken.includes(mine),{seat:mine,taken:s.carousel.taken});
@@ -124,6 +140,6 @@ try{
  const rx=bots.filter(b=>b.id).map(b=>b.bytes);out.botRx=rx.length?{avgKB:+(rx.reduce((a,b)=>a+b,0)/rx.length/1024).toFixed(0)}:null;
 }catch(e){check('예외 없음',false,{e:String(e.stack??e).slice(0,500)});}
 check('페이지 오류 0',out.errors.length===0,{errors:out.errors.slice(0,5)});
-writeFileSync(`${dir}/report${FIGHT_ALL?'-fight':''}.json`,JSON.stringify(out,null,1));
+writeFileSync(`${dir}/report${FIGHT_ALL?'-fight':SKY_ALL?'-sky':''}.json`,JSON.stringify(out,null,1));
 bots.forEach(b=>b.close());await browser.close();await vite.close();await srv.close?.();
 process.exit(fail?1:0);

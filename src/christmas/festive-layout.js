@@ -102,3 +102,16 @@ export function carouselSeatAt(k,ms,groundY=0){const s=CAROUSEL_SEATS[k];if(!s)r
 // 타는 곳에서 가장 가까운(지금 그 순간) 빈 자리. taken = 이미 찬 자리 번호 Set
 export function nearestFreeSeat(ms,taken=new Set(),from=CAROUSEL.board){let best=-1,bd=Infinity;
  for(const s of CAROUSEL_SEATS){if(taken.has(s.id))continue;const p=carouselSeatAt(s.id,ms);const d=Math.hypot(p.x-from.x,p.z-from.z);if(d<bd){bd=d;best=s.id;}}return best;}
+
+// ═════ 루돌프 썰매 정류장(11-18, 설계 v2 §1: 자리 (25, 28)·썰매는 북서쪽(광장 쪽)을 봄 = 추천안·대표 미확인). 회전목마 동쪽 빈 눈밭.
+// ring = 금빛 원 가운데·반지름(이 안에 서면 「하늘 썰매 타기」 단추 — 판정 반경은 월드개발이 정함). 원은 썰매 옆(왼쪽)에 있다.
+// sleigh = 기다리는 썰매 원점(썰매 날 바닥 가운데, sky-sleigh.js place 값). 루돌프 둘은 그 앞 2.35m(SLEIGH.tow).
+// sign = 「루돌프 썰매 정류장」 표지판(원의 앞 오른쪽, 광장에서 오는 길 쪽), hay = 건초 더미·당근 먹이통. heading 규칙은 위와 같다(0 = −Z).
+const RS={x:25,z:28};const RH=+Math.atan2(RS.x,RS.z).toFixed(3); // 정류장 → 트리 쪽(북서)을 보는 heading
+const RF=[-Math.sin(RH),-Math.cos(RH)],RR=[Math.cos(RH),-Math.sin(RH)]; // 앞·오른쪽
+export const REINDEER_STATION=Object.freeze({x:RS.x,z:RS.z,ring:2,heading:RH,
+ // 썰매 방향(11-18 월드개발): 트리 쪽(RH)을 보면 바로 앞이 표지판·회전목마·집이라 날아오를 길(앞 13m)이 없어, 서북서(광장 남쪽 눈밭 쪽)를 봄 — 추천안·대표 미확인
+ sleigh:Object.freeze({x:+(RS.x-RR[0]*2.9-RF[0]).toFixed(2),z:+(RS.z-RR[1]*2.9-RF[1]).toFixed(2),heading:1.25}),
+ sign:Object.freeze({x:+(RS.x+RF[0]*2.35+RR[0]*1.3).toFixed(2),z:+(RS.z+RF[1]*2.35+RR[1]*1.3).toFixed(2)}),
+ hay:Object.freeze({x:RS.x+2.6,z:RS.z+2.2}),
+});

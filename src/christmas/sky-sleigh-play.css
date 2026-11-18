@@ -1,0 +1,21 @@
+/* 하늘 썰매 화면(월드개발, 2026-11-18, 설계 v2 §3): 위 가운데 고도 칩 · 오른쪽 세로 줄 ▲▼(아래부터 행동 단추 → ▼ → ▲ → 빨리). 색·종이 톤은 hud.css 변수 */
+.xs{position:absolute;inset:0;pointer-events:none}
+.xs-alt{position:absolute;left:50%;top:calc(var(--st,0px) + 98px);transform:translateX(-50%);display:flex;align-items:center;gap:6px;min-height:34px;padding:0 14px 0 10px;border-radius:17px;background:var(--paper);color:var(--ink);box-shadow:var(--lift),var(--soft);font-size:14px;font-weight:900;white-space:nowrap}
+.xs-alt i{display:grid;place-items:center;font-style:normal;line-height:0}
+.xs-alt.edge{background:var(--gold);color:var(--ink)}
+.xs-alt[hidden],.xs-pads[hidden]{display:none}
+.xs-pads{--xs-pad:64px;position:absolute;right:calc(var(--sr,0px) + 18px);bottom:calc(var(--sb,0px) + 22px + 64px + 10px + 48px + 12px);display:flex;flex-direction:column;align-items:center;gap:8px}
+.xs-pads button{pointer-events:auto;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:var(--xs-pad);height:var(--xs-pad);border:0;border-radius:50%;background:var(--paper);color:var(--ink);box-shadow:var(--lift),var(--soft);font:900 11px var(--nb-font);touch-action:none;user-select:none;-webkit-user-select:none}
+.xs-pads button .ic{width:28px;height:28px}
+.xs-pads button span{line-height:1;margin-top:1px}
+.xs-pads button kbd{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);font:800 10px/1 ui-monospace,Menlo,monospace;padding:3px 5px;border-radius:5px;background:var(--paper2);color:var(--ink2)}
+.xs-pads button.on{background:var(--stamp);color:#fff;transform:scale(.94)}
+.xh.touch .xs-pads{bottom:calc(var(--sb,0px) + 22px + 64px + 6px + 44px + 10px)}
+.xh.touch .xs-pads button kbd{display:none}
+/* 타는 동안 「달리기」 단추는 「빨리」(travel-ui.js), 휴대폰은 ▲▼ 위로 올림 */
+html.xs-flying .xt{--xt-run-bottom:300px}
+@media (orientation:landscape) and (max-height:540px){
+ .xs-pads{--xs-pad:56px}.xs-pads button .ic{width:24px;height:24px}
+ .xs-alt{top:calc(var(--st,0px) + 56px)}
+ html.xs-flying .xt{--xt-run-bottom:274px}
+}

@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>루돌프 하늘 썰매 — 시안 v2 (썰매 방식)</title>
+<style>
+:root{--paper:#fbf3df;--paper2:#f4e7c8;--ink:#4a3618;--ink2:#7a5f3a;--edge:#b49563;--rule:#d9c79d;--stamp:#c23a32;--stamp-d:#86231f;--pine:#2f7a52;--gold:#e9b949;--lift:1px 2px 0 #b49563;--soft:0 4px 14px rgba(10,14,30,.45);--nb-font:"Apple SD Gothic Neo",Pretendard,-apple-system,"Malgun Gothic",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#1b2436;color:var(--ink);font-family:var(--nb-font)}
+.ic{width:22px;height:22px;display:inline-block;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wrap{max-width:1470px;margin:0 auto;padding:24px 20px 60px}
+.sheet{background:var(--paper);border-radius:18px;padding:22px 26px;margin:0 0 22px;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+h1{color:#fff;font-size:26px;margin:6px 0 4px}h1+p{color:#cfd6e6;margin:0 0 18px;font-size:14px}
+h2{margin:0 0 12px;font-size:20px;display:flex;align-items:center;gap:10px}h2 b{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--stamp);color:#fff;font-size:15px}
+.tag{display:inline-block;padding:3px 10px;border-radius:12px;background:var(--gold);color:#4a3618;font-size:12px;font-weight:900;margin-left:6px}
+.note{font-size:13px;color:var(--ink2);margin:8px 0 0;line-height:1.55}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+table{border-collapse:collapse;font-size:13.5px;width:100%}th,td{border-bottom:1px solid var(--rule);padding:7px 8px;text-align:left;vertical-align:top}th{background:var(--paper2)}
+.pick{background:#fff3c9}
+/* 지도 */
+.map{position:relative;width:552px;height:630px;border-radius:12px;overflow:hidden;flex:none;box-shadow:var(--lift)}
+.map img,.map svg{position:absolute;inset:0;width:100%;height:100%}
+.legend{font-size:13px;line-height:1.9;min-width:260px;flex:1}.legend i{display:inline-block;width:16px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+/* 화면 틀 */
+.frame{position:relative;overflow:hidden;border-radius:14px;box-shadow:0 0 0 6px #10151f,0 8px 26px rgba(0,0,0,.5);flex:none;background:#24304a}
+.pc{width:960px;height:540px}.pc>.in{width:1920px;height:1080px;transform:scale(.5);transform-origin:0 0;position:absolute;left:0;top:0}
+.ph{width:390px;height:844px;border-radius:34px}.ph>.in{width:390px;height:844px;position:absolute;inset:0}
+.in>img.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.in canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cap{font-size:13px;color:var(--ink2);margin:8px 0 0;text-align:center}
+/* 게임 화면 단추(실제 hud.css 값) */
+.act{position:absolute;display:flex;align-items:center;gap:8px;min-height:64px;padding:0 20px 0 14px;border:0;border-radius:32px;background:var(--stamp);color:#fff;box-shadow:1px 3px 0 var(--stamp-d),var(--soft);font:900 16px var(--nb-font)}
+.act kbd,.sub kbd,.rnd kbd{font:700 11px ui-monospace,Menlo,monospace;padding:2px 5px;border-radius:4px;background:rgba(255,255,255,.22)}
+.sub{position:absolute;display:flex;align-items:center;gap:6px;min-height:48px;padding:0 14px 0 10px;border:0;border-radius:24px;background:var(--paper);color:var(--ink);box-shadow:var(--lift),var(--soft);font:900 14px var(--nb-font)}.sub kbd{background:var(--paper2)}
+.rnd{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;border-radius:50%;background:var(--paper);color:var(--ink);box-shadow:var(--lift),var(--soft);font:900 11px var(--nb-font)}
+.rnd.red{background:var(--stamp);color:#fff;box-shadow:1px 3px 0 var(--stamp-d),var(--soft)}
+.rnd.on{background:var(--stamp);color:#fff;box-shadow:0 0 0 3px var(--gold),var(--soft)}
+.rnd kbd{background:var(--paper2);color:var(--ink)}
+.chip{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:16px;background:color-mix(in srgb,var(--paper) 92%,transparent);box-shadow:var(--lift);font:900 14px var(--nb-font);white-space:nowrap}
+.chip.warn{background:var(--stamp);color:#fff}
+.keys{position:absolute;left:96px;bottom:26px;display:flex;gap:8px;font:800 14px var(--nb-font);color:#fff}
+.keys span{background:rgba(20,26,40,.55);padding:6px 10px;border-radius:10px}.keys kbd{font:700 12px ui-monospace,Menlo,monospace;background:rgba(255,255,255,.2);padding:1px 5px;border-radius:4px;margin-right:4px}
+.stick{position:absolute;width:120px;height:120px;border-radius:50%;border:3px solid rgba(255,255,255,.55);background:rgba(255,255,255,.12)}.stick::after{content:"";position:absolute;left:32px;top:14px;width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.7)}
+.hand{position:absolute;font:800 11px var(--nb-font);color:#fff;background:rgba(20,26,40,.6);padding:3px 7px;border-radius:8px}
+.toast{position:absolute;left:50%;transform:translateX(-50%);padding:9px 16px;border-radius:12px;background:var(--paper);box-shadow:var(--lift),var(--soft);font:900 14px var(--nb-font);white-space:nowrap}
+.rider{position:absolute;pointer-events:none}
+/* 단계 탭 */
+.tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}.tabs button{border:0;border-radius:18px;padding:8px 14px;background:var(--paper2);font:900 14px var(--nb-font);color:var(--ink);cursor:pointer;box-shadow:var(--lift)}.tabs button.on{background:var(--stamp);color:#fff}
+[data-show]:not(.vis){display:none!important}
+/* 흐름 */
+.flow{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.step{background:#fff;border-radius:12px;padding:10px;box-shadow:var(--lift);font-size:12.5px;line-height:1.45;position:relative}
+.step svg{width:100%;height:92px;display:block;background:linear-gradient(#26324f,#3a4a70 70%,#dfe6f3 70%);border-radius:8px;margin-bottom:6px}
+.step h3{margin:0 0 4px;font-size:14px}.step .b{display:inline-block;margin-top:5px;padding:2px 8px;border-radius:10px;background:var(--stamp);color:#fff;font-weight:900;font-size:11.5px}.step .b.s{background:var(--paper2);color:var(--ink)}
+.step:not(:last-child)::after{content:"›";position:absolute;right:-9px;top:44px;font:900 20px var(--nb-font);color:var(--edge)}
+/* 별 강도 */
+.lv{display:flex;gap:8px;margin:0 0 10px}.lv button{border:0;border-radius:18px;padding:8px 16px;background:var(--paper2);font:900 14px var(--nb-font);cursor:pointer;box-shadow:var(--lift)}.lv button.on{background:var(--pine);color:#fff}
+#trail{width:100%;height:220px;display:block;border-radius:12px;background:linear-gradient(#141c30,#2b3a60 78%,#d8e0ee 78%)}
+.stat{font-size:13px;margin-top:8px}
+.side{width:100%;height:auto;display:block;background:#fff;border-radius:12px;box-shadow:var(--lift)}
+@media (max-width:900px){.flow{grid-template-columns:repeat(2,1fr)}.pc{transform:scale(.36);transform-origin:0 0;margin-bottom:-346px;margin-right:-614px}.map{width:100%;max-width:552px;height:auto;aspect-ratio:736/840}.legend{min-width:0}.wrap{padding:16px 10px 40px}.sheet{padding:16px 14px}.ph{transform:scale(.8);transform-origin:0 0;margin-right:-78px;margin-bottom:-169px}}
+body.shot .hide-shot{display:none}
+</style></head><body>
+<!--SPRITE-->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+ <!-- 임시 루돌프(월드디자인 평면 그림 — 정식 모습은 월드아트). 옆모습, 오른쪽을 봄 -->
+ <symbol id="rd-side" viewBox="0 0 200 150">
+  <g stroke="#3b2414" stroke-width="3" stroke-linejoin="round">
+   <path d="M150 28 l-6 -20 M147 18 l-12 -6 M150 28 l10 -22 M157 14 l12 -4" fill="none" stroke="#6b4428" stroke-width="6" stroke-linecap="round"/>
+   <rect x="58" y="100" width="13" height="34" rx="6" fill="#6b4428"/><rect x="76" y="102" width="13" height="32" rx="6" fill="#5a3820"/><rect x="108" y="102" width="13" height="32" rx="6" fill="#5a3820"/><rect x="124" y="100" width="13" height="34" rx="6" fill="#6b4428"/>
+   <circle cx="44" cy="80" r="9" fill="#fff"/>
+   <ellipse cx="95" cy="90" rx="52" ry="28" fill="#a8693d"/>
+   <ellipse cx="96" cy="104" rx="34" ry="11" fill="#e9cfa6" stroke="none"/>
+   <path d="M122 80 Q132 62 140 52 L160 64 Q150 84 140 96 Z" fill="#a8693d"/>
+   <path d="M76 64 h40 a6 6 0 0 1 6 6 v8 h-52 v-8 a6 6 0 0 1 6 -6z" fill="#c23a32"/><path d="M70 78 h52" stroke="#e9b949" stroke-width="4"/>
+   <ellipse cx="128" cy="38" rx="11" ry="6" fill="#a8693d" transform="rotate(-25 128 38)"/>
+   <circle cx="150" cy="52" r="28" fill="#a8693d"/>
+   <ellipse cx="170" cy="62" rx="16" ry="12" fill="#e9cfa6"/>
+   <circle cx="155" cy="46" r="4" fill="#2a1a10" stroke="none"/><circle cx="156.5" cy="44.5" r="1.4" fill="#fff" stroke="none"/>
+   <path d="M128 84 Q140 92 152 80" fill="none" stroke="#c23a32" stroke-width="6"/>
+   <circle cx="140" cy="92" r="6.5" fill="#e9b949"/>
+  </g>
+  <circle cx="185" cy="58" r="14" fill="#ff5a4a" opacity=".28"/><circle cx="185" cy="58" r="8" fill="#e2322b" stroke="#3b2414" stroke-width="2.5"/><circle cx="182.5" cy="55.5" r="2.2" fill="#fff" opacity=".8"/>
+ </symbol>
+ <!-- 동동이(산타 옷) 올라탄 모습 — rd-side 위에 겹쳐 씀 -->
+ <symbol id="dd-ride" viewBox="0 0 200 150">
+  <g stroke="#3b2414" stroke-width="3" stroke-linejoin="round">
+   <rect x="96" y="66" width="10" height="20" rx="5" fill="#c23a32"/>
+   <path d="M80 70 q0 -26 18 -26 q18 0 18 26 z" fill="#c23a32"/><path d="M80 66 h36" stroke="#fff" stroke-width="5"/>
+   <circle cx="98" cy="24" r="21" fill="#f6d7b8"/><path d="M77 24 q2 -14 21 -15 q19 1 21 15 q-6 -6 -12 -5 q-9 -6 -18 0 q-6 -1 -12 5z" fill="#2a1d14"/>
+   <path d="M76 14 q22 -30 46 -2 z" fill="#c23a32"/><path d="M76 14 h46" stroke="#fff" stroke-width="6" stroke-linecap="round"/><circle cx="126" cy="4" r="6" fill="#fff"/>
+   <circle cx="106" cy="28" r="2.6" fill="#2a1a10" stroke="none"/>
+   <path d="M113 52 q12 6 20 0" fill="none" stroke="#c23a32" stroke-width="7" stroke-linecap="round"/>
+  </g>
+ </symbol>
+ <!-- 하늘 썰매 옆모습(오른쪽으로 감): 루돌프 2마리(먼 쪽은 조금 위·어둡게) + 고삐 + 썰매 + 앉은 동동이 -->
+ <symbol id="sk-side" viewBox="0 0 340 150">
+  <g style="filter:brightness(.78)"><use href="#rd-side" x="222" y="28" width="118" height="89"/></g>
+  <path d="M150 86 Q196 76 246 78 M150 90 Q194 92 236 90" fill="none" stroke="#6b4428" stroke-width="3"/>
+  <use href="#rd-side" x="186" y="42" width="134" height="100"/>
+  <use href="#dd-ride" x="-20" y="8" width="200" height="150"/>
+  <g stroke="#3b2414" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+   <path d="M40 136 V116 M124 136 V116" stroke-width="5"/>
+   <path d="M14 136 H150 Q170 136 170 120 Q170 110 160 110" fill="none" stroke-width="9"/><path d="M14 136 H150 Q170 136 170 120 Q170 110 160 110" fill="none" stroke="#e9b949" stroke-width="4"/>
+   <path d="M10 120 Q4 62 24 46 Q40 38 42 58 Q46 92 72 92 H140 Q158 92 158 106 L152 120 Z" fill="#c23a32"/>
+   <path d="M12 108 H154" stroke="#e9b949" stroke-width="4"/><circle cx="30" cy="52" r="8" fill="#e9b949"/>
+  </g>
+ </symbol>
+ <!-- 하늘 썰매 뒷모습(비행·지상 화면용): 멀리 루돌프 한 쌍, 가까이 썰매 뒤판과 동동이 등 -->
+ <symbol id="sk-back" viewBox="0 0 260 250">
+  <g stroke="#3b2414" stroke-width="3" stroke-linejoin="round">
+   <g transform="translate(130 4) scale(.7) translate(-130 0)"><g id="rdb-l" transform="translate(22 0)"><circle cx="70" cy="18" r="16" fill="#ff6a50" opacity=".3" stroke="none"/>
+    <path d="M62 26 l-9 -14 M57 19 l-8 1 M78 26 l9 -14 M83 19 l8 1" fill="none" stroke="#6b4428" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="70" cy="34" r="12" fill="#a8693d"/><path d="M56 72 l-6 18 M84 72 l6 18" stroke="#5a3820" stroke-width="8" stroke-linecap="round"/>
+    <ellipse cx="70" cy="60" rx="24" ry="20" fill="#a8693d"/><path d="M48 52 q22 -10 44 0" fill="none" stroke="#c23a32" stroke-width="6"/><circle cx="70" cy="68" r="5" fill="#e9b949"/><circle cx="70" cy="78" r="6" fill="#fff"/></g>
+   <use href="#rdb-l" x="76"/></g>
+   <path d="M108 52 L98 150 M152 52 L162 150" fill="none" stroke="#6b4428" stroke-width="3"/>
+   <g transform="translate(10 34)">
+    <path d="M90 128 q0 -42 30 -42 q30 0 30 42 z" fill="#c23a32"/><path d="M90 122 h60" stroke="#fff" stroke-width="7"/>
+    <circle cx="120" cy="80" r="27" fill="#2a1d14"/>
+    <path d="M92 74 q28 -46 58 -2 z" fill="#c23a32"/><path d="M92 74 h58" stroke="#fff" stroke-width="8" stroke-linecap="round"/><circle cx="160" cy="46" r="8" fill="#fff"/>
+    <path d="M104 102 q16 8 32 0" fill="none" stroke="#c23a32" stroke-width="8" stroke-linecap="round"/>
+   </g>
+   <path d="M30 222 Q30 236 46 236 H214 Q230 236 230 222" fill="none" stroke-width="10" stroke-linecap="round"/><path d="M30 222 Q30 236 46 236 H214 Q230 236 230 222" fill="none" stroke="#e9b949" stroke-width="4" stroke-linecap="round"/>
+   <path d="M60 214 V234 M200 214 V234" stroke-width="6"/>
+   <path d="M34 152 Q30 120 50 116 Q72 124 92 148 H168 Q188 124 210 116 Q230 120 226 152 L218 214 H42 Z" fill="#c23a32"/>
+   <path d="M40 170 H220" stroke="#e9b949" stroke-width="5"/><path d="M46 200 H214" stroke="#e9b949" stroke-width="3"/>
+   <circle cx="50" cy="122" r="9" fill="#e9b949"/><circle cx="210" cy="122" r="9" fill="#e9b949"/>
+  </g>
+ </symbol>
+ <!-- (v1) 뒤에서 본 날기 — 지금은 안 씀 -->
+ <symbol id="rd-back" viewBox="0 0 240 230">
+  <g stroke="#3b2414" stroke-width="3.2" stroke-linejoin="round">
+   <circle cx="120" cy="40" r="34" fill="#ff6a50" opacity=".25" stroke="none"/>
+   <path d="M98 34 l-16 -22 M88 22 l-14 2 M142 34 l16 -22 M152 22 l14 2" fill="none" stroke="#6b4428" stroke-width="7" stroke-linecap="round"/>
+   <ellipse cx="92" cy="44" rx="11" ry="6" fill="#a8693d" transform="rotate(20 92 44)"/><ellipse cx="148" cy="44" rx="11" ry="6" fill="#a8693d" transform="rotate(-20 148 44)"/>
+   <circle cx="120" cy="50" r="22" fill="#a8693d"/>
+   <rect x="66" y="180" width="18" height="30" rx="9" fill="#5a3820" transform="rotate(28 75 190)"/><rect x="156" y="180" width="18" height="30" rx="9" fill="#5a3820" transform="rotate(-28 165 190)"/>
+   <ellipse cx="120" cy="150" rx="62" ry="48" fill="#a8693d"/>
+   <path d="M64 122 q56 -26 112 0 l-6 22 q-50 -18 -100 0z" fill="#c23a32"/><path d="M70 142 q50 -18 100 0" fill="none" stroke="#e9b949" stroke-width="4"/>
+   <circle cx="120" cy="186" r="11" fill="#fff"/>
+   <!-- 동동이 등 -->
+   <path d="M90 128 q0 -42 30 -42 q30 0 30 42 z" fill="#c23a32"/><path d="M90 122 h60" stroke="#fff" stroke-width="7"/>
+   <circle cx="120" cy="80" r="27" fill="#2a1d14"/>
+   <path d="M92 74 q28 -46 58 -2 z" fill="#c23a32"/><path d="M92 74 h58" stroke="#fff" stroke-width="8" stroke-linecap="round"/><circle cx="160" cy="46" r="8" fill="#fff"/>
+   <path d="M104 102 q16 8 32 0" fill="none" stroke="#c23a32" stroke-width="8" stroke-linecap="round"/>
+  </g>
+ </symbol>
+</svg>
+<div class="wrap">
+<h1>루돌프 하늘 썰매 — 화면·조작 시안 v2 <span class="tag">썰매 방식 · 숫자는 추천안</span></h1>
+<p>크리스마스 광장 시안 B 기준. 바탕 화면은 실제 게임에서 찍은 사진이고, 썰매·루돌프·단추·별은 시안용으로 겹쳐 그렸습니다(평면 임시 그림, 정식 모습은 월드아트). 설계서: <code>docs/크리스마스/루돌프-하늘썰매-설계-v2.md</code></p>
+<section class="sheet">
+ <h2><b>0</b>v1에서 바뀐 점 — 루돌프 등이 아니라 루돌프가 끄는 썰매</h2>
+ <div class="row" style="align-items:center">
+  <svg viewBox="0 0 340 150" style="width:340px;height:150px;flex:none;background:linear-gradient(#26324f,#3a4a70 78%,#dfe6f3 78%);border-radius:12px"><use href="#sk-side" width="340" height="150"/></svg>
+  <svg viewBox="0 0 260 250" style="width:150px;height:144px;flex:none;background:linear-gradient(#26324f,#3a4a70);border-radius:12px"><use href="#sk-back" width="260" height="250"/></svg>
+  <table style="flex:1;min-width:300px">
+   <tr><th>항목</th><th>v1 (폐기)</th><th>v2</th></tr>
+   <tr><td>탈것</td><td>루돌프 등에 올라탐</td><td><b>「하늘 썰매」</b> — 루돌프 2마리가 끄는 산타 썰매, 동동이는 좌석에 앉음</td></tr>
+   <tr><td>이름·단추</td><td>루돌프 정류장 · 루돌프 타기</td><td><b>루돌프 썰매 정류장 · 하늘 썰매 타기</b> (언덕 「눈썰매」와 이름·단추·지도 핀을 나눔)</td></tr>
+   <tr><td>크기·움직임</td><td>1마리 크기</td><td>전체 길이 약 4.6m — 루돌프가 먼저 돌고 썰매가 늦게 따라옴, 돌 때 썰매가 옆으로 기욺, 뒤로 가지 않음</td></tr>
+   <tr><td>카메라</td><td>지상 5.5m · 비행 8m</td><td>지상 7m · 비행 10m (썰매와 루돌프가 다 보이게)</td></tr>
+   <tr><td>별 흔적</td><td>루돌프 발밑</td><td>썰매 날(바닥) 뒤로 떨어짐</td></tr>
+  </table>
+ </div>
+ <p class="note">대표 결정(휴대폰 조이스틱+▲▼, 범위 38m·6~20m, 별 보통, 동시 탑승 제한 없음)은 그대로입니다. 기존 언덕 눈썰매의 규칙·기록판은 건드리지 않습니다. 동승(여러 명)은 이번 범위 밖입니다.</p>
+</section>
+
+<section class="sheet">
+ <h2><b>1</b>루돌프 썰매 정류장 자리와 날 수 있는 범위</h2>
+ <div class="row">
+  <div class="map"><img src="{{IMG:map-b}}" alt="광장 지도">
+   <svg viewBox="0 0 736 840">
+    <defs><clipPath id="north"><rect x="0" y="264" width="736" height="600"/></clipPath>
+     <pattern id="hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="rgba(194,58,50,.12)"/><line x1="0" y1="0" x2="0" y2="10" stroke="rgba(194,58,50,.55)" stroke-width="3"/></pattern></defs>
+    <g clip-path="url(#north)">
+     <circle cx="368" cy="472" r="304" fill="rgba(233,185,73,.13)" stroke="#e9b949" stroke-width="5" stroke-dasharray="14 8"/>
+     <circle cx="368" cy="472" r="272" fill="none" stroke="rgba(233,185,73,.55)" stroke-width="2" stroke-dasharray="4 6"/>
+    </g>
+    <line x1="146" y1="264" x2="590" y2="264" stroke="#e9b949" stroke-width="5" stroke-dasharray="14 8"/>
+    <!-- 못 내리는 곳 -->
+    <rect x="536" y="432" width="96" height="112" rx="6" fill="url(#hatch)"/><rect x="92" y="428" width="104" height="120" rx="6" fill="url(#hatch)"/>
+    <rect x="180" y="676" width="128" height="80" rx="20" fill="url(#hatch)"/><circle cx="508" cy="660" r="34" fill="url(#hatch)"/><circle cx="368" cy="472" r="32" fill="url(#hatch)"/>
+    <!-- 피해 가는 원기둥 -->
+    <circle cx="368" cy="472" r="32" fill="none" stroke="#2f7a52" stroke-width="5"/><circle cx="532" cy="275" r="48" fill="rgba(47,122,82,.18)" stroke="#2f7a52" stroke-width="5"/>
+    <!-- 정류장 -->
+    <circle cx="574" cy="702" r="16" fill="rgba(233,185,73,.5)" stroke="#fff" stroke-width="3"/>
+    <g transform="translate(568 696) rotate(-45)"><rect x="-6" y="-24" width="12" height="16" rx="3" fill="#a8693d" stroke="#3b2414" stroke-width="2"/><rect x="-7" y="-6" width="14" height="16" rx="4" fill="#c23a32" stroke="#e9b949" stroke-width="3"/></g>
+    <g font-family="Apple SD Gothic Neo,sans-serif" font-weight="900" font-size="19">
+     <rect x="560" y="724" width="172" height="30" rx="15" fill="#c23a32"/><text x="646" y="745" text-anchor="middle" fill="#fff">루돌프 썰매 정류장</text>
+     <text x="368" y="196" text-anchor="middle" fill="#8a6a1a" font-size="17">← 날 수 있는 끝 z = −26 →</text>
+     <text x="96" y="810" fill="#8a6a1a" font-size="17">금빛 점선 = 반지름 38m</text>
+    </g>
+    <!-- 이륙 예시 -->
+    <path d="M568 696 Q520 600 470 540" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="2 9" stroke-linecap="round"/>
+   </svg>
+  </div>
+  <div class="legend">
+   <p><i style="background:#c23a32;border:3px solid #e9b949"></i><b>루돌프 썰매 정류장 (25, 28)</b> — 회전목마 동쪽 빈 눈밭. 썰매(길이 약 4.6m)는 북서쪽(광장 쪽)을 보고 서 있어 회전목마와 집 사이로 바로 나갑니다. 첫 등장 자리·입구 길과 떨어져 붐비지 않음.</p>
+   <p><i style="background:rgba(233,185,73,.4);border:2px dashed #e9b949"></i><b>날 수 있는 곳</b> — 트리에서 38m 원 안 + 케이블카 승강장 앞(z ≥ −26)까지. 안쪽 점선(34m)부터 부드럽게 휘어 돌아옴.</p>
+   <p><i style="background:rgba(47,122,82,.25);border:2px solid #2f7a52"></i><b>피해 가는 곳</b> — 트리(반지름 4m·높이 10.5m, 그 위는 통과), 케이블카 승강장(6m·9m).</p>
+   <p><span style="display:inline-block;width:16px;height:12px;margin-right:6px;background:repeating-linear-gradient(45deg,rgba(194,58,50,.6) 0 3px,rgba(194,58,50,.12) 3px 7px);border-radius:3px;vertical-align:-1px"></span><b>못 내리는 곳</b> — 눈싸움·눈사람 마당, 스케이트장, 회전목마, 트리 둘레. 위로 날아 지나가는 것은 됨.</p>
+   <p class="note">언덕 눈썰매 산·케이블 선은 범위 밖이라 부딪힐 일이 없습니다. 지도 핀이 하나 늘어납니다(「하늘 썰매」, 루돌프 얼굴 — 언덕 「눈썰매」 핀과 다른 그림).</p>
+  </div>
+ </div>
+</section>
+
+<section class="sheet">
+ <h2><b>2</b>타기 → 달리기 → 이륙 → 비행 → 착지 → 내리기</h2>
+ <div class="flow">
+  <div class="step"><svg viewBox="0 0 200 92"><ellipse cx="62" cy="80" rx="46" ry="10" fill="rgba(233,185,73,.45)"/><use href="#sk-side" x="14" y="16" width="170" height="75"/></svg><h3>① 타기</h3>썰매 옆 금빛 원(2m) 안에서. 동동이가 좌석에 올라앉음 0.6초, 어두워짐 없음.<br><span class="b">하늘 썰매 타기 E</span></div>
+  <div class="step"><svg viewBox="0 0 200 92"><use href="#sk-side" x="18" y="16" width="170" height="75"/><g fill="#fff8c0"><circle cx="16" cy="86" r="2"/><circle cx="8" cy="82" r="1.5"/><circle cx="24" cy="88" r="1.8"/></g></svg><h3>② 지상 달리기</h3>걷기와 같은 조작, 3.6m/s(빨리 5). 루돌프가 먼저 돌고 썰매가 따라옴. 뒤로는 안 감.<br><span class="b">날아오르기 E</span> <span class="b s">내리기 Q</span></div>
+  <div class="step"><svg viewBox="0 0 200 92"><g transform="rotate(-14 100 50)"><use href="#sk-side" x="24" y="8" width="160" height="70"/></g><path d="M4 86 Q50 86 76 70" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="3 5"/></svg><h3>③ 이륙</h3>1.2초 저절로 도움닫기(약 5m) → 루돌프가 먼저 뜨고 썰매가 따라 1.5초에 땅 위 6m. 앞 13m가 막혀 있으면 단추 흐림.</div>
+  <div class="step"><svg viewBox="0 0 200 92"><use href="#sk-side" x="34" y="2" width="150" height="66"/><g fill="#ffe27a"><circle cx="34" cy="62" r="3"/><circle cx="22" cy="68" r="2.4"/><circle cx="12" cy="74" r="2"/><circle cx="4" cy="80" r="1.5"/></g></svg><h3>④ 비행</h3>6~20m에서 자유롭게. 손을 떼면 둥실(루돌프는 허공을 천천히 달림). 썰매 뒤로 별.<br><span class="b">내려앉기 E</span> <span class="b s">내리기 Q</span></div>
+  <div class="step"><svg viewBox="0 0 200 92"><g transform="rotate(12 100 50)"><use href="#sk-side" x="30" y="4" width="156" height="68"/></g><path d="M10 14 Q50 24 80 60" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="3 5"/></svg><h3>⑤ 착지</h3>2초 비스듬히 내려와 썰매 날이 눈에 닿으며 ②로. 아래가 못 내리는 곳이면 가까운 바닥으로 미끄러져 감(최대 3초).</div>
+  <div class="step"><svg viewBox="0 0 200 92"><g transform="rotate(-12 150 26)"><use href="#sk-side" x="96" y="4" width="100" height="44"/></g><g fill="#ffe27a"><circle cx="96" cy="50" r="2.4"/><circle cx="86" cy="58" r="2"/></g><g transform="translate(26 34)"><use href="#dd-ride" x="-20" y="0" width="80" height="60"/><rect x="18" y="38" width="5" height="12" rx="2" fill="#3b2414"/><rect x="27" y="38" width="5" height="12" rx="2" fill="#3b2414"/></g></svg><h3>⑥ 내리기</h3>땅에서 어디서나. 동동이는 썰매 옆에 서고, 빈 썰매는 별을 뿌리며 정류장으로 날아감(1.5초).</div>
+ </div>
+ <p class="note">일시정지 없음 · 모든 동작은 화면 단추로도 됨(기존 원칙). 비행 중 「내리기」 = 내려앉고 바로 내림. 탈 때 내내 방울 소리가 나고, 빨리 갈수록 방울이 빨라집니다.</p>
+</section>
+
+<section class="sheet">
+ <h2><b>3</b>화면 시안 — PC · 휴대폰</h2>
+ <div class="tabs hide-shot" id="tabs"><button data-st="stop">정류장</button><button data-st="ground">지상 달리기</button><button data-st="fly" class="on">비행</button><button data-st="edge">광장 끝</button></div>
+ <div class="row">
+  <div>
+   <div class="frame pc"><div class="in" id="pc">
+    <img class="bg" data-show="stop" src="{{IMG:pc-station-base}}" alt="">
+    <img class="bg" data-show="ground fly edge" src="{{IMG:pc-fly-base}}" alt="">
+    <canvas id="pcStars" width="1920" height="1080" data-show="fly edge"></canvas>
+    <!-- 정류장: 금빛 원·표지판·기다리는 루돌프 -->
+    <svg data-show="stop" class="rider" style="left:0;top:0;width:1920px;height:1080px" viewBox="0 0 1920 1080"><ellipse cx="860" cy="668" rx="230" ry="58" fill="rgba(233,185,73,.28)" stroke="#e9b949" stroke-width="5" stroke-dasharray="18 10"/>
+     <g transform="translate(560 330)"><rect x="-6" y="40" width="14" height="230" rx="5" fill="#6b4428" stroke="#3b2414" stroke-width="4"/><rect x="-170" y="-10" width="350" height="90" rx="14" fill="#fbf3df" stroke="#6b4428" stroke-width="7"/><text x="5" y="46" text-anchor="middle" font-family="Apple SD Gothic Neo,sans-serif" font-weight="900" font-size="32" fill="#c23a32">루돌프 썰매 정류장</text></g>
+     <use href="#sk-side" x="760" y="400" width="600" height="265"/></svg>
+    <!-- 지상/비행 동동이+루돌프 -->
+    <svg data-show="ground" class="rider" style="left:800px;top:520px;width:330px;height:317px" viewBox="0 0 260 250"><use href="#sk-back" width="260" height="250"/></svg>
+    <svg data-show="fly edge" class="rider" id="pcRider" style="left:820px;top:410px;width:290px;height:279px" viewBox="0 0 260 250"><use href="#sk-back" width="260" height="250"/></svg>
+    <!-- 위 칩 -->
+    <div class="chip" data-show="fly" style="top:104px">고도 12m · 날 수 있는 곳</div>
+    <div class="chip warn" data-show="edge" style="top:104px">광장 끝이에요 · 안쪽으로 돌아가요</div>
+    <div class="toast" data-show="ground" style="top:150px">「날아오르기」로 하늘을 날아요</div>
+    <!-- 오른쪽 아래 단추 -->
+    <button class="act" data-show="stop" style="right:18px;bottom:22px"><svg class="ic"><use href="#ic-x-star"/></svg>하늘 썰매 타기 <kbd>E</kbd></button>
+    <button class="act" data-show="ground" style="right:18px;bottom:22px"><svg class="ic"><use href="#ic-x-uphill"/></svg>날아오르기 <kbd>E</kbd></button>
+    <button class="act" data-show="fly edge" style="right:18px;bottom:22px"><svg class="ic"><use href="#ic-x-downhill"/></svg>내려앉기 <kbd>E</kbd></button>
+    <button class="sub" data-show="ground fly edge" style="right:18px;bottom:96px"><svg class="ic"><use href="#ic-c-leave"/></svg>내리기 <kbd>Q</kbd></button>
+    <button class="rnd" data-show="fly edge" style="right:200px;bottom:90px;width:56px;height:56px">▲<kbd>Space</kbd></button>
+    <button class="rnd" data-show="fly edge" style="right:200px;bottom:22px;width:56px;height:56px">▼<kbd>C</kbd></button>
+    <button class="rnd" data-show="stop" style="right:16px;bottom:262px;width:60px;height:60px"><svg class="ic"><use href="#ic-x-run"/></svg>달리기</button>
+    <button class="rnd" data-show="ground fly edge" style="right:16px;bottom:262px;width:60px;height:60px"><svg class="ic"><use href="#ic-x-boost"/></svg>빨리<kbd>Shift</kbd></button>
+    <div class="keys" data-show="fly edge"><span><kbd>WASD</kbd>방향</span><span><kbd>Space</kbd>위 <kbd>C</kbd>아래</span><span><kbd>Shift</kbd>빨리</span><span>마우스 끌기 = 시점</span></div>
+   </div></div>
+   <p class="cap">PC 1920×1080 (절반 크기로 보임)</p>
+  </div>
+  <div>
+   <div class="frame ph"><div class="in" id="ph">
+    <img class="bg" data-show="stop ground fly edge" src="{{IMG:phone-fly-base}}" alt="">
+    <canvas id="phStars" width="390" height="844" data-show="fly edge"></canvas>
+    <svg data-show="stop" class="rider" style="left:14px;top:480px;width:340px;height:170px" viewBox="0 0 340 170"><ellipse cx="96" cy="150" rx="94" ry="22" fill="rgba(233,185,73,.3)" stroke="#e9b949" stroke-width="3" stroke-dasharray="10 6"/><use href="#sk-side" x="0" y="10" width="340" height="150"/></svg>
+    <svg data-show="ground" class="rider" style="left:110px;top:540px;width:170px;height:164px" viewBox="0 0 260 250"><use href="#sk-back" width="260" height="250"/></svg>
+    <svg data-show="fly edge" class="rider" id="phRider" style="left:118px;top:430px;width:156px;height:150px" viewBox="0 0 260 250"><use href="#sk-back" width="260" height="250"/></svg>
+    <div class="chip" data-show="fly" style="top:104px;font-size:13px">고도 12m</div>
+    <div class="chip warn" data-show="edge" style="top:104px;font-size:13px">광장 끝이에요</div>
+    <div class="toast" data-show="stop" style="top:250px;font-size:13px">루돌프 썰매 정류장 · 「하늘 썰매 타기」로 타요</div>
+    <div class="toast" data-show="ground" style="top:250px;font-size:13px">「날아오르기」로 하늘을 날아요</div>
+    <div class="stick" data-show="ground fly edge" style="left:40px;bottom:120px"></div>
+    <span class="hand" data-show="ground fly edge" style="left:40px;bottom:250px">왼쪽 절반 = 조이스틱</span>
+    <button class="act" data-show="stop" style="right:18px;bottom:22px"><svg class="ic"><use href="#ic-x-star"/></svg>하늘 썰매 타기</button>
+    <button class="rnd red" data-show="ground" style="right:18px;bottom:22px;width:76px;height:76px"><svg class="ic" style="width:28px;height:28px"><use href="#ic-x-uphill"/></svg>날아오르기</button>
+    <button class="rnd red" data-show="fly edge" style="right:18px;bottom:22px;width:76px;height:76px"><svg class="ic" style="width:28px;height:28px"><use href="#ic-x-downhill"/></svg>내려앉기</button>
+    <button class="rnd" data-show="ground fly edge" style="right:30px;bottom:110px;width:52px;height:52px"><svg class="ic"><use href="#ic-c-leave"/></svg>내리기</button>
+    <button class="rnd" data-show="fly edge" style="right:106px;bottom:94px;width:60px;height:60px;font-size:20px">▲<span style="font-size:10px">위로</span></button>
+    <button class="rnd" data-show="fly edge" style="right:106px;bottom:22px;width:60px;height:60px;font-size:20px">▼<span style="font-size:10px">아래로</span></button>
+    <button class="rnd" data-show="stop" style="right:16px;bottom:262px;width:60px;height:60px"><svg class="ic"><use href="#ic-x-run"/></svg>달리기</button>
+    <button class="rnd" data-show="ground fly edge" style="right:16px;bottom:262px;width:60px;height:60px"><svg class="ic"><use href="#ic-x-boost"/></svg>빨리</button>
+   </div></div>
+   <p class="cap">휴대폰 세로 390×844</p>
+  </div>
+ </div>
+ <p class="note">단추 자리는 지금 크리스마스 화면 값 그대로: 행동 단추 오른쪽 아래(18·22px), 달리기 자리(오른쪽 16px·아래 262px)가 탈 때 「빨리」로 바뀝니다. 휴대폰 ▲▼·내리기는 모두 화면 오른쪽 절반 안이라 조이스틱(왼쪽 절반)과 겹치지 않습니다. 가로 화면은 단추를 56px로 줄입니다. 탈 때는 다른 행동 단추가 숨습니다(회전목마와 같음). 카메라는 썰매 뒤 위에서 봅니다(지상 7m·비행 10m) — 루돌프 두 마리와 썰매가 한 화면에 들어옵니다.</p>
+</section>
+
+<section class="sheet">
+ <h2><b>4</b>고도 한계 (옆에서 본 그림)</h2>
+ <svg class="side" viewBox="0 0 980 300">
+  <rect x="0" y="0" width="980" height="300" fill="#eef2f8"/>
+  <rect x="80" y="60" width="760" height="140" fill="rgba(233,185,73,.25)"/>
+  <line x1="80" y1="60" x2="840" y2="60" stroke="#e9b949" stroke-width="3" stroke-dasharray="10 6"/><line x1="80" y1="200" x2="840" y2="200" stroke="#e9b949" stroke-width="3" stroke-dasharray="10 6"/>
+  <line x1="40" y1="260" x2="960" y2="260" stroke="#7a8aa6" stroke-width="4"/>
+  <!-- 7px/m 가로, 7px/m 세로: 땅 y=260, 6m=218? → 세로 확대 -->
+  <g font-family="Apple SD Gothic Neo,sans-serif" font-size="14" font-weight="800" fill="#4a3618">
+   <text x="846" y="65">20m 위 끝</text><text x="846" y="205">6m 아래 끝</text>
+   <!-- 트리 9m -->
+   <polygon points="460,260 432,260 446,174" fill="#2f7a52"/><polygon points="460,260 488,260 474,174" fill="#2f7a52"/><polygon points="422,260 498,260 460,170" fill="#2f7a52"/><text x="460" y="174" text-anchor="middle" fill="#e9b949" font-size="22">★</text><text x="460" y="285" text-anchor="middle">트리 9m (반지름 4m 원기둥은 10.5m까지 피함)</text>
+   <rect x="420" y="155" width="80" height="105" fill="none" stroke="#2f7a52" stroke-width="3" stroke-dasharray="6 4"/>
+   <!-- 집 5m -->
+   <rect x="180" y="226" width="60" height="34" fill="#d9b48a" stroke="#6b4428" stroke-width="3"/><polygon points="170,226 250,226 210,210" fill="#fff" stroke="#6b4428" stroke-width="3"/><text x="210" y="285" text-anchor="middle">집 약 5m</text>
+   <!-- 회전목마 5.6m -->
+   <rect x="641" y="226" width="8" height="34" fill="#e9b949"/><polygon points="590,228 700,228 645,204" fill="#c23a32" stroke="#86231f" stroke-width="3"/><text x="645" y="285" text-anchor="middle">회전목마 5.6m</text>
+   <!-- 하늘 썰매 -->
+   <use href="#sk-side" x="250" y="82" width="124" height="55"/>
+   <use href="#sk-side" x="690" y="160" width="104" height="46"/>
+   <text x="80" y="40">날아다니는 높이 6~20m (땅 기준). 6m = 지붕·가로등 위, 20m = 광장 전체가 한 화면에</text>
+  </g>
+ </svg>
+ <p class="note">가로·세로 모두 1m = 10px로 맞춘 그림입니다(썰매만 크게, 실제 길이 약 4.6m). 이륙·착지 중에만 6m 아래를 지나고, 그때는 앞 13m에 막힘이 없는지 먼저 봅니다.</p>
+</section>
+
+<section class="sheet">
+ <h2><b>5</b>별 흔적 세기 (성능 고려)</h2>
+ <div class="lv hide-shot" id="lv"><button data-lv="0">은은</button><button data-lv="1" class="on">보통 (추천)</button><button data-lv="2">화려</button></div>
+ <canvas id="trail" width="1180" height="220"></canvas>
+ <div class="stat" id="lvStat"></div>
+ <table style="margin-top:10px">
+  <tr><th>세기</th><th>내 별(1초)</th><th>다른 사람(1초)</th><th>별 수명</th><th>땅 반짝임</th><th>30명이 다 날 때(PC)</th></tr>
+  <tr><td>은은</td><td>6</td><td>3</td><td>1.6초</td><td>없음</td><td>약 150개</td></tr>
+  <tr class="pick"><td><b>보통 (추천)</b></td><td>10</td><td>5</td><td>2.4초, 떨어지며 작아짐</td><td>광장 위만 0.8초</td><td>약 370개</td></tr>
+  <tr><td>화려</td><td>16</td><td>10</td><td>3.2초</td><td>1.2초</td><td>약 980개 → 상한에 걸림</td></tr>
+ </table>
+ <p class="note">한 화면 상한: PC 400개 · 휴대폰 150개(넘으면 오래된 별부터 다시 씀). 모두 한 묶음으로 그려 무게가 거의 늘지 않고, 통신도 늘지 않습니다(각 화면이 받은 위치로 별을 만듦). 휴대폰은 가까운 6명만 흔적을 그립니다. 프레임이 떨어지면(PC 50·휴대폰 36 아래가 3초) 남의 흔적부터 줄입니다.</p>
+</section>
+
+<section class="sheet">
+ <h2><b>6</b>다른 놀이와 바꿔 탈 때 (탈것은 한 번에 하나)</h2>
+ <table>
+  <tr><th>지금 하는 것</th><th>정류장 「하늘 썰매 타기」</th><th>하늘 썰매 탄 채로</th></tr>
+  <tr><td>회전목마·언덕 눈썰매(출발대 줄 포함)·케이블카·스케이트장 안</td><td>안 뜸(먼저 내리기)</td><td>그 시설 단추 안 뜸. 회전목마·링크 위를 6m 넘게 날아 지나가는 것은 됨</td></tr>
+  <tr><td>모닥불 앉기·트리 장식·눈사람 굴리기</td><td>안 뜸</td><td>단추 숨김(앉기·장식 안 됨)</td></tr>
+  <tr><td>눈싸움 조준·한 판 참가</td><td>안 뜸</td><td>마당에 내려앉지 못함, 하늘의 사람은 눈덩이에 안 맞음</td></tr>
+  <tr><td>달리기 켜짐</td><td>탈 때 꺼짐</td><td>같은 단추가 「빨리」</td></tr>
+  <tr><td>지도 바로 가기</td><td>—</td><td>썰매를 정류장으로 돌려보내고 어두워짐 뒤 이동(지금 방식과 같음)</td></tr>
+  <tr><td>언덕 눈썰매 기록판·레이스</td><td>—</td><td>건드리지 않음(하늘 썰매는 기록·순위 없음)</td></tr>
+  <tr><td>서버 바꾸기·다시 연결</td><td>—</td><td>바로 내려 땅에 섬</td></tr>
+  <tr><td>채팅</td><td>그대로</td><td>그대로(말풍선이 하늘 위 머리에)</td></tr>
+ </table>
+</section>
+
+<section class="sheet">
+ <h2><b>7</b>정한 것 · 추천안 · 알아 둘 것</h2>
+ <table>
+  <tr><th>항목</th><th>내용</th><th>상태</th></tr>
+  <tr><td>탈것 방식</td><td>루돌프가 끄는 산타 썰매에 앉아 탐(등에 타기 폐기)</td><td>대표 지시</td></tr>
+  <tr><td>휴대폰 조작</td><td>조이스틱 = 방향, ▲▼ 단추 = 높이, 손 떼면 둥실</td><td>대표 결정</td></tr>
+  <tr><td>범위·고도</td><td>트리에서 38m 원 + z ≥ −26, 땅 위 6~20m</td><td>대표 결정</td></tr>
+  <tr><td>별 흔적</td><td>보통(PC 400·휴대폰 150개 상한)</td><td>대표 결정</td></tr>
+  <tr><td>동시 탑승</td><td>제한 없음(누구나 썰매 1대씩), 동승은 범위 밖</td><td>대표 결정</td></tr>
+  <tr class="pick"><td>루돌프 수</td><td>늘 2마리. 휴대폰의 먼 사람(가벼운 동동이)은 간단한 모양 2마리, 프레임이 떨어지면 먼 사람부터 1마리로</td><td>추천안(대표 미확인)</td></tr>
+  <tr class="pick"><td>돌기·뒤로</td><td>루돌프가 먼저 돌고 썰매가 0.25초 늦게 따라옴, 초당 최대 150°, 돌 때 썰매 15° 기욺. 뒤로 가지 않고 뒤쪽 입력 = 크게 돌아섬</td><td>추천안(대표 미확인)</td></tr>
+  <tr class="pick"><td>정류장 썰매</td><td>늘 1대가 서서 기다림. 누가 타면 그 사람 썰매가 출발하고 2초 뒤 새 썰매가 다시 나타남</td><td>추천안(대표 미확인)</td></tr>
+ </table>
+ <p class="note"><b>알아 둘 것:</b> 다른 사람에게 하늘 높이를 보여 주려면 서버가 받는 내용이 하나 늘어서, 구현 뒤 <b>운영 멀티 서버를 한 번 다시 켜야</b> 합니다(정원·비용 변경 아님). 비행 속도(최고 9m/s)는 지금 서버 속도 한도(12m/s) 안입니다.</p>
+</section>
+</div>
+<script>
+const shot=new URLSearchParams(location.search).has('shot');if(shot)document.body.classList.add('shot');
+// 단계 탭
+function setState(st){document.querySelectorAll('[data-show]').forEach(e=>{e.classList.toggle('vis',e.dataset.show.split(' ').includes(st));});document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.st===st));}
+document.getElementById('tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setState(b.dataset.st);});
+setState(new URLSearchParams(location.search).get('st')||'fly');
+// 별 흔적 공통
+const LV=[{rate:6,life:1.6,spark:0,name:'은은'},{rate:10,life:2.4,spark:.8,name:'보통'},{rate:16,life:3.2,spark:1.2,name:'화려'}];
+let lv=1;
+function star(ctx,x,y,r,a,rot){ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.globalAlpha=a;ctx.beginPath();for(let i=0;i<10;i++){const rr=i%2?r*.45:r,t=i*Math.PI/5;ctx.lineTo(Math.sin(t)*rr,-Math.cos(t)*rr);}ctx.closePath();ctx.fillStyle='#ffe27a';ctx.shadowColor='#fff3b0';ctx.shadowBlur=r*1.6;ctx.fill();ctx.restore();}
+// 비행 화면 별(뒤에서 봄: 별은 아래·바깥으로 퍼지며 사라짐)
+function screenStars(id,rid,scale){const c=document.getElementById(id),ctx=c.getContext('2d'),rider=document.getElementById(rid),base={l:parseFloat(rider.style.left),t:parseFloat(rider.style.top)};const P=[];let acc=0,last=performance.now();
+ function f(now){const dt=Math.min(.05,(now-last)/1000);last=now;const L=LV[lv],t=now/1000;
+  const bob=Math.sin(t*2)*6*scale,sway=Math.sin(t*.7)*14*scale;rider.style.left=(base.l+sway)+'px';rider.style.top=(base.t+bob)+'px';rider.style.transform=`rotate(${Math.cos(t*.7)*5}deg)`;
+  const w=parseFloat(rider.style.width),h=parseFloat(rider.style.height),ex=base.l+sway+w/2,ey=base.t+bob+h*.92;
+  acc+=dt*L.rate*1.4;while(acc>=1){acc--;P.push({x:ex+(Math.random()-.5)*w*.6,y:ey,vx:(Math.random()-.5)*60*scale,vy:(40+Math.random()*50)*scale,age:0,life:L.life,r:(7+Math.random()*5)*scale,rot:Math.random()*6});}
+  ctx.clearRect(0,0,c.width,c.height);
+  for(let i=P.length-1;i>=0;i--){const p=P[i];p.age+=dt;if(p.age>p.life){P.splice(i,1);continue;}p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=30*scale*dt;const k=p.age/p.life;star(ctx,p.x,p.y,p.r*(1+k*.6)*(lv===1?1-k*.35:1),(1-k)*(k<.1?k*10:1),p.rot+k*2);}
+  requestAnimationFrame(f);}requestAnimationFrame(f);}
+screenStars('pcStars','pcRider',2);screenStars('phStars','phRider',.8);
+// 세기 비교(옆에서 봄)
+const T=document.getElementById('trail'),tc=T.getContext('2d'),TP=[],SP=[];let tacc=0,tlast=performance.now(),tx=0;const GROUND=172;
+function trailFrame(now){const dt=Math.min(.05,(now-tlast)/1000);tlast=now;const L=LV[lv];tx=(tx+dt*150)%(T.width+240);const x=tx-120,y=70+Math.sin(now/600)*10;
+ tacc+=dt*L.rate;while(tacc>=1){tacc--;TP.push({x:x-78,y:y+30,vx:-20+Math.random()*16,vy:10+Math.random()*20,age:0,life:L.life,r:5+Math.random()*3,rot:Math.random()*6,sp:false});}
+ tc.clearRect(0,0,T.width,T.height);
+ for(let i=TP.length-1;i>=0;i--){const p=TP[i];p.age+=dt;p.vy+=40*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.y>=GROUND){if(L.spark&&!p.sp)SP.push({x:p.x,age:0,life:L.spark});TP.splice(i,1);continue;}if(p.age>p.life){TP.splice(i,1);continue;}const k=p.age/p.life;star(tc,p.x,p.y,p.r*(lv===1?1-k*.4:1),1-k,p.rot+k*3);}
+ for(let i=SP.length-1;i>=0;i--){const s=SP[i];s.age+=dt;if(s.age>s.life){SP.splice(i,1);continue;}const k=s.age/s.life;tc.save();tc.globalAlpha=1-k;tc.strokeStyle='#fff6c4';tc.lineWidth=2;tc.beginPath();const r=4+k*8;tc.moveTo(s.x-r,GROUND);tc.lineTo(s.x+r,GROUND);tc.moveTo(s.x,GROUND-r);tc.lineTo(s.x,GROUND+r*.4);tc.stroke();tc.restore();}
+ const img=document.getElementById('sideRd');tc.drawImage(img,x-85,y-36,170,75);
+ document.getElementById('lvStat').textContent=`지금 화면의 별 ${TP.length}개 · 땅 반짝임 ${SP.length}개 (썰매 1대 기준) — ${L.name}: 1초 ${L.rate}개, 수명 ${L.life}초${L.spark?`, 반짝임 ${L.spark}초`:', 반짝임 없음'}`;
+ requestAnimationFrame(trailFrame);}
+document.getElementById('lv').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;lv=+b.dataset.lv;document.querySelectorAll('#lv button').forEach(x=>x.classList.toggle('on',x===b));});
+// 캔버스용 하늘 썰매 그림(심볼을 이미지로)
+{const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 150"><defs>${document.getElementById('rd-side').outerHTML}${document.getElementById('dd-ride').outerHTML}</defs>${document.getElementById('sk-side').innerHTML}</svg>`;const im=new Image();im.id='sideRd';im.style.display='none';im.onload=()=>requestAnimationFrame(trailFrame);im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);document.body.appendChild(im);}
+</script>
+</body></html>

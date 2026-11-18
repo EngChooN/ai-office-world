@@ -14,6 +14,8 @@ import {RINK,CAROUSEL,CAROUSEL_SEATS,SEAT_SIT_Y} from './festive-layout.js';
 import {createXmasPoser} from './poses.js';
 import {TREE_LIGHT_STEPS,STAR_UNLOCK,SPAWN,CAMPFIRE,MAILBOX,SNOWMAN_YARD,SNOWBALL_YARD,SLED_RUN,heightAt} from './layout.js';
 import {ORNAMENT_KINDS} from './props.js';
+import {createSleighRider} from './sleigh-rider.js';
+import {REINDEER_STATION} from './festive-layout.js';
 
 const q=new URLSearchParams(location.search);
 const look=festiveLevel(location.search),XMAS_SKY=skyFor(look); // ?look=festive|festive-b = 「밝고 화려하게」 시안(festive.js)
@@ -62,6 +64,32 @@ if(village.festive?.carousel&&q.get('riders')!=='0')for(const [k,lk] of [[0,{out
 await add({outfit:'santa',hat:'beanie'},SNOWBALL_YARD.x-2.5,SNOWBALL_YARD.z-4.5,face(0,0,SNOWBALL_YARD.x+3,SNOWBALL_YARD.z+5));
 
 }else await addCrowd();
+// 하늘 썰매(11-18 설계 v2): ?view=reindeer-* 장면에서만 동동이가 탄 썰매를 띄운다. 동작 5가지 줄(광장 동쪽 x≈10에 남북으로 한 줄, 모두 서쪽을 봄) + 하늘을 도는 3대(별 흔적) + 땅을 도는 1대(눈 튐)
+// &p=0~1 = 날아오르기·내려앉기 자세를 그 진행도에 고정(촬영용). &solo=run|fly|takeoff|land = 정류장 서쪽 한 대의 자세
+const SKY=village.festive?.skySleigh,deerDemo=[];
+if(SKY&&(q.get('view')??'').startsWith('reindeer')){const looks=[{outfit:'santa'},{outfit:'elf',hat:'antlers'},{outfit:'sweater',hat:'santa'},{outfit:'santa',scarf:'stripe'},{outfit:'sweater'},{outfit:'elf'},{outfit:'santa',hat:'beanie'},{outfit:'sweater',hat:'antlers'}];
+ const ride=async(i,kind,o={})=>{const team=SKY.fleet.spawn(),a=await add(looks[i%looks.length],0,0,0,'reindeer'),poser=createXmasPoser({avatar:a,world,toon}),r=createSleighRider({avatar:a,poser});team.driver=true;const d={team,a,r,kind,i,...o};deerDemo.push(d);return d;};
+ const modes=[['stand',0],['run',3.6],['takeoff',.12],['fly',0],['land',.55]];
+ for(let i=0;i<modes.length;i++)await ride(i,'line',{mode:modes[i][0],arg:modes[i][1],x:10+i*.6,z:3.6+i*2.5});
+ await ride(6,'line',{mode:q.get('solo')??'stand',arg:q.get('solo')==='run'?3.6:.5,x:19.5,z:32.5,solo:true});
+ for(let i=0;i<3;i++)await ride(5+i,'sky',{R:12+i*4,h:8+i*2.5,ph:i*2.1,speed:6+i*1.2,mine:i===0});
+ await ride(3,'ground',{R:9.5,ph:1,speed:3.6});
+ for(const a of avatars)if(a.group!=='reindeer')a.root.visible=false; // 썰매 장면은 다른 동동이를 숨겨 실루엣이 겹치지 않게
+ for(const d of deerDemo){d.trail=SKY.stars.emitter({mine:d.mine??true});d.team.mode=d.mode??(d.kind==='sky'?'fly':'run');d.r.mount(d.team,{instant:true});}}
+let demoT=0;const fixedP=q.has('p')?+q.get('p'):null,frozen=q.get('frozen')==='1';
+function updateDeerDemo(dt){if(!deerDemo.length)return;demoT+=frozen?0:dt;const T=new THREE.Vector3();
+ for(const d of deerDemo){const {team,a}=d;
+  if(d.kind==='line'){const p=fixedP??((demoT%3)/3);team.mode=d.mode;team.speed=d.mode==='run'?d.arg:0;team.progress=d.mode==='takeoff'||d.mode==='land'?(fixedP==null?p:d.arg):0;
+   const y=heightAt(d.x,d.z),lift=d.mode==='fly'?1.6:d.mode==='takeoff'?.3+.8*team.progress:d.mode==='land'?Math.max(0,.75-team.progress)*1.6:0;team.place(d.x,y+lift,d.z,Math.PI/2);
+   // 날아오르기는 루돌프가 먼저 뜨고(앞이 1m 위), 내려앉기는 루돌프가 먼저 내려옴(앞이 0.4m 아래) — 썰매는 끌려와 기욺
+   const fl=d.mode==='takeoff'?1:d.mode==='land'?-.4:0;if(fl){const f=team.front;team.drive(f.x,f.y+fl,f.z,Math.PI/2);}}
+  else{const w=d.speed/d.R,ang=d.ph+demoT*w,x=Math.sin(ang)*d.R,z=Math.cos(ang)*d.R,heading=Math.atan2(-Math.cos(ang),Math.sin(ang));
+   const y=d.kind==='sky'?d.h+Math.sin(demoT*.7+d.ph)*1.2:heightAt(x,z);team.speed=d.speed;team.drive(x,y,z,heading);
+   team.trailPoint(T);d.trail.update(dt,T,{air:d.kind==='sky',running:d.kind==='ground',ground:heightAt(team.x,team.z)});}
+  a.place(team.x,team.z,team.heading);}
+ // 따라가기: 하늘 첫 대 뒤 위(설계 §3 비행 카메라 10m)
+ if(state.view==='reindeer-chase'){const d=deerDemo.find(e=>e.kind==='sky');if(d){const h=d.team.heading,f=new THREE.Vector3(-Math.sin(h),0,-Math.cos(h));
+  camera.position.set(d.team.x-f.x*8,d.team.y+5.5,d.team.z-f.z*8);controls.target.set(d.team.x+f.x*2.5,d.team.y+.6,d.team.z+f.z*2.5);}}}
 // 30명 장면: 놀이 자리마다 그 자리에서 할 법한 모습으로 선다(자리는 모두 layout·festive-layout 값에서 계산 → 광장 크기를 바꾸면 같이 옮겨짐).
 // 11-17 5차(링크·회전목마 크게): 놀이 기구에 사람을 더 태운다 — 트리 4 · 모닥불 앉기 4 + 서기 1 · 전시 구경 1 · 노점 앞 3 · 우체통 1 · 회전목마 타기 8 + 타는 곳 1 · 링크 얼음 위 6 + 문 앞 1 = 30
 async function addCrowd(){const L=village.layout,F=village.festive,looks=[{outfit:'santa'},{outfit:'sweater'},{outfit:'elf'},{outfit:'sweater',hat:'santa'},{outfit:'santa',scarf:'stripe'},{outfit:'elf',hat:'antlers'},{outfit:'sweater',hat:'antlers'},{outfit:'santa',hat:'beanie'}];
@@ -96,6 +124,9 @@ const VIEWS={
  'crowd-map':[0,78,.01,0,0,0],'crowd-top':[0,34,SPAWN.z+30,0,0,0],'crowd-eye':[0,2.3,SPAWN.z+3.4,0,1.6,SPAWN.z-8],
  // 링크·회전목마 비교(11-17 5차): 남쪽 위에서 광장 남쪽 밖 전체(전·후 같은 카메라)
  'crowd-south':[0,27,56,0,0,23],
+ // 하늘 썰매(11-18): 정류장(광장 쪽에서) · 동작 5가지 줄 · 한 대 옆/앞/뒤(실루엣 확인) · 하늘(별 흔적)
+ 'reindeer-station':[30.2,2.7,24.6,23.9,.7,29.2],'reindeer-modes':[3.2,6.2,21,10.6,1.2,8.6],
+ 'reindeer-side':[18.3,1.5,36.9,18.3,.95,32.5],'reindeer-front':[13.4,1.9,34.6,17.4,.75,32.5],'reindeer-back':[23.6,2.2,34.4,19.5,.75,32.5],'reindeer-sky':[24,15,30,0,8,2],'reindeer-trail':[3,10.5,25,0,8.6,8],'reindeer-chase':[0,12,20,0,10,0],
  outfits:[0,.62,LINE_Z+4.2,0,.5,LINE_Z],'outfits-side':[4.2,.62,LINE_Z,0,.5,LINE_Z],'outfits-back':[0,.62,LINE_Z-4.2,0,.5,LINE_Z],gifts:[0,.64,LINE_Z+40+4.6,0,.52,LINE_Z+40],
 };
 const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;
@@ -118,7 +149,7 @@ addEventListener('resize',()=>{resize();setView(state.view);});resize();setView(
 
 let frames=0;const clock=new THREE.Clock();const snowOn=q.get('snow')!=='0';
 renderer.info.autoReset=false;
-renderer.setAnimationLoop(()=>{const dt=Math.min(.05,clock.getDelta());controls.update();renderer.info.reset();
+renderer.setAnimationLoop(()=>{const dt=Math.min(.05,clock.getDelta());updateDeerDemo(dt);controls.update();renderer.info.reset();
  const car=village.festive?.carousel;for(const r of riders){const p=car.seatPose(r.k);r.a.place(p.x,p.z,p.heading);}
  for(const a of avatars)a.update(dt,{moved:0});
  for(const r of riders){const p=car.seatPose(r.k);r.a.root.position.y+=p.y-SEAT_SIT_Y;}
@@ -126,4 +157,4 @@ renderer.setAnimationLoop(()=>{const dt=Math.min(.05,clock.getDelta());controls.
  toon.updateSky(env,sunVec,moonVec);toon.pipeline.update(env);toon.pipeline.render(dt);frames++;});
 // 진단: ?hide=이름,이름 → 그 이름의 물체를 숨긴다
 for(const n of (q.get('hide')??'').split(',').filter(Boolean))scene.traverse(o=>{if(o.name===n)o.visible=false;});
-window.xmas={village,scene,avatars,setView,setStage,state,camera,renderer,get frames(){return frames;},info(){return renderer.info.render;}};
+window.xmas={village,scene,avatars,setView,setStage,state,camera,renderer,deerDemo,get frames(){return frames;},info(){return renderer.info.render;}};

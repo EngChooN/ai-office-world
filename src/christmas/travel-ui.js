@@ -48,7 +48,7 @@ export function createTravelUi({spots,shapes=mapShapes(),mobile=false,onRun=()=>
  // 지도 단추: 위 오른쪽 둥근 단추 줄(hud.js .xh-tr) 맨 앞에. 줄이 없으면 이 화면 안에
  const mapBtn=doc.createElement('button');mapBtn.type='button';mapBtn.className='xh-round xt-map-btn';mapBtn.setAttribute('aria-label','바로 가기 지도');mapBtn.setAttribute('aria-haspopup','dialog');mapBtn.innerHTML=icon('x-map',{size:'m'});
  const tr=doc.querySelector('.xh-tr');if(tr)tr.prepend(mapBtn);else root.appendChild(mapBtn);
- let runOn=false,runOff=false,othersT=0;
+ let runOn=false,runOff=false,othersT=0;const runLabel=run.querySelector('span');
  const setRunView=()=>{run.setAttribute('aria-pressed',String(runOn));run.classList.toggle('on',runOn);run.toggleAttribute('data-off',runOff);};
  run.addEventListener('click',()=>{if(runOff)return;runOn=!runOn;setRunView();onRun(runOn);});
  const open=on=>{map.hidden=!on;mapBtn.setAttribute('aria-pressed',String(on));if(on){othersT=0;draw(0);onOpen();}};
@@ -66,7 +66,7 @@ export function createTravelUi({spots,shapes=mapShapes(),mobile=false,onRun=()=>
   get open(){return !map.hidden;},get run(){return runOn;},
   setOpen:open,
   // 달리기 상태를 밖에서 맞춤(Shift·자동 해제). blocked면 단추를 흐리게 하고 켜짐을 끈다
-  syncRun({on=runOn,blocked=false}={}){const was=runOn;runOff=blocked;runOn=blocked?false:on;setRunView();if(was!==runOn)onRun(runOn);},
+  syncRun({on=runOn,blocked=false,label='달리기'}={}){const was=runOn;runOff=blocked;runOn=blocked?false:on;setRunView();if(runLabel.textContent!==label){runLabel.textContent=label;run.setAttribute('aria-label',label);}if(was!==runOn)onRun(runOn);}, // label: 하늘 썰매 탄 동안 「빨리」(11-18)
   // 화면 어두워짐 → mid() → 밝아짐. 끝나면 resolve
   fade(mid){fade.classList.add('on');return new Promise(r=>setTimeout(()=>{try{mid?.();}finally{setTimeout(()=>{fade.classList.remove('on');setTimeout(r,TRAVEL.fadeMs);},60);}},TRAVEL.fadeMs));},
   update(dt){if(!map.hidden)draw(dt);},

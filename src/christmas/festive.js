@@ -10,7 +10,9 @@ import {v,ell,capsule} from '../toon/concept-kit.js';
 import {XMAS,XMAS_SKY} from './palette.js';
 import * as L from './layout.js';
 import {groundGlowMaterial,haloMaterial} from './props.js';
-import {RINK,CAROUSEL,CAROUSEL_SEATS,carouselSpin,deerBob,carouselSeatAt,lookLevel} from './festive-layout.js';
+import {RINK,CAROUSEL,CAROUSEL_SEATS,carouselSpin,deerBob,carouselSeatAt,lookLevel,REINDEER_STATION} from './festive-layout.js';
+import {createSkySleighFleet,SLEIGH} from './sky-sleigh.js';
+import {createStarTrail} from './star-trail.js';
 
 const {Color,Matrix4}=THREE;
 const rng=seed=>{let s=seed>>>0;return ()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);};
@@ -47,7 +49,7 @@ const STALLS=[[40,'cocoa'],[-40,'cookie'],[64,'card'],[-62,'toy'],[120,'ornament
 // 시안 B는 넓힌 광장(festive-layout PLAZA_B)이면 노점 고리·길가 장식도 같이 바깥으로(K배)
 const BIG=L.BIG_PLAZA,K=BIG?.scale??1;
 const STALL_R=BIG?.stallR??14.6,STALL_W=2.7,STALL_D=1.6;
-const SIGN={cocoa:'핫초코',cookie:'쿠키',card:'카드',toy:'장난감',ornament:'오너먼트',candy:'사탕',scarf:'목도리',photo:'포토존',skate:'스케이트'};
+const SIGN={cocoa:'핫초코',cookie:'쿠키',card:'카드',toy:'장난감',ornament:'오너먼트',candy:'사탕',scarf:'목도리',photo:'포토존',skate:'스케이트',reindeer:'루돌프 썰매 정류장'};
 const SIGN_KEYS=Object.keys(SIGN);
 
 export function buildFestive({group,tz,H,mobile=false,level=1,colliders,houses=[],tree=null,camera=null}){
@@ -304,11 +306,48 @@ export function buildFestive({group,tz,H,mobile=false,level=1,colliders,houses=[
    let lastMs=Date.now();
    carousel={spin,deers,R,center:{x:cx,z:cz},seats:CAROUSEL_SEATS.length,seatPose:k=>carouselSeatAt(k,lastMs,base.y),update(ms){lastMs=ms;spin.rotation.y=carouselSpin(ms);DEER.forEach((st,k)=>{Q.setFromAxisAngle(Y,st.a);P.set(Math.sin(st.a)*st.r,CAROUSEL.deerY+deerBob(ms,st.deer),Math.cos(st.a)*st.r);deers.setMatrixAt(k,M.compose(P,Q,SC));});deers.instanceMatrix.needsUpdate=true;}};
    carousel.update(Date.now());}
+  station();
   // 아이스링크(광장 남서쪽 밖): 평평한 얼음 판·흰 울타리(빨간 위 손잡이)·기둥 전구 줄·동쪽 문 아치 + 「스케이트」 간판·가운데 섬 트리·펭귄 보조 기구·밖 벤치와 스케이트
   rink();
   // 장식 더: 노점 앞 지팡이 사탕 쌍, 마당 가는 길 작은 트리, 광장 안 선물 더미
   STALLS.slice(0,mobile?5:7).forEach(([deg],k)=>{const a=deg*Math.PI/180,o=1.75;for(const s of [-1,1]){const aa=a+s*(STALL_W/2+.4)/STALL_R;cane(Math.sin(aa)*(STALL_R+.9),Math.cos(aa)*(STALL_R+.9),1.1,aa);}});
   if(!mobile)(BIG?.yardTrees??[[-22,-1],[22,-.5],[-8,-16.8],[8,-16.8]]).forEach(([x,z],k)=>miniTree(x,z,1,50+k));
+ }
+
+ // ═════ 루돌프 썰매 정류장(시안 B, 11-18 설계 v2): 자리는 festive-layout.js REINDEER_STATION. 기다리는 썰매는 아래 하늘 썰매(sky-sleigh.js)의 첫 대.
+ // 그림: 썰매 옆 금빛 원(빛 띠 + 둘레 낮은 전구 12개 + 가운데 별) · 지붕 달린 나무 표지판(「루돌프 썰매 정류장」 간판 + 처마 전구 + 방울) · 건초 더미 + 당근 먹이통
+ function station(){const S=REINDEER_STATION,f=frame(S.x,S.z,S.heading),R=S.ring;
+  // 금빛 원: 빛나는 고리(얼음·눈 위 2cm) + 안쪽 은은한 빛 웅덩이 + 둘레 전구(땅에 꽂은 짧은 말뚝 위)
+  // 땅에 붙인 판: 놓은 뒤 꼭짓점마다 땅 높이 + lift로 올린다(정류장 자리가 조금 기울어 평평한 판이면 눈 바닥과 겹쳐 휴대폰에서 줄무늬가 생김)
+  const onGround=(geo,lift)=>{geo.applyMatrix4(f.m);const p=geo.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,H(p.getX(i),p.getZ(i))+lift);geo.computeVertexNormals();return geo;};
+  world.glow(onGround(new THREE.RingGeometry(R-.12,R,48,2).rotateX(-Math.PI/2),.07),C.gold,1.5);
+  world.glow(onGround(new THREE.RingGeometry(R-.42,R-.36,48,1).rotateX(-Math.PI/2),.07),C.gold,1.05);
+  pools.push(onGround(new THREE.RingGeometry(0,R+.6,32,4).rotateX(-Math.PI/2),.06));
+  for(let k=0;k<12;k++){const a=k/12*Math.PI*2,x=Math.sin(a)*(R+.12),z=Math.cos(a)*(R+.12);f.add(new THREE.CylinderGeometry(.025,.03,.16,6).translate(x,.08,z),C.woodDark);f.bulb(x,.2,z,k%2?C.warmBulb:C.santaRed,2.3,.9);}
+  // 바닥 별 무늬(원 가운데, 금빛 5갈래 — 「여기서 타요」 표시)
+  {const sh=new THREE.Shape();for(let i=0;i<10;i++){const a=i*Math.PI/5,rr=i%2?.22:.52;i?sh.lineTo(Math.sin(a)*rr,Math.cos(a)*rr):sh.moveTo(Math.sin(a)*rr,Math.cos(a)*rr);}
+   world.glow(onGround(new THREE.ShapeGeometry(sh).rotateX(-Math.PI/2).translate(-.55,0,-.45),.075),C.gold,1.2);}
+  // 표지판: 기둥 2 + 판 + 작은 박공지붕(눈) + 처마 전구 + 금방울
+  const sx=S.sign.x,sz=S.sign.z,sg=frame(sx,sz,S.heading),SW=1.5,SH=1.75;
+  for(const s of [-1,1])sg.add(new THREE.CylinderGeometry(.05,.06,SH+.35,8).translate(s*SW/2,(SH+.35)/2,0),C.woodDark);
+  sg.add(B(SW+.12,.62,.07,0,SH-.18,0),C.woodDark);
+  {const g=new THREE.PlaneGeometry(SW,.54).rotateY(Math.PI).translate(0,SH-.18,-.04);g.userData.cell=SIGN_KEYS.indexOf('reindeer');g.applyMatrix4(sg.m);signs.push(g);}
+  {const g=new THREE.PlaneGeometry(SW,.54).translate(0,SH-.18,.04);g.userData.cell=SIGN_KEYS.indexOf('reindeer');g.applyMatrix4(sg.m);signs.push(g);}
+  for(const s of [-1,1]){sg.add(B(SW+.5,.06,.5,0,0,0).rotateX(s*.55).translate(0,SH+.28,s*.13),C.santaRed);sg.add(B(SW+.54,.07,.46,0,.05,0).rotateX(s*.55).translate(0,SH+.28,s*.13),C.snow);}
+  for(let k=0;k<8;k++){const x=-SW/2-.2+k*(SW+.4)/7;for(const s of [-1,1])sg.bulb(x,SH+.1,s*.25,MARKET_BULBS[(k+(s>0?3:0))%MARKET_BULBS.length],2.3,.8);}
+  for(const s of [-1,1]){sg.add(new THREE.SphereGeometry(.06,10,8).translate(s*(SW/2+.02),SH-.62,-.06),C.gold);sg.add(new THREE.TorusGeometry(.07,.025,6,10).translate(s*(SW/2+.02),SH-.5,-.06),C.santaRed);}
+  boxC(sx,sz,SW+.3,.4,S.heading);
+  // 건초 더미(둥근 원통 두 덩이) + 당근 먹이통
+  const hf=frame(S.hay.x,S.hay.z,S.heading+.6),straw='#e6c36a',strawDark='#c9a14a';
+  // 옆으로 누운 둥근 건초 두 덩이 + 그 위에 한 덩이(마구리는 진하게, 빨간 끈 두 줄)
+  const bale=(x,y,z,r,len)=>{hf.add(new THREE.CylinderGeometry(r,r,len,14).rotateZ(Math.PI/2).translate(x,y,z),V=>Math.abs(V.x-x)>len/2-.03?strawDark:Math.floor((Math.atan2(V.y-y,V.z-z)+3.2)*4)%2?straw:'#dcb65e');
+   for(const t of [-1,1])hf.add(new THREE.TorusGeometry(r+.005,.012,4,16).rotateY(Math.PI/2).translate(x+t*len*.25,y,z),C.santaRed);};
+  bale(0,.27,-.29,.27,.55);bale(0,.27,.29,.27,.55);bale(0,.73,0,.25,.5);hf.add(lump(.24,.05,.2,91).translate(0,.98,0),C.snow);
+  hf.add(B(.62,.2,.32,.0,.12,.86),C.wood);hf.add(B(.56,.04,.26,0,.23,.86),C.woodDark);
+  for(let k=0;k<5;k++){const x=-.2+k*.1;hf.add(new THREE.ConeGeometry(.025,.16,6).rotateZ(Math.PI/2+.4-k*.2).translate(x,.27,.86+(k%2?.05:-.04)),C.carrot);hf.add(new THREE.ConeGeometry(.02,.05,5).translate(x-.07,.29,.86),C.pine);}
+  circleC(S.hay.x,S.hay.z,.7);
+  // 기다리는 썰매 자리(충돌: 썰매·루돌프 둘 = 설계 §4 판정 원 둘)
+  {const W=S.sleigh,fx=-Math.sin(W.heading),fz=-Math.cos(W.heading);circleC(W.x,W.z,SLEIGH.hit.r);circleC(W.x+fx*SLEIGH.tow,W.z+fz*SLEIGH.tow,SLEIGH.hit.r*.9);}
  }
 
  // ═════ 아이스링크(시안 B): 자리·크기·문은 festive-layout.js RINK. 얼음은 꼭짓점 색(새 재질·조명 없음) + 바닥 빛 판으로 불빛 비침.
@@ -397,6 +436,14 @@ bulbs.forEach((b,i)=>{bulbMesh.setMatrixAt(i,M.makeScale(b.s,b.s,b.s).setPositio
   const m=new THREE.Mesh(mergeGeometries(list),new THREE.MeshBasicMaterial({map:tex,color:new Color(1.15,1.12,1.05)}));m.name='노점 간판';m.userData.textPlane=true;root.add(m);return m;})():null;
  const poolMesh=new THREE.Mesh(mergeGeometries(pools),groundGlowMaterial('#ffbf6a',.34));poolMesh.name='노점 바닥 빛';poolMesh.renderOrder=2;root.add(poolMesh);
 
+ // ═════ 하늘 썰매(시안 B): 그리기 7번으로 정류장 썰매 + 탄 사람 썰매(정원 30) 모두(루돌프 5 + 썰매 1 + 끈 1). 별 흔적은 점 묶음 하나(그리기 1번).
+ // 월드개발: festive.skySleigh.fleet.spawn()으로 탈 썰매를 받고, 별은 festive.skySleigh.stars.emitter()로 흔적을 단다(sky-sleigh.js·star-trail.js 머리말).
+ let skySleigh=null;
+ if(level>=2){const fleet=createSkySleighFleet({toon:{toonify:(m,o)=>tz(m,o)},max:31,mobile,heightAt:H,parent:root});
+  const S=REINDEER_STATION,waiting=fleet.spawn().place(S.sleigh.x,0,S.sleigh.z,S.sleigh.heading);waiting.mode='stand';
+  const stars=createStarTrail({mobile});root.add(stars.points);
+  skySleigh={fleet,stars,station:S,waiting};}
+
  // ═════ 눈 위 반짝임: 땅에 흩은 작은 점이 제각각 깜빡인다(점 하나 = 그리기 1번)
  const glints=(()=>{const n=mobile?700:1600,pos=new Float32Array(n*3),ph=new Float32Array(n);for(let i=0;i<n;i++){const a=r()*6.28,d=3.8+Math.sqrt(r())*36,x=Math.sin(a)*d,z=Math.cos(a)*d;pos.set([x,H(x,z)+.05,z],i*3);ph[i]=r()*100;}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('ph',new THREE.BufferAttribute(ph,1));
@@ -406,10 +453,12 @@ bulbs.forEach((b,i)=>{bulbMesh.setMatrixAt(i,M.makeScale(b.s,b.s,b.s).setPositio
   const p=new THREE.Points(g,m);p.name='눈 반짝임';p.frustumCulled=false;root.add(p);return m;})();
 
  let acc=0;
- return {group:root,bulbs:bulbMesh,count:{bulbs:bulbs.length,stalls:stallList.length},carousel,
+ return {group:root,bulbs:bulbMesh,count:{bulbs:bulbs.length,stalls:stallList.length},carousel,skySleigh,
   // 노점 앞 자리(계산대 앞 1.4m, 노점을 봄) — 미리보기 30명 장면용
   stalls:stallList.map(([deg,kind])=>{const a=deg*Math.PI/180,rr=STALL_R-STALL_D/2-1.4;return {kind,x:Math.sin(a)*rr,z:Math.cos(a)*rr,heading:Math.atan2(Math.sin(a),Math.cos(a))};}),
-  update(dt,t,ms=Date.now()){glints.uniforms.uT.value=t;carousel?.update(ms);
+  // view = {camera, viewHeight}: 별 크기(화면 높이 기준)를 맞춘다(없으면 지난 값)
+  update(dt,t,ms=Date.now(),view=null){glints.uniforms.uT.value=t;carousel?.update(ms);
+   if(skySleigh){skySleigh.fleet.update(dt);skySleigh.stars.update(dt,view?.camera,view?.viewHeight);}
    acc+=dt;if(acc<.05)return;acc=0;
    // 전구 반짝임: 대부분은 은은히 숨쉬고, 일부(7개 중 1개)는 또렷이 깜빡인다
    for(let i=0;i<bulbs.length;i++){const b=bulbs[i],w=i%7===0?(Math.sin(t*4+b.ph)>.2?1.1:.35):.82+.18*Math.sin(t*1.8+b.ph);bulbMesh.setColorAt(i,tmp.copy(b.c).multiplyScalar(b.k*w));}
@@ -435,11 +484,19 @@ function signAtlas(){
   scarf(x,y){g.fillStyle='#d23b36';g.beginPath();g.roundRect(x-22,y-18,44,12,5);g.fill();g.fillRect(x+6,y-8,11,30);g.fillStyle='#f7f2e8';for(let k=0;k<3;k++)g.fillRect(x+6,y-2+k*8,11,3);},
   skate(x,y){g.fillStyle='#f6f3ec';g.beginPath();g.moveTo(x-20,y-24);g.lineTo(x-4,y-24);g.lineTo(x-4,y-2);g.lineTo(x+18,y+4);g.quadraticCurveTo(x+22,y+10,x+16,y+12);g.lineTo(x-20,y+12);g.closePath();g.fill();
    g.strokeStyle='#cfe6ff';g.lineWidth=4;g.beginPath();g.moveTo(x-24,y+20);g.lineTo(x+20,y+20);g.quadraticCurveTo(x+28,y+20,x+28,y+13);g.stroke();g.strokeStyle='#d23b36';g.lineWidth=3;g.beginPath();g.moveTo(x-16,y-14);g.lineTo(x-8,y-10);g.moveTo(x-16,y-7);g.lineTo(x-8,y-3);g.stroke();},
+  reindeer(x,y){g.strokeStyle='#e2c08a';g.lineWidth=5;g.lineCap='round';for(const s of [-1,1]){g.beginPath();g.moveTo(x+s*9,y-14);g.lineTo(x+s*18,y-36);g.moveTo(x+s*13,y-24);g.lineTo(x+s*24,y-28);g.stroke();}
+   g.fillStyle='#a5683b';g.beginPath();g.ellipse(x-20,y-12,9,5,-.5,0,7);g.ellipse(x+20,y-12,9,5,.5,0,7);g.fill();g.beginPath();g.arc(x,y-2,17,0,7);g.fill();
+   g.fillStyle='#f0d3a8';g.beginPath();g.ellipse(x,y+9,11,9,0,0,7);g.fill();g.fillStyle='#ff3b30';g.beginPath();g.arc(x,y+6,6,0,7);g.fill();
+   g.fillStyle='#2a2321';g.beginPath();g.arc(x-7,y-6,3,0,7);g.arc(x+7,y-6,3,0,7);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(x-8,y-7.5,1.1,0,7);g.arc(x+6,y-7.5,1.1,0,7);g.fill();},
   photo(x,y){g.fillStyle='#3d3f44';g.beginPath();g.roundRect(x-22,y-12,44,30,5);g.fill();g.fillRect(x-8,y-18,16,7);g.fillStyle='#cfe6ff';g.beginPath();g.arc(x,y+3,10,0,7);g.fill();g.fillStyle='#3d3f44';g.beginPath();g.arc(x,y+3,5,0,7);g.fill();g.fillStyle='#ffd27a';g.fillRect(x+12,y-9,6,4);},
  };
  SIGN_KEYS.forEach((k,i)=>{const x0=(i%4)*cw,y0=Math.floor(i/4)*ch;
-  g.fillStyle=k==='photo'?'#a92c2a':k==='skate'?'#2f5f8f':'#7a4a2a';g.fillRect(x0,y0,cw,ch);g.strokeStyle='#e9b949';g.lineWidth=6;g.strokeRect(x0+6,y0+6,cw-12,ch-12);
+  g.fillStyle=k==='photo'||k==='reindeer'?'#a92c2a':k==='skate'?'#2f5f8f':'#7a4a2a';g.fillRect(x0,y0,cw,ch);g.strokeStyle='#e9b949';g.lineWidth=6;g.strokeRect(x0+6,y0+6,cw-12,ch-12);
   draw[k](x0+56,y0+ch/2+2);
-  g.fillStyle='#fbf0d8';g.textAlign='center';g.textBaseline='middle';const t=SIGN[k];g.font=`900 ${t.length>3?34:42}px 'Apple SD Gothic Neo',system-ui,sans-serif`;g.fillText(t,x0+166,y0+ch/2+2);});
+  g.fillStyle='#fbf0d8';g.textAlign='center';g.textBaseline='middle';const t=SIGN[k],cut=t.lastIndexOf(' '),lines=cut>0?[t.slice(0,cut),t.slice(cut+1)]:[t];
+  // 띄어쓰기가 있으면 마지막 띄어쓰기에서 두 줄, 줄이 칸(170px)보다 길면 글자를 줄인다
+  if(lines.length>1){let fs=34;do{g.font=`900 ${fs}px 'Apple SD Gothic Neo',system-ui,sans-serif`;fs--;}while(fs>20&&Math.max(...lines.map(l=>g.measureText(l).width))>170);
+   lines.forEach((l,j)=>g.fillText(l,x0+166,y0+ch/2+2+(j-.5)*(fs+6)));}
+  else{g.font=`900 ${t.length>3?34:42}px 'Apple SD Gothic Neo',system-ui,sans-serif`;g.fillText(t,x0+166,y0+ch/2+2);}});
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
 }

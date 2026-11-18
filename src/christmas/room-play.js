@@ -73,7 +73,7 @@ export function createRoomPlay({cleanText=t=>t,rules=GIFT_RULES}={}){
   ctx.send(c.id,{t:'snow:no',reason:r.reason,op:m.t});
  }
  function throwBall(c,m,t,ctx){
-  const p=posOf(c);if(!p||!inFightYard(p.x,p.z,-.3))return ctx.send(c.id,{t:'sb:no',reason:'outside'});
+  const p=posOf(c);if(!p||!inFightYard(p.x,p.z,-.3)||c.act?.hs)return ctx.send(c.id,{t:'sb:no',reason:'outside'}); // 하늘 썰매 탄 사람은 못 던짐
   if(t-(lastThrow.get(c.id)??-Infinity)<FIGHT.gapMs)return ctx.send(c.id,{t:'sb:no',reason:'gap'});
   if(t-(lastHitAt.get(c.id)??-Infinity)<FIGHT.stunMs)return ctx.send(c.id,{t:'sb:no',reason:'stun'}); // 맞은 뒤 0.6초는 못 던짐
   if(!num(m.dx)||!num(m.dz)||Math.hypot(m.dx,m.dz)<1e-3)return ctx.send(c.id,{t:'sb:no',reason:'bad'});
@@ -89,7 +89,7 @@ export function createRoomPlay({cleanText=t=>t,rules=GIFT_RULES}={}){
  // 날아가는 눈덩이: 지난 구간에 지금 있는 사람(웅크림 act.cr·맞은 뒤 1초 무적은 통과). 던진 사람이 나가도 끝까지 간다
  function stepFlights(t,ctx){
   if(!flights.length)return;
-  const all=[];for(const o of ctx.members.values()){const q=posOf(o);if(q)all.push({id:o.id,...q,crouch:o.act?.cr===1});}
+  const all=[];for(const o of ctx.members.values()){if(o.act?.hs>=2)continue;const q=posOf(o);if(q)all.push({id:o.id,...q,crouch:o.act?.cr===1});} // 하늘 썰매로 하늘에 있는 사람(act.hs 2~4)은 맞지 않음(11-18)
   for(let i=0;i<flights.length;i++){const f=flights[i];
    const s1=f.d*Math.min(1,Math.max(0,(t-f.t0)/f.ms));
    const people=all.filter(q=>q.id!==f.id).map(q=>({...q,safe:t-(lastHitAt.get(q.id)??-Infinity)<FIGHT.invulnMs}));

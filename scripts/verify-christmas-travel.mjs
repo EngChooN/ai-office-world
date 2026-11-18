@@ -78,7 +78,7 @@ try{
  await A.keyboard.up('ShiftLeft');
  // ② 지도
  await tap(B,'.xt-map-btn');await sleep(500);
- {const s=await st(B);check('휴대폰: 지도 단추 → 지도 창·핀 10개·다른 사람 점',s.travel.open&&s.travel.pins.length===10&&s.travel.dots>=1,{t:s.travel});}
+ {const s=await st(B);check('휴대폰: 지도 단추 → 지도 창·핀 11개(하늘 썰매 포함)·다른 사람 점',s.travel.open&&s.travel.pins.length===11&&s.travel.pins.includes('sky')&&s.travel.dots>=1,{t:s.travel});}
  await shot(B,'mobile-map');
  // 앉아 있는 A가 지도에서 트리로 → 먼저 일어나고 이동
  await tap(A,'.xt-map-btn');await sleep(400);await shot(A,'pc-map');

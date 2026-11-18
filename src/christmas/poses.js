@@ -71,7 +71,7 @@ export const SLED_SEAT_Y=.33;
 export function applyXmasAct(poser,a,seatY=.34){
  if(!poser)return;
  const sled=a?.sl>=1;
- poser.setSit(!!a?.st||sled||!!a?.mg,sled?SLED_SEAT_Y:seatY);
- // 썰매·회전목마 위에서 wm = 🙌 만세, 모닥불에서 wm = 손 녹이기
- poser.setArms(a?.cr?'crouch':a?.pk?'pack':a?.pu?'push':a?.wm&&(sled||a?.mg)?'cheer':a?.wm?'warm':a?.cc?'cocoa':'none');
+ poser.setSit(!!a?.st||sled||!!a?.mg||!!a?.hs,sled?SLED_SEAT_Y:seatY); // hs = 하늘 썰매 좌석(sky-sleigh.js SLEIGH.sitY .34, 11-18)
+ // 썰매·회전목마·하늘 썰매 위에서 wm = 🙌 만세, 모닥불에서 wm = 손 녹이기
+ poser.setArms(a?.cr?'crouch':a?.pk?'pack':a?.pu?'push':a?.wm&&(sled||a?.mg||a?.hs)?'cheer':a?.wm?'warm':a?.cc?'cocoa':'none');
 }

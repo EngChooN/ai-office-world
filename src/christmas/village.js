@@ -162,7 +162,7 @@ export function buildVillage({toon,scene,world,mobile=false,samples=false,look=0
    time+=dt;tree.update(dt,time);course.update(dt);gondola.update(dt);fire.update(dt,time,{power:mobile?4:6});
    for(const {l,base} of lights)l.intensity=base();
    for(const m of smoke){const u=(time*.12+m.userData.ph)%1;m.position.copy(m.userData.base).add(new THREE.Vector3(Math.sin(time*.5+m.userData.ph*9)*.3*u+u*.8,u*3.2,u*.3));m.scale.setScalar(.4+u*1.6);m.material.opacity=.5*(1-u);}
-   festive?.update(dt,time);
+   festive?.update(dt,time,Date.now(),{camera,viewHeight});
    if(camera)snowfall.update(time,camera,{amount:snow,viewHeight});
   },
   dispose(){snowfall.dispose();scene?.remove(snowfall.group);world.remove(group);},

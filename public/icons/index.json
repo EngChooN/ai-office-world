@@ -1062,6 +1062,51 @@
   "color": true
  },
  {
+  "name": "x-reindeer",
+  "group": "christmas",
+  "file": "icons/christmas/x-reindeer.svg",
+  "symbol": "ic-x-reindeer",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-takeoff",
+  "group": "christmas",
+  "file": "icons/christmas/x-takeoff.svg",
+  "symbol": "ic-x-takeoff",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-land",
+  "group": "christmas",
+  "file": "icons/christmas/x-land.svg",
+  "symbol": "ic-x-land",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-fly-up",
+  "group": "christmas",
+  "file": "icons/christmas/x-fly-up.svg",
+  "symbol": "ic-x-fly-up",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-fly-down",
+  "group": "christmas",
+  "file": "icons/christmas/x-fly-down.svg",
+  "symbol": "ic-x-fly-down",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
   "name": "x-gondola",
   "group": "christmas",
   "file": "icons/christmas/x-gondola.svg",

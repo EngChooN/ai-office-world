@@ -112,7 +112,9 @@ export const ACT_SCHEMA=Object.freeze({
   //   + 11-17 2차: gd 케이블카(0 없음·1 올라가는 중·2 내려가는 중, 서버 위치 검사 한도가 넓어짐)
   gd:Object.freeze([0,1,2]),
   //   + 11-17 3차: mg 회전목마 자리(0 없음·1~4 루돌프·5~8 썰매 의자, festive-layout.js CAROUSEL_SEATS 번호+1. 시안 B ?look=festive-b에서만 보냄 — 받는 쪽은 자기 화면의 같은 번호 자리 위에 그림)
-  mg:Object.freeze(Array.from({length:CAROUSEL_SEATS.length+1},(_,i)=>i))}) // 자리 수는 레이아웃을 따름(월드아트가 자리를 늘리면 같이 늘어남)
+  mg:Object.freeze(Array.from({length:CAROUSEL_SEATS.length+1},(_,i)=>i)),
+  //   + 11-18: hs 하늘 썰매(0 없음·1 땅·2 날아오르기·3 비행·4 내려앉기, src/christmas/sky-rules.js HS). 언덕 눈썰매 sl과 따로. 높이는 위치 메시지 s의 a칸
+  hs:Object.freeze([0,1,2,3,4])}) // 자리 수는 레이아웃을 따름(월드아트가 자리를 늘리면 같이 늘어남)
 });
 export function sanitizeAct(exp,a){
  const sc=ACT_SCHEMA[exp];if(!sc||!a||typeof a!=='object'||Array.isArray(a))return null;
@@ -132,7 +134,7 @@ export function encodeState(id,seq,p,extra={}){
 }
 export function decodeState(m){
  if(!m||m.t!=='s'||!Number.isFinite(m.x)||!Number.isFinite(m.y)||!Number.isFinite(m.h))return null;
- return {id:m.id,seq:m.q,zone:ZONE_NAME[m.z]??'route',x:m.x,z:m.y,heading:m.h,speed:Number.isFinite(m.v)?m.v:0,flags:m.f|0};
+ return {id:m.id,seq:m.q,zone:ZONE_NAME[m.z]??'route',x:m.x,z:m.y,heading:m.h,speed:Number.isFinite(m.v)?m.v:0,flags:m.f|0,...(Number.isFinite(m.a)&&m.a>0?{alt:Math.min(30,m.a)}:{})}; // alt = 크리스마스 하늘 썰매 높이(11-18)
 }
 // flags 비트: 1 앉음, 2 달리는 중, 4 순간이동(구간 이동·같이 셀카 자리 옮김 — 서버가 순간이동 거부에서 1초에 한 번 봐준다), 8 자동 걷기 중(동행 속도 맞추기에 씀)
 export const FLAG={sit:1,run:2,jump:4,auto:8};

@@ -167,12 +167,13 @@ export function createXmasMulti({ctx,search=globalThis.location?.search??'',envU
   const moved=lastSent?Math.hypot(p.x-lastSent.x,p.z-lastSent.z):Infinity,turned=lastSent?Math.abs(Math.atan2(Math.sin(p.heading-lastSent.h),Math.cos(p.heading-lastSent.h))):Infinity;
   if(!force&&moved<.01&&turned<.02&&t-lastSentAt<XMAS_MULTI.idleSend)return;
   // 순간이동 표시(받는 쪽이 보간을 끊고 바로 옮김)는 걷기·썰매·케이블카로 갈 수 없는 거리만. 케이블카(act.gd)는 건너뛰기 때 약 70m/s, 썰매는 12m/s까지(11-17 2차)
-  const a=myAct?.()??{},vmax=a.gd?90:a.sl>=5?14:3;
+  const a=myAct?.()??{},vmax=a.gd?90:a.sl>=5?14:a.hs?10:3; // 하늘 썰매(act.hs) 최고 9m/s
   const elapsed=Math.max(.05,t-lastSentAt),jump=jumpNext||(lastSent&&moved>XMAS_MULTI.jumpDist+vmax*elapsed);
   let f=0;if(p.running)f|=FLAG.run;if(jump)f|=FLAG.jump;
   jumpNext=false;seq=(seq+1)&0xffff;
   const r2=v=>Math.round(v*100)/100;
-  send({t:'s',id:myId,q:seq,z:0,x:r2(p.x),y:r2(p.z),h:r2(p.heading),v:r2(p.speed??0),f});
+  const alt=ctx.skyAlt?.()??0; // 하늘 썰매 높이(땅 위 m): 하늘에 있을 때만 a칸(11-18, 서버가 a를 아는 버전이어야 다른 사람에게 감)
+  send({t:'s',id:myId,q:seq,z:0,x:r2(p.x),y:r2(p.z),h:r2(p.heading),v:r2(p.speed??0),f,...(alt>0?{a:Math.round(alt*10)/10}:{})});
   lastSent={x:p.x,z:p.z,h:p.heading};lastSentAt=t;
  }
  // 트리 요청. 보냈으면 true, 연결이 없거나 다시 연결 중이면 false(누른 것은 버린다 — 중복 방지, 체험설계 §3-4)
@@ -228,19 +229,22 @@ export function createXmasMulti({ctx,search=globalThis.location?.search??'',envU
   // 회전목마(act.mg): 받은 위치 대신 이 화면의 같은 번호 루돌프 위(ctx.rideAt, 시안 B에서만). 회전 시각이 화면마다 달라도 루돌프에서 떨어져 보이지 않게
   const ride=show&&r.act?.mg?ctx.rideAt?.(r.act)??null:null;
   if(ride)s={...s,x:ride.x,z:ride.z,heading:ride.heading,moving:false};
+  // 하늘 썰매(act.hs, 11-18): 이 화면이 그린 그 사람 썰매 좌석 위(ctx.skyAt). 몸 높이는 좌석이 정하므로(sleigh-rider.js) 땅 높이를 더하지 않는다
+  const sky=show&&r.act?.hs?ctx.skyAt?.(r.id)??null:null;
+  if(sky)s={...s,x:sky.x,z:sky.z,heading:sky.heading,moving:false};
   // 몸이 아직 없거나(읽는 중) 먼 사람이면 가벼운 동동이
   const useFull=show&&r.full&&!!r.avatar,useLite=show&&!useFull;
   // 케이블카(act.gd): 높이는 케이블 선에서(ctx.gondolaY), 아니면 땅
-  const gy=show?(ride?ride.y:r.act?.gd&&ctx.gondolaY?ctx.gondolaY(s.x,s.z):ctx.heightAt(s.x,s.z)):0;
+  const gy=show?(sky?(sky.seated?0:sky.y):ride?ride.y:r.act?.gd&&ctx.gondolaY?ctx.gondolaY(s.x,s.z):ctx.heightAt(s.x,s.z)):0;
   r.shown=show;
   if(r.avatar)r.avatar.root.visible=useFull;
-  if(useLite){const l=liteOf(r);if(l){l.root.visible=true;l.root.position.set(s.x,gy+(r.act?.sl>=1?.18:r.act?.st||ride?.12:0),s.z);l.root.rotation.y=s.heading;l.update?.(dt,s.moving&&!(r.act?.sl>=1));}}
+  if(useLite){const l=liteOf(r);if(l){l.root.visible=true;l.root.position.set(s.x,sky?sky.y:gy+(r.act?.sl>=1?.18:r.act?.st||ride?.12:0),s.z);l.root.rotation.y=s.heading;l.update?.(dt,s.moving&&!(r.act?.sl>=1));}}
   else if(r.lite)r.lite.root.visible=false;
   if(!useFull)return;
   const a=r.avatar;
   // 땅 높이는 더한다(앉기 자세가 root y를 바닥 0 기준으로 올려 둔다, poses.js)
   if(r.snap){a.place(s.x,s.z,s.heading);r.snap=false;a.update(0,{moved:0});a.root.position.y+=gy;return;}
-  const moved=Math.hypot(s.x-a.x,s.z-a.z),seated=!!(r.act?.st||r.act?.sl>=1||r.act?.gd||ride);
+  const moved=Math.hypot(s.x-a.x,s.z-a.z),seated=!!(r.act?.st||r.act?.sl>=1||r.act?.gd||ride||sky);
   a.x=s.x;a.z=s.z;if(moved>1e-3||!s.moving||seated)a.heading=s.heading;
   // 썰매·자리에 앉아 움직이면 걷는 다리 동작 없이 미끄러진다
   // 아이스링크 위(시안 B, ctx.strideAt)는 보폭을 줄여 미끄러지듯
