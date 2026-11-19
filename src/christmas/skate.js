@@ -9,7 +9,8 @@
 export const SKATE=Object.freeze({
  vmax:2.4,acc:1.6,fric:1.15,drag:.08, // 최고 속도(m/s)·90%까지(초)·손 뗀 뒤 감속(m/s², + 속도×drag)
  turnLo:300,turnHi:150,pivotTurn:720, // 도는 빠르기(°/s): 느릴 때 → 최고 속도, pivot보다 느리면 제자리 돌기
- grip:7,carry:.85,                    // 옆미끄럼이 날 방향으로 모이는 빠르기(1/s)·그때 앞으로 옮겨 가는 몫
+ grip:3.5,carry:.85,                  // 옆미끄럼이 날 방향으로 모이는 빠르기(1/s)·그때 앞으로 옮겨 가는 몫. 시안 7은 속도가 붙는 계산에서 나온 값이라,
+                                      // 속도를 안 보태게 고친 뒤 시안의 「90° 꺾을 때 바깥 1.55m」에 맞춰 3.5로(11-19)
  brake:3.6,pivot:.5,oppCos:-.5,oppMin:.3, // 반대 입력 제동(m/s²)·제자리 돌기 속도·「반대」 판정(120°)·제동이 걸리는 최소 속도
  wallKeep:.8,wallHit:.6,wobble:.3,    // 벽에 세게(벽 쪽 속도 wallHit m/s 넘게) 닿으면 나란한 속도 80%만 남기고 0.3초 휘청
  gate:1.5,gateDecel:14,               // 문 안쪽 1.5m 안은 걷기 속도까지(초과분을 14m/s²로 빨리 줄임 — 최고 속도에서 약 0.1초)
@@ -41,10 +42,14 @@ export function skateStep(S,dt,{dx=0,dz=0,gateDist=Infinity,walk=1.37}={}){
     const na=along+(P.vmax-along)*(1-Math.exp(-dt*KACC))*push;S.vx+=(na-along)*f[0];S.vz+=(na-along)*f[1];S.pushing=push>.3;}
   }
  }else if(v>0)scale(S,Math.max(0,v-(P.fric+v*P.drag)*dt),v);
- // 옆미끄럼: 날 방향과 다른 속도는 grip으로 줄고, 그 몫의 carry는 날 방향(가는 쪽 부호)으로 옮겨 간다
+ // 옆미끄럼: 날 방향과 다른 속도는 grip으로 줄고, 그 몫의 carry는 날 방향(가는 쪽 부호)으로 옮겨 간다.
+ // 옮겨 가는 몫이 속도를 보태지 않게 이 단계 앞 속력을 넘지 않는다(11-19 고침: 계속 돌면 13m/s까지 붙던 결함 — 시안 sim.mjs에도 같은 식이 있었음)
  {const f=blade(S,h)??[-Math.sin(h),-Math.cos(h)],along=S.vx*f[0]+S.vz*f[1],lx=S.vx-along*f[0],lz=S.vz-along*f[1],k=Math.exp(-dt*P.grip);
-  const keep=Math.hypot(lx,lz)*(1-k)*P.carry*(along>=0?1:-1);
-  S.vx=along*f[0]+lx*k+f[0]*keep;S.vz=along*f[1]+lz*k+f[1]*keep;}
+  const before=Math.hypot(S.vx,S.vz),keep=Math.hypot(lx,lz)*(1-k)*P.carry*(along>=0?1:-1);
+  S.vx=along*f[0]+lx*k+f[0]*keep;S.vz=along*f[1]+lz*k+f[1]*keep;
+  const after=Math.hypot(S.vx,S.vz);if(after>before)scale(S,before,after);}
+ // 어떤 경우에도 최고 속도 위로는 가지 않는다
+ {const vv=Math.hypot(S.vx,S.vz);if(vv>P.vmax)scale(S,P.vmax,vv);}
  // 문 앞: 걷기 속도까지만(「나가기」 단추 자리를 지나치지 않게)
  if(gateDist<P.gate){v=Math.hypot(S.vx,S.vz);if(v>walk)scale(S,Math.max(walk,v-P.gateDecel*dt),v);}
  S.heading=wrap(h);
@@ -122,7 +127,7 @@ export function createSkateTrack(){
 }
 
 // ── 날 자국·얼음 가루 자료(그림 없음). 그리기(월드아트)는 marks·powder 배열을 읽는다
-//  marks: {x,z,h(몸 방향),side(±1, 두 줄이면 0),age} — 사람마다 최대 marks개, 오래된 것부터 지움, life초에 걸쳐 흐려짐(age/life)
+//  marks: {x,z,h(몸 방향),side(±1, 두 줄이면 0),kind('glide'|'brake'),age} — 사람마다 최대 marks개, 오래된 것부터 지움, life초에 걸쳐 흐려짐(age/life)
 //  powder: {x,y,z,vx,vy,vz,age} — 전체 최대 powder알, powderLife초
 export const SKATE_FX=Object.freeze({
  pc:Object.freeze({people:8,marks:40,powder:80}),
@@ -136,21 +141,21 @@ export function createSkateFx({mobile=false,random=Math.random}={}){
  let rank=new Map(); // 다른 사람 순위(가까운 순, 0부터). 나는 늘 허용
  const allowed=owner=>owner==='me'||(rank.get(owner)??Infinity)<cap.people;
  function own(owner){let o=byOwner.get(owner);if(!o){o={list:[],acc:0,brakeT:0,seen:0};byOwner.set(owner,o);}return o;}
- function mark(owner,x,z,h,side=0){const o=own(owner);o.list.push({x,z,h,side,age:0});if(o.list.length>cap.marks)o.list.shift();stats.emitted++;}
+ function mark(owner,x,z,h,side=0,kind='glide'){const o=own(owner);o.list.push({x,z,h,side,kind,age:0});if(o.list.length>cap.marks)o.list.shift();stats.emitted++;}
  function dust(x,z,n,{spread=.5,up=.9,h=0}={}){
   for(let i=0;i<n;i++){if(powder.length>=cap.powder){stats.dropped++;powder.shift();}
    const a=h+Math.PI/2*(random()<.5?1:-1)+(random()-.5)*1.2,s=spread*(.4+random()*.6);
    powder.push({x,y:.03,z,vx:-Math.sin(a)*s,vy:up*(.5+random()*.5),vz:-Math.cos(a)*s,age:0});}
  }
  return {
-  cap,marksOf(owner){return byOwner.get(owner)?.list??[];},get powder(){return powder;},stats,
+  cap,marksOf(owner){return byOwner.get(owner)?.list??[];},owners(){return [...byOwner.keys()];},get powder(){return powder;},stats, // owners = 자국 주인 목록(월드아트 부탁)
   // 사람마다 매 프레임: 자리·속도·자세 → 자국·가루를 남김(허용된 사람만)
   emit(owner,dt,{x,z,heading=0,v=0,gait=null}={}){
    if(!allowed(owner))return false;
    const o=own(owner);o.seen=0;
    if(v>SKATE_FX.markMin){o.acc+=v*dt;if(o.acc>=SKATE_FX.markStep){o.acc=0;mark(owner,x,z,heading,gait?.pose==='glide1'||gait?.pose==='push'?gait.side:0);}}
    if(gait?.events.includes('push'))dust(x,z,SKATE_FX.pushPowder,{spread:.35,up:.5,h:heading});
-   if(gait?.pose==='brake'){o.brakeT-=dt;if(o.brakeT<=0){o.brakeT=SKATE_FX.brakeEvery;dust(x,z,SKATE_FX.brakePowder,{spread:.9,up:1.1,h:heading});mark(owner,x,z,heading+Math.PI/2,0);}}
+   if(gait?.pose==='brake'){o.brakeT-=dt;if(o.brakeT<=0){o.brakeT=SKATE_FX.brakeEvery;dust(x,z,SKATE_FX.brakePowder,{spread:.9,up:1.1,h:heading});mark(owner,x,z,heading+Math.PI/2,0,'brake');}}
    return true;
   },
   // 다른 사람 순위(가까운 순 id 배열)

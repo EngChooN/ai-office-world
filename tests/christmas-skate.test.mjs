@@ -14,6 +14,13 @@ test('넓은 얼음: 최고 2.39m/s·90%까지 1.57초·손 떼면 2.22m·90° �
  m=open();for(let i=0;i<300;i++)m.step(1,0);let sx=m.x,over=0;for(let i=0;i<150;i++){m.step(0,-1);over=Math.max(over,m.x-sx);}near(over,1.55,'꺾기 바깥');
  m=open();for(let i=0;i<300;i++)m.step(1,0);sx=m.x;let mx=0;for(let i=0;i<240;i++){m.step(-1,0);mx=Math.max(mx,m.x-sx);}near(mx,.81,'제동 거리');
 });
+test('계속 돌거나(원 그리기) 손을 떼도 최고 속도 2.4m/s를 넘지 않음(초당 20~60장 모두)',()=>{
+ for(const dt of [1/60,1/30,1/20]){const S=createSkateState();let max=0;
+  for(let i=0;i<4/dt;i++)skateStep(S,dt,{dx:1,dz:0});
+  for(let i=0;i<8/dt;i++){const a=i*dt*2.5;skateStep(S,dt,{dx:Math.cos(a),dz:Math.sin(a)});max=Math.max(max,Math.hypot(S.vx,S.vz));}
+  for(let i=0;i<3/dt;i++){skateStep(S,dt,{});max=Math.max(max,Math.hypot(S.vx,S.vz));}
+  assert.ok(max<=SKATE.vmax+1e-9,`dt ${dt} 최고 ${max}`);}
+});
 test('느릴 때는 제자리에서 바로 돌아섬(0.25초 안에 180°)',()=>{
  const m=open();for(let i=0;i<15;i++)m.step(-1,0);assert.ok(Math.abs(Math.atan2(Math.sin(m.S.heading-Math.PI/2),Math.cos(m.S.heading-Math.PI/2)))<.05);
 });
@@ -59,7 +66,8 @@ test('효과 자료: 휴대폰은 사람 3명·자국 20·가루 30, PC는 8·40
   const ids=Array.from({length:12},(_,i)=>'p'+i);fx.setRank(ids);
   for(let i=0;i<600;i++){for(const id of ['me',...ids])fx.emit(id,DT,{x:i*.01,z:0,v:2,gait:{pose:'brake',events:['push'],side:1}});fx.update(DT/50);}
   const owners=['me',...ids].filter(id=>fx.marksOf(id).length);assert.equal(owners.length,c.people+1);
-  assert.ok(owners.every(id=>fx.marksOf(id).length<=c.marks));assert.ok(fx.powder.length<=c.powder);}
+  assert.ok(owners.every(id=>fx.marksOf(id).length<=c.marks));assert.ok(fx.powder.length<=c.powder);
+  assert.deepEqual(new Set(fx.owners()),new Set(owners));assert.ok(fx.marksOf('me').some(m=>m.kind==='brake'));}
 });
 test('들어가면 새 안내 문구, 충돌은 그대로 링크 안',()=>{
  assert.match(RINK_TEXT.in,/반대로 당기면 멈춰요/);const p=collideRink(RINK.x+100,RINK.z);assert.ok(inRink(p.x,p.z,.2));

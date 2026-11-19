@@ -91,6 +91,12 @@ try{
   const actions=await A.evaluate(()=>window.xmas.status().actions);
   out.measured.gate={maxBeforeZone:+before.toFixed(2),maxWithin1_2m:+maxIn.toFixed(2),walk:WALK_SPEED,actions};
   check('문 앞 감속: 문 안쪽 1.2m 안 속도 ≤ 걷기 속도 + 0.1, 「나가기」 단추 뜸',inZone.length>0&&maxIn<=WALK_SPEED+.1&&actions.includes('rk:out'),out.measured.gate);}
+ // 원 그리기(W+D 5초) 뒤 손 떼기: 어떤 경우에도 최고 2.4m/s를 넘지 않음(11-19 월드아트 시험에서 2.8~3.1m/s 나오던 결함)
+ await placeIn(A,RINK.x+4,RINK.z+3.4,W);i0=await mark(A);
+ await A.keyboard.down('KeyW');await A.keyboard.down('KeyD');await sleep(5000);await A.keyboard.up('KeyD');await A.keyboard.up('KeyW');await sleep(2500);
+ {const L=await logFrom(A,i0),max=Math.max(...L.map(s=>s.v));out.measured.circle={maxV:+max.toFixed(2),poses:[...new Set(L.map(s=>s.pose))]};
+  check('원 그리기·손 떼기 내내 최고 속도 ≤ 2.4m/s',max<=2.41,out.measured.circle);}
+ {const art=await A.evaluate(()=>window.xmas.rink.status().art),artB=await B.evaluate(()=>window.xmas.rink.status().art);out.measured.art={pc:art,mobile:artB};}
  await A.evaluate(()=>{const x=window.xmas,c=x.cam;c.yaw=-1.2;c.pitch=.35;c.dist=8;});await sleep(300);await A.screenshot({path:`${dir}/pc-rink.png`});
 
  // ── ② 휴대폰 조이스틱
