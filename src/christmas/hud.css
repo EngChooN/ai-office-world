@@ -326,6 +326,8 @@ html.uf .uf-tr .hc-btn.xc-chat{display:grid!important}
 html.uf .uf-tr .hc-btn.xc-chat[hidden]{display:none!important}
 /* 눈싸움 한 판 중에는 💬를 접는다(fight-ui.js html.xf-match, 설계 v1). 위 공통 줄 규칙이 접기를 덮지 않게 더 좁게 */
 html.uf.xf-match .uf-tr .hc-btn.xc-chat{display:none!important}
+/* 썰매 타는 중(sled-play.js html.xh-sledding)은 예전처럼 위 오른쪽 줄(지도·💬·☰)을 접는다. 그 자리는 썰매 ↩·⚙ 단추 자리 */
+html.uf.xh-sledding .uf-tr{display:none!important}
 /* 지도 창 = 메뉴와 같은 시트 자리: 세로 아래(절반 이하) · 가로 오른쪽 340px */
 html.uf .xt-map.uf-mapsheet{position:fixed;flex-direction:column;font-family:var(--nb-font);color:var(--ink);pointer-events:auto;left:0;right:0;top:auto;bottom:0;transform:none;width:auto;max-height:52dvh;border-radius:22px 22px 0 0;padding:10px calc(var(--sr) + 14px) calc(var(--sb) + 12px) calc(var(--sl) + 14px);background:rgba(255,250,238,.97);box-shadow:0 -6px 20px rgba(40,25,10,.22);z-index:60}
 html.uf .xt-map.uf-mapsheet .xt-board{width:auto;height:calc(52dvh - 80px);max-height:none;max-width:100%;margin:0 auto} /* 지도는 세로로 긴 판(폭/높이 0.88)이라 높이에 맞춤 */

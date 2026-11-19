@@ -291,6 +291,12 @@ try{
    const ev=(t,dx)=>el.dispatchEvent(new PointerEvent(t,{bubbles:true,pointerId:21,pointerType:'touch',clientX:x+dx,clientY:y}));ev('pointerdown',0);ev('pointermove',40);await new Promise(r=>setTimeout(r,250));const s=window.xmas.sled.status();ev('pointerup',40);return {shown:true,off:s.off};});
   check('⑤ 휴대폰 아래 절반 끌기 = 가상 핸들',dr.shown,dr);
   await sleep(1500);await shot(A,'pc-sled-ride');await shot(B,'mobile-sled-ride');
+  // 11-19: 탈 때 💬는 접혀야 함(hud.css html.xh-sledding). 공통 틀 줄 규칙에 덮여 보이거나, 썰매 단추 밑에 깔려 있는지 휴대폰에서 확인
+  {const c=await B.evaluate(()=>{const e=document.querySelector('.uf-tr .hc-btn.xc-chat')??document.querySelector('.hc-btn.xc-chat');if(!e)return {found:false};const r=e.getBoundingClientRect(),cs=getComputedStyle(e);
+    const top=r.width?document.elementFromPoint(r.x+r.width/2,r.y+r.height/2):null;return {found:true,display:cs.display,vis:cs.visibility,w:r.width,h:r.height,x:Math.round(r.x),y:Math.round(r.y),cover:top&&!e.contains(top)?(top.className||top.tagName):null,sled:document.documentElement.classList.contains('xh-sledding')};});
+   check('⑤ 휴대폰 썰매 타는 중 💬 접힘',c.found&&c.sled&&(c.display==='none'||c.w===0),c);
+   const t=await B.evaluate(()=>[...document.querySelectorAll('.xl-tools button')].map(b=>{const r=b.getBoundingClientRect(),top=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {w:Math.round(r.width),on:!!top&&b.contains(top)};}));
+   check('⑤ 휴대폰 썰매 ↩·⚙ 단추가 가려지지 않음',t.length===2&&t.every(b=>b.w>=44&&b.on),{t});}
   const rk=await A.evaluate(()=>document.querySelector('.xl .xg-bar .xg-l')?.textContent??'');check('⑤ 위 띠 왼쪽 순위(n/2)',/\d\/2/.test(rk),{rk});
   const done=await until(async()=>(await st(A)).sled.race?.ph==='done'&&(await st(A)).sled.result&&(await st(B)).sled.result,160000);await sleep(800);
   check('⑤ 둘 다 완주 → 레이스 끝·두 화면 결과 창',done,{a:(await st(A)).sled,b:(await st(B)).sled});
