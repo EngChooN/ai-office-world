@@ -285,7 +285,7 @@ window.namsan.status=()=>({started:window.namsan.started,x:st.x,z:st.z,y:walkHei
 window.namsan.jump=s=>{jumpTo(G,st,s);shortcut=true;camBase=st.heading;look.yaw=0;return window.namsan.status();};
 window.namsan.setAuto=on=>{st.auto=!!on;paintBig();return st.auto;};
 window.namsan.multi=()=>multi?.info()??null;
-if(q.has('debug'))Object.assign(window,{__ns:ns,__scene:scene,__land:landscape.group,__camera:camera,__THREE:THREE});   // 점검용(?debug)
+if(q.has('debug'))Object.assign(window,{__ns:ns,__scene:scene,__land:landscape.group,__camera:camera,__THREE:THREE,__G:G,__avatar:avatar});   // 점검용(?debug)
 
 // ── 준비 ──
 await lighting.prepare?.();loading.done('environment');

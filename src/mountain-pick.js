@@ -44,7 +44,9 @@ export function mountainArt(m,{season='autumn',time='day',w=362,h=150,gray=false
   :`M${sx} ${sy} C${w*.25} ${h*.82} ${w*.3} ${h*.62} ${w*.45} ${h*.6} S${px-30} ${py+30} ${px} ${py+2}`;
  // 정상 표시: 깃발, 또는 전망탑(남산 art.summit 'tower'). 밤에는 탑 불빛·산 아래 도심 불빛 점
  const lit=time==='night',tower=m.art?.summit==='tower';
- const peakMark=tower?`<g transform="translate(${px.toFixed(1)} ${(py+3).toFixed(1)})"><rect x="-2" y="-30" width="4" height="30" fill="#e9e1cf"/><ellipse cx="0" cy="-31" rx="6.5" ry="3" fill="${lit?'#ffd36b':'#d8d0bd'}"/><line x1="0" y1="-34" x2="0" y2="-46" stroke="#c4473a" stroke-width="1.6"/>${lit?'<circle cx="0" cy="-46" r="1.6" fill="#ff7ab8"/>':''}</g>`
+ // 탑은 테두리·굵은 몸통·전망대로 작게도 탑으로 읽히게(11-19, 세로 카드에서 막대처럼 보였음). 카드 높이에 맞춰 크기를 줄인다(가로 112px 카드도 위가 안 잘리게)
+ const tk=Math.min(1,h/150),tw2=(lit?'#ffe7a8':'#f4eedf');
+ const peakMark=tower?`<g transform="translate(${px.toFixed(1)} ${(py+3).toFixed(1)}) scale(${tk.toFixed(2)})" stroke="#3b2a1a" stroke-width="1.2" stroke-linejoin="round"><path d="M-4.5 0 L-2.6 -30 L2.6 -30 L4.5 0Z" fill="${tw2}"/><path d="M-9 -30 h18 l-2.5 -6 h-13Z" fill="${lit?'#ffd36b':'#d8d0bd'}"/><rect x="-5" y="-40" width="10" height="4" rx="1.5" fill="${tw2}"/><line x1="0" y1="-40" x2="0" y2="-54" stroke="#c4473a" stroke-width="2"/>${lit?'<circle cx="0" cy="-54" r="2.2" fill="#ff7ab8" stroke="none"/>':''}</g>`
   :`<g transform="translate(${px.toFixed(1)} ${(py+2).toFixed(1)})"><line x1="0" y1="0" x2="0" y2="-20" stroke="#4a3618" stroke-width="2"/><path d="M0 -20 L14 -15 L0 -10Z" fill="#b9472f"/></g>`;
  let city='';if(tower&&lit){let s2=3;const r2=()=>(s2=(s2*16807)%2147483647)/2147483647;for(let i=0;i<26;i++)city+=`<circle cx="${(r2()*w).toFixed(1)}" cy="${(h-2-r2()*h*.1).toFixed(1)}" r="${(.8+r2()*.9).toFixed(1)}" fill="#ffd98a" opacity=".85"/>`;}
  return `<svg class="pk-art" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice" aria-hidden="true"${gray?' style="filter:grayscale(1) contrast(.8) brightness(1.05)"':''}>
@@ -107,7 +109,7 @@ export function mountMountainPick(doc=document,win=window){
   if(!freeBox.hidden&&freeBox.contains(e.target)){if(e.target===freeBox){freeBox.hidden=true;return;}handlePanelClick(e,{context:'pick',mountain:freeFor,onGo:()=>go(freeFor),onClose:()=>{freeBox.hidden=true;}});return;}
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.pkGo)go(b.dataset.pkGo);
-  else if(b.dataset.pkFree){const m=MOUNTAINS.find(x=>x.id===b.dataset.pkFree);if(!freeState.unlockedFor(m?.id)){say(`${m?.summitName??'정상'}에서 완등 도장을 받으면 열려요`,'c-lock');return;}freeFor=m.id;panel.innerHTML=panelHTML({context:'pick',mountain:freeFor});freeBox.hidden=false;panel.querySelector('button')?.focus({preventScroll:true});}
+  else if(b.dataset.pkFree){const m=MOUNTAINS.find(x=>x.id===b.dataset.pkFree);if(!freeState.unlockedFor(m?.id)){say(`${m?.summitName??'정상'}에서 완등 도장을 받으면 열려요`,'c-lock');return;}freeFor=m.id;panel.innerHTML=panelHTML({context:'pick',mountain:freeFor});freeBox.style.top=`${root.scrollTop}px`;freeBox.style.bottom=`${-root.scrollTop}px`;freeBox.hidden=false;panel.querySelector('button')?.focus({preventScroll:true});}
  });
  win.addEventListener('keydown',e=>{if(e.key==='Escape'&&!freeBox.hidden&&root.isConnected){freeBox.hidden=true;e.stopPropagation();}},true);
  onFreeChange(()=>{if(root.isConnected)render();});

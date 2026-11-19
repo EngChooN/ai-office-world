@@ -56,6 +56,10 @@
 /* 휴대폰 세로: 머리글 위, 카드는 아래로 쌓는다. 자유 설정은 아래 시트 */
 @media (orientation:portrait){
  #mountain-pick{padding:calc(var(--st,0px) + 22px) 14px calc(var(--sb,0px) + 14px);gap:14px;overflow:auto;justify-content:flex-start}
+ /* 세로는 스크롤되므로 어두운 막을 스크롤 상자 자신의 배경으로(.pk-dim은 첫 화면 높이만 덮어 내리면 아래·옆으로 뒤 화면이 비쳤다, 11-19) */
+ #mountain-pick{background:linear-gradient(180deg,rgba(28,18,6,.55),rgba(28,18,6,.72))}
+ :root[data-hud-time=night] #mountain-pick{background:linear-gradient(180deg,rgba(6,8,16,.58),rgba(6,8,16,.78))}
+ .pk-dim{display:none}
  .pk-head{text-align:left;align-self:stretch}
  .pk-brand{justify-content:space-between}
  .pk-title{font-size:24px}
@@ -65,6 +69,8 @@
  .pk-name{font-size:24px}
  .pk-soon{width:auto;align-self:stretch;margin:0 0}
  .pk-free{place-items:end stretch;padding:calc(var(--st,0px) + 12px) 8px calc(var(--sb,0px) + 8px)}
+ /* 판은 스크롤 상자 안 absolute라 내려 둔 만큼 top/bottom을 mountain-pick.js가 맞추고, 열린 동안은 뒤 목록이 스크롤되지 않게(11-19: 남산 카드에서 열면 판이 화면 가운데 뜨고 360×640은 위가 잘렸다) */
+ #mountain-pick:has(.pk-free:not([hidden])){overflow:hidden}
  .fs-pick{width:auto;border-radius:14px 14px 6px 6px}
 }
 /* 휴대폰 가로: 왼쪽 머리글 열(212), 오른쪽 카드 가로 목록 */

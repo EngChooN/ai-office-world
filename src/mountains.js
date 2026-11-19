@@ -13,7 +13,7 @@ export const MOUNTAINS=Object.freeze([
  // 남산(11-19, 월드디자인 설계 v1 §8 · 대표 결정: 성곽 계단길·265m). 코스 길이 1,067m(assets/shared/namsan/course.json), 걷기 공식 26.6분 → 카드 30분
  Object.freeze({id:'namsan',name:'남산',altitudeM:265,course:'백범광장 → 남산 정상 · 성곽 계단길',summitName:'남산 정상',
   distanceKm:1.1,etaMin:30,stamps:4,difficulty:'쉬움',ready:true,page:'namsan/',tag:'밤 전망 추천',
-  art:Object.freeze({ridge:[.06,.18,.38,.56,.53,.45,.39,.33,.28,.23],peak:.33,summit:'tower',course:'zigzag-left'})}),
+  art:Object.freeze({ridge:[.06,.14,.27,.42,.56,.5,.42,.35,.29,.23],peak:.44,summit:'tower',course:'zigzag-left'})})   // 봉우리를 x 44%로(33%면 휴대폰 세로 카드에서 탑 꼭대기가 왼쪽 위 계절 꼬리표에 가렸다, 11-19),
 ]);
 export const mountainById=id=>MOUNTAINS.find(m=>m.id===id)??null;
 export const DEFAULT_MOUNTAIN='gwanak';
