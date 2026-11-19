@@ -126,7 +126,7 @@ const frame=createUiFrame({exp:'hiking',menuLabel:'남산 메뉴',tabs:[
  {id:'map',label:'지도',ic:'h-map',render:p=>{p.innerHTML=`<div class="ns-panel ns-map"><h4>남산 성곽 계단길 · 1.1km</h4><svg viewBox="0 0 320 240" aria-label="코스와 지금 위치">${mapSvg()}</svg><div class="ns-stamps" data-ns-stamps></div><small>스탬프 4곳 · 정상 광장에 들어서면 완등이에요</small></div>`;},onOpen:p=>paintMap(p)},
  {id:'settings',label:'설정',ic:'c-settings',render:p=>{p.innerHTML=`<section id="nb-sheet-settings" class="ns-panel"><div class="nb-grid ns-grid"><button type="button" data-ns="face">정면 보기</button><button type="button" data-ns="people" aria-pressed="false">함께 걷기 인사·목록 판</button><button type="button" data-ns="pick">다른 산 고르기</button><div data-dev-slot></div></div>
 <div class="ns-dev"><b>개발용 · 구간 이동</b><div class="ns-grid">${[['출발',2],['큰 계단',430],['쉼터',770],['마지막 계단',840],['정상 앞',1040]].map(([t,s])=>`<button type="button" data-ns-jump="${s}">${t}</button>`).join('')}</div></div>
-<p class="ns-credits">걷기: 왼쪽 아래 손가락(조이스틱)·WASD, 둘러보기: 드래그·Q/E, 빨간 단추·R = 자동 걷기, V = 시점.<br>지형: produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. 길·성곽·건물: © OpenStreetMap contributors (ODbL). 전망탑·광장·소품·이정표 문구는 게임 속 디자인이에요.</p></section>`;
+<p class="ns-credits">걷기: 왼쪽 아래 손가락(조이스틱)·WASD, 둘러보기: 드래그·Q/E, 빨간 단추·R = 자동 걷기, V = 시점.<br>지형: produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. 길·성곽·건물: © OpenStreetMap contributors (ODbL). 날씨: 10분마다 <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> 데이터(<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>)를 받아 표현해요. 전망탑·광장·소품·이정표 문구는 게임 속 디자인이에요.</p></section>`;
   p.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.ns==='face')faceForward(look);else if(b.dataset.ns==='people'){const on=document.body.classList.toggle('ns-multi-open');b.setAttribute('aria-pressed',String(on));frame.close();}else if(b.dataset.ns==='pick')location.assign(new URL('../'+location.search.replace(/([?&])multi=[^&]*&?/,'$1').replace(/[?&]$/,''),location.href).href);else if(b.dataset.nsJump){jumpTo(G,st,Number(b.dataset.nsJump));shortcut=true;camBase=st.heading;look.yaw=0;sendJump=true;frame.close();}});}},
 ]});
 const topl=document.createElement('div');topl.className='hk-topl';topl.innerHTML=`<div class="hk-topl-r1"><button type="button" class="hk-pill" aria-label="남산 진행"><b class="hk-pill-t">출발 전</b><i class="hk-pill-bar" aria-hidden="true"><i></i></i></button><button type="button" id="view" aria-label="시점 바꾸기 (V)"><em aria-hidden="true">${icon('h-view',{size:'s'})}</em><span>3인칭</span></button></div><div class="hk-topl-r2"></div>`;
@@ -169,7 +169,8 @@ function command(id){
  else if(id==='face-forward')faceForward(look);
  else if(id==='escape'){if(!summitBox.hidden)summitBox.hidden=true;else frame.close();}
  else if(id==='map-toggle')frame.toggle('map');
- else if(id==='interact'||id==='emote-menu')multi?.greetKey?.();   // F·X = 앞사람에게 인사(관악산과 같은 키)
+ else if(id==='interact'||id==='emote-menu')multi?.greetKey?.();
+ else if(id==='labels-toggle'){if(!multi){say('이름표는 함께 걷기 중에 보여요');return;}const on=!multi.tagsOn;multi.setTags(on);say(on?'이름표 켜짐':'이름표 꺼짐');}   // N·함께 걷기 판 「이름표」(관악산 interaction-controller와 같은 문구)   // F·X = 앞사람에게 인사(관악산과 같은 키)
 }
 const input=bindInput(command,(dx,dy)=>turnLook(look,dx,dy),dz=>{if(view==='third')look.orbit=THREE.MathUtils.clamp(look.orbit+dz,2.2,12);},{mode:()=>'none',interact:()=>!!multi?.greet?.().target,panel:()=>frame.isOpen});
 

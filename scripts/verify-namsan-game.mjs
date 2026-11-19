@@ -175,11 +175,16 @@ if(PART.includes('multi')){
  await B.waitForFunction(()=>window.__ev.some(e=>e.type==='hiking:chat'&&e.text==='남산 정상에서 만나요'),null,{timeout:15000}).catch(()=>{});
  const got=await B.evaluate(()=>window.__ev.filter(e=>e.type==='hiking:chat').map(e=>e.text));
  check('채팅 왕복(A → B)',got.includes('남산 정상에서 만나요'),{got});
+ // 함께 걷기 판 「이름표」 단추: 누르면 꺼지고 다시 누르면 켜짐(11-19 결함 수정)
+ const tagBtn=async()=>{await A.evaluate(()=>[...document.querySelectorAll('.multi-btn')].find(b=>b.textContent.startsWith('이름표')).click());await sleep(300);return A.evaluate(()=>window.hiking.multiApi.tagsOn);};
+ const t1=await tagBtn(),t2=await tagBtn();check('함께 걷기 판 「이름표」 단추가 켜고 끔',t1===false&&t2===true,{t1,t2});
+ const credit=await A.$eval('#source-line',el=>el.textContent);check('화면 출처 줄에 날씨 출처(Open-Meteo CC BY 4.0)',credit.includes('Open-Meteo.com (CC BY 4.0)'),{credit});
  await sleep(800);await shot(A,'D-pc-sees-other-chat');await shot(B,'D-phone-sees-other');
  // 관악산 방 사람은 남산 사람을 보지 않음
  const C=await open({viewport:{width:1000,height:700},label:'C-gwanak',url:`${pageUrl}/hiking/?multi=${encodeURIComponent('관악산-1')}&server=${encodeURIComponent(wsUrl)}&${Q}&start=entrance`});
  await C.waitForFunction(()=>window.hiking?.started&&window.hiking?.multi?.(),null,{timeout:180000});await sleep(4000);
- const ic=await C.evaluate(()=>window.hiking.multi());
+ await C.waitForFunction(()=>typeof window.hiking?.multi==='function'&&window.hiking.multi(),null,{timeout:60000}).catch(()=>{});   // 함께 걷기가 붙는 사이 window.hiking이 바뀌는 순간을 피함
+ const ic=await C.evaluate(()=>window.hiking?.multi?.()??null);
  check('관악산 방과 섞이지 않음',(ic?.roster?.length??0)===0&&(await A.evaluate(()=>window.namsan.multi().roster.length))===1,{gwanakRoster:ic?.roster?.length,room:ic?.room});
  out.metrics.multiHealth=await health();
  for(const p of [A,B,C])await p.context().close();

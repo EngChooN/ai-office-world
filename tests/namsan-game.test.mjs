@@ -75,3 +75,14 @@ test('서버 인원: 남산 = 등산 전체 접속 − 관악산 서버 방', ()
  assert.equal(namsanCount(h),3);assert.equal(namsanCount({servers:{}}),null);
  const n=namsanHealth(h);assert.deepEqual(n.servers.hiking,[{id:'1',name:'남산 서버',count:3}]);assert.deepEqual(n.servers.smoking,h.servers.smoking);
 });
+
+test('날씨 출처(Open-Meteo CC BY 4.0)가 화면 출처 줄과 설정 탭에 있다(이용 조건, 11-19)', ()=>{
+ const html=readFileSync('hiking/namsan/index.html','utf8'),game=readFileSync('src/namsan/game.js','utf8');
+ assert.match(html.match(/<div id="source-line"[^>]*>([^<]*)</)[1],/Open-Meteo\.com \(CC BY 4\.0\)/);
+ assert.match(game,/href="https:\/\/open-meteo\.com\/"/);assert.match(game,/creativecommons\.org\/licenses\/by\/4\.0/);
+});
+
+test('함께 걷기 판 「이름표」(N)가 남산 command에서 처리된다', ()=>{
+ const game=readFileSync('src/namsan/game.js','utf8');
+ assert.match(game,/id==='labels-toggle'\).{0,200}multi\.setTags\(on\)/);
+});
