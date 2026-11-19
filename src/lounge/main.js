@@ -19,8 +19,8 @@ import {createSpots} from './spots.js';
 import {createScene} from './scene.js';
 import {createLoungeMulti} from './multi.js';
 import {installLoungeMultiUi} from './multi-ui.js';
-import {serverPickMode} from '../server-pick.js';
-import {takeHubPick,applyHubPick} from '../hub/handoff.js';
+import {serverPickMode,loadPickName} from '../server-pick.js';
+import {takeEntryChoice,enterWith} from '../entry.js';
 import {ageGate} from './age-gate.js';
 
 const q=new URLSearchParams(location.search);
@@ -56,6 +56,7 @@ export const TIME_PRESETS=Object.freeze({
  night:{label:'밤',sun:{elevation:-24,azimuth:300},moon:{elevation:40,azimuth:150,illumination:.85}},
 });
 const profile=loadProfile();
+{const n=loadPickName();if(n)profile.nickname=n;} // 이름은 세 체험 공용 저장값이 먼저(허브 설정·입장 창, 11-19)
 // 세 체험 공용 소리 설정(11-17, shared-settings.js): 저장된 적이 있으면 그 값을 따르고, 여기서 바꾸면 거기에도 쓴다
 const sharedSound=loadShared();if(sharedSound.has)profile.muted=!sharedSound.sound;
 const timeState={mode:q.get('time')??profile.timeMode??'auto'};
@@ -174,10 +175,10 @@ const multiUi=installLoungeMultiUi({multi,ctx,hud});
 // 옛 주소 ?multi=옥상-1은 서버 고르기 창을 건너뛰고 바로 참가. 아니면 로딩(과 첫 로비 카드) 뒤 서버 고르기 창(점검 스크립트는 ?serverpick=on일 때만).
 const afterIntro=fn=>{if(!profile.seenIntro){const h=setInterval(()=>{if(profile.seenIntro){clearInterval(h);fn();}},300);}else fn();};
 const pickMode=serverPickMode(location.search,!!navigator.webdriver);
-const hubChoice=pickMode!=='legacy'&&!multi.params.auto?takeHubPick('smoking'):null;
+const entryChoice=!multi.params.auto?takeEntryChoice('smoking',{mode:pickMode}):null; // 허브에서 고른 것 → 이 기기의 지난 선택(11-19 entry.js)
 if(multi.params.auto){const go=()=>multi.join({room:multi.params.room,name:multi.params.name??''});
  if(multi.params.name===null)afterIntro(go);else go();}
-else if((pickMode==='show'||hubChoice)&&multiUi){if(!multi.joined&&!applyHubPick(multiUi.pick,hubChoice))multiUi.open({closable:false});} // 허브에서 서버를 골라 왔으면 창 없이 바로(11-17) // 로비 카드보다 먼저: 허브 → 체험 → 서버 카드 → 입장(11-08). 첫 방문 닉네임은 서버 카드 칸에서 받는다
+else if((pickMode==='show'||entryChoice)&&multiUi){if(!multi.joined)enterWith(multiUi.pick,entryChoice,pickMode);} // 고른 적 있으면(허브·지난 선택) 창 없이 바로, 아니면 공용 입장 창 한 번(11-19) // 로비 카드보다 먼저: 허브 → 체험 → 서버 카드 → 입장(11-08). 첫 방문 닉네임은 서버 카드 칸에서 받는다
 
 // ── 크기·화질
 function resize(){const w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio,mobile?1.5:2);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setPixelRatio(dpr);renderer.setSize(w,h);toon.pipeline.resize(mobile?1:2,w,h,dpr);}

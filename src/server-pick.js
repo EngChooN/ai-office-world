@@ -8,11 +8,13 @@
 //  - 서버가 full로 거절하면 호출한 쪽이 open({note:'full'})로 다시 띄운다 → '방금 꽉 찼어요'.
 // 11-08 입장 흐름 개편: 서버를 허브 체험 카드와 같은 카드(그림·이름·인원 막대·들어가기)로 보여 준다. 입장 전(current 없음·closable false)은
 // 게임 화면을 가리는 불투명 전체 화면(data-mode=entry), 게임 안에서 서버를 바꿀 때는 같은 카드의 창(data-mode=switch).
+// 11-19 입장 흐름 정리: 세 체험의 입장 화면은 이 창 하나(entry.js). 고르면 이 기기에 지난 선택으로 남겨 다음에 주소로 와도 창 없이 들어간다.
 // 체험 코드(main.js·lounge)와는 콜백으로만 만난다. 모양은 server-pick.css(등산 수첩 종이 톤, 단추 44px 이상, 안전 영역 안).
 import {SERVERS,SERVER_MAX,EXPERIENCES,NET,serverMax} from './multi-protocol.js';
 import {ART,hubTime} from './hub/art.js';
 import {sunPosition} from './daytime.js';
 import {icon,iconText} from './icons/icon.js';
+import {rememberEntry} from './entry.js';
 
 export const NAME_KEY='gwanak-multi-name';   // 등산 함께 걷기 카드와 같은 저장값(닉네임 재사용)
 export const REFRESH_MS=5000;
@@ -168,9 +170,9 @@ export function createServerPick({experience='hiking',serverUrl=null,serverOff=f
  }
  function join(id){
   const s=(servers[experience]??[]).find(x=>x.id===id);if(!s)return;
-  const n=saveName();close();onJoin({server:s.id,room:s.room,name:n,serverName:s.name});
+  const n=saveName();rememberEntry(experience,{server:s.id},storage);close();onJoin({server:s.id,room:s.room,name:n,serverName:s.name});
  }
- function solo(){saveName();const was=st.current;close();onSolo({left:!!was});}
+ function solo(){saveName();rememberEntry(experience,{solo:true},storage);const was=st.current;close();onSolo({left:!!was});}
  const matchMediaSafe=q=>{try{return !!win?.matchMedia?.(q).matches;}catch{return false;}};
  const api={open,close,refresh,join,solo,render,
   get isOpen(){return st.open;},get state(){return {...st,health:st.health,rows:pickRows(experience,st.health,servers),totals:pickTotals(experience,st.health,servers),name};},

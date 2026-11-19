@@ -1,4 +1,4 @@
-// 산 고르기 첫 화면 닉네임 칸(2026-11-08, 대표 추가 지시). 저장값은 서버 고르기 창과 같은 NAME_KEY 'gwanak-multi-name'.
+// 닉네임 저장값(2026-11-08, 대표 추가 지시). 저장값은 서버 고르기 창과 같은 NAME_KEY 'gwanak-multi-name'. 11-19부터 산 고르기의 칸은 없애고 공용 입장 창 칸 하나.
 // mountain-pick.js는 CSS를 불러와 node에서 import할 수 없어 소스·CSS를 읽어 보고, 저장·미리 채우기는 server-pick.js로 본다.
 // 화면 흐름(단축키 막기·키보드·세 화면 크기)은 scripts/capture-mountain-nick.mjs.
 import test from 'node:test';
@@ -37,24 +37,10 @@ test('흡연장: 저장값이 비어 있으면 로비 닉네임(기본값)을 �
  const q=createServerPick({experience:'smoking',serverUrl:null,storage:st,doc:null,defaultName:'옥상고양이'});
  await q.open();assert.equal(q.state.name,'옥상고양이');q.close();
 });
-test('산 고르기 소스: 닉네임 칸·저장·단축키 막기·키보드 대응·출발할 때 저장',()=>{
+test('산 고르기(11-19 입장 흐름 정리): 닉네임 칸 없음(이름은 공용 입장 창), 고른 적 있으면 산 고르기도 건너뜀',()=>{
  const s=read('../src/mountain-pick.js');
- assert.match(s,/import \{loadPickName,savePickName,PICK_LABELS\} from '\.\/server-pick\.js'/);
- assert.match(s,/maxlength="\$\{NET\.nameMax\}"/);assert.match(s,/placeholder="\$\{esc\(PICK_LABELS\.hiking\.anon\)\}"/);
- assert.equal(PICK_LABELS.hiking.anon,'등산객XXXX');
- assert.match(s,/nickFieldHTML\(loadPickName\(\)\)/,'다시 들어오면 마지막 이름');
- assert.match(s,/for\(const ev of \['keydown','keyup','keypress'\]\)[^\n]*e\.stopPropagation\(\)/,'입력 중 단축키 막기');
- assert.match(s,/addEventListener\('input',\(\)=>\{savePickName\(input\.value,storage\)/,'치는 대로 저장');
- assert.match(s,/visualViewport/);assert.match(s,/scrollIntoView\(\{block:'center'/);assert.match(s,/classList\.add\('pk-typing'\)/);
- const go=s.slice(s.indexOf('function go(){'),s.indexOf('root.addEventListener(\'click\''));
- assert.ok(go.indexOf('savePickName(nick.value)')>=0&&go.indexOf('savePickName(nick.value)')<go.indexOf('openFirstHikingPick'),'서버 창을 열기 전에 저장(허브 선택으로 바로 들어갈 때도)');
-});
-test('산 고르기 모양: 수첩 토큰, 칸 44px 이상·16px(iOS 확대 방지), 키보드 동안 스크롤',()=>{
- const css=read('../src/free-settings.css');
- assert.match(css,/\.pk-nick input\{[^}]*min-height:44px[^}]*font:800 16px/);
- assert.match(css,/\.pk-nick\{[^}]*background:var\(--paper\)[^}]*color:var\(--ink\)/);
- assert.match(css,/#mountain-pick\.pk-typing\{overflow:auto;padding-bottom:calc\(var\(--sb,0px\) \+ var\(--kb,0px\)/);
- assert.match(css,/max-height:540px\)\{[^]*\.pk-nick\{width:auto/,'가로 휴대폰 왼쪽 열에 맞춤');
+ assert.doesNotMatch(s,/pk-nick|nickFieldHTML|savePickName/);
+ assert.match(s,/return p==='on'\|\|\(p!=='off'&&!webdriver&&!decided\)/);
 });
 test('서버 고르기 창: 고치는 대로 같은 저장값에, 열 때 저장값 다시 읽기',()=>{
  const s=read('../src/server-pick.js');

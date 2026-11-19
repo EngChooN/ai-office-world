@@ -82,12 +82,12 @@ test('넘기기 적용: 서버 → 서버 창의 join, 혼자 → solo, 서버 �
  const local=createServerPick({experience:'hiking',serverUrl:null,doc:null,fetchImpl:null,storage:mem(),onJoin:()=>joined.push('x')});
  assert.equal(applyHubPick(local,{server:'1'}),null);assert.equal(joined.length,1);
 });
-test('세 체험은 허브 선택이 있으면 서버 창 대신 바로 들어가고(?multi= 옛 주소는 제외), 없으면 예전처럼 창을 연다', ()=>{
+test('세 체험은 허브 선택(없으면 지난 선택)이 있으면 서버 창 대신 바로 들어가고, 없으면 공용 입장 창을 연다(11-19 entry.js)', ()=>{
  const hp=read('src/hiking-server-pick.js'),mp=read('src/mountain-pick.js'),l=read('src/lounge/main.js'),x=read('src/christmas/main.js');
- assert.match(hp,/hikingPickMode\(\)!=='legacy'\?takeHubPick\('hiking'\)/);assert.match(hp,/if\(!applyHubPick\(p,hubChoice\)\)p\.open\(\{closable:false\}\)/);
+ assert.match(hp,/takeEntryChoice\('hiking',\{mode:hikingPickMode\(\)\}\)/);assert.match(hp,/enterWith\(hikingServerPick\(\),entryChoice,'show'\)/);
  assert.equal((mp.match(/serverReady\.then\(openFirstHikingPick\)/g)??[]).length,2);
- assert.match(l,/takeHubPick\('smoking'\)/);assert.match(l,/!applyHubPick\(multiUi\.pick,hubChoice\)\)multiUi\.open\(\{closable:false\}\)/);
- assert.match(x,/takeHubPick\('christmas'\)/);assert.match(x,/!applyHubPick\(pick,hubChoice\)\)pick\.open\(\{closable:false\}\)/);
+ assert.match(l,/takeEntryChoice\('smoking',\{mode:pickMode\}\)/);assert.match(l,/enterWith\(multiUi\.pick,entryChoice,pickMode\)/);
+ assert.match(x,/takeEntryChoice\('christmas',\{mode:pickMode\}\)/);assert.match(x,/enterWith\(pick,entryChoice,pickMode\)/);
 });
 
 // ── 서버 상태

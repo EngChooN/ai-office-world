@@ -122,12 +122,12 @@ test('모양: 줄·단추·닫기 44px 이상, 입력 16px(iOS 확대 방지), �
 });
 test('연결: 등산은 산 고르기 다음·HUD 👋, 흡연장은 👥 단추·로딩 뒤, 옛 주소는 건너뜀',()=>{
  const pick=read('../src/mountain-pick.js'),hp=read('../src/hiking-server-pick.js'),lui=read('../src/lounge/multi-ui.js'),lmain=read('../src/lounge/main.js');
- assert.match(pick,/hikingPickMode\(\)==='show'\|\|hubPicked\(\)\)serverReady\.then\(openFirstHikingPick\)/); // 서버 주소(공개 파일)를 고른 뒤 연다(허브 선택이 있으면 창 없이, 11-17)
- assert.match(hp,/function openFirstHikingPick\(\)\{const p=hikingServerPick\(\);if\(!applyHubPick\(p,hubChoice\)\)p\.open\(\{closable:false\}\);\}/);
+ assert.match(pick,/hikingPickMode\(\)==='show'\|\|entryDecided\(\)\)serverReady\.then\(openFirstHikingPick\)/); // 서버 주소(공개 파일)를 고른 뒤 연다(고른 적 있으면 창 없이, 11-19)
+ assert.match(hp,/function openFirstHikingPick\(\)\{enterWith\(hikingServerPick\(\),entryChoice,'show'\);\}/);
  assert.match(lmain,/await serverReady;\nconst multi=createLoungeMulti/);
  assert.match(hp,/experience:'hiking'/);assert.match(hp,/__hikingMultiJoin=detail/);
  assert.match(lui,/createServerPick\(\{experience:'smoking'/);assert.ok(!/name="room"/.test(lui),'흡연장 방 이름 칸 없음');
- assert.match(lmain,/serverPickMode\(location\.search,!!navigator\.webdriver\)/);assert.match(lmain,/multiUi\.open\(\{closable:false\}\)/);
+ assert.match(lmain,/serverPickMode\(location\.search,!!navigator\.webdriver\)/);assert.match(lmain,/enterWith\(multiUi\.pick,entryChoice,pickMode\)/);
 });
 test('입장 카드: 서버마다 카드 하나(그림·이름·n/정원·꽉 참), 입장 전은 entry 모드, 게임 안·full 거절은 카드 화면 복귀',()=>{
  const src=read('../src/server-pick.js');

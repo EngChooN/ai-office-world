@@ -12,7 +12,7 @@ import {sunDirection} from '../look-profile.js';
 import {createInput} from '../lounge/input.js';
 import {WALK_SPEED,RUN_MUL} from '../lounge/avatar.js';
 import {serverPickMode,createServerPick,NAME_KEY} from '../server-pick.js';
-import {takeHubPick,applyHubPick} from '../hub/handoff.js';
+import {takeEntryChoice,enterWith} from '../entry.js';
 import {loadShared,saveShared,volumeGain} from '../shared-settings.js';
 import '../server-pick.css';
 import {currentChoice} from '../server-link.js';
@@ -428,8 +428,8 @@ const serverIdOf=room=>room?findServer('christmas',room)?.id??null:null;
 function openPick(note=null){pick.open({current:multi.joined&&multi.state!=='full'?serverIdOf(multi.room):null,note,closable:note!=='full'||multi.joined});}
 const pickMode=serverPickMode(location.search,!!navigator.webdriver);
 if(multi.params.auto)multi.join({room:multi.params.room,name:multi.params.name??profile.nickname});
-else{const hubChoice=pickMode!=='legacy'?takeHubPick('christmas'):null; // 허브에서 서버를 골라 왔으면 창 없이 바로(11-17)
- if((pickMode==='show'||hubChoice)&&!applyHubPick(pick,hubChoice))pick.open({closable:false});}
+else{const entryChoice=takeEntryChoice('christmas',{mode:pickMode}); // 허브에서 고른 것 → 이 기기의 지난 선택(11-19 entry.js)
+ if(pickMode==='show'||entryChoice)enterWith(pick,entryChoice,pickMode);} // 고른 적 있으면 창 없이 바로, 아니면 공용 입장 창 한 번
 
 // ── 크기·화질
 function resize(){const w=innerWidth,h=innerHeight,dpr=Math.min(devicePixelRatio,mobile?1.5:2);camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setPixelRatio(dpr);renderer.setSize(w,h);toon.pipeline.resize(mobile?1:2,w,h,dpr);}

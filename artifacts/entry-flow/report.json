@@ -1,0 +1,372 @@
+{
+ "at": "2026-11-19T04:20:10.833Z",
+ "checks": {
+  "hiking ① 처음: 산 고르기가 보임": {
+   "ok": true
+  },
+  "hiking ① 처음: 공용 입장 창(전체 화면) 한 번, 로비 카드 없음": {
+   "ok": true,
+   "mountain": false,
+   "entry": true,
+   "mode": "entry",
+   "lobby": false
+  },
+  "hiking ① 고르면 1서버에 들어감": {
+   "ok": true,
+   "count": 1
+  },
+  "hiking ① 고른 뒤 입장 창이 다시 안 뜸": {
+   "ok": true,
+   "mountain": false,
+   "entry": false,
+   "lobby": false
+  },
+  "hiking ② 다시 방문: 산 고르기·입장 창·로비 없이 바로": {
+   "ok": true,
+   "mountain": false,
+   "entry": false,
+   "lobby": false
+  },
+  "hiking ② 다시 방문: 지난 서버(1서버)에 들어가 있음·이름 그대로": {
+   "ok": true,
+   "j": {
+    "room": "관악산",
+    "name": "길손hi",
+    "st": "online",
+    "server": "1"
+   }
+  },
+  "smoking ① 처음: 공용 입장 창(전체 화면) 한 번, 로비 카드 없음": {
+   "ok": true,
+   "mountain": false,
+   "entry": true,
+   "mode": "entry",
+   "lobby": false
+  },
+  "smoking ① 고르면 1서버에 들어감": {
+   "ok": true,
+   "count": 1
+  },
+  "smoking ① 고른 뒤 입장 창이 다시 안 뜸": {
+   "ok": true,
+   "mountain": false,
+   "entry": false,
+   "lobby": false
+  },
+  "smoking ② 다시 방문: 산 고르기·입장 창·로비 없이 바로": {
+   "ok": true,
+   "mountain": false,
+   "entry": false,
+   "lobby": false
+  },
+  "smoking ② 다시 방문: 지난 서버(1서버)에 들어가 있음·이름 그대로": {
+   "ok": true,
+   "j": {
+    "room": "옥상",
+    "name": "길손sm",
+    "st": "online",
+    "server": "1"
+   }
+  },
+  "christmas ① 처음: 공용 입장 창(전체 화면) 한 번, 로비 카드 없음": {
+   "ok": true,
+   "mountain": false,
+   "entry": true,
+   "mode": "entry",
+   "lobby": false
+  },
+  "christmas ① 고르면 1서버에 들어감": {
+   "ok": true,
+   "count": 1
+  },
+  "christmas ① 고른 뒤 입장 창이 다시 안 뜸": {
+   "ok": true,
+   "mountain": false,
+   "entry": false,
+   "lobby": false
+  },
+  "christmas ② 다시 방문: 산 고르기·입장 창·로비 없이 바로": {
+   "ok": true,
+   "mountain": false,
+   "entry": false,
+   "lobby": false
+  },
+  "christmas ② 다시 방문: 지난 서버(1서버)에 들어가 있음·이름 그대로": {
+   "ok": true,
+   "j": {
+    "room": "눈마을",
+    "name": "길손ch",
+    "st": "online",
+    "server": "1"
+   }
+  },
+  "hiking ③ 허브 → 게임: 산 고르기·입장 창·로비 없음": {
+   "ok": true,
+   "mountain": false,
+   "entry": false,
+   "lobby": false
+  },
+  "hiking ③ 허브에서 고른 2서버에 들어감": {
+   "ok": true,
+   "count": 1
+  },
+  "hiking ③ 허브에서 정한 이름 그대로": {
+   "ok": true,
+   "j": {
+    "room": "관악산-2",
+    "name": "허브hi",
+    "st": "online",
+    "server": "2"
+   }
+  },
+  "smoking ③ 허브 → 게임: 산 고르기·입장 창·로비 없음": {
+   "ok": true,
+   "mountain": false,
+   "entry": false,
+   "lobby": false
+  },
+  "smoking ③ 허브에서 고른 2서버에 들어감": {
+   "ok": true,
+   "count": 1
+  },
+  "smoking ③ 허브에서 정한 이름 그대로": {
+   "ok": true,
+   "j": {
+    "room": "옥상-2",
+    "name": "허브sm",
+    "st": "online",
+    "server": "2"
+   }
+  },
+  "christmas ③ 허브 → 게임: 산 고르기·입장 창·로비 없음": {
+   "ok": true,
+   "mountain": false,
+   "entry": false,
+   "lobby": false
+  },
+  "christmas ③ 허브에서 고른 2서버에 들어감": {
+   "ok": true,
+   "count": 1
+  },
+  "christmas ③ 허브에서 정한 이름 그대로": {
+   "ok": true,
+   "j": {
+    "room": "눈마을-2",
+    "name": "허브ch",
+    "st": "online",
+    "server": "2"
+   }
+  },
+  "④ hiking-667x375 산 고르기: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": []
+  },
+  "④ hiking-667x375 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ smoking-667x375 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ christmas-667x375 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ hiking-812x375 산 고르기: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": []
+  },
+  "④ hiking-812x375 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ smoking-812x375 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ christmas-812x375 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ hiking-915x412 산 고르기: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": []
+  },
+  "④ hiking-915x412 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ smoking-915x412 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ christmas-915x412 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ hiking-390x844 산 고르기: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": []
+  },
+  "④ hiking-390x844 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ smoking-390x844 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "④ christmas-390x844 공용 입장 창: 잘림·겹침 없음": {
+   "ok": true,
+   "cut": [],
+   "overlap": [],
+   "tiny": []
+  },
+  "페이지 오류 0": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "layout": {
+  "hiking-667x375-mountain": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 3
+  },
+  "hiking-667x375-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "smoking-667x375-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "christmas-667x375-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "hiking-812x375-mountain": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 3
+  },
+  "hiking-812x375-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "smoking-812x375-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "christmas-812x375-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "hiking-915x412-mountain": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 3
+  },
+  "hiking-915x412-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "smoking-915x412-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "christmas-915x412-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "hiking-390x844-mountain": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 3
+  },
+  "hiking-390x844-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "smoking-390x844-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  },
+  "christmas-390x844-entry": {
+   "cut": [],
+   "tiny": [],
+   "overlap": [],
+   "docScroll": false,
+   "items": 5
+  }
+ },
+ "errors": []
+}

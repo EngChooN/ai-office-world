@@ -13,6 +13,8 @@ import {DONATE_URL} from '../donate.js';
 import {ageCardHtml} from './age-gate.js';
 import {icon,iconText} from '../icons/icon.js';
 import {createUiFrame,createChatBar,ufPlace,openWin,closeWin,onWin} from '../ui-frame.js';
+import {loadPickName,savePickName} from '../server-pick.js';
+import {NET} from '../multi-protocol.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const today=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10); // 서울 날짜
@@ -212,7 +214,7 @@ export function createHud({ctx,smoker,audio,timeState,TIME_PRESETS,profile,onPro
   const draw=()=>{modal.innerHTML=`<div class="lg-card lg-sheet" role="dialog" aria-modal="true">
    ${edit?'<button class="lg-btn lg-close" data-a="close" aria-label="닫기">✕</button>':''}
    <div class="sub">온라인 시리즈 ②</div><h1>온라인 흡연장</h1><div class="sub">옥상에서 수다만 떨어요. 몸에 해로운 건 하나도 없어요.</div>
-   <h2>닉네임</h2><input type="text" id="lg-nick" maxlength="8" placeholder="동동이" value="${esc(profile.nickname||'')}" autocomplete="off">
+   <h2>닉네임</h2><input type="text" id="lg-nick" maxlength="${NET.nameMax}" placeholder="동동이" value="${esc(loadPickName()||profile.nickname||'')}" autocomplete="off">
    <h2>나는</h2><div class="opts"><button class="lg-btn ${status==='quit'?'on':''}" data-s="quit">${iconText('s-quitting','금연 중')}</button><button class="lg-btn ${status==='never'?'on':''}" data-s="never">${iconText('s-nonsmoker','비흡연자')}</button></div>
    ${status==='quit'?`<div class="two"><div><h2>금연 시작일</h2><input type="date" id="lg-date" value="${profile.quitDate||today()}" max="${today()}"></div><div><h2>하루 몇 갑</h2><select id="lg-packs">${[.25,.5,1,1.5,2].map(v=>`<option value="${v}" ${v===profile.packsPerDay?'selected':''}>${v}갑</option>`).join('')}</select></div></div>`:''}
    <h2>옷 고르기</h2><div class="lg-outfits">${Object.entries(OUTFITS).map(([k,o])=>`<button class="lg-btn ${k===outfit?'on':''}" data-o="${k}" title="${esc(o.desc)}">${esc(o.label)}</button>`).join('')}</div>
@@ -225,7 +227,7 @@ export function createHud({ctx,smoker,audio,timeState,TIME_PRESETS,profile,onPro
    if(t.dataset.o){outfit=t.dataset.o;modal.querySelectorAll('[data-o]').forEach(b=>b.classList.toggle('on',b.dataset.o===outfit));save({outfit});return;}
    if(t.dataset.a==='close'){closeModal();return;}
    if(t.dataset.a==='enter'){
-    const nick=(modal.querySelector('#lg-nick').value.trim()||'동동이').slice(0,8);
+    const typed=savePickName(modal.querySelector('#lg-nick').value),nick=typed||'동동이'; // 세 체험 공용 이름 저장값(입장 창·허브 설정과 같음)
     const p={nickname:nick,status,outfit,seenIntro:true};
     if(status==='quit'){p.quitDate=modal.querySelector('#lg-date')?.value||profile.quitDate||today();p.packsPerDay=+(modal.querySelector('#lg-packs')?.value||profile.packsPerDay);}
     if(!edit)p.stats={...profile.stats,visits:(profile.stats.visits||0)+1,lastVisit:today()};
@@ -279,7 +281,9 @@ export function createHud({ctx,smoker,audio,timeState,TIME_PRESETS,profile,onPro
  // 키보드 단축(PC): Enter로 말하기 줄 열고 입력칸에
  addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement!==bar.input&&modal.hidden&&!e.isComposing){setChat(true);bar.input.focus();e.preventDefault();}});
  renderSnd();renderNote();
- if(!profile.seenIntro||!profile.nickname)lobby(false);else{profile.stats.lastVisit!==today()&&save({stats:{...profile.stats,visits:(profile.stats.visits||0)+1,lastVisit:today()}});}
+ // 11-19 입장 흐름 정리: 처음 와도 로비 카드를 띄우지 않는다(이름·서버는 세 체험 공용 입장 창, 금연 상태·옷은 ☰ 「내 정보」에서 언제든). 기본값으로 바로 들어간다
+ if(!profile.seenIntro)save({seenIntro:true,nickname:loadPickName()||profile.nickname||'',stats:{...profile.stats,visits:(profile.stats.visits||0)+1,lastVisit:today()}});
+ else if(profile.stats.lastVisit!==today())save({stats:{...profile.stats,visits:(profile.stats.visits||0)+1,lastVisit:today()}});
 
  // ── 매 프레임: 말풍선 위치, 수첩 숫자 갱신
  const v=new THREE.Vector3();let noteT=0;

@@ -30,7 +30,7 @@ export function installLoungeMultiUi({multi,ctx,hud=null,root=document.getElemen
  let last=null,noteT=0;
  // ── 서버 고르기 창: 고르면 그 서버 방으로 참가, 혼자 피우기(참가 중이면 나가기)
  const pick=createServerPick({experience:'smoking',serverUrl:multi.server,serverOff:currentChoice().source==='file-off',defaultName:cleanName(ctx.profile?.nickname),doc,win,
-  onJoin:d=>multi.join({room:d.room,name:d.name}),
+  onJoin:d=>{if(d.name)ctx.onProfile?.({nickname:d.name});multi.join({room:d.room,name:d.name});}, // 창에서 고친 이름을 이 체험 이름에도(11-19)
   onSolo:({left})=>{if(left)multi.leave();},...pickOptions});
  const openPick=(note=null,closable=true)=>pick.open({current:last?.joined&&last.state!=='full'?loungeServerId(last.room):null,note,closable});
  function render(){
