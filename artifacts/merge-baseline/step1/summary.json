@@ -1,0 +1,72 @@
+[
+ {
+  "name": "plaza-start",
+  "code": 0,
+  "sec": 414
+ },
+ {
+  "name": "full-autowalk",
+  "code": 0,
+  "sec": 1012
+ },
+ {
+  "name": "controls-camera",
+  "code": 1,
+  "sec": 93
+ },
+ {
+  "name": "facing",
+  "code": 1,
+  "sec": 18
+ },
+ {
+  "name": "auto-view",
+  "code": 0,
+  "sec": 54
+ },
+ {
+  "name": "entrance-integration",
+  "code": 0,
+  "sec": 217
+ },
+ {
+  "name": "start-choice",
+  "code": 0,
+  "sec": 43
+ },
+ {
+  "name": "mobile-buttons",
+  "code": 1,
+  "sec": 44
+ },
+ {
+  "name": "mobile-pages",
+  "code": 1,
+  "sec": 24
+ },
+ {
+  "name": "hud-toggle",
+  "code": 1,
+  "sec": 48
+ },
+ {
+  "name": "ui-frame",
+  "code": 0,
+  "sec": 172
+ },
+ {
+  "name": "free-settings",
+  "code": 1,
+  "sec": 36
+ },
+ {
+  "name": "no-realistic",
+  "code": 0,
+  "sec": 127
+ },
+ {
+  "name": "namsan-game",
+  "code": 0,
+  "sec": 140
+ }
+]

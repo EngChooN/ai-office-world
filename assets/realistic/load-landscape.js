@@ -118,7 +118,7 @@ function disposeGeometry(object){object.traverse(o=>{if(o.geometry)o.geometry.di
  * 실사 PBR 텍스처·HDR·지형 셰이더 분기는 2026-11-19에 지웠다(11-06 실사 모드 제거의 남은 코드).
  * 지형·식생은 chunkBase(assets/shared/chunks/)의 200m 청크 목록으로 카메라 주변만 붙이고 멀어지면 해제한다.
  */
-export async function loadLandscape({base='/assets/realistic/generated/',maxContactMapSize=8192,materialFactory=null,toon=null,chunkBase=null,terrainRadius=1,vegetationRadius=5}={}){
+export async function loadLandscape({base='/assets/realistic/generated/',maxContactMapSize=8192,materialFactory=null,toon=null,chunkBase=null,terrainRadius=1,vegetationRadius=5,mountain=true}={}){
   if(!base.endsWith('/'))base+='/';
   chunkBase??=base.replace(/realistic\/generated\/$/,'shared/chunks/');if(!chunkBase.endsWith('/'))chunkBase+='/';
   if(!materialFactory||!toon)throw new Error('카툰 재질(materialFactory)과 변환 함수(toon)가 필요합니다');
@@ -128,6 +128,15 @@ export async function loadLandscape({base='/assets/realistic/generated/',maxCont
   const status={style:'toon',source:manifest.inventoryFallback?'파일 목록':'manifest',cityChunks:0,buildings:0,waterPolygons:0,errors:[],ready:false};
   if(manifest.version!==1)throw new Error('미지원 자산 버전');
   if(!manifest.observation||!manifest.atmosphere||!manifest.directionCaptures)throw new Error('서울 원경 기준 갱신 후 prepare.mjs 재실행 필요');
+  // mountain:false(남산 등 다른 산, 통합 1단계 11-19): 관악산 산(근경 격자·노면·입구·정상 시설·소품·지형/식생 청크)을 만들지 않고 서울 배경만. 원경 땅은 관악산 자리도 채운다.
+  if(!mountain){
+    let disposed=false;const group=new THREE.Group();group.name='SeoulBackdrop';
+    const backdrop=createSeoulBackdrop({base,group,status,toon,materialFactory,getManifest:()=>manifest,near:null,isDisposed:()=>disposed}),culler=createChunkCuller();
+    freezeStatic(group);
+    return {group,get manifest(){return manifest;},status,mountain:false,streamFar:backdrop.streamFar,streamRoads:backdrop.streamRoads,streamCity:backdrop.streamCity,streamWater:backdrop.streamWater,finalizeCities:()=>backdrop.city.finalize(),
+      update(camera,quality=2){if(disposed)return;culler.update(camera);const grid=backdrop.city;grid.update(camera,quality,culler);},
+      dispose(){disposed=true;backdrop.unbindCityLabels();backdrop.city.dispose();disposeGeometry(group);const seen=new Set([backdrop.cityMaterial]);group.traverse(o=>{for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[])seen.add(m);});for(const m of seen){for(const value of Object.values(m))if(value?.isTexture)value.dispose();m.dispose();}}};
+  }
   const [near,routeSource,chunkIndex]=await Promise.all([readGrid(base,manifest.near),readJSON(base+manifest.route),readJSON(chunkBase+'index.json')]);
   const materials={...materialFactory.materials()};
   if(chunkIndex.schemaVersion!==1||chunkIndex.chunkSize!==200)throw new Error('미지원 청크 목록');
@@ -148,8 +157,8 @@ export async function loadLandscape({base='/assets/realistic/generated/',maxCont
   const path=ribbon(pathPoints,pathMaterials,manifest.materials.soil.metres);path.name='등산로 노면';group.add(path);
   path.traverse(mesh=>{if(mesh.isMesh)indexStaticRaycast(mesh);});
   path.userData.metricKind='등산로';
-  const chunks=new Map();let far,farGroup,farPromise,waterGroup,disposed=false;
-  const rawHeight=(x,z)=>gridHeight(within(near,x,z)?near:far||near,x,z);
+  const chunks=new Map();let backdrop,disposed=false;
+  const rawHeight=(x,z)=>gridHeight(within(near,x,z)?near:backdrop?.farGrid()||near,x,z);
   const nearest=indexRoute(route);
   let summitSites=[],sectionSites=[],groundSites=[];const entranceGround=createEntranceGround(route);
   const floorHeight=(x,z)=>{
@@ -394,97 +403,9 @@ export async function loadLandscape({base='/assets/realistic/generated/',maxCont
     bucket.box.union(box);bucket.items.push({lod,box,maxDistance,distanceSq:0});bucket.maxDistance=Math.max(bucket.maxDistance,maxDistance);
     applyNatureQuality(lod,natureQuality);applyDenseTrees(lod,natureQuality);vegetation.push(lod);
   }
-  async function streamFar(){
-    if(disposed)throw new Error('해제한 자산');
-    if(farGroup)return farGroup;
-    if(farPromise)return farPromise;
-    farPromise=(async()=>{
-      const grid=await readGrid(base,manifest.far);if(disposed)throw new Error('해제한 자산');far=grid;
-      const holder=new THREE.Group();holder.name='SeoulFar';
-      holder.userData.metricKind='원경 지형';
-      // 전체 원경 바닥. 근경과 만나는 경계의 겹침은 캡처 검증이 필요하다.
-      const positions=[],indices=[],uv=[];
-      for(let j=0;j<grid.height;j++)for(let i=0;i<grid.width;i++){
-        const x=grid.x0+i*grid.spacing,z=grid.z0+j*grid.spacing;positions.push(x,grid.values[j*grid.width+i],z);uv.push(x/60,z/60);
-      }
-      for(let j=0;j<grid.height-1;j++)for(let i=0;i<grid.width-1;i++){
-        // 근경 전체 대신 현재 청크만 있으므로 완전한 지형은 원경을 계속 유지한다.
-        const x=grid.x0+i*grid.spacing,z=grid.z0+j*grid.spacing;
-        if(within(near,x,z)&&within(near,x+grid.spacing,z+grid.spacing))continue;
-        const a=j*grid.width+i,b=a+1,c=a+grid.width,d=c+1;indices.push(a,c,b,b,c,d);
-      }
-      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();
-      // 근경 아래 2m 오프셋. 원경 DSM을 과장하지 않는다.
-      const mesh=new THREE.Mesh(g,applyAtmosphere(new THREE.MeshStandardMaterial({color:0x334b28,roughness:1,polygonOffset:true,polygonOffsetFactor:2,polygonOffsetUnits:2}),manifest.atmosphere));mesh.position.y=-2;holder.add(mesh);
-      // 원경 바닥은 단색(토지피복 사진은 실사 때만 썼다).
-      // 서울 간선도로·교량·거리 불빛(seoul-surface.json, 약 10MB)은 streamRoads()가 준비 완료 뒤 따로 붙인다(2026-11-06 첫 로딩 단축).
-      // 카툰: 랜드마크도 도심과 같은 재질(창 격자·밤 불빛)로. 도심 스타일이 없을 때만 일반 툰 재질.
-      for(const p of manifest.landmarks)holder.add(cityStyle?.applyLandmark?cityStyle.applyLandmark(createSeoulLandmark(p,manifest.atmosphere)):toon.toonify(createSeoulLandmark(p,manifest.atmosphere),{kind:'prop'}));
-      toon.toonify(mesh,{kind:'prop'});
-      if(disposed){disposeGeometry(holder);throw new Error('해제한 자산');}
-      farGroup=holder;group.add(holder);freezeStatic(holder);return holder;
-    })().catch(e=>{farPromise=null;throw e;});
-    return farPromise;
-  }
-  // 서울 간선도로·교량·거리 불빛. 원경(streamFar) 위에 얹으며 첫 진입에는 필요 없어 main.js가 준비 완료 뒤 도시 건물과 함께 부른다.
-  let roadsPromise=null;
-  function streamRoads(){
-    if(!manifest.seoulSurface)return Promise.resolve(null);
-    roadsPromise??=streamFar().then(async holder=>{
-      const grid=far;
-      const surface=await readJSON(base+manifest.seoulSurface),roads=seoulRoadGeometry(surface.roads,(x,z)=>gridHeight(grid,x,z));
-      const roadMesh=new THREE.Mesh(roads,applyAtmosphere(new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide}),manifest.atmosphere));roadMesh.name='서울 간선도로·교량';holder.add(roadMesh);
-      // 교량 측판·교각과 밤 거리 불빛(산풍경 city-water.js). 불빛은 도시 격자가 시각·화질에 맞춰 켜고 끈다.
-      const bridges=new THREE.Mesh(seoulBridgeStructure(surface.roads,(x,z)=>gridHeight(grid,x,z)),roadMesh.material);bridges.name='서울 교량 측판·교각';holder.add(bridges);
-      toon.toonify(roadMesh,{kind:'prop'});toon.toonify(bridges,{kind:'prop'});
-      const lamps=seoulRoadLights(surface.roads,(x,z)=>gridHeight(grid,x,z));cityStyle?.styleNightLight(lamps);holder.add(lamps);
-      // 카툰: 간선도로 차량 불빛 줄기(src/toon/city.js). 실사는 cityStyle이 없다.
-      cityStyle?.styleRoads?.(surface.roads,(x,z)=>gridHeight(grid,x,z),holder);city.addNightLights(lamps);status.seoulLamps=lamps.userData.lampCount;status.seoulRoads=surface.roads.length;status.seoulBridges=surface.roads.filter(r=>r.bridge).length;
-      freezeStatic(holder);return holder;
-    }).catch(e=>{roadsPromise=null;throw e;});
-    return roadsPromise;
-  }
-  const unbindCityLabels=bindSeoulLabels(group,status);
-  const loadedCities=new Map(),cityMaterial=applyAtmosphere(new THREE.MeshStandardMaterial({color:0x78878b,roughness:.92}),manifest.atmosphere);
-  // 전용 모델이 있는 랜드마크 자리의 OSM 중복 건물(63빌딩 등)은 뺀다.
-  const cityExclude=manifest.landmarks.filter(p=>p.shape!=='reference'&&Number.isFinite(p.height)).map(p=>({x:p.x,z:p.z,radius:45,minHeight:p.height*.5}));
-  const city=createCityGrid({parent:group,material:cityMaterial,atmosphere:manifest.atmosphere,status,exclude:cityExclude});
-  // 카툰: 파스텔 도심 + 밤 창문 불빛. apply는 나중에 추가되는 도시 칸도 바꾼다.
-  const cityStyle=toon?.styleCity?toon.styleCity({material:cityMaterial,nightLights:[]}):null;cityStyle?.apply(city.root);
-  async function streamCity(id){
-    if(disposed)throw new Error('해제한 자산');
-    if(loadedCities.has(id))return loadedCities.get(id);
-    const meta=manifest.cityChunks.find(c=>c.id===id);if(!meta)throw new Error('원경 청크 ID 없음');
-    const promise=(async()=>{
-      const data=await readJSON(base+meta.file);if(disposed)throw new Error('해제한 자산');
-      const added=city.addBuildings(data.buildings);status.cityChunks++;status.buildings+=added;status.cityDuplicates=(status.cityDuplicates??0)+data.buildings.length-added;return {id,buildings:data.buildings.length};
-    })().catch(e=>{loadedCities.delete(id);throw e;});
-    loadedCities.set(id,promise);return promise;
-  }
-  async function streamWater(){
-    await streamFar();
-    const holder=new THREE.Group();holder.name='HanRiverAndWater';const waterGeometries=[],waterMasks=[];status.waterPolygons=0;
-    const seen=new Set();
-    for(const file of manifest.water){
-      const data=await readJSON(base+file);
-      for(const element of data.elements){
-        if(seen.has(`${element.type}/${element.id}`))continue;
-        const polygons=waterShapes(element);if(!polygons.length)continue;seen.add(`${element.type}/${element.id}`);
-        for(const shape of polygons){
-          const points=shape.getPoints();waterMasks.push({points,holes:shape.holes.map(h=>h.getPoints()),box:new THREE.Box2().setFromPoints(points)});
-          const g=new THREE.ShapeGeometry(shape);g.rotateX(-Math.PI/2);
-          g.translate(0,5,0);waterGeometries.push(g);
-          // 한강 수면은 고도 5m 기준. DSM 수목/교량 최고점을 수면에 쓰지 않는다.
-          status.waterPolygons++;
-        }
-      }
-    }
-    // DSM의 교량·둑·보간값이 수면을 덮지 않도록 실제 물 윤곽 안의 원경 바닥만 낮춘다.
-    const ground=farGroup.children.find(o=>o.isMesh)?.geometry;
-    if(ground){const pos=ground.attributes.position,p=new THREE.Vector2();for(let i=0;i<pos.count;i++){p.set(pos.getX(i),-pos.getZ(i));if(waterMasks.some(m=>m.box.containsPoint(p)&&insideRing(p,m.points)&&!m.holes.some(h=>insideRing(p,h))))pos.setY(i,Math.min(pos.getY(i),4));}pos.needsUpdate=true;ground.computeVertexNormals();}
-    if(waterGeometries.length){const merged=mergeGeometries(waterGeometries,false);waterGeometries.forEach(g=>g.dispose());/* 한강 물빛: 물결·하늘 반사·노을·밤 불빛 일렁임(산풍경 city-water.js) */holder.add(new THREE.Mesh(merged,cityStyle?.riverMaterial?.()??materialFactory.water()));}
-    if(disposed){disposeGeometry(holder);throw new Error('해제한 자산');}if(waterGroup){waterGroup.traverse(o=>{if(o.material&&!o.material.userData.shared)o.material.dispose();});disposeGeometry(waterGroup);}waterGroup=holder;group.add(holder);freezeStatic(holder);return holder;
-  }
+  // 서울 배경(원경 땅·간선도로·도심·한강·이름표)은 createSeoulBackdrop으로 뗐다(통합 1단계 11-19). 관악산은 near 격자 자리를 원경에서 비운다.
+  backdrop=createSeoulBackdrop({base,group,status,toon,materialFactory,getManifest:()=>manifest,near,isDisposed:()=>disposed});
+  const {streamFar,streamRoads,streamCity,streamWater,city,cityMaterial,unbindCityLabels}=backdrop;
   freezeStatic(group);
   return {group,get manifest(){return manifest;},status,route,interactionProps,entranceReady:()=>plazaReady,materials,rawHeight,floorHeight,surfaceHeight,treeNear:(x,z,r)=>nearTrees.nearest(x,z,r),update,streamFar,streamRoads,streamCity,finalizeCities:()=>city.finalize(),streamWater,
     collisionObjects:()=>[path,...chunks.values()],
@@ -545,6 +466,104 @@ export async function loadLandscape({base='/assets/realistic/generated/',maxCont
     },
     dispose(){disposed=true;terrainStream.dispose();vegetationStream?.dispose();unbindCityLabels();contactOcclusion.dispose();city.dispose();for(const geometry of baseGeometries)if(geometry!==baseMesh.geometry)geometry.dispose();disposeGeometry(group);const seen=new Set([cityMaterial]);group.traverse(o=>{for(const m of o.material?(Array.isArray(o.material)?o.material:[o.material]):[])seen.add(m);});for(const m of Object.values(materials))seen.add(m);for(const m of seen){for(const value of Object.values(m))if(value?.isTexture)value.dispose();m.dispose();}sky?.dispose();}
   };
+}
+
+/** 서울 배경: 원경 땅(far 격자)·랜드마크·간선도로·교량·거리 불빛·도심 2km 칸·한강·도심 이름표.
+ * 산(관악산 near 격자·노면·시설·청크)과 무관해 여러 산이 같이 쓴다(통합 1단계, 11-19). near를 주면 그 자리는 원경 땅을 비운다(관악산 근경이 덮음). */
+function createSeoulBackdrop({base,group,status,toon,materialFactory,getManifest,near=null,isDisposed}){
+  let far,farGroup,farPromise,waterGroup;
+  async function streamFar(){
+    if(isDisposed())throw new Error('해제한 자산');
+    if(farGroup)return farGroup;
+    if(farPromise)return farPromise;
+    farPromise=(async()=>{
+      const grid=await readGrid(base,getManifest().far);if(isDisposed())throw new Error('해제한 자산');far=grid;
+      const holder=new THREE.Group();holder.name='SeoulFar';
+      holder.userData.metricKind='원경 지형';
+      // 전체 원경 바닥. 근경과 만나는 경계의 겹침은 캡처 검증이 필요하다.
+      const positions=[],indices=[],uv=[];
+      for(let j=0;j<grid.height;j++)for(let i=0;i<grid.width;i++){
+        const x=grid.x0+i*grid.spacing,z=grid.z0+j*grid.spacing;positions.push(x,grid.values[j*grid.width+i],z);uv.push(x/60,z/60);
+      }
+      for(let j=0;j<grid.height-1;j++)for(let i=0;i<grid.width-1;i++){
+        // 근경 전체 대신 현재 청크만 있으므로 완전한 지형은 원경을 계속 유지한다.
+        const x=grid.x0+i*grid.spacing,z=grid.z0+j*grid.spacing;
+        if(near&&within(near,x,z)&&within(near,x+grid.spacing,z+grid.spacing))continue;
+        const a=j*grid.width+i,b=a+1,c=a+grid.width,d=c+1;indices.push(a,c,b,b,c,d);
+      }
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();
+      // 근경 아래 2m 오프셋. 원경 DSM을 과장하지 않는다.
+      const mesh=new THREE.Mesh(g,applyAtmosphere(new THREE.MeshStandardMaterial({color:0x334b28,roughness:1,polygonOffset:true,polygonOffsetFactor:2,polygonOffsetUnits:2}),getManifest().atmosphere));mesh.position.y=-2;holder.add(mesh);
+      // 원경 바닥은 단색(토지피복 사진은 실사 때만 썼다).
+      // 서울 간선도로·교량·거리 불빛(seoul-surface.json, 약 10MB)은 streamRoads()가 준비 완료 뒤 따로 붙인다(2026-11-06 첫 로딩 단축).
+      // 카툰: 랜드마크도 도심과 같은 재질(창 격자·밤 불빛)로. 도심 스타일이 없을 때만 일반 툰 재질.
+      for(const p of getManifest().landmarks)holder.add(cityStyle?.applyLandmark?cityStyle.applyLandmark(createSeoulLandmark(p,getManifest().atmosphere)):toon.toonify(createSeoulLandmark(p,getManifest().atmosphere),{kind:'prop'}));
+      toon.toonify(mesh,{kind:'prop'});
+      if(isDisposed()){disposeGeometry(holder);throw new Error('해제한 자산');}
+      farGroup=holder;group.add(holder);freezeStatic(holder);return holder;
+    })().catch(e=>{farPromise=null;throw e;});
+    return farPromise;
+  }
+  // 서울 간선도로·교량·거리 불빛. 원경(streamFar) 위에 얹으며 첫 진입에는 필요 없어 main.js가 준비 완료 뒤 도시 건물과 함께 부른다.
+  let roadsPromise=null;
+  function streamRoads(){
+    if(!getManifest().seoulSurface)return Promise.resolve(null);
+    roadsPromise??=streamFar().then(async holder=>{
+      const grid=far;
+      const surface=await readJSON(base+getManifest().seoulSurface),roads=seoulRoadGeometry(surface.roads,(x,z)=>gridHeight(grid,x,z));
+      const roadMesh=new THREE.Mesh(roads,applyAtmosphere(new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide}),getManifest().atmosphere));roadMesh.name='서울 간선도로·교량';holder.add(roadMesh);
+      // 교량 측판·교각과 밤 거리 불빛(산풍경 city-water.js). 불빛은 도시 격자가 시각·화질에 맞춰 켜고 끈다.
+      const bridges=new THREE.Mesh(seoulBridgeStructure(surface.roads,(x,z)=>gridHeight(grid,x,z)),roadMesh.material);bridges.name='서울 교량 측판·교각';holder.add(bridges);
+      toon.toonify(roadMesh,{kind:'prop'});toon.toonify(bridges,{kind:'prop'});
+      const lamps=seoulRoadLights(surface.roads,(x,z)=>gridHeight(grid,x,z));cityStyle?.styleNightLight(lamps);holder.add(lamps);
+      // 카툰: 간선도로 차량 불빛 줄기(src/toon/city.js). 실사는 cityStyle이 없다.
+      cityStyle?.styleRoads?.(surface.roads,(x,z)=>gridHeight(grid,x,z),holder);city.addNightLights(lamps);status.seoulLamps=lamps.userData.lampCount;status.seoulRoads=surface.roads.length;status.seoulBridges=surface.roads.filter(r=>r.bridge).length;
+      freezeStatic(holder);return holder;
+    }).catch(e=>{roadsPromise=null;throw e;});
+    return roadsPromise;
+  }
+  const unbindCityLabels=bindSeoulLabels(group,status);
+  const loadedCities=new Map(),cityMaterial=applyAtmosphere(new THREE.MeshStandardMaterial({color:0x78878b,roughness:.92}),getManifest().atmosphere);
+  // 전용 모델이 있는 랜드마크 자리의 OSM 중복 건물(63빌딩 등)은 뺀다.
+  const cityExclude=getManifest().landmarks.filter(p=>p.shape!=='reference'&&Number.isFinite(p.height)).map(p=>({x:p.x,z:p.z,radius:45,minHeight:p.height*.5}));
+  const city=createCityGrid({parent:group,material:cityMaterial,atmosphere:getManifest().atmosphere,status,exclude:cityExclude});
+  // 카툰: 파스텔 도심 + 밤 창문 불빛. apply는 나중에 추가되는 도시 칸도 바꾼다.
+  const cityStyle=toon?.styleCity?toon.styleCity({material:cityMaterial,nightLights:[]}):null;cityStyle?.apply(city.root);
+  async function streamCity(id){
+    if(isDisposed())throw new Error('해제한 자산');
+    if(loadedCities.has(id))return loadedCities.get(id);
+    const meta=getManifest().cityChunks.find(c=>c.id===id);if(!meta)throw new Error('원경 청크 ID 없음');
+    const promise=(async()=>{
+      const data=await readJSON(base+meta.file);if(isDisposed())throw new Error('해제한 자산');
+      const added=city.addBuildings(data.buildings);status.cityChunks++;status.buildings+=added;status.cityDuplicates=(status.cityDuplicates??0)+data.buildings.length-added;return {id,buildings:data.buildings.length};
+    })().catch(e=>{loadedCities.delete(id);throw e;});
+    loadedCities.set(id,promise);return promise;
+  }
+  async function streamWater(){
+    await streamFar();
+    const holder=new THREE.Group();holder.name='HanRiverAndWater';const waterGeometries=[],waterMasks=[];status.waterPolygons=0;
+    const seen=new Set();
+    for(const file of getManifest().water){
+      const data=await readJSON(base+file);
+      for(const element of data.elements){
+        if(seen.has(`${element.type}/${element.id}`))continue;
+        const polygons=waterShapes(element);if(!polygons.length)continue;seen.add(`${element.type}/${element.id}`);
+        for(const shape of polygons){
+          const points=shape.getPoints();waterMasks.push({points,holes:shape.holes.map(h=>h.getPoints()),box:new THREE.Box2().setFromPoints(points)});
+          const g=new THREE.ShapeGeometry(shape);g.rotateX(-Math.PI/2);
+          g.translate(0,5,0);waterGeometries.push(g);
+          // 한강 수면은 고도 5m 기준. DSM 수목/교량 최고점을 수면에 쓰지 않는다.
+          status.waterPolygons++;
+        }
+      }
+    }
+    // DSM의 교량·둑·보간값이 수면을 덮지 않도록 실제 물 윤곽 안의 원경 바닥만 낮춘다.
+    const ground=farGroup.children.find(o=>o.isMesh)?.geometry;
+    if(ground){const pos=ground.attributes.position,p=new THREE.Vector2();for(let i=0;i<pos.count;i++){p.set(pos.getX(i),-pos.getZ(i));if(waterMasks.some(m=>m.box.containsPoint(p)&&insideRing(p,m.points)&&!m.holes.some(h=>insideRing(p,h))))pos.setY(i,Math.min(pos.getY(i),4));}pos.needsUpdate=true;ground.computeVertexNormals();}
+    if(waterGeometries.length){const merged=mergeGeometries(waterGeometries,false);waterGeometries.forEach(g=>g.dispose());/* 한강 물빛: 물결·하늘 반사·노을·밤 불빛 일렁임(산풍경 city-water.js) */holder.add(new THREE.Mesh(merged,cityStyle?.riverMaterial?.()??materialFactory.water()));}
+    if(isDisposed()){disposeGeometry(holder);throw new Error('해제한 자산');}if(waterGroup){waterGroup.traverse(o=>{if(o.material&&!o.material.userData.shared)o.material.dispose();});disposeGeometry(waterGroup);}waterGroup=holder;group.add(holder);freezeStatic(holder);return holder;
+  }
+  return {streamFar,streamRoads,streamCity,streamWater,city,cityMaterial,unbindCityLabels,farGrid:()=>far};
 }
 
 /** 외부 CC0/CC BY 모델을 별도 전달하는 인스턴싱 LOD. 구형 나무 대체물을 자동 생성하지 않는다.

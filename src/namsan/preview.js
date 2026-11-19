@@ -29,7 +29,7 @@ const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'h
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,30000);
 const toon=await createToonStyle({renderer,scene,camera,mobile});
 if(q.get('season'))toon.setSeason(q.get('season'),{instant:true});
-const landscape=await loadLandscape({base:`${BASE}assets/realistic/generated/`,chunkBase:`${BASE}assets/shared/chunks/`,maxContactMapSize:renderer.capabilities.maxTextureSize,materialFactory:toon.materialFactory,toon:{toonify:toon.toonify,patchFoliage:toon.patchFoliage,styleCity:toon.styleCity,natureParts:toon.natureParts}});
+const landscape=await loadLandscape({base:`${BASE}assets/realistic/generated/`,chunkBase:`${BASE}assets/shared/chunks/`,maxContactMapSize:renderer.capabilities.maxTextureSize,materialFactory:toon.materialFactory,toon:{toonify:toon.toonify,patchFoliage:toon.patchFoliage,styleCity:toon.styleCity,natureParts:toon.natureParts},mountain:false});
 for(const child of landscape.group.children)if(!['SeoulCity2km','SeoulFar','HanRiverAndWater'].includes(child.name))toon.toonify(child,{kind:'prop'});
 scene.add(landscape.group); // 관악산 풀밭(toon.attachLandscape)은 관악산 길·높이를 따르므로 남산에서는 붙이지 않는다(인계 문서 참고)
 const lighting=setupRendering(renderer,scene,camera,mobile,{toon});
