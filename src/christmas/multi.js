@@ -247,8 +247,9 @@ export function createXmasMulti({ctx,search=globalThis.location?.search??'',envU
   const moved=Math.hypot(s.x-a.x,s.z-a.z),seated=!!(r.act?.st||r.act?.sl>=1||r.act?.gd||ride||sky);
   a.x=s.x;a.z=s.z;if(moved>1e-3||!s.moving||seated)a.heading=s.heading;
   // 썰매·자리에 앉아 움직이면 걷는 다리 동작 없이 미끄러진다
-  // 아이스링크 위(시안 B, ctx.strideAt)는 보폭을 줄여 미끄러지듯
-  a.update(dt,{moved:seated?0:moved*(ctx.strideAt?.(s.x,s.z)??1),running:!!(r.flags&FLAG.run)});a.root.position.y+=gy;
+  // 아이스링크 위(시안 B): 받은 움직임으로 스케이트 자세를 정함(ctx.skateAt, 서버 변경 없음). 밀 때만 짧은 보폭 다리, 그림이 오면 자세는 그림이 입힘
+  const sk=seated?null:ctx.skateAt?.(r.id,s,dt,a)??null;
+  a.update(dt,{moved:seated?0:moved*(sk?sk.stride:ctx.strideAt?.(s.x,s.z)??1),running:!!(r.flags&FLAG.run)&&!sk});a.root.position.y+=gy;
  }
 
  return {

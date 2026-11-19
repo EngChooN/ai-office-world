@@ -1,0 +1,199 @@
+{
+ "at": "2026-11-19T03:58:36.421Z",
+ "design": {
+  "top": 2.39,
+  "t90": 1.57,
+  "glide": 2.22,
+  "brake": 0.81
+ },
+ "measured": {
+  "pc": {
+   "top": 2.37,
+   "t90": 1.44,
+   "glide": 2.18,
+   "glideT": 1.9,
+   "vAtRelease": 2.37
+  },
+  "remotePosesRun": [
+   "stand",
+   "push",
+   "glide2",
+   "glide1",
+   "wobble",
+   "brake"
+  ],
+  "brake": {
+   "v0": 2.27,
+   "dist": 0.68,
+   "poses": [
+    "brake",
+    "stand",
+    "push",
+    "glide1"
+   ]
+  },
+  "remotePosesBrake": [
+   "push",
+   "glide2",
+   "wobble",
+   "brake",
+   "stand"
+  ],
+  "wall": {
+   "vLast1s": 2.3,
+   "xTravel": 5.37,
+   "zMax": 35.2,
+   "wallZ": 35.2,
+   "poses": [
+    "stand",
+    "push",
+    "glide1"
+   ]
+  },
+  "gate": {
+   "maxBeforeZone": 2.29,
+   "maxWithin1_2m": 1.37,
+   "walk": 1.37,
+   "actions": [
+    "rk:out"
+   ]
+  },
+  "mobile": {
+   "top": 2.37,
+   "t90": 1.52,
+   "glide": 2.3,
+   "glideT": 1.97,
+   "vAtRelease": 2.37
+  },
+  "stick8": {
+   "maxTurnDegPerSecWhenMoving": 230,
+   "maxTurnPerFrameDeg": 12.2,
+   "framesMoving": 263,
+   "frames": 320,
+   "poses": [
+    "stand",
+    "push",
+    "glide1",
+    "wobble"
+   ]
+  },
+  "plazaWalk": 1.37
+ },
+ "checks": {
+  "PC 최고 속도 ≈ 2.39m/s(±10%, 3초 누름)": {
+   "ok": true,
+   "top": 2.37,
+   "t90": 1.44,
+   "glide": 2.18,
+   "glideT": 1.9,
+   "vAtRelease": 2.37
+  },
+  "PC 90%까지 ≈ 1.57초(±10%)": {
+   "ok": true,
+   "top": 2.37,
+   "t90": 1.44,
+   "glide": 2.18,
+   "glideT": 1.9,
+   "vAtRelease": 2.37
+  },
+  "PC 손 떼면 ≈ 2.22m 미끄러짐(±10%)": {
+   "ok": true,
+   "top": 2.37,
+   "t90": 1.44,
+   "glide": 2.18,
+   "glideT": 1.9,
+   "vAtRelease": 2.37
+  },
+  "다른 사람(둘) 화면: 하나의 밀기·활주가 움직임만으로 보임": {
+   "ok": true,
+   "seen": [
+    "stand",
+    "push",
+    "glide2",
+    "glide1",
+    "wobble",
+    "brake"
+   ]
+  },
+  "PC 반대로 누르면 ≈ 0.81m 안에 멈춤(±15%)·멈추기 자세": {
+   "ok": true,
+   "v0": 2.27,
+   "dist": 0.68,
+   "poses": [
+    "brake",
+    "stand",
+    "push",
+    "glide1"
+   ]
+  },
+  "다른 사람(둘) 화면: 하나의 멈추기 자세도 보임": {
+   "ok": true,
+   "seen": [
+    "push",
+    "glide2",
+    "wobble",
+    "brake",
+    "stand"
+   ]
+  },
+  "벽 비비기: 튕기지 않고 벽 따라 계속 미끄러짐(마지막 1초 평균 1m/s 넘음·울타리 안)": {
+   "ok": true,
+   "vLast1s": 2.3,
+   "xTravel": 5.37,
+   "zMax": 35.2,
+   "wallZ": 35.2,
+   "poses": [
+    "stand",
+    "push",
+    "glide1"
+   ]
+  },
+  "문 앞 감속: 문 안쪽 1.2m 안 속도 ≤ 걷기 속도 + 0.1, 「나가기」 단추 뜸": {
+   "ok": true,
+   "maxBeforeZone": 2.29,
+   "maxWithin1_2m": 1.37,
+   "walk": 1.37,
+   "actions": [
+    "rk:out"
+   ]
+  },
+  "휴대폰 조이스틱 최고 속도 ≈ 2.39m/s(±10%)": {
+   "ok": true,
+   "top": 2.37,
+   "t90": 1.52,
+   "glide": 2.3,
+   "glideT": 1.97,
+   "vAtRelease": 2.37
+  },
+  "휴대폰 손 떼면 ≈ 2.22m 미끄러짐(±12%)": {
+   "ok": true,
+   "top": 2.37,
+   "t90": 1.52,
+   "glide": 2.3,
+   "glideT": 1.97,
+   "vAtRelease": 2.37
+  },
+  "휴대폰 8방향: 움직이는 동안 몸은 300°/s 이하로만 돎(커브, ±10%)": {
+   "ok": true,
+   "maxTurnDegPerSecWhenMoving": 230,
+   "maxTurnPerFrameDeg": 12.2,
+   "framesMoving": 263,
+   "frames": 320,
+   "poses": [
+    "stand",
+    "push",
+    "glide1",
+    "wobble"
+   ]
+  },
+  "링크 밖 걷기 속도 = 1.37m/s(±5%), 링크 상태 아님": {
+   "ok": true,
+   "v": 1.37
+  },
+  "페이지 오류 0": {
+   "ok": true,
+   "errors": []
+  }
+ },
+ "errors": []
+}

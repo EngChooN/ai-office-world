@@ -86,16 +86,16 @@ test('문 밖 = 광장 충돌에 안 막히는 자리, 들어가기·나가기',
  r.act('rk:out');assert.ok(!r.inside);assert.ok(!inRink(player.x,player.z));
  const off=createRinkPlay({enabled:false,player});assert.deepEqual(off.actions(),[]);
 });
-test('얼음 걷기: 입력 쪽으로 천천히 빨라지고, 손 떼면 0.5~1.5m 미끄러져 섬, 울타리에 막히면 속도 버림',()=>{
+test('스케이트(A안): 1.6초쯤에 최고 속도 90%, 손 떼면 약 2.2m 미끄러져 섬, 울타리에 막히면 그쪽 속도만 버림',()=>{
  const player={x:RINK.x+3.5,z:RINK.z,heading:Math.PI/2,place(x,z,h){this.x=x;this.z=z;this.heading=h;}};
- const r=createRinkPlay({enabled:true,player});r.act('rk:in');player.x=RINK.x+4.2;player.z=RINK.z+2.2; // 섬(가운데)을 비켜 남쪽 줄을 따라 서쪽으로
+ const r=createRinkPlay({enabled:true,player});r.act('rk:in');player.x=RINK.x+6;player.z=RINK.z+3.6;player.heading=Math.PI/2; // 섬을 비켜 남쪽 줄을 따라 서쪽으로
  const dt=1/60;let t=0,first=null;
- for(;t<2;t+=dt){r.step(dt,{dx:-1,dz:0,speed:1.4});if(first===null&&r.speed>1.4*1.1*.9)first=t;}
- assert.ok(first>.4&&first<1,`90% 속도까지 ${first}`);
+ for(;t<2.6;t+=dt){r.step(dt,{dx:-1,dz:0,speed:1.37});if(first===null&&r.speed>2.4*.9)first=t;}
+ assert.ok(first>1.3&&first<1.9,`90% 속도까지 ${first}`);
  const x0=player.x;let n=0;while(r.speed>0&&n<600){r.step(dt,{});n++;}
- const glide=x0-player.x;assert.ok(glide>.5&&glide<1.5,`미끄러짐 ${glide}`);
- // 울타리 쪽(남쪽)으로 계속: 울타리 안에 머물고 남쪽 속도는 0
- for(let i=0;i<300;i++)r.step(dt,{dx:0,dz:1,speed:1.4});
+ const glide=x0-player.x;assert.ok(glide>1.9&&glide<2.5,`미끄러짐 ${glide}`);
+ // 울타리 쪽(남쪽)으로 계속: 울타리 안에 머물고 결국 멈춤(남쪽 속도는 버림)
+ for(let i=0;i<300;i++)r.step(dt,{dx:0,dz:1,speed:1.37});
  assert.ok(inRink(player.x,player.z,.2));assert.ok(r.speed<.05);
  // 입력 없이 미끄러질 때는 걷는 다리 0
  const s=r.step(dt,{});assert.equal(s.stride,0);

@@ -3,6 +3,7 @@
 //  - 모닥불: 낮게 웅웅 타는 소리 + 탁탁 튀는 소리. 불에서 멀수록 작게(12m 밖 0), 앉으면 크게(체험설계 §5-3 "장작 소리 크게").
 //  - 효과음: jingle 장식 딸랑 · mail 우체통 쏙 · open 선물 풀기 · throw 휙 · hit 퍽 · roll 눈 뭉치는 사각 · done 완성 반짝 · bank 눈 더미 푹 · pop 알림
 //  - 썰매: 미끄러지는 쉬익(속도에 따라) + 방울(slide(speed) 매 프레임)
+//  - 스케이트(11-19): 활주 쉬익(update의 skate 속도에 따라, 썰매보다 높고 가늘게) · 밀기 skate-push 「슥」 · 멈춤 skate-stop 「샤악」. 내 소리만(다른 사람 소리는 후속)
 // 아이폰 사파리 제한 때문에 첫 입력(터치·클릭·키) 전에는 AudioContext를 만들지 않는다(흡연장·등산과 같음). 소리 끄기는 이 기기에 저장(main.js).
 // 캐럴 배경음(11-16 3차): 미 공군 군악대 녹음 8곡(carols.js, 퍼블릭 도메인 — 출처는 「소리 출처」·기록표 §16). 관악산 FM처럼 <audio>로 흘려 받아(radio-audio.js createDeck)
 //  같은 AudioContext의 마스터로 섞는다(긴 곡을 통째로 풀지 않아 휴대폰 메모리를 아낌). 모두 같은 시계로 같은 곡(carolAt). 소리 끄기(🔊)나 캐럴 끄기면 <audio>를 멈추고 비워
@@ -10,14 +11,14 @@
 import {createDeck} from '../radio-audio.js';
 import {CAROLS,CAROL_DIR,carolAt} from './carols.js';
 export const CAROL_LEVEL=.24,CAROL_FIRE=.12; // 캐럴 버스 크기(평소·모닥불에 앉았을 때)
-export const XMAS_SOUNDS=Object.freeze(['jingle','mail','open','throw','hit','roll','done','bank','pop','warm','beep','go','boost','tick']);
+export const XMAS_SOUNDS=Object.freeze(['jingle','mail','open','throw','hit','roll','done','bank','pop','warm','beep','go','boost','tick','skate-push','skate-stop']);
 export const FIRE_HEAR=12; // 모닥불이 들리는 거리(m)
 // 거리 → 크기(0~1): 1m 안 그대로, radius 밖 0, 사이는 제곱
 export function hearGain(d,radius=FIRE_HEAR){if(!Number.isFinite(d))return 1;if(d<=1)return 1;if(d>=radius)return 0;const k=1-(d-1)/(radius-1);return k*k;}
 const baseUrl=()=>{try{return import.meta.env?.BASE_URL??'/';}catch{return '/';}};
 
 export function createXmasAudio({muted=false,volume=1,carol:carolOn=true,win=globalThis.window,doc=globalThis.document,windUrl=`${baseUrl()}sounds/ambient/wind-forest-loop.flac`,carolBase=`${baseUrl()}${CAROL_DIR}`,carols=CAROLS,now=()=>Date.now(),random=Math.random}={}){
- let ctx=null,master=null,noiseBuf=null,fire=null,sled=null,wind=null,unlocked=false,off=!!muted,carol=null,carolDeck=null,carolState='off',tapM=null,tapC=null;
+ let ctx=null,master=null,noiseBuf=null,fire=null,sled=null,skate=null,wind=null,unlocked=false,off=!!muted,carol=null,carolDeck=null,carolState='off',tapM=null,tapC=null;
  const listener={x:0,z:0};
  let vol=Number.isFinite(+volume)?Math.max(0,+volume):1;
  const stats={played:0,byName:{},fireGain:0,unlocked:false,carol:{on:!!carolOn,state:'off',index:-1,title:null,level:0}};
@@ -29,7 +30,7 @@ export function createXmasAudio({muted=false,volume=1,carol:carolOn=true,win=glo
   tapM=ctx.createAnalyser();tapM.fftSize=2048;master.connect(tapM);
   carol=ctx.createGain();carol.gain.value=CAROL_LEVEL;carol.connect(master);tapC=ctx.createAnalyser();tapC.fftSize=2048;carol.connect(tapC);
   const n=ctx.sampleRate*2;noiseBuf=ctx.createBuffer(1,n,ctx.sampleRate);const d=noiseBuf.getChannelData(0);let b=0;for(let i=0;i<n;i++){const w=random()*2-1;b=(b+.02*w)/1.02;d[i]=w*.6+b*3.2;}
-  startFire();startSled();loadWind();
+  startFire();startSled();startSkate();loadWind();
   ctx.resume?.();
   syncCarol();
  }
@@ -65,6 +66,12 @@ export function createXmasAudio({muted=false,volume=1,carol:carolOn=true,win=glo
   const s=noise(),bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=900;bp.Q.value=.7;s.connect(bp).connect(g);s.start();
   sled={g,bp,speed:0,bell:0};
  }
+ // ── 스케이트 활주(날이 얼음을 긁는 높은 쉬익, 늘 켜 두고 크기만)
+ function startSkate(){
+  const g=ctx.createGain();g.gain.value=0;g.connect(master);
+  const s=noise(),hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=2600;const bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=4200;bp.Q.value=.9;
+  s.connect(hp).connect(bp).connect(g);s.start();skate={g,bp};
+ }
  function bell(at,f=1568,v=.12){for(const [m,k] of [[1,1],[2.76,.4],[5.4,.15]]){const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=f*m;g.gain.setValueAtTime(v*k,at);g.gain.exponentialRampToValueAtTime(.0005,at+.5/m+.15);o.connect(g).connect(master);o.start(at);o.stop(at+.8);}}
  async function loadWind(){
   try{const r=await fetch(windUrl);if(!r.ok)return;const buf=await ctx.decodeAudioData(await r.arrayBuffer());const s=ctx.createBufferSource();s.buffer=buf;s.loop=true;const g=ctx.createGain();g.gain.value=.07;s.connect(g).connect(master);s.start();wind={s,g};}catch{}
@@ -91,6 +98,9 @@ export function createXmasAudio({muted=false,volume=1,carol:carolOn=true,win=glo
    case 'beep':tone(t,880,.16,{type:'square',v:.06*k});break;
    case 'go':tone(t,1320,.1,{type:'square',v:.07*k});tone(t+.08,220,.32,{type:'sawtooth',v:.08*k,to:160});break;
    case 'boost':burst(t,.4,{f:900,q:1.4,v:.18*k,to:3200});break;
+   // 11-19 스케이트: 밀기 「슥」(짧게 위로 긁음) · 멈춤 「샤악」(얼음 가루 날리는 긴 소리)
+   case 'skate-push':burst(t,.2,{f:1800,q:1.2,v:.12*k,to:3600});break;
+   case 'skate-stop':burst(t,.5,{f:5200,q:.7,v:.2*k,to:2400});burst(t,.08,{f:900,type:'lowpass',v:.12*k});break;
    case 'tick':tone(t,1800,.04,{type:'square',v:.04*k});break;
    default:stats.played--;return false;
   }
@@ -110,7 +120,7 @@ export function createXmasAudio({muted=false,volume=1,carol:carolOn=true,win=glo
   levels(){return {master:level(tapM),carol:level(tapC)};},
   get carolDeck(){return carolDeck;},
   // 매 프레임: 내 자리, 모닥불까지 거리·앉았는지, 썰매 속도(타지 않으면 0)
-  update(dt,{x=0,z=0,fireDist=Infinity,sitting=false,sled:sp=0}={}){
+  update(dt,{x=0,z=0,fireDist=Infinity,sitting=false,sled:sp=0,skate:kv=0}={}){
    listener.x=x;listener.z=z;if(!ctx||off)return;
    const t=ctx.currentTime;
    if(carol){const fl=Math.min(1,hearGain(fireDist));const want=sitting?CAROL_FIRE:CAROL_LEVEL-(CAROL_LEVEL-CAROL_FIRE)*.5*fl;carol.gain.setTargetAtTime(want,t,.4);
@@ -119,6 +129,7 @@ export function createXmasAudio({muted=false,volume=1,carol:carolOn=true,win=glo
     if(lv>.02){fire.next-=dt;if(fire.next<=0){crackle(t+.01,lv);if(random()<.25)crackle(t+.05+random()*.05,lv*.7);fire.next=.05+random()*.28;}}}
    if(sled){const s=Math.min(1,sp/8);sled.g.gain.setTargetAtTime(s*.22,t,.1);sled.bp.frequency.setTargetAtTime(600+s*1600,t,.1);
     if(s>.05){sled.bell-=dt;if(sled.bell<=0){bell(t+.01,1760+random()*200,.035*s+.02);sled.bell=.16+random()*.12;}}}
+   if(skate){const s=Math.min(1,kv/2.4);skate.g.gain.setTargetAtTime(s*s*.09,t,.08);skate.bp.frequency.setTargetAtTime(3400+s*1800,t,.1);stats.skateGain=+(s*s*.09).toFixed(3);}
   },
   dispose(){carolDeck?.stop();carolDeck=null;try{ctx?.close();}catch{}for(const e of ['pointerdown','keydown','touchend'])win?.removeEventListener?.(e,onInput);},
  };

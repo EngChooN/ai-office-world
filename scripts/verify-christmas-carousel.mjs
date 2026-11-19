@@ -110,10 +110,10 @@ try{
  await A.evaluate(()=>{const x=window.xmas;x.rink.goTo();x.doAction('rk:in');x.cam.yaw=-Math.PI/2;});await sleep(200);
  await A.evaluate(([x,z])=>{window.xmas.player.place(x,z,-Math.PI/2);},[RINK.x-RINK.w*.4,RINK.z+RINK.d*.33]);
  await A.keyboard.down('KeyW');await sleep(1500);
- const g0=await A.evaluate(()=>({x:window.xmas.player.x,z:window.xmas.player.z,v:window.xmas.rink.status().v}));await A.keyboard.up('KeyW');await sleep(1800);
+ const g0=await A.evaluate(()=>({x:window.xmas.player.x,z:window.xmas.player.z,v:window.xmas.rink.status().v}));await A.keyboard.up('KeyW');await sleep(2600);
  const g1=await A.evaluate(()=>({x:window.xmas.player.x,z:window.xmas.player.z,v:window.xmas.rink.status().v}));
  const glide=Math.hypot(g1.x-g0.x,g1.z-g0.z);
- check('손 떼면 조금 미끄러져 섬(너무 미끄럽지 않게)',glide>.3&&glide<2&&g1.v===0,{glide:+glide.toFixed(2),v0:g0.v,v1:g1.v});
+ check('손 떼면 쭉 미끄러져 섬(스케이트 A안)',glide>1&&glide<3&&g1.v===0,{glide:+glide.toFixed(2),v0:g0.v,v1:g1.v});
  await A.keyboard.down('KeyA');await sleep(4000);await A.keyboard.up('KeyA');
  {const s=await st(A);check('울타리 밖으로 못 나감',s.rink.inside&&inRink(s.player.x,s.player.z,.2),{p:s.player});}
  const idA2=idA;check('둘 화면: 하나가 얼음 높이에 보임',await until(async()=>B.evaluate(([id,iceY])=>{const h=window.xmas.multi.headOf(id);const a=h?.avatar;return a&&Math.abs(a.root.position.y-iceY)<.03;},[idA2,RINK.iceY]),6000));

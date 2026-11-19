@@ -137,8 +137,8 @@ function updatePlayer(dt){
  if(campfire.update(dt,{moveInput})||campfire.sitting){if(campfire.sitting)player.update(dt,{moved:0});player.root.position.y+=H(player.x,player.z);return;}
  if(moveInput){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);dirX=fx*mv.forward+rx*mv.side;dirZ=fz*mv.forward+rz*mv.side;}
  const len=Math.hypot(dirX,dirZ);
- // 아이스링크 안: 미끄러지듯 걷기(관성·짧은 보폭, rink-play.js ICE)
- if(rink?.inside){const k=len>0?1/len:0,r=rink.step(dt,{dx:dirX*k,dz:dirZ*k,speed:WALK_SPEED});player.running=false;player.update(dt,{moved:r.stride});player.root.position.y+=H(player.x,player.z);return;}
+ // 아이스링크 안: 스케이트(A안 관성·커브·제동, skate.js) + 자세(그림이 오면 rink.pose)
+ if(rink?.inside){const k=len>0?1/len:0,r=rink.step(dt,{dx:dirX*k,dz:dirZ*k,speed:WALK_SPEED});player.running=false;player.update(dt,{moved:r.stride});rink.pose(dt);player.root.position.y+=H(player.x,player.z);return;}
  if(len>0&&!snowfight.packing){dirX/=len;dirZ/=len;const running=mv.run&&snowfight.moveMul===1,speed=WALK_SPEED*(running?(travel?TRAVEL.runMul:RUN_MUL):1)*snowfight.moveMul; // 조준 50%·웅크림 40%
   // 눈사람 마당: 눈덩이를 밀거나 눈덩이 몸에 막힘(큼을 혼자 밀면 절반 속도)
   let tx=player.x+dirX*speed*dt,tz=player.z+dirZ*speed*dt;
@@ -202,7 +202,7 @@ let treePlay=null;
 const multi=createXmasMulti({ctx:{world,player,profile,mobile,heightAt:H,gondolaY:(x,z)=>cabinYAt(x,z)?.y??H(x,z),
   createAvatar:({look,id,name})=>createXmasAvatar({rigUrl:RIG_URL,toon,look,id,name}),
   createLite:look=>createLiteDongdong({toon,look}),
-  attachPoser:a=>createXmasPoser({avatar:a,world,toon}),rideAt:a=>carousel?.rideAt(a)??null,strideAt:festiveLook>=2?strideAt:null,
+  attachPoser:a=>createXmasPoser({avatar:a,world,toon}),rideAt:a=>carousel?.rideAt(a)??null,strideAt:festiveLook>=2?strideAt:null,skateAt:festiveLook>=2?(id,s,dt,a)=>rink?.remote(id,s,dt,a)??null:null,
   skyAt:id=>skyPlay?.skyAt(id)??null,skyAlt:()=>skyPlay?.sendAlt()??0}, // 하늘 썰매: 다른 사람 몸은 그 사람 썰매 좌석 위, 내 높이는 위치 메시지 a칸
  envUrl:import.meta.env.VITE_MULTI_SERVER_URL,myAct,onTree:m=>treePlay?.receive(m),onPlay:m=>{if(m.t==='seat:no'){campfire?.denied();return;}if(m.t==='ride:no'){carousel?.denied();return;}net?.receive(m);}});
 // 머리 위 화면 자리(말풍선·이름표). 화면 밖·카메라 뒤면 visible false
@@ -309,7 +309,7 @@ if(village.course?.boardCanvas)sledPlay.setBoardCanvas(village.course.boardCanva
 sledPlay.onCourse(c=>village.course.setCourse(c));
 gondola=createGondolaPlay({world,toon,player,multi,hud,audio,onChange:resend,busy:()=>sledPlay.mode!=='none'});
 carousel=createCarouselPlay({carousel:findCarousel(village.festive),player,poser,multi,hud,audio,onChange:resend});
-rink=createRinkPlay({enabled:festiveLook>=2&&!!village.festive,player,hud,audio});
+rink=createRinkPlay({enabled:festiveLook>=2&&!!village.festive,player,hud,audio,mobile,art:village.festive?.skate??null}); // art = 월드아트 스케이트 그림(오기 전엔 null)
 // 하늘 썰매(시안 B): 다른 놀이 중이면 못 탐(설계 §7) — 회전목마·언덕 눈썰매(출발대 줄 포함)·케이블카·링크·모닥불·장식·조준·한 판·눈사람 굴리기
 skyPlay=createSkySleighPlay({sky:village.festive?.skySleigh??null,player,poser,multi,hud,audio,input,mobile,heightAt:H,cols,root:hud.root,onChange:resend,fps:()=>fps,
  busy:()=>{const sm=snowman.actFields?.()??{};return {...busyNow(),sky:false,match:document.documentElement.classList.contains('xf-match'),snow:!!(sm.pu||sm.pk)};}});
@@ -440,7 +440,7 @@ const clock=new THREE.Clock();let frames=0,last=performance.now(),fps=60,actT=0;
 updateCamera(1);
 renderer.setAnimationLoop(()=>{
  const dt=Math.min(.05,clock.getDelta());
- updatePlayer(dt);rink.update();skyPlay.updateRemotes(dt);skyPlay.frame(dt);multi.update(dt);net.update(dt);
+ updatePlayer(dt);rink.update(dt);skyPlay.updateRemotes(dt);skyPlay.frame(dt);multi.update(dt);net.update(dt);
  if(travel){travel.ui.syncRun({on:input.run,blocked:runBlocked(busyNow()),label:skyPlay.riding?'빨리':'달리기'});travel.ui.update(dt);}
  // 그림자는 내 주변에 맞춘다(광장이 넓어 22m 상자 하나로는 다 못 덮음)
  const focus=deco.on?lookAt:player.root.position;moon.target.position.set(focus.x,0,focus.z);moon.position.copy(moon.target.position).addScaledVector(Ldir,60);
@@ -456,7 +456,7 @@ renderer.setAnimationLoop(()=>{
   {const g=gifts.open||snowman.decoOpen;if(g&&!playWin){playWin=true;openWin('play');}else if(!g&&playWin){playWin=false;closeWin('play');}}
   if(!playWinHook){playWinHook=true;onWin('play',()=>{if(gifts.open)gifts.closeAll();if(snowman.decoOpen)snowman.closeDeco();});}
   if(hud.sheet==='music')showCarol();}
- audio.update(dt,{x:player.x,z:player.z,fireDist:Math.hypot(player.x-CAMPFIRE.x,player.z-CAMPFIRE.z),sitting:campfire.sitting,sled:sledPlay.mode==='ride'?sledPlay.ride?.v??0:sledPlay.riding?6:skyPlay.riding?Math.max(2.5,skyPlay.speed):0}); // 하늘 썰매도 같은 방울 소리(둥실 멈춤이면 느리게)
+ audio.update(dt,{x:player.x,z:player.z,fireDist:Math.hypot(player.x-CAMPFIRE.x,player.z-CAMPFIRE.z),sitting:campfire.sitting,skate:rink.glide,sled:sledPlay.mode==='ride'?sledPlay.ride?.v??0:sledPlay.riding?6:skyPlay.riding?Math.max(2.5,skyPlay.speed):0}); // 하늘 썰매도 같은 방울 소리(둥실 멈춤이면 느리게)
  hud.update(dt,{hasBubble:id=>chat?.hasBubble?.(id)});
  renderer.info.reset();toon.pipeline.render(dt); // 그림자·외곽선 패스까지 한 프레임 전체 그리기 횟수(status().calls)
  frames++;const now=performance.now();if(now-last>1000){fps=frames*1000/(now-last);frames=0;last=now;}
