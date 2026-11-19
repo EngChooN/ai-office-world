@@ -2,7 +2,8 @@
 // 로딩은 뒤에서 그대로 진행한다(메모리는 예전과 같음). '▶ 오르기'가 출발 신호('hiking:start')를 보낸다.
 // 이 모듈은 main.js보다 먼저 실행되어 수동 시작(data-start-mode=manual)을 걸어 둔다.
 // 건너뛰기: ?pick=off, 자동화 브라우저(navigator.webdriver)는 ?pick=on일 때만 보인다(기존 점검 스크립트가 그대로 돌게).
-// 11-19 입장 흐름 정리(entry.js): 허브에서 골라 왔거나 이 기기에 지난 선택이 있으면 산 고르기도 건너뛰고 바로 들어간다(주소로 처음 올 때만 보임).
+// 11-19 입장 흐름 정리(entry.js): 산 고르기는 등산에 들어올 때마다(허브에서 와도) 보인다(11-06 결정, 11-19 대표 재확인). 고른 뒤 서버·이름은
+//  허브 선택·이 기기의 지난 선택이 있으면 다시 묻지 않고 바로 들어간다.
 //  닉네임 칸은 없앴다 — 이름은 세 체험 공용 입장 창(서버 고르기)·허브 설정에서 같은 저장값으로 받는다.
 import {serverReady} from './server-link-pin.js';   // 맨 먼저: 서버 주소 고르기 시작(공개 파일 multi-server.json을 새로 받음). 서버 창은 끝난 뒤 연다
 import './free-settings.css';
@@ -19,7 +20,7 @@ import {START_EVENT} from './loading.js';
 import {hikingPickMode,openFirstHikingPick,entryDecided} from './hiking-server-pick.js';
 
 const q=new URLSearchParams(location.search);
-export const pickEnabled=(search=location.search,webdriver=!!navigator.webdriver,decided=entryDecided())=>{const p=new URLSearchParams(search).get('pick');return p==='on'||(p!=='off'&&!webdriver&&!decided);};
+export const pickEnabled=(search=location.search,webdriver=!!navigator.webdriver)=>{const p=new URLSearchParams(search).get('pick');return p==='on'||(p!=='off'&&!webdriver);};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 // ── 카드 그림: 능선·점선 코스·정상 깃발. 나무 색은 계절, 하늘은 시간대(사양 §4 색) ──

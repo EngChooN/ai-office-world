@@ -1,5 +1,5 @@
 {
- "at": "2026-11-19T04:20:10.833Z",
+ "at": "2026-11-19T05:05:22.897Z",
  "checks": {
   "hiking ① 처음: 산 고르기가 보임": {
    "ok": true
@@ -21,7 +21,10 @@
    "entry": false,
    "lobby": false
   },
-  "hiking ② 다시 방문: 산 고르기·입장 창·로비 없이 바로": {
+  "hiking ② 다시 방문: 산 고르기는 다시 보임": {
+   "ok": true
+  },
+  "hiking ② 다시 방문: 입장 창·로비 없이 바로": {
    "ok": true,
    "mountain": false,
    "entry": false,
@@ -53,7 +56,7 @@
    "entry": false,
    "lobby": false
   },
-  "smoking ② 다시 방문: 산 고르기·입장 창·로비 없이 바로": {
+  "smoking ② 다시 방문: 입장 창·로비 없이 바로": {
    "ok": true,
    "mountain": false,
    "entry": false,
@@ -85,7 +88,7 @@
    "entry": false,
    "lobby": false
   },
-  "christmas ② 다시 방문: 산 고르기·입장 창·로비 없이 바로": {
+  "christmas ② 다시 방문: 입장 창·로비 없이 바로": {
    "ok": true,
    "mountain": false,
    "entry": false,
@@ -100,7 +103,10 @@
     "server": "1"
    }
   },
-  "hiking ③ 허브 → 게임: 산 고르기·입장 창·로비 없음": {
+  "hiking ③ 허브 → 게임: 산 고르기는 보임": {
+   "ok": true
+  },
+  "hiking ③ 허브 → 게임: 입장 창·로비 없음": {
    "ok": true,
    "mountain": false,
    "entry": false,
@@ -119,7 +125,7 @@
     "server": "2"
    }
   },
-  "smoking ③ 허브 → 게임: 산 고르기·입장 창·로비 없음": {
+  "smoking ③ 허브 → 게임: 입장 창·로비 없음": {
    "ok": true,
    "mountain": false,
    "entry": false,
@@ -138,7 +144,7 @@
     "server": "2"
    }
   },
-  "christmas ③ 허브 → 게임: 산 고르기·입장 창·로비 없음": {
+  "christmas ③ 허브 → 게임: 입장 창·로비 없음": {
    "ok": true,
    "mountain": false,
    "entry": false,

@@ -1,8 +1,8 @@
 // 세 체험 공통 입장 흐름 점검(월드개발, 2026-11-19 입장 흐름 정리): 서버(MULTI_PORT 8798)·vite(PORT 5206)를 이 스크립트가 띄우고 끝나면 닫는다.
 // 실제 사용자처럼 보이게 navigator.webdriver = false, 서버 주소는 공개 파일(multi-server.json)을 가로채 이 서버로 준다(주소창에 ?server 없음).
 //  ① 주소로 처음: 등산은 산 고르기 → 공용 입장 창, 흡연장·크리스마스는 공용 입장 창 바로. 창이 한 번만 뜨고 고르면 그 서버에 들어감
-//  ② 다시 방문(새로고침): 산 고르기·입장 창 없이 지난 서버로 바로
-//  ③ 허브에서 이름·서버를 고르고 들어가기: 게임에서 산 고르기·입장 창 없이 그 서버로, 이름도 그대로
+//  ② 다시 방문(새로고침): 입장 창 없이 지난 서버로 바로(등산은 산 고르기만 다시 보임 — 11-06 결정, 11-19 대표 재확인)
+//  ③ 허브에서 이름·서버를 고르고 들어가기: 게임에서 입장 창 없이 그 서버로, 이름도 그대로(등산은 산 고르기만 보임)
 //  ④ 입장 화면 크기: 가로 667×375·812×375·915×412, 세로 390×844에서 잘리거나 겹치지 않음(넘치면 스크롤로 닿음) → 사진
 //   node scripts/verify-entry-flow.mjs → artifacts/entry-flow/report.json, *.png   (PART=flow,layout 로 일부만)
 import {chromium} from '@playwright/test';
@@ -64,8 +64,9 @@ if(PARTS.has('flow'))for(const g of GAMES){
  // ② 다시 방문
  const c1=await count(g.exp,'1');
  await p.reload();
+ if(g.exp==='hiking'){check(`${g.exp} ② 다시 방문: 산 고르기는 다시 보임`,await until(async()=>(await screens(p)).mountain,60000));await p.click('[data-pk-go]');}
  const seen=await watch(p,g.exp==='hiking'?25000:15000);
- check(`${g.exp} ② 다시 방문: 산 고르기·입장 창·로비 없이 바로`,!seen.mountain&&!seen.entry&&!seen.lobby,seen);
+ check(`${g.exp} ② 다시 방문: 입장 창·로비 없이 바로`,!seen.mountain&&!seen.entry&&!seen.lobby,seen);
  check(`${g.exp} ② 다시 방문: 지난 서버(1서버)에 들어가 있음·이름 그대로`,await until(async()=>{const j=await joinedOf(p,g.exp);return j?.server==='1'&&j.st==='online'&&j.name===name;},30000),{j:await joinedOf(p,g.exp)});
  await ctx.close();await sleep(1500);
 }
@@ -81,8 +82,9 @@ if(PARTS.has('flow'))for(const g of GAMES){
  await p.waitForSelector('.hb-panel .hb-go[data-enter=server][data-server="2"]',{timeout:10000});
  const before=await count(g.exp,'2');
  await Promise.all([p.waitForNavigation({timeout:60000}),p.click('.hb-panel .hb-go[data-enter=server]')]);
+ if(g.exp==='hiking'){check(`${g.exp} ③ 허브 → 게임: 산 고르기는 보임`,await until(async()=>(await screens(p)).mountain,60000));await p.click('[data-pk-go]');}
  const seen=await watch(p,g.exp==='hiking'?25000:15000);
- check(`${g.exp} ③ 허브 → 게임: 산 고르기·입장 창·로비 없음`,!seen.mountain&&!seen.entry&&!seen.lobby,seen);
+ check(`${g.exp} ③ 허브 → 게임: 입장 창·로비 없음`,!seen.mountain&&!seen.entry&&!seen.lobby,seen);
  check(`${g.exp} ③ 허브에서 고른 2서버에 들어감`,await until(async()=>(await count(g.exp,'2'))>before,40000),{count:await count(g.exp,'2')});
  check(`${g.exp} ③ 허브에서 정한 이름 그대로`,await until(async()=>(await joinedOf(p,g.exp))?.name===name,20000),{j:await joinedOf(p,g.exp)});
  await ctx.close();await sleep(1500);

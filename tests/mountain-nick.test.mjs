@@ -37,10 +37,10 @@ test('흡연장: 저장값이 비어 있으면 로비 닉네임(기본값)을 �
  const q=createServerPick({experience:'smoking',serverUrl:null,storage:st,doc:null,defaultName:'옥상고양이'});
  await q.open();assert.equal(q.state.name,'옥상고양이');q.close();
 });
-test('산 고르기(11-19 입장 흐름 정리): 닉네임 칸 없음(이름은 공용 입장 창), 고른 적 있으면 산 고르기도 건너뜀',()=>{
+test('산 고르기(11-19 입장 흐름 정리): 닉네임 칸 없음(이름은 공용 입장 창), 산 고르기는 매번(고른 적 있어도) 보임',()=>{
  const s=read('../src/mountain-pick.js');
  assert.doesNotMatch(s,/pk-nick|nickFieldHTML|savePickName/);
- assert.match(s,/return p==='on'\|\|\(p!=='off'&&!webdriver&&!decided\)/);
+ assert.match(s,/return p==='on'\|\|\(p!=='off'&&!webdriver\);/);
 });
 test('서버 고르기 창: 고치는 대로 같은 저장값에, 열 때 저장값 다시 읽기',()=>{
  const s=read('../src/server-pick.js');

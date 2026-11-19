@@ -1,5 +1,5 @@
 {
- "at": "2026-11-19T04:11:00.941Z",
+ "at": "2026-11-19T05:08:42.094Z",
  "design": {
   "top": 2.39,
   "t90": 1.57,
@@ -33,20 +33,22 @@
    ]
   },
   "remotePosesBrake": [
-   "glide2",
+   "wobble",
    "push",
+   "glide2",
    "brake",
    "stand"
   ],
   "wall": {
    "vLast1s": 2.33,
-   "xTravel": 5.39,
+   "xTravel": 5.47,
    "zMax": 35.2,
    "wallZ": 35.2,
    "poses": [
     "stand",
     "push",
-    "glide1"
+    "glide1",
+    "glide2"
    ]
   },
   "gate": {
@@ -73,16 +75,16 @@
   },
   "mobile": {
    "top": 2.37,
-   "t90": 1.52,
+   "t90": 1.51,
    "glide": 2.26,
    "glideT": 1.95,
    "vAtRelease": 2.37
   },
   "stick8": {
-   "maxTurnDegPerSecWhenMoving": 234,
-   "maxTurnPerFrameDeg": 12.2,
-   "framesMoving": 289,
-   "frames": 319,
+   "maxTurnDegPerSecWhenMoving": 240,
+   "maxTurnPerFrameDeg": 12.1,
+   "framesMoving": 294,
+   "frames": 324,
    "poses": [
     "stand",
     "push",
@@ -143,8 +145,9 @@
   "다른 사람(둘) 화면: 하나의 멈추기 자세도 보임": {
    "ok": true,
    "seen": [
-    "glide2",
+    "wobble",
     "push",
+    "glide2",
     "brake",
     "stand"
    ]
@@ -152,13 +155,14 @@
   "벽 비비기: 튕기지 않고 벽 따라 계속 미끄러짐(마지막 1초 평균 1m/s 넘음·울타리 안)": {
    "ok": true,
    "vLast1s": 2.33,
-   "xTravel": 5.39,
+   "xTravel": 5.47,
    "zMax": 35.2,
    "wallZ": 35.2,
    "poses": [
     "stand",
     "push",
-    "glide1"
+    "glide1",
+    "glide2"
    ]
   },
   "문 앞 감속: 문 안쪽 1.2m 안 속도 ≤ 걷기 속도 + 0.1, 「나가기」 단추 뜸": {
@@ -184,7 +188,7 @@
   "휴대폰 조이스틱 최고 속도 ≈ 2.39m/s(±10%)": {
    "ok": true,
    "top": 2.37,
-   "t90": 1.52,
+   "t90": 1.51,
    "glide": 2.26,
    "glideT": 1.95,
    "vAtRelease": 2.37
@@ -192,17 +196,17 @@
   "휴대폰 손 떼면 ≈ 2.22m 미끄러짐(±12%)": {
    "ok": true,
    "top": 2.37,
-   "t90": 1.52,
+   "t90": 1.51,
    "glide": 2.26,
    "glideT": 1.95,
    "vAtRelease": 2.37
   },
   "휴대폰 8방향: 움직이는 동안 몸은 300°/s 이하로만 돎(커브, ±10%)": {
    "ok": true,
-   "maxTurnDegPerSecWhenMoving": 234,
-   "maxTurnPerFrameDeg": 12.2,
-   "framesMoving": 289,
-   "frames": 319,
+   "maxTurnDegPerSecWhenMoving": 240,
+   "maxTurnPerFrameDeg": 12.1,
+   "framesMoving": 294,
+   "frames": 324,
    "poses": [
     "stand",
     "push",
