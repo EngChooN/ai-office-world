@@ -348,12 +348,13 @@ try{
 
  // ── ⑥ 휴대폰 단추 크기·화면 안
  {await tp(B,L.MAILBOX.stand.x,L.MAILBOX.stand.z,-Math.PI/2);await sleep(900);
-  const r=await B.evaluate(()=>[...document.querySelectorAll('.xh-acts button,.xh-tr button,.hc-btn')].filter(b=>b.offsetParent).map(b=>{const r=b.getBoundingClientRect();return {c:b.className,w:Math.round(r.width),h:Math.round(r.height),in:r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight};}));
+  // 11-18 공통 틀: 행동 단추는 position:fixed(data-uf 자리)라 offsetParent가 늘 null → 그려진 상자로 보이는지 가림. 위 오른쪽 줄(🗺·💬·☰)도 셈
+  const r=await B.evaluate(()=>[...document.querySelectorAll('.xh-acts button,.uf-tr button')].filter(b=>b.getClientRects().length&&getComputedStyle(b).visibility!=='hidden').map(b=>{const r=b.getBoundingClientRect();return {c:b.className,w:Math.round(r.width),h:Math.round(r.height),in:r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight};}));
   check('⑥ 휴대폰 단추가 모두 44px 이상·화면 안',r.length>=4&&r.every(b=>b.w>=44&&b.h>=44&&b.in),{r});
   await shot(B,'mobile-mailbox-actions');
   await B.setViewportSize({width:844,height:390});await sleep(900);await shot(B,'mobile-landscape-mailbox');
-  const r2=await B.evaluate(()=>[...document.querySelectorAll('.xh-acts button,.xh-tr button')].filter(b=>b.offsetParent).map(b=>{const r=b.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight;}));
-  check('⑥ 휴대폰 가로에서도 단추가 화면 안',r2.length&&r2.every(Boolean));
+  const r2=await B.evaluate(()=>[...document.querySelectorAll('.xh-acts button,.uf-tr button')].filter(b=>b.getClientRects().length&&getComputedStyle(b).visibility!=='hidden').map(b=>{const r=b.getBoundingClientRect();return r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight;}));
+  check('⑥ 휴대폰 가로에서도 단추가 화면 안',r2.length>=4&&r2.every(Boolean),{n:r2.length});
   await B.setViewportSize({width:390,height:844});}
 
  // ── 캐럴
