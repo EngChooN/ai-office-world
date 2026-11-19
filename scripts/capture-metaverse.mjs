@@ -1,4 +1,4 @@
-// 메타버스 통합(2026-11-08) 확인 캡처: 허브(PC·휴대폰 세로·가로), 옛 주소 넘기기, 등산 PC, 흡연장 PC(담배·채팅·NPC).
+// 메타버스 통합(2026-11-08) 확인 캡처: 허브(PC·휴대폰 세로·가로), 옛 주소 넘기기, 등산 PC, 흡연장 PC(담배·채팅).
 // 개발 서버(npm run dev, 5173)를 먼저 띄운다. 결과: artifacts/metaverse-2026-11-08/
 import {chromium} from 'playwright';
 import {mkdirSync,writeFileSync} from 'node:fs';
@@ -24,7 +24,7 @@ for(const [name,w,h,m] of [['hub-pc',1280,800,false],['hub-portrait',390,844,tru
  await page.waitForFunction(()=>window.hiking?.started===true||window.hiking?.loading?.().phase==='error',null,{timeout:300000});
  await page.waitForTimeout(3000);await page.screenshot({path:`${OUT}/hiking-pc.png`});
  report.hiking={started:await page.evaluate(()=>window.hiking.started),errors};await page.close();}
-// 허브 카드 → 흡연장: 입장 → 담배 꺼내기·불·한 모금 → 채팅 → NPC
+// 허브 카드 → 흡연장: 입장 → 담배 꺼내기·불·한 모금 → 채팅
 {const {page,errors}=await open(1280,800);await page.goto(`${BASE}/`);await page.click('#hub-smoking');await page.click('.hb-panel [data-enter="solo"]');await page.waitForURL(/\/smoking\//); // 11-17: 장소를 고른 뒤 판의 「혼자 하기」
  await page.waitForFunction(()=>window.lounge,null,{timeout:60000});await page.waitForTimeout(1500);
  const enter=page.locator('[data-a="enter"]');if(await enter.count())await enter.first().click();

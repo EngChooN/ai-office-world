@@ -1,11 +1,11 @@
 // 흡연장 소리. 라이터·들숨·날숨·담배 타는 지직·캔커피는 녹음 파일(public/sounds/lounge/, 11-13), 나머지와 파일을 못 불러왔을 때는 Web Audio 합성(런타임 외부 접속 없음).
 // 효과음: 라이터 딸깍·불꽃, 들이마시기, 내뿜기, 재 털기, 꽁초 톡, 매너 도장 쿵, 채팅 톡 + 은은한 도심 배경음(차 소리 웅웅·가끔 지나가는 차·바람).
 // 온라인 등산처럼 첫 사용자 입력(터치·클릭·키) 전에는 AudioContext를 만들지 않는다(아이폰 사파리 제한 → 입력 전에는 소리 없음).
-// play(name,{at:{x,z},gain}) — at을 주면 내 아바타와의 거리만큼 작게·좌우로(NPC 담배 소리).
+// play(name,{at:{x,z},gain}) — at을 주면 내 아바타와의 거리만큼 작게·좌우로(같이 피우는 다른 사람 담배 소리).
 
 // v2(기획서 A4): 지포 뚜껑 철컥(cap)·휠 드르륵(wheel)·치이익(update의 draw로 계속 변함)·길게 내쉬는 숨(exhale, quality별)·기침(cough)·링(ring)·캔 따는 소리(can, lounge:spot vending use)
 export const SOUND_NAMES=Object.freeze(['lighter','click','cap','wheel','flame','inhale','exhale','ash','drop','stamp','chat','pop','cough','ring','can']);
-const HEAR_RADIUS=9; // NPC 소리가 들리는 거리(m)
+const HEAR_RADIUS=9; // 다른 사람 담배 소리가 들리는 거리(m)
 // 내쉬는 숨 길이(초): quality가 sweet·deep이면 길게 "하아…". light는 짧게.
 export const EXHALE_LEN=Object.freeze({light:{hold:.3,release:.8},sweet:{hold:.8,release:1.7},deep:{hold:1.3,release:2.3},cough:{hold:.2,release:.5}});
 export const exhaleLen=q=>EXHALE_LEN[q]??EXHALE_LEN.light;
@@ -53,7 +53,7 @@ export function createLoungeAudio({muted=false,volume=1,base=`${baseUrl()}sounds
  const amb$={nodes:null,nextCar:4,nextWind:2,level:0,duck:1,duckTo:1,duckLeft:0,sizzle:null,tick:0};
  let lastQuality=null; // 가장 최근 lounge:smoke의 quality(내쉬는 숨 길이를 정한다)
  // 이벤트로 받는 소리: 담배 내뿜기 quality, 자판기 캔 따기(lounge:spot {spot:'vending',state:'use'})
- const onSmoke=e=>{const d=e.detail??{};if(d.isPlayer!==false&&d.state==='exhale'&&d.quality)lastQuality=d.quality;}; // NPC(isPlayer:false)는 무시. play에 quality를 직접 주면 그 값이 먼저
+ const onSmoke=e=>{const d=e.detail??{};if(d.isPlayer!==false&&d.state==='exhale'&&d.quality)lastQuality=d.quality;}; // 다른 사람(isPlayer:false)은 무시. play에 quality를 직접 주면 그 값이 먼저
  const onSpot=e=>{const d=e.detail??{};if(d.spot==='vending'&&d.state==='use')play('can');};
  window.addEventListener('lounge:smoke',onSmoke);window.addEventListener('lounge:spot',onSpot);
 

@@ -7,7 +7,6 @@ import {remoteOutfit,avatarId,multiParams,cleanRoom,smokePlan,chatRoute,loungeSt
 import {OUTFITS} from '../src/lounge/outfit.js';
 import {broadcastChannelName,createBroadcastTransport} from '../src/multi-transport.js';
 import {FLAG,SMOKE_STATES} from '../src/multi-protocol.js';
-import {REMOTE_REACT} from '../src/lounge/npc.js';
 
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
@@ -60,15 +59,15 @@ test('연결 상태 칩 6종(등산 칩과 같은 상태, 흡연장 말투)',()=
  assert.equal(v('connecting').tone,'wait');assert.match(v('connecting').text,/옥상 문/);
  assert.equal(v('online').tone,'ok');assert.match(v('online').text,/같이 피우는 중 · 3명/);
  assert.equal(loungeStatusView({state:'online',count:2,transport:'local'}).tone,'local');
- assert.equal(v('reconnecting').tone,'warn');assert.match(v('reconnecting').sub,/NPC/);
+ assert.equal(v('reconnecting').tone,'warn');assert.doesNotMatch(v('reconnecting').sub,/NPC/);
  assert.equal(v('offline').action,'retry');assert.equal(v('full').action,'other');
  assert.equal(v('bogus'),null);
 });
 
-test('NPC는 사람 채팅에 가끔만 대답(확률 ≤ 0.5, 쉬는 시간 ≥ 5초)',()=>{
- assert.ok(REMOTE_REACT.chance>0&&REMOTE_REACT.chance<=.5);assert.ok(REMOTE_REACT.cool>=5);
- const src=readFileSync(new URL('../src/lounge/npc.js',import.meta.url),'utf8');
- assert.match(src,/e\.detail\.remote&&!fromMe/);
+test('옥상 NPC 코드는 지웠다(11-19 대표 지시): npc.js·lines.js 없음, ?npc=1 안 읽음',()=>{
+ for(const f of ['npc.js','lines.js'])assert.throws(()=>readFileSync(new URL(`../src/lounge/${f}`,import.meta.url)),f);
+ const main=readFileSync(new URL('../src/lounge/main.js',import.meta.url),'utf8');
+ assert.doesNotMatch(main,/q\.get\('npc'\)|createNpcs/);
 });
 
 test('HUD 말풍선이 같이 피우는 사람도 찾는다(hud.js avatarOf → ctx.multi)',()=>{
@@ -113,10 +112,9 @@ test('두 사람: 서로 보이고(위치·이름) 채팅이 한 번씩만, 담�
  // 채팅: A가 HUD로 보냄 → B는 remote:true로 한 번, A는 되돌림을 다시 그리지 않음
  const chatA=events(A.win,'lounge:chat'),chatB=events(B.win,'lounge:chat');
  A.win.dispatchEvent(new CustomEvent('lounge:chat',{detail:{id:'me',name:'하늘',text:'불 있어요?'}}));
- A.win.dispatchEvent(new CustomEvent('lounge:chat',{detail:{id:'me',name:'하늘',text:'각본 대사',scripted:true}}));
  await sleep(40);
  assert.deepEqual(chatB.map(c=>[c.name,c.text,c.remote]),[['하늘','불 있어요?',true]]);
- assert.equal(chatA.length,2,'A 화면에는 내가 낸 두 줄뿐(되돌림 중복 없음)');
+ assert.equal(chatA.length,1,'A 화면에는 내가 낸 한 줄뿐(되돌림 중복 없음)');
  assert.equal(A.multi.status().stats.chatsEchoSkipped,1);
  // 속도 제한: 바로 또 보내면 알림
  const notes=events(A.win,'lounge:multi-note');

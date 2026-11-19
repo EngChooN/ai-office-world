@@ -91,46 +91,59 @@
 /* 무거운 창(메뉴·지도·사람 목록…): 행동 원·할 일 칩 숨김. 상태 알약·위 단추는 그대로 */
 :root.uf[data-uf-heavy] [data-uf]{display:none!important}
 /* 세로 휴대폰 메뉴 창: 위 단추 줄만 남고 아래는 창 */
-/* 채팅(가벼운 창): 큰 단추만 60px로 말하기 줄 위에, 작은 단추·할 일 칩은 숨김 */
-:root.uf[data-uf-win=chat] [data-uf^=s],:root.uf[data-uf-win=chat] [data-uf=todo]{display:none!important}
-:root.uf[data-uf-win=chat] [data-uf=big]{--uf-big:60px;width:60px!important;height:60px!important;font-size:10px!important;bottom:calc(var(--uf-chat-h) + 10px)!important;right:calc(var(--uf-sr) + 12px)!important}
-:root.uf[data-uf-win=chat] [data-uf=big] .ic{width:24px;height:24px}
+/* 채팅(가벼운 창, 11-19 채팅 통일 A안 · 대표 확정): 열려 있는 동안 행동 단추·할 일 칩은 예외 없이 모두 숨김(피우는 중·눈싸움 한 판 중도) */
+:root.uf[data-uf-win=chat] [data-uf]{display:none!important}
 /* 가로 휴대폰에서 오른쪽 시트(메뉴·지도)가 열리면 그 밑에 깔리는 위 단추 줄은 숨긴다(시트의 ✕로 닫음) */
 @media (orientation:landscape) and (max-height:540px),(min-width:900px) and (min-height:541px){:root.uf[data-uf-win=menu] .uf-tr,:root.uf[data-uf-win=map] .uf-tr{visibility:hidden}}
 /* 키보드가 올라오면: 상태 알약과 말하기 줄만 */
 :root.uf[data-uf-kb] [data-uf],:root.uf[data-uf-kb] .uf-tr{display:none!important}
 
-/* ── 말하기 줄(채팅 창이 .uf-chatbar를 달면 아래 한 줄로) ── */
+/* ── 말하기 줄(11-19 채팅 통일, 시안 docs/UI-개선/채팅-통일-시안-v1.html v1.1) ──
+   세로 = 화면 맨 아래 꽉 찬 줄 · 가로(와 PC) = 왼쪽 아래 모서리에 붙은 540px 줄 · 키보드가 오르면 키보드 바로 위(가로는 꽉 찬 줄).
+   부품은 입력칸 · 빨간 보내기 · ✕ 세 개뿐. 크림 바탕·위 모서리 18px·부품 사이 6px·바깥 여백 12px·단추 44px */
 :root.uf .uf-chatbar[hidden]{display:none!important}
-:root.uf .uf-chatbar{position:fixed!important;z-index:47!important;left:calc(var(--uf-sl) + 0px)!important;right:calc(var(--uf-sr) + 0px)!important;top:auto!important;bottom:0!important;width:auto!important;max-width:none!important;max-height:none!important;
- box-sizing:border-box;margin:0!important;padding:8px 10px calc(var(--uf-sb) + 8px)!important;border:0!important;border-radius:20px 20px 0 0!important;background:rgba(255,250,238,.95)!important;box-shadow:0 -4px 16px rgba(40,25,10,.18)!important;
- display:flex!important;flex-direction:column!important;gap:8px!important;font-family:var(--uf-font);overflow:visible!important;pointer-events:auto}
+:root.uf .uf-chatbar{position:fixed!important;z-index:47!important;left:0!important;right:0!important;top:auto!important;bottom:0!important;width:auto!important;max-width:none!important;max-height:none!important;
+ box-sizing:border-box;margin:0!important;padding:8px calc(var(--uf-sr) + 12px) calc(var(--uf-sb) + 8px) calc(var(--uf-sl) + 12px)!important;border:0!important;border-radius:18px 18px 0 0!important;background:rgba(255,250,238,.97)!important;box-shadow:0 -4px 16px rgba(40,25,10,.18)!important;
+ display:block!important;font-family:var(--uf-font);color:var(--uf-ink);overflow:visible!important;pointer-events:auto}
 :root.uf[data-uf-kb] .uf-chatbar{bottom:var(--uf-kb)!important;padding-bottom:8px!important}
-@media (orientation:landscape) and (max-height:540px){
- :root.uf .uf-chatbar{right:auto!important;left:calc(var(--uf-sl) + 12px)!important;bottom:calc(var(--uf-sb) + 10px)!important;width:min(470px,calc(100vw - var(--uf-sl) - var(--uf-sr) - 110px))!important;border-radius:20px!important}
- :root.uf[data-uf-kb] .uf-chatbar{top:calc(var(--uf-st) + 4px)!important;bottom:auto!important}
+@media (orientation:landscape) and (max-height:540px),(min-width:900px) and (min-height:541px){
+ :root.uf .uf-chatbar{right:auto!important;width:min(calc(540px + var(--uf-sl)),100vw)!important;padding-right:12px!important;border-radius:0 18px 0 0!important}
+ :root.uf[data-uf-kb] .uf-chatbar{right:0!important;width:auto!important;border-radius:0!important;padding-right:calc(var(--uf-sr) + 12px)!important}
 }
-@media (min-width:900px) and (min-height:541px){
- :root.uf .uf-chatbar{right:auto!important;left:calc(var(--uf-sl) + 16px)!important;bottom:16px!important;width:440px!important;border-radius:20px!important}
-}
-/* 지난 말: 회색 반투명 줄 2~3개, 말하기 줄 바로 위 */
-:root.uf .uf-chatbar .uf-lines{position:absolute;left:10px;right:80px;bottom:calc(100% + 8px);display:flex;flex-direction:column;align-items:flex-start;gap:5px;pointer-events:none}
-:root.uf .uf-chatbar .uf-lines p{margin:0;max-width:min(280px,100%);padding:4px 10px;border-radius:12px;background:rgba(30,20,12,.55);color:#fff;font:600 12.5px/1.35 var(--uf-font);overflow-wrap:anywhere;word-break:keep-all}
-:root.uf .uf-chatbar .uf-lines p b{color:#ffd36b;margin-right:4px}
-:root.uf[data-uf-kb] .uf-chatbar .uf-lines{display:none}
-/* 빠른 말 칩 줄 + ✏️ */
-:root.uf .uf-chatbar .uf-say{display:flex;gap:6px;align-items:center;min-width:0}
-:root.uf .uf-chatbar .uf-say>.uf-chips{flex:1;min-width:0;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;overscroll-behavior:contain;padding:2px 0}
-:root.uf .uf-chatbar .uf-say>.uf-chips::-webkit-scrollbar{display:none}
-:root.uf .uf-chatbar .uf-chips button{flex:none;min-height:44px;padding:0 13px;border:1.5px solid var(--uf-line);border-radius:20px;background:#fff;color:var(--uf-ink);box-shadow:none;font:700 13px var(--uf-font)!important;white-space:nowrap;cursor:pointer}
-:root.uf .uf-chatbar .uf-pen{flex:none;display:grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:var(--uf-ink);color:#fff;cursor:pointer}
-:root.uf .uf-chatbar .uf-pen.on{background:var(--uf-red)}
-/* 입력 줄: ✏️를 누르거나(휴대폰) PC면 보임 */
-:root.uf .uf-chatbar .uf-type{display:none!important}
-:root.uf .uf-chatbar.typing .uf-type{display:flex!important}
-:root.uf .uf-chatbar .uf-type input{flex:1;min-width:0;height:44px;min-height:44px;box-sizing:border-box;padding:0 14px;border:2px solid #d9c9aa;border-radius:22px;background:#fff;color:var(--uf-ink);font:600 16px var(--uf-font)!important;outline:0}
+:root.uf .uf-chatbar .uf-type{display:flex!important;gap:6px;align-items:center;margin:0}
+:root.uf .uf-chatbar .uf-type input{flex:1;min-width:0;height:44px;min-height:44px;box-sizing:border-box;margin:0;padding:0 14px;border:2px solid #d9c9aa;border-radius:22px;background:#fff;color:var(--uf-ink);box-shadow:none;font:600 16px var(--uf-font)!important;outline:0}
+:root.uf .uf-chatbar .uf-type input::placeholder{color:#a8977f}
 :root.uf .uf-chatbar .uf-type input:focus{border-color:var(--uf-red)}
-:root.uf .uf-chatbar .uf-type button[type=submit]{flex:none;min-width:44px;min-height:44px;height:44px;padding:0 14px;border:0;border-radius:22px;background:var(--uf-red);color:#fff;box-shadow:none;font:800 14px var(--uf-font)!important;cursor:pointer}
+:root.uf .uf-chatbar .uf-type input:disabled{background:#f4efe4}
+:root.uf .uf-chatbar .uf-send{flex:none;min-width:44px;min-height:44px;height:44px;margin:0;padding:0 16px;border:0;border-radius:22px;background:var(--uf-red);color:#fff;box-shadow:none;font:800 14px var(--uf-font)!important;cursor:pointer}
+:root.uf .uf-chatbar .uf-send:disabled{opacity:.55}
+:root.uf .uf-chatbar .uf-close{flex:none;display:grid;place-items:center;width:44px;height:44px;margin:0;padding:0;border:0;border-radius:50%;background:#efe4cc;color:var(--uf-ink);box-shadow:none;cursor:pointer}
+/* 지난 말: 말하기 줄 바로 위, 왼쪽부터 최근 3줄. 반투명 갈색 띠·흰 글자 13px, 이름 노랑(나 연두), 오래된 줄은 흐리게 */
+:root.uf .uf-chatbar .uf-lines{position:absolute;left:calc(var(--uf-sl) + 12px);right:12px;bottom:calc(100% + 8px);display:flex;flex-direction:column;align-items:flex-start;gap:5px;pointer-events:none}
+:root.uf .uf-chatbar .uf-lines:empty{display:none}
+:root.uf .uf-chatbar .uf-lines p{margin:0;max-width:100%;box-sizing:border-box;padding:4px 10px;border-radius:12px;background:rgba(30,20,12,.58);color:#fff;font:600 13px/1.4 var(--uf-font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root.uf .uf-chatbar .uf-lines p b{color:#ffd36b;margin-right:5px}
+:root.uf .uf-chatbar .uf-lines p.me b{color:#9fe0b4}
+:root.uf .uf-chatbar .uf-lines p.old{opacity:.55}
+:root.uf .uf-chatbar .uf-lines p.note{background:rgba(70,62,54,.62);color:#eee6d8;white-space:normal}
+:root.uf .uf-chatbar .uf-lines p.hint{background:rgba(120,70,10,.78);white-space:normal}
+/* 키보드가 오르면: 세로 2줄, 가로 숨김 */
+:root.uf[data-uf-kb] .uf-chatbar .uf-lines p:not(.hint):nth-last-child(n+3){display:none}
+:root.uf[data-uf-kb] .uf-chatbar .uf-lines:has(.hint) p:not(.hint):nth-last-child(n+2){display:none}
+@media (orientation:landscape) and (max-height:540px){:root.uf[data-uf-kb] .uf-chatbar .uf-lines p:not(.hint){display:none}}
+/* 밤: 등산·흡연장은 수첩 밤 색을 따른다(크리스마스는 밤이 없음) */
+:root.uf[data-hud-time=night]:not([data-uf-exp=christmas]) .uf-chatbar{background:rgba(59,48,36,.96)!important;color:#f6ead0}
+:root.uf[data-hud-time=night]:not([data-uf-exp=christmas]) .uf-chatbar .uf-type input{background:#43372a;color:#f6ead0;border-color:#5a4a35}
+:root.uf[data-hud-time=night]:not([data-uf-exp=christmas]) .uf-chatbar .uf-close{background:#5a4a35;color:#f6ead0}
+
+/* ── 머리 위 말풍선(세 콘텐츠 같은 종이 풍선 한 모양): 테 2.5px·모서리 14px·글자 14px 굵게·최대 240px ── */
+.uf-bub{position:absolute;left:0;top:-10px;max-width:min(60vw,240px);box-sizing:border-box;padding:6px 12px 7px;border-radius:14px;background:var(--bub,#fffaf0);border:2.5px solid var(--bub-line,#4a3618);color:var(--bub-ink,#3a2a14);
+ font:800 14px/1.3 "Apple SD Gothic Neo","Pretendard",-apple-system,"Malgun Gothic",sans-serif;box-shadow:2px 3px 0 rgba(74,54,24,.35);overflow-wrap:anywhere;word-break:keep-all;text-align:center;opacity:0;transition:opacity .25s;will-change:transform;pointer-events:none}
+.uf-bub.on{opacity:1}.uf-bub.out{opacity:0}
+.uf-bub small{display:block;font-size:10.5px;font-weight:800;opacity:.7;margin-bottom:1px}
+.uf-bub small i{font-style:normal;margin-left:4px;padding:0 4px;border-radius:6px;background:rgba(74,54,24,.15)}
+.uf-bub::after{content:'';position:absolute;left:50%;bottom:-9px;width:13px;height:13px;margin-left:-6.5px;transform:rotate(45deg);background:var(--bub,#fffaf0);border-right:2.5px solid var(--bub-line,#4a3618);border-bottom:2.5px solid var(--bub-line,#4a3618);clip-path:polygon(100% 0,100% 100%,0 100%)}
+@media (prefers-reduced-motion:reduce){.uf-bub{transition:none}}
 @media (prefers-reduced-motion:no-preference){.uf-sheet:not([hidden]){animation:uf-up .18s ease-out}}
 @keyframes uf-up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
 @media (orientation:landscape) and (max-height:540px){@keyframes uf-up{from{transform:translateX(24px);opacity:.4}to{transform:none;opacity:1}}}

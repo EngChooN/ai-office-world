@@ -28,7 +28,7 @@ test('HUD 단추(data-a)마다 처리하는 곳이 있다',()=>{
  for(const b of ['emote','set','snd'])assert.match(hud,new RegExp(`a==='${b}'`),`클릭 처리 ${b}`);
  assert.match(hud,/chatBtn\.addEventListener\('click'/,'💬 단추 처리');
  for(const b of ['close','enter','mute','info','age','feedback'])assert.match(hud,new RegExp(`dataset\\.a==='${b}'`),`창 단추 ${b}`);
- assert.ok(made.size>=20,`단추 종류 ${made.size}`);
+ assert.ok(made.size>=16,`단추 종류 ${made.size}`); // 11-19: NPC 전용 함께 단추 5종(받기·괜찮아요·불 빌리기·권하기·대답 칩)을 지워 20 → 18
  const missing=[...made].filter(a=>!actKeys.has(a)&&!branches.has(a));
  assert.deepEqual(missing,[],'처리 없는 단추');
 });
@@ -47,9 +47,10 @@ test('키보드 담배 키(SMOKE_KEYS)를 HUD press가 모두 받고, 키 기능
   const ok=name==='draw'?/name==='draw'/.test(hud):/^kind\d$/.test(name)?/\^kind\\d\$/.test(hud):['ring','nose','french'].includes(name)?hud.includes("['ring','nose','french'].includes(name)"):hud.includes(`name==='${name}'`);
   assert.ok(ok,`press(${name})`);
  }
- // 키 → 단추: draw=꾹 단추, ring·nose·french=묘기 단추, kind=담배 고르기, borrow·give=함께 단추(NPC 있을 때), E=대상 위 표시, C=캔 단추, Enter=채팅
+ // 키 → 단추: draw=꾹 단추, ring·nose·french=묘기 단추, kind=담배 고르기, E=대상 위 표시, C=캔 단추, Enter=채팅
  assert.match(hud,/data-a="draw"/);for(const k of ['ring','nose','french'])assert.match(hud,new RegExp(`data-k="${k}"`));
- assert.match(hud,/b\('kind'/);assert.match(hud,/b\('borrow'/);assert.match(hud,/b\('offer'/);assert.match(hud,/b\('accept'/);
+ assert.match(hud,/b\('kind'/);
+ for(const k of ['borrow','give'])assert.ok(!Object.values(SMOKE_KEYS).includes(k),`NPC 전용 키 ${k}는 지움`);
 });
 test('<html data-scene>이 있어도 손 단추·대상 위 표시·상황 단추가 그 단추로 처리된다(상황을 고른 뒤 「눌러도 반응 없음」)',()=>{
  const sp=src('spots.js');
@@ -58,8 +59,11 @@ test('<html data-scene>이 있어도 손 단추·대상 위 표시·상황 단�
  // scene.js는 여전히 <html data-scene>으로 분위기를 알린다 — 그래서 위 검사가 필요
  assert.match(src('scene.js'),/root\.dataset\.scene=id/);
 });
-test('NPC를 안 부른 기본 옥상에서 G(한 대 권하기·받기)가 오류 없이 지나간다',()=>{
- assert.match(src('hud.js'),/npcs\.social\?\.\(\)\?\.incoming/);
+test('NPC 전용 함께 단추(불 빌리기·맞불·한 대 권하기·받기·대답 칩)와 한숨·기지개는 없다(11-19), 인사는 남는다',()=>{
+ const hud=src('hud.js');
+ assert.doesNotMatch(hud,/npcs\.|b\('borrow'|b\('offer'|b\('accept'|'sigh'\},|k:'stretch'/);
+ assert.match(hud,/const EMOTES=\[\{k:'wave',i:'👋',t:'인사'\}\];/);
+ assert.match(src('multi.js'),/if\(k!=='wave'\)return;/);
 });
 test('아이콘 그림은 누르는 대상이 아니다(단추가 늘 event.target)',()=>{
  assert.match(readFileSync(new URL('../src/icons/icons.css',import.meta.url),'utf8'),/svg\.ic,\.ic-emoji\{pointer-events:none\}/);
@@ -167,7 +171,8 @@ test('연결: 인사는 채팅이 아니라 act로 가서 같은 인사를 거�
  assert.equal(chats.filter(c=>c.remote).length,0,'채팅 c로는 안 보냄');
  const late=[];C=world('구름');C.win.addEventListener('lounge:remote-emote',e=>late.push(e));C.multi=mount(C);C.multi.join({room:'인사시험'});await tick([A,B,C],8);
  assert.equal(late.length,0,'나중에 온 사람에게 지난 인사는 안 뜸');
- A.win.dispatchEvent(new CustomEvent('lounge:emote',{detail:{emote:'sigh'}}));await tick([A,B,C],3);assert.equal(late.length,1);assert.equal(late[0].detail.emote,'sigh');
+ A.win.dispatchEvent(new CustomEvent('lounge:emote',{detail:{emote:'sigh'}}));await tick([A,B,C],3);assert.equal(late.length,0,'한숨은 지운 동작이라 보내지 않음(11-19)');
+ A.win.dispatchEvent(new CustomEvent('lounge:emote',{detail:{emote:'wave'}}));await tick([A,B,C],3);assert.equal(late.length,1);assert.equal(late[0].detail.emote,'wave');
 });
 test('연결: 고른 옷이 상대 몸에 입혀지고, 바꾸면 따라 바뀐다',async t=>{
  const A=world('하늘','padding'),B=world('바다');A.multi=mount(A);B.multi=mount(B);t.after(()=>{A.multi.dispose();B.multi.dispose();});

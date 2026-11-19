@@ -47,22 +47,23 @@ for(const [sn,vp,mobile] of SIZES)for(const [tn,time] of TIMES){
  await A.click('.hc-btn');await sleep(300);
  const geo=await A.evaluate(()=>{const q=s=>document.querySelector(s).getBoundingClientRect(),p=q('.hc-panel');
   const small=[...document.querySelectorAll('.hc-panel button,.hc-panel input,.hc-btn')].map(e=>e.getBoundingClientRect()).filter(r=>r.width&&(r.height<43.5||r.width<43.5));
-  return {panel:{x:p.x,y:p.y,r:p.right,b:p.bottom},inside:p.x>=0&&p.y>=0&&p.right<=innerWidth&&p.bottom<=innerHeight,small:small.length,chips:document.querySelectorAll('.uf-chatbar [data-say]').length,font:parseFloat(getComputedStyle(document.querySelector('.uf-chatbar input')).fontSize)};});
- check(`${tag} 채팅 창이 화면 안`,geo.inside,geo);check(`${tag} 버튼·입력칸 44px 이상`,geo.small===0,geo);check(`${tag} 칩 4~6개`,geo.chips>=4&&geo.chips<=6,geo);check(`${tag} 입력 글자 16px 이상`,geo.font>=16,geo);
+  return {panel:{x:p.x,y:p.y,r:p.right,b:p.bottom},inside:p.x>=0&&p.y>=0&&p.right<=innerWidth&&p.bottom<=innerHeight,small:small.length,chips:document.querySelectorAll('.uf-chatbar [data-say],.uf-chatbar .uf-pen').length,btns:document.querySelectorAll('.uf-chatbar button').length,font:parseFloat(getComputedStyle(document.querySelector('.uf-chatbar input')).fontSize)};});
+ check(`${tag} 채팅 창이 화면 안`,geo.inside,geo);check(`${tag} 버튼·입력칸 44px 이상`,geo.small===0,geo);check(`${tag} 입력칸·보내기·✕만(빠른 말 칩 없음)`,geo.chips===0&&geo.btns===2,geo);check(`${tag} 입력 글자 16px 이상`,geo.font>=16,geo);
  // 입력 중 단축키 막기: 입력칸에서 r·c·f를 눌러도 window keydown에 닿지 않는다
  await A.evaluate(()=>{window.__keys=0;addEventListener('keydown',()=>window.__keys++);});
  if(!mobile){await A.focus('.uf-chatbar input');await A.keyboard.type('rcf');const k=await A.evaluate(()=>window.__keys);check(`${tag} 입력 중 단축키가 걷기에 안 닿음`,k===0,k);await A.fill('.uf-chatbar input','');}
  // 말하기: B가 칩 없이 직접 보냄 → A에 기록·말풍선
  await B.evaluate(()=>dispatchEvent(new CustomEvent('hiking:chat-send',{detail:{text:'정상에서 봐요 ⛰'}})));
  await A.waitForFunction(()=>document.querySelectorAll('.uf-chatbar .uf-lines p b').length>=1,null,{timeout:10000}).catch(()=>{});
- await A.click('.uf-chatbar [data-say] >> nth=1');await sleep(500);
+ const say=async t=>{await A.fill('.uf-chatbar input',t);await A.click('.uf-chatbar .uf-send');};
+ await say('같이 가요');await sleep(500);
  const log=await A.evaluate(()=>[...document.querySelectorAll('.uf-chatbar .uf-lines p')].map(p=>p.textContent));
  check(`${tag} 기록에 내 글·상대 글`,log.some(t=>t.includes('같이 가요'))&&log.some(t=>t.includes('정상에서 봐요')),log);
  const bub=await A.evaluate(()=>[...document.querySelectorAll('.hc-bub')].map(b=>({t:b.textContent,disp:b.style.display,tr:b.style.transform})));
  check(`${tag} 말풍선이 생김`,bub.length>=1,bub);
  // 너무 빨리 → 안내
- await A.click('.uf-chatbar [data-say] >> nth=0');await A.click('.uf-chatbar [data-say] >> nth=2');await sleep(400);
- const hint=await A.evaluate(()=>{const h=document.querySelector('.hc-hint');return h.hidden?'':h.textContent;});
+ await say('안녕하세요');await say('쉬었다 가요');await sleep(400);
+ const hint=await A.evaluate(()=>document.querySelector('.uf-chatbar .uf-lines .hint')?.textContent??'');
  check(`${tag} 너무 빠르면 '잠깐만요' 안내`,/잠깐만요, 조금 천천히/.test(hint),hint);
  await sleep(300);await (await waitChunks(A)).screenshot({path:`${dir}/hiking-chat-${tag}.png`});
  // 4초 뒤 말풍선 사라짐

@@ -138,7 +138,7 @@ export function createPoser({S,avatar,rooftop,world,toon,smokeState=()=>'idle',a
   root.position.y+=(seat.y+SEAT_PAD-hipsH)*w;root.position.addScaledVector(F,-SIT.back*w);root.updateMatrixWorld(true);
   // 등받이에 살짝 기댄다: 허리를 뒤로, 목은 반쯤 되돌려 앞을 본다
   blend([...rig.spine,rig.head],w,()=>{turnWorld(rig.spine[0],L,-SIT.lean);turnWorld(rig.head,L,SIT.lean*.6);});
-  // 다리: 등산 'bench-sit'(src/toon/hiker-acts.js)과 같은 값·같은 흔들림. 오른쪽 -1.15(+sw*.6)·왼쪽 -0.75(-sw)만큼 앞으로 들고 달랑달랑(sw=sin(t*3.8)*.22). 사람마다 위상이 달라 NPC끼리 박자가 겹치지 않는다.
+  // 다리: 등산 'bench-sit'(src/toon/hiker-acts.js)과 같은 값·같은 흔들림. 오른쪽 -1.15(+sw*.6)·왼쪽 -0.75(-sw)만큼 앞으로 들고 달랑달랑(sw=sin(t*3.8)*.22). 사람마다 위상이 달라 여럿이 앉아도 박자가 겹치지 않는다.
   S.swingT??=Math.random()*6;S.swingT+=dt*3.8;const sw=Math.sin(S.swingT)*.22*w;
   for(const [s,x] of [['Left',1],['Right',-1]]){
    const [up,mid,end]=rig[s].leg,toe=rig[s].toe;if(!up||!mid)continue;
@@ -228,7 +228,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
  // 다른 동동이·장애물이 그 자리를 차지했는지: main.js collide(나는 빼고 민다)가 자리를 옮기면 차지된 것
  //  (collide는 정확히 같은 점에 선 동동이는 밀지 못하므로 3cm 옆 점도 함께 본다)
  // 같은 방 다른 사람(같이 피우기, 11-10)이 서 있거나 앉은 자리도 차지된 것으로 본다(ctx.multi.occupied). 전에는 두 사람이 같은 난간 지점·같은 좌판에 겹쳐 섰다.
- const taken=(x,z,r=.36)=>!!ctx.multi?.occupied?.(x,z,r)||(ctx.npcs?.avatars??[]).some(a=>Math.hypot(a.x-x,a.z-z)<r);
+ const taken=(x,z,r=.36)=>!!ctx.multi?.occupied?.(x,z,r);
  const free=(x,z)=>!taken(x,z)&&(!ctx.collide||[[0,0],[.03,0],[0,.03]].every(([ox,oz])=>{const c=ctx.collide(x+ox,z+oz);return Math.hypot(c.x-x-ox,c.z-z-oz)<.05;}));
  // 벤치(길이 1.5m): 가운데에 누가 앉아 있으면 왼쪽·오른쪽 자리(±0.42m)에 앉는다. 셋 다 차면 null.
  // 좌판 칸 번호 slot(0 가운데·1·2)은 같이 피우기 act로 보내고, 같은 칸을 이미 차지했다고 서버가 알린 사람(seatTaken)도 피한다(11-17)
@@ -382,7 +382,7 @@ export function createSpots({ctx,player=ctx.player,smoker=ctx.smoker,rooftop=ctx
    const px=player.x,pz=player.z,list=[],sp=rooftop.spots??{};
    const add=(kind,index,x,z,ax,az,lift=LIFT[kind])=>{const d=Math.hypot(x-px,z-pz);if(d<=MARK.show)list.push({key:kind+index,kind,index,x:ax??x,z:az??z,d,lift});};
    if(sp.vending)add('vending',0,sp.vending.x,sp.vending.z,sp.vending.outlet?.x,(sp.vending.outlet?.z??sp.vending.z)-.1);
-   // 다른 사람·NPC가 앉아 있는 벤치는 표시를 앉은 머리 위로 올린다(좌판 위 1.0m는 앉은 얼굴 높이)
+   // 다른 사람이 앉아 있는 벤치는 표시를 앉은 머리 위로 올린다(좌판 위 1.0m는 앉은 얼굴 높이)
    (sp.benches??[]).forEach((b,i)=>add('bench',i,b.x,b.z,b.seat?.x,b.seat?.z,b.seat&&seatBusy(b.seat)?LIFT.benchBusy:LIFT.bench));
    (sp.ashtrays??[]).forEach((a,i)=>add('ashtray',i,a.x,a.z,a.at?.x,a.at?.z));
    const r=S.pose==='lean'&&S.spot?S.spot:railSpot(rooftop,px,pz,MARK.show,free);

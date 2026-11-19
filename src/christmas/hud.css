@@ -99,10 +99,8 @@
 }
 /* 장식 달기 중에는 이동 조이스틱·행동 단추를 숨기고 채팅 단추는 그대로 */
 html.xh-decorating .joy{display:none}
-/* 공용 채팅 창(hiking-chat-ui) 크리스마스 자리: 💬 단추는 왼쪽 아래(체험설계 §4-1), 창은 그 위 */
+/* 공용 채팅(hiking-chat-ui) 💬 단추 예전 자리(틀이 없을 때): 왼쪽 아래(체험설계 §4-1). 말하기 줄 자리는 공통 ui-frame.css */
 .hc-btn.xc-chat{left:calc(var(--sl) + 16px)!important;top:auto!important;bottom:calc(var(--sb) + 22px)!important;right:auto!important;width:52px;height:52px;font-size:22px;z-index:25}
-.hc-panel.xc-chat{z-index:26;bottom:calc(var(--sb) + 84px)}
-.hc-notice{margin:0;padding:6px 10px;border-radius:8px;background:var(--paper2);font-size:11.5px;font-weight:700;color:var(--ink2);line-height:1.4}
 /* 장식 고르기 판이 열린 동안 채팅은 접는다(한 번에 한 가지 창, 체험설계 §1-4) */
 html.xh-decorating .hc-btn.xc-chat,html.xh-decorating .hc-panel.xc-chat,html.xh-panel .hc-btn.xc-chat,html.xh-panel .hc-panel.xc-chat{display:none!important}
 /* 말풍선(공용 채팅 층 z 22)은 크리스마스 화면(z 20) 아래로: 장식 판·창이 말풍선에 가리지 않게 */

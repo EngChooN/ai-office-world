@@ -97,7 +97,7 @@ for(const id of which)for(const [sz,vp] of Object.entries(SIZES)){
   await p.screenshot({path:`${OUT}/${key}.png`});const m=await ev(p,measure);delete m.btns;report[key]=m;
   const d=DESIGN[key],b=BEFORE[key];
   const bad=[];if(m.overlaps.length)bad.push('겹침 '+JSON.stringify(m.overlaps));if(m.covered.length)bad.push('가림 '+JSON.stringify(m.covered));if(m.wins.length>1)bad.push('창 여러 개 '+m.wins.join(','));
-  if(/fight/.test(st)&&!m.big)bad.push('던지기(큰 단추) 없음');
+  if(st==='fight'&&!m.big)bad.push('던지기(큰 단추) 없음'); // 11-19 채팅 통일: 채팅 중(fight-chat)에는 큰 단추도 숨김
   if(bad.length)fails.push(`${key}: ${bad.join(' / ')}`);
   console.log(`${key}\t게임 보임 ${m.visiblePct}%\t막힘없는 ${m.freePct}%\t단추 ${m.btnCount}${d?`\t시안 ${d[0]}%/${d[1]}%`:''}${b?`\t고치기 전 ${b[0]}%/${b[1]}%`:''}${bad.length?'\t✗ '+bad.join(' / '):'\t✓'}`);
  }

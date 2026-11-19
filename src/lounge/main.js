@@ -1,5 +1,5 @@
 // 온라인 흡연장 — 온라인 시리즈 2. 그래픽은 온라인 등산의 카툰 파이프라인(src/toon/**)을, 캐릭터는 동동이(src/toon/link-hiker.js)를 그대로 쓴다.
-// 이 파일: 렌더러·카툰 후처리·하늘·시간대 빛, 내 아바타 이동(키보드·떠다니는 조이스틱)·3인칭 카메라, 옥상·NPC·흡연·HUD 연결.
+// 이 파일: 렌더러·카툰 후처리·하늘·시간대 빛, 내 아바타 이동(키보드·떠다니는 조이스틱)·3인칭 카메라, 옥상·흡연·HUD 연결.
 // 다른 모듈과는 window 'lounge:*' 이벤트와 ctx 객체로만 주고받는다.
 import {serverReady} from '../server-link-pin.js';   // 맨 먼저: 서버 주소 고르기 시작(공개 파일 multi-server.json을 새로 받음). 같이 피우기는 끝난 뒤 만든다
 import * as THREE from 'three';
@@ -12,7 +12,6 @@ import {createSmoker} from './smoke.js';
 import {createLoungeAudio} from './audio.js';
 import {createHud} from './hud.js';
 import {createMoment} from './moment.js';
-import {createNpcs} from './npc.js';
 import {createInput} from './input.js';
 import {loadProfile,saveProfile} from './profile.js';
 import {loadShared,saveShared,volumeGain} from '../shared-settings.js';
@@ -97,13 +96,10 @@ const sp=rooftop.spots.spawn;player.place(sp.x,sp.z,sp.heading);
 const smoker=createSmoker(player,{toon,world,audio,isPlayer:true,profile});
 player.extra.push((dt)=>smoker.apply(dt,{moving:player.moving}));
 
-// ── 옥상 NPC 4명(미나·지훈·보미·대호): 진짜 사람과 헷갈려 기본은 안 부른다(2026-11-08 대표 요청). ?npc=1 이면 예전처럼 떠들고 피운다.
-const NO_NPCS=Object.freeze({avatars:[],setCollide(){},update(){},social(){return null;},status(){return [];},scene:null});
+// 옥상 NPC 4명(?npc=1로만 켜지던 것)은 11-19 대표 지시로 코드째 지움. 옥상에는 같이 피우는 진짜 사람만 있다.
 const ctx={THREE,scene,camera,renderer,toon,world,rooftop,audio,player,smoker,profile,mobile,dispatch,createAvatar:(o)=>createAvatar({rigUrl:RIG_URL,toon,...o}),createSmoker:(a,o={})=>createSmoker(a,{toon,world,audio,...o}),get env(){return env;}};
-setLoad('옥상 사람들 부르는 중…');
-const npcs=q.get('npc')==='1'?await createNpcs(ctx):NO_NPCS;ctx.npcsOn=npcs!==NO_NPCS;ctx.npcs=npcs;
 
-// ── 충돌: 옥상 경계(상자) 안, 장애물(원·상자) 밖으로 민다. 다른 동동이와도 겹치지 않게.
+// ── 충돌: 옥상 경계(상자) 안, 장애물(원·상자) 밖으로 민다. self가 내가 아니면(자동 걷기 점검 등) 내 몸과도 겹치지 않게.
 const R=.2;
 function collide(x,z,self=player){
  const b=rooftop.bounds;x=Math.min(Math.max(x,b.minX+R),b.maxX-R);z=Math.min(Math.max(z,b.minZ+R),b.maxZ-R);
@@ -112,11 +108,10 @@ function collide(x,z,self=player){
   else{const nx=Math.min(Math.max(x,c.minX),c.maxX),nz=Math.min(Math.max(z,c.minZ),c.maxZ),dx=x-nx,dz=z-nz,d=Math.hypot(dx,dz);
    if(d<R){if(d>1e-6){x=nx+dx/d*R;z=nz+dz/d*R;}else{const o=[[c.minX-R-x,0],[c.maxX+R-x,0],[0,c.minZ-R-z],[0,c.maxZ+R-z]].sort((a,b)=>Math.abs(a[0]+a[1])-Math.abs(b[0]+b[1]))[0];x+=o[0];z+=o[1];}}}
  }
- for(const n of npcs.avatars)if(n!==self){const dx=x-n.x,dz=z-n.z,d=Math.hypot(dx,dz),m=R*2;if(d<m&&d>1e-6){x=n.x+dx/d*m;z=n.z+dz/d*m;}}
  if(self!==player){const dx=x-player.x,dz=z-player.z,d=Math.hypot(dx,dz),m=R*2;if(d<m&&d>1e-6){x=player.x+dx/d*m;z=player.z+dz/d*m;}}
  return {x,z};
 }
-ctx.collide=collide;npcs.setCollide?.(collide);
+ctx.collide=collide;
 
 // ── 입력·카메라(3인칭 뒤 따라가기. 드래그로 돌리기, 휠·핀치로 멀리·가까이)
 const input=createInput({canvas:renderer.domElement,mobile});
@@ -162,7 +157,7 @@ function updateCamera(dt){
 
 // ── HUD(수첩 톤 카드·채팅·흡연 버튼·로비) — 입장 안내를 통과한 뒤에 만든다(이름 정하기보다 안내가 먼저)
 await agePass;
-const hud=createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
+const hud=createHud({ctx,smoker,audio,timeState,TIME_PRESETS,profile,
  onProfile(p){Object.assign(profile,p);saveProfile(profile);if(p.outfit)player.setOutfit(p.outfit);if(p.nickname)player.name=p.nickname;if('muted' in p){audio.setMuted(p.muted);saveShared({sound:!p.muted});}if(p.timeMode){timeState.mode=p.timeMode;}},
  goTo(spot){autoWalk=spot;},
 });
@@ -194,7 +189,7 @@ applyEnvironment();updateCamera(1);
 renderer.setAnimationLoop(()=>{
  const dt=Math.min(.05,clock.getDelta());
  updatePlayer(dt);
- npcs.update(dt);spots.update(dt);multi.update(dt);
+ spots.update(dt);multi.update(dt);
  rooftop.update?.(dt,env,camera);
  const sm=smoker.status?.();audio.update?.(dt,{env,player,draw:sm?.state==='inhale'?sm.draw:0});
  updateCamera(dt);moment.update(dt);
@@ -207,11 +202,11 @@ loading?.classList.add('done');setTimeout(()=>loading?.remove(),700);
 dispatch('lounge:ready',{});
 
 // 진단·자동 점검용(브라우저 콘솔 window.lounge)
-window.lounge={ctx,player,npcs,smoker,hud,rooftop,timeState,cam,spots,scene:sceneCtl,multi,
+window.lounge={ctx,player,smoker,hud,rooftop,timeState,cam,spots,scene:sceneCtl,multi,
  get fps(){return fps;},
  setTime(mode){timeState.mode=mode;applyEnvironment();},
  goTo(spot){autoWalk=spot;},
  teleport(x,z,heading){player.place(x,z,heading);cam.yaw=heading??cam.yaw;},
  setCam(o){Object.assign(cam,o);},
- status(){return {multi:multi.status(),fps:+fps.toFixed(1),player:{x:+player.x.toFixed(2),z:+player.z.toFixed(2),heading:+player.heading.toFixed(2),outfit:player.outfit},smoke:smoker.status?.(),npcs:npcs.status?.(),time:timeState.mode,phase:document.documentElement.dataset.hudTime,calls:renderer.info.render.calls,tris:renderer.info.render.triangles};},
+ status(){return {multi:multi.status(),fps:+fps.toFixed(1),player:{x:+player.x.toFixed(2),z:+player.z.toFixed(2),heading:+player.heading.toFixed(2),outfit:player.outfit},smoke:smoker.status?.(),time:timeState.mode,phase:document.documentElement.dataset.hudTime,calls:renderer.info.render.calls,tris:renderer.info.render.triangles};},
 };

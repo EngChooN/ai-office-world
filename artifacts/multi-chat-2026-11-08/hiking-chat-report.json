@@ -1,0 +1,939 @@
+{
+ "at": "2026-11-19T02:33:08.608Z",
+ "checks": [
+  {
+   "name": "phone-portrait-day 혼자일 때 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "phone-portrait-day 참가 후 💬 버튼 보임",
+   "ok": true
+  },
+  {
+   "name": "phone-portrait-day 💬 버튼 44px 이상·화면 안",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 282,
+    "y": 10,
+    "r": 326,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 104.4375,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "phone-portrait-day 💬 버튼이 상태 칩과 겹치지 않음",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 282,
+    "y": 10,
+    "r": 326,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 104.4375,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "phone-portrait-day 채팅 창이 화면 안",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 784,
+     "r": 390,
+     "b": 844
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-portrait-day 버튼·입력칸 44px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 784,
+     "r": 390,
+     "b": 844
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-portrait-day 입력칸·보내기·✕만(빠른 말 칩 없음)",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 784,
+     "r": 390,
+     "b": 844
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-portrait-day 입력 글자 16px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 784,
+     "r": 390,
+     "b": 844
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-portrait-day 기록에 내 글·상대 글",
+   "ok": true,
+   "info": [
+    "다라정상에서 봐요 ⛰",
+    "나같이 가요"
+   ]
+  },
+  {
+   "name": "phone-portrait-day 말풍선이 생김",
+   "ok": true,
+   "info": [
+    {
+     "t": "다라정상에서 봐요 ⛰",
+     "disp": "none",
+     "tr": ""
+    },
+    {
+     "t": "나같이 가요",
+     "disp": "none",
+     "tr": ""
+    }
+   ]
+  },
+  {
+   "name": "phone-portrait-day 너무 빠르면 '잠깐만요' 안내",
+   "ok": true,
+   "info": "잠깐만요, 조금 천천히"
+  },
+  {
+   "name": "phone-portrait-day 말풍선 4초 뒤 사라짐",
+   "ok": true
+  },
+  {
+   "name": "phone-portrait-day 접힌 뒤 새 글 점",
+   "ok": true
+  },
+  {
+   "name": "phone-portrait-day 나가면 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "phone-portrait-night 혼자일 때 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "phone-portrait-night 참가 후 💬 버튼 보임",
+   "ok": true
+  },
+  {
+   "name": "phone-portrait-night 💬 버튼 44px 이상·화면 안",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 282,
+    "y": 10,
+    "r": 326,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 104.4375,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "phone-portrait-night 💬 버튼이 상태 칩과 겹치지 않음",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 282,
+    "y": 10,
+    "r": 326,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 104.4375,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "phone-portrait-night 채팅 창이 화면 안",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 784,
+     "r": 390,
+     "b": 844
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-portrait-night 버튼·입력칸 44px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 784,
+     "r": 390,
+     "b": 844
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-portrait-night 입력칸·보내기·✕만(빠른 말 칩 없음)",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 784,
+     "r": 390,
+     "b": 844
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-portrait-night 입력 글자 16px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 784,
+     "r": 390,
+     "b": 844
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-portrait-night 기록에 내 글·상대 글",
+   "ok": true,
+   "info": [
+    "다라정상에서 봐요 ⛰",
+    "나같이 가요"
+   ]
+  },
+  {
+   "name": "phone-portrait-night 말풍선이 생김",
+   "ok": true,
+   "info": [
+    {
+     "t": "다라정상에서 봐요 ⛰",
+     "disp": "none",
+     "tr": ""
+    },
+    {
+     "t": "나같이 가요",
+     "disp": "none",
+     "tr": ""
+    }
+   ]
+  },
+  {
+   "name": "phone-portrait-night 너무 빠르면 '잠깐만요' 안내",
+   "ok": true,
+   "info": "잠깐만요, 조금 천천히"
+  },
+  {
+   "name": "phone-portrait-night 말풍선 4초 뒤 사라짐",
+   "ok": true
+  },
+  {
+   "name": "phone-portrait-night 접힌 뒤 새 글 점",
+   "ok": true
+  },
+  {
+   "name": "phone-portrait-night 나가면 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "phone-landscape-day 혼자일 때 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "phone-landscape-day 참가 후 💬 버튼 보임",
+   "ok": true
+  },
+  {
+   "name": "phone-landscape-day 💬 버튼 44px 이상·화면 안",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 736,
+    "y": 10,
+    "r": 780,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 173.0625,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "phone-landscape-day 💬 버튼이 상태 칩과 겹치지 않음",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 736,
+    "y": 10,
+    "r": 780,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 173.0625,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "phone-landscape-day 채팅 창이 화면 안",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 330,
+     "r": 540,
+     "b": 390
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-landscape-day 버튼·입력칸 44px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 330,
+     "r": 540,
+     "b": 390
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-landscape-day 입력칸·보내기·✕만(빠른 말 칩 없음)",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 330,
+     "r": 540,
+     "b": 390
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-landscape-day 입력 글자 16px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 330,
+     "r": 540,
+     "b": 390
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-landscape-day 기록에 내 글·상대 글",
+   "ok": true,
+   "info": [
+    "다라정상에서 봐요 ⛰",
+    "나같이 가요"
+   ]
+  },
+  {
+   "name": "phone-landscape-day 말풍선이 생김",
+   "ok": true,
+   "info": [
+    {
+     "t": "다라정상에서 봐요 ⛰",
+     "disp": "none",
+     "tr": ""
+    },
+    {
+     "t": "나같이 가요",
+     "disp": "none",
+     "tr": ""
+    }
+   ]
+  },
+  {
+   "name": "phone-landscape-day 너무 빠르면 '잠깐만요' 안내",
+   "ok": true,
+   "info": "잠깐만요, 조금 천천히"
+  },
+  {
+   "name": "phone-landscape-day 말풍선 4초 뒤 사라짐",
+   "ok": true
+  },
+  {
+   "name": "phone-landscape-day 접힌 뒤 새 글 점",
+   "ok": true
+  },
+  {
+   "name": "phone-landscape-day 나가면 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "phone-landscape-night 혼자일 때 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "phone-landscape-night 참가 후 💬 버튼 보임",
+   "ok": true
+  },
+  {
+   "name": "phone-landscape-night 💬 버튼 44px 이상·화면 안",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 736,
+    "y": 10,
+    "r": 780,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 173.0625,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "phone-landscape-night 💬 버튼이 상태 칩과 겹치지 않음",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 736,
+    "y": 10,
+    "r": 780,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 173.0625,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "phone-landscape-night 채팅 창이 화면 안",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 330,
+     "r": 540,
+     "b": 390
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-landscape-night 버튼·입력칸 44px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 330,
+     "r": 540,
+     "b": 390
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-landscape-night 입력칸·보내기·✕만(빠른 말 칩 없음)",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 330,
+     "r": 540,
+     "b": 390
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-landscape-night 입력 글자 16px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 330,
+     "r": 540,
+     "b": 390
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "phone-landscape-night 기록에 내 글·상대 글",
+   "ok": true,
+   "info": [
+    "다라정상에서 봐요 ⛰",
+    "나같이 가요"
+   ]
+  },
+  {
+   "name": "phone-landscape-night 말풍선이 생김",
+   "ok": true,
+   "info": [
+    {
+     "t": "다라정상에서 봐요 ⛰",
+     "disp": "none",
+     "tr": ""
+    },
+    {
+     "t": "나같이 가요",
+     "disp": "none",
+     "tr": ""
+    }
+   ]
+  },
+  {
+   "name": "phone-landscape-night 너무 빠르면 '잠깐만요' 안내",
+   "ok": true,
+   "info": "잠깐만요, 조금 천천히"
+  },
+  {
+   "name": "phone-landscape-night 말풍선 4초 뒤 사라짐",
+   "ok": true
+  },
+  {
+   "name": "phone-landscape-night 접힌 뒤 새 글 점",
+   "ok": true
+  },
+  {
+   "name": "phone-landscape-night 나가면 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "pc-day 혼자일 때 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "pc-day 참가 후 💬 버튼 보임",
+   "ok": true
+  },
+  {
+   "name": "pc-day 💬 버튼 44px 이상·화면 안",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 1812,
+    "y": 10,
+    "r": 1856,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 276,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "pc-day 💬 버튼이 상태 칩과 겹치지 않음",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 1812,
+    "y": 10,
+    "r": 1856,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 276,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "pc-day 채팅 창이 화면 안",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 1020,
+     "r": 540,
+     "b": 1080
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "pc-day 버튼·입력칸 44px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 1020,
+     "r": 540,
+     "b": 1080
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "pc-day 입력칸·보내기·✕만(빠른 말 칩 없음)",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 1020,
+     "r": 540,
+     "b": 1080
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "pc-day 입력 글자 16px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 1020,
+     "r": 540,
+     "b": 1080
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "pc-day 입력 중 단축키가 걷기에 안 닿음",
+   "ok": true,
+   "info": 0
+  },
+  {
+   "name": "pc-day 기록에 내 글·상대 글",
+   "ok": true,
+   "info": [
+    "다라정상에서 봐요 ⛰",
+    "나같이 가요"
+   ]
+  },
+  {
+   "name": "pc-day 말풍선이 생김",
+   "ok": true,
+   "info": [
+    {
+     "t": "다라정상에서 봐요 ⛰",
+     "disp": "none",
+     "tr": ""
+    },
+    {
+     "t": "나같이 가요",
+     "disp": "none",
+     "tr": ""
+    }
+   ]
+  },
+  {
+   "name": "pc-day 너무 빠르면 '잠깐만요' 안내",
+   "ok": true,
+   "info": "잠깐만요, 조금 천천히"
+  },
+  {
+   "name": "pc-day 말풍선 4초 뒤 사라짐",
+   "ok": true
+  },
+  {
+   "name": "pc-day 접힌 뒤 새 글 점",
+   "ok": true
+  },
+  {
+   "name": "pc-day 나가면 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "pc-night 혼자일 때 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "pc-night 참가 후 💬 버튼 보임",
+   "ok": true
+  },
+  {
+   "name": "pc-night 💬 버튼 44px 이상·화면 안",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 1812,
+    "y": 10,
+    "r": 1856,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 276,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "pc-night 💬 버튼이 상태 칩과 겹치지 않음",
+   "ok": true,
+   "info": {
+    "w": 44,
+    "h": 44,
+    "x": 1812,
+    "y": 10,
+    "r": 1856,
+    "b": 54,
+    "chip": {
+     "x": 56,
+     "r": 276,
+     "y": 62,
+     "b": 98
+    }
+   }
+  },
+  {
+   "name": "pc-night 채팅 창이 화면 안",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 1020,
+     "r": 540,
+     "b": 1080
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "pc-night 버튼·입력칸 44px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 1020,
+     "r": 540,
+     "b": 1080
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "pc-night 입력칸·보내기·✕만(빠른 말 칩 없음)",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 1020,
+     "r": 540,
+     "b": 1080
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "pc-night 입력 글자 16px 이상",
+   "ok": true,
+   "info": {
+    "panel": {
+     "x": 0,
+     "y": 1020,
+     "r": 540,
+     "b": 1080
+    },
+    "inside": true,
+    "small": 0,
+    "chips": 0,
+    "btns": 2,
+    "font": 16
+   }
+  },
+  {
+   "name": "pc-night 입력 중 단축키가 걷기에 안 닿음",
+   "ok": true,
+   "info": 0
+  },
+  {
+   "name": "pc-night 기록에 내 글·상대 글",
+   "ok": true,
+   "info": [
+    "다라정상에서 봐요 ⛰",
+    "나같이 가요"
+   ]
+  },
+  {
+   "name": "pc-night 말풍선이 생김",
+   "ok": true,
+   "info": [
+    {
+     "t": "다라정상에서 봐요 ⛰",
+     "disp": "none",
+     "tr": ""
+    },
+    {
+     "t": "나같이 가요",
+     "disp": "none",
+     "tr": ""
+    }
+   ]
+  },
+  {
+   "name": "pc-night 너무 빠르면 '잠깐만요' 안내",
+   "ok": true,
+   "info": "잠깐만요, 조금 천천히"
+  },
+  {
+   "name": "pc-night 말풍선 4초 뒤 사라짐",
+   "ok": true
+  },
+  {
+   "name": "pc-night 접힌 뒤 새 글 점",
+   "ok": true
+  },
+  {
+   "name": "pc-night 나가면 💬 숨김",
+   "ok": true
+  },
+  {
+   "name": "콘솔 오류 없음",
+   "ok": true,
+   "info": []
+  }
+ ],
+ "errors": []
+}

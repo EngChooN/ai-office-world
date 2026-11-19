@@ -50,29 +50,36 @@ export function ufPlace(scope,{big=null,small=[],todo=[],labels=new Map()}={}){
  for(const el of scope?.querySelectorAll?.('[data-uf]')??[])if(!seen.has(el)){delete el.dataset.uf;el.style.removeProperty('--uf-k');}
 }
 
-// ── 말하기 줄(세 콘텐츠 공통 모양) ──
-// 아래 한 줄: 빠른 말 칩(누르면 키보드 없이 바로 말함) + ✏️(누르면 입력칸·키보드). 지난 말은 회색 반투명 줄 3개만(나머지는 머리 위 말풍선).
-// PC(마우스)는 열면 입력칸도 같이 보인다. onSay(text) → 보냈으면 true. 돌려준 el은 콘텐츠가 원하는 곳에 붙인다.
+// ── 말하기 줄(세 콘텐츠 공통 모양, 11-19 채팅 통일 · 시안 docs/UI-개선/채팅-통일-시안-v1.html v1.1) ──
+// 열면 화면 맨 아래 한 줄: 입력칸 + 빨간 보내기 + ✕ 닫기 세 개뿐(빠른 말 칩은 없앰). 키보드가 오르면 키보드 바로 위.
+// 지난 말은 줄 위 반투명 띠 최근 3줄(키보드가 오르면 세로 2줄·가로 숨김, CSS). 나머지는 머리 위 말풍선(.uf-bub).
+// 입력칸은 열면 늘 보이고, 휴대폰은 입력칸을 눌러야 키보드가 오른다(PC는 열면 바로 입력칸에).
+// onSay(text) → 보냈으면 true. onClose() → ✕를 눌렀을 때. notice = 처음 열 때 지난 말 자리에 한 번 보이는 회색 안내 줄.
 export const CHAT_LINES=3;
-export function createChatBar({doc=document,win=window,quick=[],onSay=()=>false,maxLength=80,placeholder='한마디 해 보세요',cls=''}={}){
+export function createChatBar({doc=document,win=window,onSay=()=>false,onClose=()=>{},maxLength=80,placeholder='한마디 해 보세요',cls='',notice=''}={}){
  loadCss();
  const el=doc.createElement('section');el.className=`uf-chatbar${cls?' '+cls:''}`;el.hidden=true;el.setAttribute('aria-label','말하기');
  el.innerHTML=`<div class="uf-lines" aria-live="polite"></div>
-<div class="uf-say"><div class="uf-chips" aria-label="빠른 말">${quick.map(t=>`<button type="button" data-say="${esc(t)}">${esc(t)}</button>`).join('')}</div><button type="button" class="uf-pen" aria-label="직접 쓰기" aria-expanded="false">${icon('c-edit',{size:'s',fallback:'✏️'})}</button></div>
-<form class="uf-type" autocomplete="off"><input type="text" name="text" maxlength="${maxLength}" enterkeyhint="send" placeholder="${esc(placeholder)}" autocapitalize="off" spellcheck="false" aria-label="채팅 입력"><button type="submit">보내기</button></form>`;
- const lines=el.querySelector('.uf-lines'),form=el.querySelector('form'),input=form.elements.text,pen=el.querySelector('.uf-pen'),chips=el.querySelector('.uf-chips');
+<form class="uf-type" autocomplete="off"><input type="text" name="text" maxlength="${maxLength}" enterkeyhint="send" placeholder="${esc(placeholder)}" autocapitalize="off" spellcheck="false" aria-label="채팅 입력"><button type="submit" class="uf-send">보내기</button><button type="button" class="uf-close" aria-label="채팅 닫기">${icon('c-close',{size:'s',fallback:'✕'})}</button></form>`;
+ const linesEl=el.querySelector('.uf-lines'),form=el.querySelector('form'),input=form.elements.text;
  const fine=()=>!!win.matchMedia?.('(hover:hover) and (pointer:fine)').matches;
- const setTyping=on=>{el.classList.toggle('typing',!!on);pen.classList.toggle('on',!!on);pen.setAttribute('aria-expanded',String(!!on));};
- pen.addEventListener('click',()=>{const on=!el.classList.contains('typing');setTyping(on);if(on)input.focus();else input.blur();});
- chips.addEventListener('click',e=>{const b=e.target.closest('[data-say]');if(b)onSay(b.dataset.say);});
+ let rows=[],hintText='',hintT=0,noticeLeft=!!notice;
+ const render=()=>{
+  const list=rows.slice(-CHAT_LINES);
+  linesEl.innerHTML=(noticeLeft&&!list.length?`<p class="note">${esc(notice)}</p>`:'')
+   +list.map((r,i)=>`<p class="${r.me?'me':''}${i===0&&list.length>=CHAT_LINES?' old':''}"><b>${esc(r.me?'나':r.name)}</b>${esc(r.text)}</p>`).join('')
+   +(hintText?`<p class="hint" role="status">${esc(hintText)}</p>`:'');
+ };
  form.addEventListener('submit',e=>{e.preventDefault();if(onSay(input.value))input.value='';input.focus();});
+ el.querySelector('.uf-close').addEventListener('click',()=>onClose());
  // 게임 화면을 한 번 누르면 키보드가 내려간다(입력칸 밖을 누르면 blur)
  doc.addEventListener('pointerdown',e=>{if(doc.activeElement===input&&!el.contains(e.target))input.blur();},true);
- return {el,input,form,chips,
-  show(on){el.hidden=!on;if(on)setTyping(fine());else{input.blur();setTyping(false);}},
-  setTyping,
+ return {el,input,form,
+  show(on){const was=!el.hidden;el.hidden=!on;if(on){render();if(fine())input.focus();}else{input.blur();if(was)noticeLeft=false;}}, // 안내 줄은 처음 한 번 열었다 닫으면 끝
   // rows: [{name,text,me}] 최근 것만 그린다
-  lines(rows){lines.innerHTML=rows.slice(-CHAT_LINES).map(r=>`<p class="${r.me?'me':''}"><b>${esc(r.me?'나':r.name)}</b>${esc(r.text)}</p>`).join('');},
+  lines(r){rows=r??[];render();},
+  // 잠깐 보이는 알림 줄(보내기 제한 등)
+  hint(t,ms=2400){hintText=String(t??'');render();clearTimeout(hintT);if(hintText)hintT=setTimeout(()=>{hintText='';render();},ms);},
  };
 }
 

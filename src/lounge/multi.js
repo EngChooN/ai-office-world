@@ -2,14 +2,13 @@
 // 전송·규격은 등산과 같은 파일을 그대로 쓴다(src/multi-transport.js·src/multi-protocol.js, docs/멀티-서버-운영안내.md §3-1·§3-2).
 //  - 서버 주소(?server= → VITE_MULTI_SERVER_URL)가 있으면 WebSocket {experience:'smoking'}, 없으면 BroadcastChannel(gwanak-multi:smoking:방).
 //  - 위치 s {q,z:0,x,y,h,v,f}: 움직이면 10Hz, 서 있으면 1초에 한 번. 순간 이동(자리 옮기기·teleport)이면 f|=FLAG.jump.
-//  - 채팅: HUD가 내는 'lounge:chat' {id:'me'}(각본 대사 scripted는 빼고)를 {t:'c'}로 보낸다. 받은 c는 'lounge:chat' {id,name,text,remote:true}로 흘린다.
+//  - 채팅: HUD가 내는 'lounge:chat' {id:'me'}를 {t:'c'}로 보낸다. 받은 c는 'lounge:chat' {id,name,text,remote:true}로 흘린다.
 //    서버가 되돌려 준 내 글(id===내 ID)은 이미 그렸으니 다시 그리지 않는다.
 //  - 담배: 내 smoke.js가 내는 'lounge:smoke'(isPlayer, id 'me')에서 상태가 바뀔 때만 {t:'lounge:smoke',state,lit}. 받는 쪽이 같은 smoke.js로 손·불씨·연기를 그린다.
 //  - 행동 상태(11-10): spots.act() {p 자세·b 벤치·can 캔·sip 한 모금 횟수}가 바뀔 때만 {t:'act',a}. 받는 쪽은 spots.js createPoser(내 몸과 같은 코드)로
 //    난간 기대기·벤치 걸터앉기·캔(자판기에서 떨어짐·손에 듦·한 모금)을 그린다. 서버가 마지막 act를 기억해 중간에 온 사람·다시 붙은 뒤에도 보인다.
 //    전에는 위치(앉음 표시 FLAG.sit은 그리지도 않음)와 담배만 보내 상대 화면에서는 그냥 서 있었다.
 //  - 다른 사람 몸: 동동이 그대로 + 회사원 옷(outfit.js). 상대가 고른 옷은 아직 보내지 않고 ID로 결정적으로 고른다(remoteOutfit).
-//  - NPC 4명은 사람이 들어와도 그대로 둔다(기본값). NPC는 사람 채팅에도 가끔 대답한다(npc.js REMOTE_REACT).
 // 화면(참가 카드·상태 칩·이름표)은 multi-ui.js. 이 파일과는 'lounge:multi-status' 이벤트와 반환 객체로 만난다.
 import {createWebSocketTransport,createBroadcastTransport,multiServerUrl,createBackgroundTimer} from '../multi-transport.js';
 import {anonymousName,sanitizeName,createInterpolator,decodeState,FLAG,NET,findServer,PRESENCE,createPresence,sanitizeAct} from '../multi-protocol.js';
@@ -32,7 +31,7 @@ const hash=s=>{let h=2166136261;for(const c of String(s)){h^=c.charCodeAt(0);h=M
 const OUTFIT_KEYS=Object.keys(OUTFITS);
 // 상대 옷: ID로 정해지는 회사원 옷 4종 중 하나(같은 사람은 어느 화면에서나 같은 옷)
 export const remoteOutfit=id=>OUTFIT_KEYS[hash(id)%OUTFIT_KEYS.length];
-// 다른 사람 아바타 ID(NPC id·'me'와 겹치지 않게)
+// 다른 사람 아바타 ID('me'와 겹치지 않게)
 export const avatarId=id=>`p:${id}`;
 
 // 주소에서 참가 설정: ?multi=방(있으면 바로 참가) &name= &server=. 서버 주소 규칙은 등산과 같다.
@@ -81,7 +80,7 @@ export function loungeStatusView(d={}){
    :d.room&&!findServer('smoking',d.room)
    ?{tone:'warn',ic:'c-net-other',text:`다른 방 · ${n||1}명`,short:`${n||1}`,sub:`'${d.room}' · 서버 고르기와 따로`,action:null}
    :{tone:'ok',ic:'c-net-ok',text:`같이 피우는 중 · ${n||1}명`,short:`${n||1}`,sub:where,action:null};
-  case 'reconnecting':return {tone:'warn',ic:'c-net-retry',text:'다시 연결 중…',short:'…',sub:'옥상 NPC랑은 계속 놀 수 있어요',action:null};
+  case 'reconnecting':return {tone:'warn',ic:'c-net-retry',text:'다시 연결 중…',short:'…',sub:'잠깐이면 다시 이어져요',action:null};
   case 'offline':return {tone:'bad',ic:'c-net-lost',text:'연결 끊김',short:'!',sub:'눌러서 다시 연결해요',action:'retry'};
   case 'full':return {tone:'warn',ic:'c-net-full',text:'방금 꽉 찼어요',short:'꽉',sub:'다른 서버를 골라 주세요',action:'other'};
   default:return null;
@@ -194,11 +193,11 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
  }
 
  // ── 보내기
- // 내 채팅: HUD 입력·이모트가 낸 id:'me' 채팅(NPC 대화 칩의 각본 대사는 그 화면 NPC 맥락이라 보내지 않는다)
+ // 내 채팅: HUD 입력이 낸 id:'me' 채팅
  const onChat=e=>{
-  const d=e.detail??{};if(d.id!==ctx.player.id||d.scripted||d.remote||d.emote||!joined)return; // 인사(emote)는 act e·en으로(아래 onEmote)
+  const d=e.detail??{};if(d.id!==ctx.player.id||d.remote||d.emote||!joined)return; // 인사(emote)는 act e·en으로(아래 onEmote)
   const text=String(d.text??'').trim();if(!text)return;
-  if(!online()){dispatch('lounge:multi-note',{text:'아직 연결 전이라 옥상 NPC만 들었어요'});return;}
+  if(!online()){dispatch('lounge:multi-note',{text:'아직 연결 전이라 보내지 못했어요'});return;}
   stats.chatsSent++;send({t:'c',id:myId,text});
  };
  // 내 담배: 상태가 바뀔 때만
@@ -215,7 +214,8 @@ export function createLoungeMulti({ctx,spots=null,search=globalThis.location?.se
   lastAct=sig;stats.actsSent++;send({t:'act',id:myId,a});
  }
  const onSmoke=e=>{const d=e.detail??{};if(d.id!==ctx.player.id||!d.isPlayer)return;const st=String(d.state);sendSmoke(st,!!d.lit,false,d.kind??null,(st==='exhale'||st==='trick')?d.trick??null:null);};
- const onEmote=e=>{const k=e.detail?.emote;if(!['wave','sigh','stretch'].includes(k))return;lastEmote=k;emoteN++;stats.emotesSent++;sendAct();};
+ const onEmote=e=>{const k=e.detail?.emote;if(k!=='wave')return; // 11-19: 한숨·기지개 없앰(받기는 hud.js가 예전 사람 것도 그림)
+ lastEmote=k;emoteN++;stats.emotesSent++;sendAct();};
  // 자리(난간·벤치)에 들어가고 나올 때는 몸을 옮기므로 순간 이동으로 보낸다
  const onSpot=e=>{const d=e.detail??{};if(d.id===ctx.player.id&&(d.state==='enter'||d.state==='leave'))jumpNext=true;};
  win?.addEventListener?.('lounge:chat',onChat);win?.addEventListener?.('lounge:smoke',onSmoke);win?.addEventListener?.('lounge:spot',onSpot);win?.addEventListener?.('lounge:emote',onEmote);

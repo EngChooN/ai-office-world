@@ -1,0 +1,1173 @@
+{
+ "smoking-portrait-base": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 94.8,
+  "uiPct": 5.2,
+  "visiblePct": 94.8,
+  "freePct": 75.4,
+  "btnCount": 6,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "꺼내기",
+   "uf": "big",
+   "sheet": false,
+   "x": 298,
+   "y": 740,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  },
+  "bar": null
+ },
+ "smoking-portrait-chat": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 90.5,
+  "uiPct": 9.5,
+  "visiblePct": 90.5,
+  "freePct": 86.7,
+  "btnCount": 6,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60,
+   "bottomGap": 0,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 3.4,
+   "lines": 3,
+   "ufShown": [],
+   "bubble": {
+    "cls": "uf-bub lg-bub on out",
+    "font": "14px",
+    "weight": "800",
+    "border": "2px",
+    "radius": "14px",
+    "max": "234px"
+   },
+   "kbTop": null
+  }
+ },
+ "smoking-portrait-chat-kb": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 57.2,
+  "uiPct": 42.8,
+  "visiblePct": 57.2,
+  "freePct": 52.6,
+  "btnCount": 4,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 493,
+   "w": 390,
+   "h": 60,
+   "bottomGap": 291,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 2.6,
+   "lines": 2,
+   "ufShown": [],
+   "bubble": null,
+   "kbTop": 553
+  }
+ },
+ "smoking-portrait-lit": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 94.1,
+  "uiPct": 5.9,
+  "visiblePct": 94.1,
+  "freePct": 72,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "꾹 눌러 들이마시기",
+   "uf": "big",
+   "sheet": false,
+   "x": 298,
+   "y": 740,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  },
+  "bar": null
+ },
+ "smoking-portrait-lit-chat": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 90.5,
+  "uiPct": 9.5,
+  "visiblePct": 90.5,
+  "freePct": 86.7,
+  "btnCount": 6,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60,
+   "bottomGap": 0,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 3.4,
+   "lines": 3,
+   "ufShown": [],
+   "bubble": null,
+   "kbTop": null
+  }
+ },
+ "smoking-portrait-menu": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 54.8,
+  "uiPct": 45.2,
+  "visiblePct": 54.8,
+  "freePct": 50.7,
+  "btnCount": 15,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null,
+  "bar": null
+ },
+ "smoking-landscape-base": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 94.7,
+  "uiPct": 5.3,
+  "visiblePct": 94.7,
+  "freePct": 70.3,
+  "btnCount": 6,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "꺼내기",
+   "uf": "big",
+   "sheet": false,
+   "x": 752,
+   "y": 298,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  },
+  "bar": null
+ },
+ "smoking-landscape-chat": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 87.7,
+  "uiPct": 12.3,
+  "visiblePct": 87.7,
+  "freePct": 70.4,
+  "btnCount": 6,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 330,
+   "w": 540,
+   "h": 60,
+   "bottomGap": 0,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 3.4,
+   "lines": 3,
+   "ufShown": [],
+   "bubble": {
+    "cls": "uf-bub lg-bub on out",
+    "font": "14px",
+    "weight": "800",
+    "border": "2px",
+    "radius": "14px",
+    "max": "240px"
+   },
+   "kbTop": null
+  }
+ },
+ "smoking-landscape-chat-kb": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 32.1,
+  "uiPct": 67.9,
+  "visiblePct": 32.1,
+  "freePct": 26.9,
+  "btnCount": 4,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 130,
+   "w": 844,
+   "h": 60,
+   "bottomGap": 200,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 0,
+   "lines": 0,
+   "ufShown": [],
+   "bubble": null,
+   "kbTop": 190
+  }
+ },
+ "smoking-landscape-lit": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 94.1,
+  "uiPct": 5.9,
+  "visiblePct": 94.1,
+  "freePct": 70.3,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "꾹 눌러 들이마시기",
+   "uf": "big",
+   "sheet": false,
+   "x": 752,
+   "y": 298,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  },
+  "bar": null
+ },
+ "smoking-landscape-lit-chat": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 87.7,
+  "uiPct": 12.3,
+  "visiblePct": 87.7,
+  "freePct": 70.4,
+  "btnCount": 6,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 330,
+   "w": 540,
+   "h": 60,
+   "bottomGap": 0,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 3.4,
+   "lines": 3,
+   "ufShown": [],
+   "bubble": null,
+   "kbTop": null
+  }
+ },
+ "smoking-landscape-menu": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 58.6,
+  "uiPct": 41.4,
+  "visiblePct": 58.6,
+  "freePct": 52.4,
+  "btnCount": 13,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null,
+  "bar": null
+ },
+ "hiking-portrait-base": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 90.9,
+  "uiPct": 9.1,
+  "visiblePct": 90.9,
+  "freePct": 60.2,
+  "btnCount": 11,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "자동 걷기 켜기 (R)",
+   "uf": "big",
+   "sheet": false,
+   "x": 298,
+   "y": 740,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  },
+  "bar": null
+ },
+ "hiking-portrait-chat": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 88.2,
+  "uiPct": 11.8,
+  "visiblePct": 88.2,
+  "freePct": 81.5,
+  "btnCount": 9,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60,
+   "bottomGap": 0,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 3.4,
+   "lines": 3,
+   "ufShown": [],
+   "bubble": {
+    "cls": "uf-bub hc-bub on",
+    "font": "14px",
+    "weight": "800",
+    "border": "2px",
+    "radius": "14px",
+    "max": "234px"
+   },
+   "kbTop": null
+  }
+ },
+ "hiking-portrait-chat-kb": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 55,
+  "uiPct": 45,
+  "visiblePct": 55,
+  "freePct": 46.9,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 493,
+   "w": 390,
+   "h": 60,
+   "bottomGap": 291,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 2.6,
+   "lines": 2,
+   "ufShown": [],
+   "bubble": null,
+   "kbTop": 553
+  }
+ },
+ "hiking-portrait-menu": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 45.6,
+  "uiPct": 54.4,
+  "visiblePct": 45.6,
+  "freePct": 38.4,
+  "btnCount": 14,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null,
+  "bar": null
+ },
+ "hiking-landscape-base": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 89.9,
+  "uiPct": 10.1,
+  "visiblePct": 89.9,
+  "freePct": 60.5,
+  "btnCount": 11,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "자동 걷기 켜기 (R)",
+   "uf": "big",
+   "sheet": false,
+   "x": 752,
+   "y": 298,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  },
+  "bar": null
+ },
+ "hiking-landscape-chat": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 84.3,
+  "uiPct": 15.7,
+  "visiblePct": 84.3,
+  "freePct": 59.2,
+  "btnCount": 9,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 330,
+   "w": 540,
+   "h": 60,
+   "bottomGap": 0,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 3.4,
+   "lines": 3,
+   "ufShown": [],
+   "bubble": {
+    "cls": "uf-bub hc-bub on",
+    "font": "14px",
+    "weight": "800",
+    "border": "2px",
+    "radius": "14px",
+    "max": "240px"
+   },
+   "kbTop": null
+  }
+ },
+ "hiking-landscape-chat-kb": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 28.7,
+  "uiPct": 71.3,
+  "visiblePct": 28.7,
+  "freePct": 21.4,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 130,
+   "w": 844,
+   "h": 60,
+   "bottomGap": 200,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 0,
+   "lines": 0,
+   "ufShown": [],
+   "bubble": null,
+   "kbTop": 190
+  }
+ },
+ "hiking-landscape-menu": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 55.2,
+  "uiPct": 44.8,
+  "visiblePct": 55.2,
+  "freePct": 45.1,
+  "btnCount": 14,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-sheet"
+  ],
+  "big": null,
+  "bar": null
+ },
+ "christmas-portrait-base": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 95.9,
+  "uiPct": 4.1,
+  "visiblePct": 95.9,
+  "freePct": 81.5,
+  "btnCount": 5,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "달리기",
+   "uf": "big",
+   "sheet": false,
+   "x": 298,
+   "y": 740,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  },
+  "bar": null
+ },
+ "christmas-portrait-chat": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 90.3,
+  "uiPct": 9.7,
+  "visiblePct": 90.3,
+  "freePct": 86.7,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60,
+   "bottomGap": 0,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 3.4,
+   "lines": 3,
+   "ufShown": [],
+   "bubble": {
+    "cls": "uf-bub hc-bub on",
+    "font": "14px",
+    "weight": "800",
+    "border": "2px",
+    "radius": "14px",
+    "max": "234px"
+   },
+   "kbTop": null
+  }
+ },
+ "christmas-portrait-chat-kb": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 57.5,
+  "uiPct": 42.5,
+  "visiblePct": 57.5,
+  "freePct": 52.6,
+  "btnCount": 4,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 493,
+   "w": 390,
+   "h": 60,
+   "bottomGap": 291,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 2.6,
+   "lines": 2,
+   "ufShown": [],
+   "bubble": null,
+   "kbTop": 553
+  }
+ },
+ "christmas-portrait-fight": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 91.7,
+  "uiPct": 8.3,
+  "visiblePct": 91.7,
+  "freePct": 59.2,
+  "btnCount": 9,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "던지기",
+   "uf": "big",
+   "sheet": false,
+   "x": 298,
+   "y": 740,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  },
+  "bar": null
+ },
+ "christmas-portrait-fight-chat": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 90.3,
+  "uiPct": 9.7,
+  "visiblePct": 90.3,
+  "freePct": 86.7,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 784,
+   "w": 390,
+   "h": 60,
+   "bottomGap": 0,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 3.4,
+   "lines": 3,
+   "ufShown": [],
+   "bubble": null,
+   "kbTop": null
+  }
+ },
+ "christmas-portrait-map": {
+  "W": 390,
+  "H": 844,
+  "visibleNoLinesPct": 48.1,
+  "uiPct": 51.9,
+  "visiblePct": 48.1,
+  "freePct": 44.1,
+  "btnCount": 16,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "xt-map"
+  ],
+  "big": null,
+  "bar": null
+ },
+ "christmas-landscape-base": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 95.9,
+  "uiPct": 4.1,
+  "visiblePct": 95.9,
+  "freePct": 77.3,
+  "btnCount": 5,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "달리기",
+   "uf": "big",
+   "sheet": false,
+   "x": 752,
+   "y": 298,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  },
+  "bar": null
+ },
+ "christmas-landscape-chat": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 87.6,
+  "uiPct": 12.4,
+  "visiblePct": 87.6,
+  "freePct": 70.4,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 330,
+   "w": 540,
+   "h": 60,
+   "bottomGap": 0,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 3.4,
+   "lines": 3,
+   "ufShown": [],
+   "bubble": {
+    "cls": "uf-bub hc-bub on",
+    "font": "14px",
+    "weight": "800",
+    "border": "2px",
+    "radius": "14px",
+    "max": "240px"
+   },
+   "kbTop": null
+  }
+ },
+ "christmas-landscape-chat-kb": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 32.4,
+  "uiPct": 67.6,
+  "visiblePct": 32.4,
+  "freePct": 27.9,
+  "btnCount": 4,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 130,
+   "w": 844,
+   "h": 60,
+   "bottomGap": 200,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 0,
+   "lines": 0,
+   "ufShown": [],
+   "bubble": null,
+   "kbTop": 190
+  }
+ },
+ "christmas-landscape-fight": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 91.6,
+  "uiPct": 8.4,
+  "visiblePct": 91.6,
+  "freePct": 70.3,
+  "btnCount": 9,
+  "overlaps": [],
+  "covered": [],
+  "wins": [],
+  "big": {
+   "t": "던지기",
+   "uf": "big",
+   "sheet": false,
+   "x": 752,
+   "y": 298,
+   "w": 76,
+   "h": 76,
+   "covered": null
+  },
+  "bar": null
+ },
+ "christmas-landscape-fight-chat": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 87.6,
+  "uiPct": 12.4,
+  "visiblePct": 87.6,
+  "freePct": 70.4,
+  "btnCount": 7,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "uf-chatbar"
+  ],
+  "big": null,
+  "bar": {
+   "x": 0,
+   "y": 330,
+   "w": 540,
+   "h": 60,
+   "bottomGap": 0,
+   "parts": [
+    "입력칸",
+    "보내기",
+    "닫기"
+   ],
+   "chips": 0,
+   "small": 0,
+   "linesPct": 3.4,
+   "lines": 3,
+   "ufShown": [],
+   "bubble": null,
+   "kbTop": null
+  }
+ },
+ "christmas-landscape-map": {
+  "W": 844,
+  "H": 390,
+  "visibleNoLinesPct": 58.9,
+  "uiPct": 41.1,
+  "visiblePct": 58.9,
+  "freePct": 52.4,
+  "btnCount": 13,
+  "overlaps": [],
+  "covered": [],
+  "wins": [
+   "xt-map"
+  ],
+  "big": null,
+  "bar": null
+ },
+ "table": [
+  {
+   "key": "smoking-portrait-base",
+   "visible": 94.8,
+   "linesPct": null,
+   "design": 93.1,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "smoking-portrait-chat",
+   "visible": 90.5,
+   "linesPct": 3.4,
+   "design": 90.3,
+   "lines": 3,
+   "ok": true
+  },
+  {
+   "key": "smoking-portrait-chat-kb",
+   "visible": 57.2,
+   "linesPct": 2.6,
+   "design": 58.5,
+   "lines": 2,
+   "ok": true
+  },
+  {
+   "key": "smoking-portrait-lit",
+   "visible": 94.1,
+   "linesPct": null,
+   "design": null,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "smoking-portrait-lit-chat",
+   "visible": 90.5,
+   "linesPct": 3.4,
+   "design": 90.3,
+   "lines": 3,
+   "ok": true
+  },
+  {
+   "key": "smoking-portrait-menu",
+   "visible": 54.8,
+   "linesPct": null,
+   "design": null,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "smoking-landscape-base",
+   "visible": 94.7,
+   "linesPct": null,
+   "design": 93.2,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "smoking-landscape-chat",
+   "visible": 87.7,
+   "linesPct": 3.4,
+   "design": 87.5,
+   "lines": 3,
+   "ok": true
+  },
+  {
+   "key": "smoking-landscape-chat-kb",
+   "visible": 32.1,
+   "linesPct": 0,
+   "design": 33.3,
+   "lines": 0,
+   "ok": true
+  },
+  {
+   "key": "smoking-landscape-lit",
+   "visible": 94.1,
+   "linesPct": null,
+   "design": null,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "smoking-landscape-lit-chat",
+   "visible": 87.7,
+   "linesPct": 3.4,
+   "design": 87.5,
+   "lines": 3,
+   "ok": true
+  },
+  {
+   "key": "smoking-landscape-menu",
+   "visible": 58.6,
+   "linesPct": null,
+   "design": null,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "hiking-portrait-base",
+   "visible": 90.9,
+   "linesPct": null,
+   "design": 90.6,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "hiking-portrait-chat",
+   "visible": 88.2,
+   "linesPct": 3.4,
+   "design": 89,
+   "lines": 3,
+   "ok": true
+  },
+  {
+   "key": "hiking-portrait-chat-kb",
+   "visible": 55,
+   "linesPct": 2.6,
+   "design": 58.3,
+   "lines": 2,
+   "ok": true
+  },
+  {
+   "key": "hiking-portrait-menu",
+   "visible": 45.6,
+   "linesPct": null,
+   "design": null,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "hiking-landscape-base",
+   "visible": 89.9,
+   "linesPct": null,
+   "design": 90.6,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "hiking-landscape-chat",
+   "visible": 84.3,
+   "linesPct": 3.4,
+   "design": 86.3,
+   "lines": 3,
+   "ok": true
+  },
+  {
+   "key": "hiking-landscape-chat-kb",
+   "visible": 28.7,
+   "linesPct": 0,
+   "design": 33.3,
+   "lines": 0,
+   "ok": true
+  },
+  {
+   "key": "hiking-landscape-menu",
+   "visible": 55.2,
+   "linesPct": null,
+   "design": null,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "christmas-portrait-base",
+   "visible": 95.9,
+   "linesPct": null,
+   "design": 90.4,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "christmas-portrait-chat",
+   "visible": 90.3,
+   "linesPct": 3.4,
+   "design": 89,
+   "lines": 3,
+   "ok": true
+  },
+  {
+   "key": "christmas-portrait-chat-kb",
+   "visible": 57.5,
+   "linesPct": 2.6,
+   "design": 58.3,
+   "lines": 2,
+   "ok": true
+  },
+  {
+   "key": "christmas-portrait-fight",
+   "visible": 91.7,
+   "linesPct": null,
+   "design": null,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "christmas-portrait-fight-chat",
+   "visible": 90.3,
+   "linesPct": 3.4,
+   "design": 89,
+   "lines": 3,
+   "ok": true
+  },
+  {
+   "key": "christmas-portrait-map",
+   "visible": 48.1,
+   "linesPct": null,
+   "design": null,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "christmas-landscape-base",
+   "visible": 95.9,
+   "linesPct": null,
+   "design": 90.4,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "christmas-landscape-chat",
+   "visible": 87.6,
+   "linesPct": 3.4,
+   "design": 86.2,
+   "lines": 3,
+   "ok": true
+  },
+  {
+   "key": "christmas-landscape-chat-kb",
+   "visible": 32.4,
+   "linesPct": 0,
+   "design": 33.3,
+   "lines": 0,
+   "ok": true
+  },
+  {
+   "key": "christmas-landscape-fight",
+   "visible": 91.6,
+   "linesPct": null,
+   "design": null,
+   "lines": null,
+   "ok": true
+  },
+  {
+   "key": "christmas-landscape-fight-chat",
+   "visible": 87.6,
+   "linesPct": 3.4,
+   "design": 86.2,
+   "lines": 3,
+   "ok": true
+  },
+  {
+   "key": "christmas-landscape-map",
+   "visible": 58.9,
+   "linesPct": null,
+   "design": null,
+   "lines": null,
+   "ok": true
+  }
+ ],
+ "fails": []
+}

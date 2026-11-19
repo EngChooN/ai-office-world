@@ -1,4 +1,4 @@
-// 흡연장 11-13 점검: 입장 안내(태어난 해)·벤치 앉기 자세·일어나기 단추 자리·NPC 앉기.
+// 흡연장 11-13 점검: 입장 안내(태어난 해)·벤치 앉기 자세·일어나기 단추 자리. (NPC 앉기는 11-19 NPC 삭제로 뺌)
 // node scripts/verify-lounge-sit-age.mjs [기본주소 http://127.0.0.1:5180] → artifacts/smoking/sit-age-2026-11-13/*.png + result.json
 import {chromium} from 'playwright';
 import {mkdirSync,writeFileSync} from 'node:fs';
@@ -84,26 +84,6 @@ for(const [w,h,bi] of [[1920,1080,1],[390,844,0],[844,390,1]]){
  R.sit[`${w}x${h}`]=r;await ctx.close();
 }
 
-// 4) NPC(?npc=1)가 벤치에 앉으면 같은 자세
-{
- const {ctx,page}=await open(1280,800,{query:'npc=1',init:INIT});
- await page.waitForFunction(()=>window.lounge,null,{timeout:60000});
- const t0=Date.now();let npc=null;
- while(Date.now()-t0<90000){npc=await page.evaluate(()=>window.lounge.npcs.status().find(n=>n.pose==='sit'));if(npc)break;await page.waitForTimeout(1000);}
- if(npc){await page.waitForTimeout(1200);
-  R.npc=await page.evaluate(async id=>{const L=window.lounge,n=L.npcs.avatars.find(a=>a.id===id)??L.npcs.avatars.find(a=>Math.hypot(a.x-L.npcs.status().find(s=>s.id===id).x,a.z-L.npcs.status().find(s=>s.id===id).z)<.01);
-   const m=n.hiker.model,V=L.ctx.THREE.Vector3,W=k=>m.getObjectByName('mixamorig'+k).getWorldPosition(new V());
-   const b=L.rooftop.spots.benches.reduce((p,c)=>Math.hypot(c.seat.x-n.x,c.seat.z-n.z)<Math.hypot(p.seat.x-n.x,p.seat.z-n.z)?c:p);
-   const h=b.heading,fx=-Math.sin(h),fz=-Math.cos(h),ax=-Math.cos(h),az=Math.sin(h); // 벤치 앞·옆 방향
-   L.teleport(b.seat.x+fx*.8+ax*1.1,b.seat.z+fz*.8+az*1.1,h);L.setCam({yaw:h+Math.PI-.35,dist:3.6,pitch:.3});
-   await new Promise(r=>setTimeout(r,900));
-   const k=W('LeftLeg'),hp=W('LeftUpLeg'),f=W('LeftFoot'),th=k.clone().sub(hp).normalize(),sh=f.clone().sub(k).normalize();
-   const marks=[...document.querySelectorAll('.sp-mark')].filter(e=>e.style.visibility!=='hidden').map(e=>e.dataset.k);
-   return {id,hipsY:+W('Hips').y.toFixed(3),knee:Math.round(Math.acos(th.dot(sh))*180/Math.PI),marks};},npc.id);
-  await page.screenshot({path:`${OUT}/npc-sit.png`});}
- else R.npc={found:false};
- await ctx.close();
-}
 R.errors=errors;
 writeFileSync(`${OUT}/result.json`,JSON.stringify(R,null,1));console.log(JSON.stringify(R,null,1));
 await browser.close();

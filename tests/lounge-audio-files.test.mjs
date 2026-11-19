@@ -136,7 +136,7 @@ test('지직은 cig-burn 반복 하나를 draw로 키우고 줄인다',async()=>
  a.dispose();
 });
 
-test('NPC 소리는 거리로 줄고, 멀면 건너뛴다',async()=>{
+test('다른 사람 담배 소리는 거리로 줄고, 멀면 건너뛴다',async()=>{
  const {a,log}=setup();a.unlock();await a.ready();
  a.update(.1,{player:{x:0,z:0,heading:0}});
  assert.equal(a.play('exhale',{at:{x:20,z:0},quality:'sweet'}),false,'반경 밖');

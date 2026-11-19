@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {cleanText,pushLog,chatRow,limitText,installHikingChat,QUICK,LOG_MAX,TEXT_MAX,BUBBLE_MS,LIMIT_TEXT} from '../src/hiking-chat-ui.js';
+import {cleanText,pushLog,chatRow,limitText,installHikingChat,LOG_MAX,TEXT_MAX,BUBBLE_MS,LIMIT_TEXT} from '../src/hiking-chat-ui.js';
 
 // 등산 채팅 HUD 이벤트 계약(산디자인, 2026-11-08). 연결 쪽(multi-client.js)과는 window 이벤트로만 만난다.
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
@@ -21,8 +21,7 @@ test('받은 채팅 → 기록 줄: 이름이 비면 등산객, 글이 비면 �
  assert.equal(chatRow({id:'a',name:'',text:'x'}).name,'등산객');
  assert.equal(chatRow({id:'a',text:'   '}),null);assert.equal(chatRow(null),null);
 });
-test('빠른 말 칩은 4~6개, 안내 문구', () => {
- assert.ok(QUICK.length>=4&&QUICK.length<=6);assert.ok(QUICK.every(t=>[...t].length<=TEXT_MAX));
+test('안내 문구·말풍선 4초', () => {
  assert.equal(limitText('rate'),'잠깐만요, 조금 천천히');assert.equal(limitText('offline'),LIMIT_TEXT.offline);assert.equal(limitText('?'),'잠깐만요, 조금 천천히');
  assert.equal(BUBBLE_MS,4000);
 });
@@ -35,16 +34,16 @@ test('연결 규약: 이벤트 이름이 multi-client와 같다', () => {
  for(const ev of ['hiking:chat-send','hiking:chat','hiking:chat-limit'])assert.ok(mc.includes(`'${ev}'`),ev);
  assert.match(mc,/screenPos/);assert.match(ui,/screenPos/);
 });
-test('입력 중 단축키 막기·visualViewport·16px 입력·44px', () => {
- const ui=read('../src/hiking-chat-ui.js'),css=read('../src/hiking-chat-ui.css');
- assert.match(ui,/stopPropagation/);assert.match(ui,/visualViewport/);
- assert.match(css,/\.hc-form input\{[^}]*font:700 16px/);
- for(const sel of ['.hc-btn','.hc-x','.hc-chip','.hc-send'])assert.match(css,new RegExp(`\\${sel}\\{[^}]*(height|min-height):44px`),sel);
- assert.match(css,/\.hc-form input\{[^}]*min-height:44px/);
+test('입력 중 단축키 막기·공통 말하기 줄(입력칸·보내기·✕만, 빠른 말 칩 없음)·16px 입력·44px', () => {
+ const ui=read('../src/hiking-chat-ui.js'),fr=read('../src/ui-frame.js'),css=read('../src/ui-frame.css');
+ assert.match(ui,/stopPropagation/);assert.match(ui,/createChatBar\(/);assert.match(fr,/visualViewport/);
+ assert.doesNotMatch(ui+fr,/data-say|uf-chips|uf-pen|QUICK/);
+ assert.match(css,/\.uf-type input\{[^}]*font:600 16px/);
+ for(const sel of ['.uf-type input','.uf-send','.uf-close'])assert.match(css,new RegExp(`\\${sel.replace(' ','\\s')}\\{[^}]*(height|min-height):44px`),sel);
 });
-test('일시정지 없음·낮노을밤 토큰·main.js가 불러옴', () => {
- const ui=read('../src/hiking-chat-ui.js'),css=read('../src/hiking-chat-ui.css'),main=read('../src/main.js');
+test('일시정지 없음·낮노을밤 토큰·공통 말풍선·main.js가 불러옴', () => {
+ const ui=read('../src/hiking-chat-ui.js'),css=read('../src/hiking-chat-ui.css'),fr=read('../src/ui-frame.css'),main=read('../src/main.js');
  assert.doesNotMatch(ui+css,/일시정지|계속하기/);
- assert.match(css,/var\(--paper/);assert.match(css,/var\(--bub/);
+ assert.match(css,/var\(--paper/);assert.match(fr,/\.uf-bub\{[^}]*var\(--bub/);assert.match(ui,/'uf-bub hc-bub'/);
  assert.match(main,/hiking-chat-ui\.js/);
 });

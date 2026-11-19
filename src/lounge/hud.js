@@ -1,6 +1,6 @@
-// HUD: 로비·수첩 카드·흡연 버튼·재떨이로 가기·채팅창+말풍선·이모트·설정. 모양은 hud.css(등산 수첩 종이 톤).
-// 함께 단추(불 빌리기·한 대 권하기·받기·수다 대답 칩)는 npcs.social()을 읽어 띄우고 npcs.borrowLight·offerCig·acceptCig·choose를 부른다.
-// 다른 모듈과는 ctx·window 이벤트로만: 'lounge:chat' {id,name,text}(받기·보내기), 'lounge:emote' {emote}(내가 이모트), 'lounge:smoke'(흡연 쪽이 보냄).
+// HUD: 로비·수첩 카드·흡연 버튼·재떨이로 가기·말하기 줄+말풍선·인사·설정. 모양은 hud.css(등산 수첩 종이 톤) + 공통 틀 ui-frame.css.
+// 다른 모듈과는 ctx·window 이벤트로만: 'lounge:chat' {id,name,text}(받기·보내기), 'lounge:emote' {emote:'wave'}(내 인사), 'lounge:smoke'(흡연 쪽이 보냄).
+// 11-19: 옥상 NPC(?npc=1)와 NPC 전용 함께 단추(불 빌리기·맞불·한 대 권하기·받기·수다 대답 칩)는 대표 지시로 코드째 지움. 한숨·기지개 동작도 지움(인사 👋만).
 import './hud.css';
 import '../ui-frame.css';   // 11-18 공통 화면 틀
 import '../icons/icons.css';   // 아이콘 공통 모양(아이콘-규칙-v1)
@@ -18,12 +18,14 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const today=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10); // 서울 날짜
 const won=n=>n.toLocaleString('ko-KR')+'원';
 // 인사 단추 그림은 누르면 그 글자가 채팅·말풍선으로 나가므로 이모지 그대로 둔다(아이콘-규칙-v1 §10 「흡연장 인사 단추 그림은 1차에서 그대로」)
-// 11-18 UI 개선: 말하기 줄 빠른 말(인사 단추 말고 나머지 이모트도 이 줄의 칩으로 들어간다)
-const QUICK=['안녕하세요','불 좀 빌려도 될까요?','수고 많으세요','잠깐 쉬어요'];
-const EMOTES=[{k:'wave',i:'👋',t:'인사'},{k:'sigh',i:'😮‍💨',t:'한숨'},{k:'stretch',i:'🙆',t:'기지개'}];
+// 11-19 채팅 통일: 빠른 말 칩·한숨·기지개는 없앰. 인사는 담배 불붙이기 전 행동 원 작은 「인사」 단추에만.
+const EMOTES=[{k:'wave',i:'👋',t:'인사'}];
+// 아직 새 화면을 받지 않은 사람(예전 배포판)이 보낸 한숨·기지개도 말풍선은 그대로 보여 준다
+const REMOTE_EMOJI=Object.freeze({wave:'👋',sigh:'😮‍💨',stretch:'🙆'});
+export const BUBBLE_SECS=4; // 머리 위 말풍선(세 콘텐츠 공통 .uf-bub, 4초)
 const TIMES=[['auto','지금'],['day','낮'],['dusk','노을'],['night','밤']];
 
-export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,onProfile,goTo}){
+export function createHud({ctx,smoker,audio,timeState,TIME_PRESETS,profile,onProfile,goTo}){
  const root=document.getElementById('app')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'app'}));
  const THREE=ctx.THREE;
  const save=p=>onProfile(p);
@@ -33,7 +35,7 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
  <div class="lg-bubbles"></div>
  <div class="lg-top"><div class="lg-top-r"></div></div>
  <div class="lg-bottom">
-  <div class="lg-dock"><div class="grp chips" aria-label="대답 고르기"></div><div class="grp social"></div><div class="grp smoke"></div><div class="grp tools"></div></div>
+  <div class="lg-dock"><div class="grp smoke"></div><div class="grp tools"></div></div>
  </div>
  <div class="lg-toast" hidden></div>
  <div class="lg-modal" hidden></div>`;
@@ -47,7 +49,7 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
   {id:'set',label:'설정',ic:'c-settings',onOpen:p=>renderSetTab(p)},
  ]});
  ctx.uf=frame;root.classList.add('lg-uf');
- const bubLayer=$('.lg-bubbles'),smokeBox=$('.smoke'),toolBox=$('.tools'),socialBox=$('.social'),chipBox=$('.chips'),toast=$('.lg-toast'),modal=$('.lg-modal');
+ const bubLayer=$('.lg-bubbles'),smokeBox=$('.smoke'),toolBox=$('.tools'),toast=$('.lg-toast'),modal=$('.lg-modal');
 
  // ── 흡연 단추(꺼내기 → 불 → 들이마시기·재 털기·꽁초 버리기)
  let stage='idle',stageAt=0;
@@ -74,12 +76,6 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
    if(good)showToast('매너 도장 꾹!','s-manner-stamp');else showToast('재떨이 근처에서 버리면 매너 도장!');
   },
   ashtray(){const a=nearestAshtray();if(a){goTo({x:a.x,z:a.z,heading:a.heading});showToast('재떨이로 걸어가요');}},
-  // ── 함께(npc.js social): 불 빌리기·한 대 권하기·받기·대답 칩
-  borrow(){const r=npcs.borrowLight?.();if(!r)return;bump('cigs',{cigs:(profile.stats.cigs||0)+1});showToast(r.mode==='tip'?`${r.name}님과 맞불`:`${r.name}님이 불을 붙여 줘요`,'s-lighter');renderSocial(true);},
-  offer(){const r=npcs.offerCig?.();if(r?.accepted)showToast(`${r.name}님에게 한 대 건넸어요`,'s-offer');renderSocial(true);},
-  accept(){const r=npcs.acceptCig?.();if(r)showToast(`${r.name}님이 ${CIG_KINDS[r.kind]?.label??''} 한 대를 줬어요`);renderSocial(true);},
-  decline(){npcs.declineCig?.();renderSocial(true);},
-  chip(i){if(npcs.choose?.(+i))renderSocial(true);},
  };
  // 꾹 누르는 모금 단추: 누르는 동안 들이마시고, 단추 안 막대가 들이마신 정도를 보여 준다(꿀모금 구간은 초록).
  // 들이마시는 세기 4종 아이콘은 S(18px) 이상(아이콘-규칙-v1 §7-3). 단추 글은 data-q(세기)가 바뀔 때만 다시 그린다.
@@ -97,20 +93,8 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
   if(!down)return;
   if(/^kind\d$/.test(name)){if(stage==='idle'||stage==='choose')act.kind(KIND_KEYS[+name.slice(4)-1]);return;}
   if(['ring','nose','french'].includes(name)&&stage==='lit')act.trick(name);
-  if(name==='borrow')act.borrow();
-  if(name==='give'){if(npcs.social?.()?.incoming)act.accept();else act.offer();} // NPC를 안 부른 기본 옥상은 social()이 null(11-17: G 키가 오류로 멈추던 것)
  }
- // 함께 단추: 가까운 NPC·불 안 붙인 담배·NPC가 권하는 중·수다 칩에 따라 뜬다. 바뀔 때만 다시 그린다.
- let socialSig='',socialT=0;
- function renderSocial(force){
-  const s=npcs.social?.();if(!s)return;
-  const sig=JSON.stringify([s.borrow?.mode,s.borrow?.id,s.offer?.id,s.incoming?.id,s.chips,s.helping]);if(!force&&sig===socialSig)return;socialSig=sig;
-  const b=(a,txt,cls='',extra='')=>`<button class="lg-btn ${cls}" data-a="${a}"${extra}>${txt}</button>`;
-  socialBox.innerHTML=(s.incoming?b('accept',iconText('s-receive',`받기 · ${s.incoming.name}`),'primary',' title="G"')+b('decline','✕','',' aria-label="괜찮아요"'):'')
-   +(s.borrow?b('borrow',iconText('s-lighter',s.borrow.mode==='tip'?`맞불 · ${s.borrow.name}`:`불 빌리기 · ${s.borrow.name}`),'primary',' title="B"'):'')
-   +(s.offer&&!s.incoming&&!s.helping?b('offer',iconText('s-offer','한 대 권하기'),'',` title="G · ${esc(s.offer.name)}님에게"`):'');
-  chipBox.innerHTML=(s.chips??[]).map((t,i)=>b('chip',iconText('c-chat',t),'',` data-k="${i}"`)).join('');
- }
+ let layoutT=0;
  function renderSmoke(){
   const b=(a,txt,cls='',extra='')=>`<button class="lg-btn ${cls}" data-a="${a}"${extra}>${txt}</button>`;
   // 곁 단추(묘기·재 털기·버리기): 휴대폰에서는 그림만 보인다(.sec .t 숨김). 글은 aria-label로 남긴다.
@@ -133,8 +117,8 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
  renderSmoke();
  // ── 행동 원 자리(11-18 공통 틀 ufPlace): 큰 단추 1 + 작은 단추(앞 3개가 원 둘레, 넘치면 왼쪽으로 2칸) + 할 일 칩(위로 쌓임)
  //  큰 단추 = 지금 단계의 빨간 단추(꺼내기 → 불 → 꾹 들이마시기 / 꽁초 버리기), 맛 고르기면 고른 맛. 서 있을 때 작은 단추 = 인사·재떨이로
- //  할 일 칩 = 닿을 거리의 대상(벤치·난간·자판기, spots.js .sp-mark.act)·함께 단추(불 빌리기·받기·권하기)·대답 칩
- const SHORT={take:'꺼내기',light:'불',flick:'재 털기',tricks:'묘기',ashtray:'재떨이로',cancel:'그만',sip:'한 모금',dropCan:'캔 버리기',decline:'괜찮아요'};
+ //  할 일 칩 = 닿을 거리의 대상(벤치·난간·자판기, spots.js .sp-mark.act)
+ const SHORT={take:'꺼내기',light:'불',flick:'재 털기',tricks:'묘기',ashtray:'재떨이로',cancel:'그만',sip:'한 모금',dropCan:'캔 버리기'};
  const TRICK_T={ring:'링',nose:'코로',french:'프렌치'};
  function shortOf(b){
   const a=b.dataset.a??b.dataset.sp,k=b.dataset.k;
@@ -155,7 +139,7 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
   const hand=[...root.querySelectorAll('.sp-hand button')];
   const extra=stage==='idle'||stage==='held'?[toolBox.querySelector('[data-a=emote][data-k=wave]'),toolBox.querySelector('[data-a=ashtray]')]:[];
   const small=[...sm.filter(b=>b!==big),...hand,...extra].filter(Boolean);
-  const todo=[...root.querySelectorAll('.sp-mark.act'),...socialBox.querySelectorAll('button'),...chipBox.querySelectorAll('button')];
+  const todo=[...root.querySelectorAll('.sp-mark.act')];
   const labels=new Map();for(const b of [big,...small,...todo]){if(!b)continue;const t=todo.includes(b)?null:shortOf(b);if(t)labels.set(b,t);}
   ufPlace(root,{big,small,todo,labels});
  }
@@ -166,15 +150,12 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
  for(const ev of ['pointerup','pointercancel'])addEventListener(ev,()=>press('draw',false));
  smokeBox.addEventListener('contextmenu',e=>{if(e.target.closest('[data-a=draw]'))e.preventDefault();});
 
- // ── 말하기 줄(공통 createChatBar): 💬는 위 오른쪽 줄, 열면 아래 한 줄. 지난 말 3줄 + 머리 위 말풍선
+ // ── 말하기 줄(공통 createChatBar, 11-19 채팅 통일): 💬는 위 오른쪽 줄, 열면 맨 아래 입력칸·보내기·✕. 지난 말 3줄 + 머리 위 말풍선
  let chatRows=[],unread=0;
  const sayText=raw=>{const text=String(raw??'').trim().slice(0,60);if(!text)return false;
   ctx.dispatch('lounge:chat',{id:'me',name:profile.nickname||'동동이',text});bump('chats',{chats:(profile.stats.chats||0)+1});return true;};
  const doEmote=k=>{const em=EMOTES.find(x=>x.k===k);if(!em)return;ctx.dispatch('lounge:emote',{emote:em.k});ctx.dispatch('lounge:chat',{id:'me',name:profile.nickname||'동동이',text:em.i,emote:em.k});}; // 같이 피우기는 채팅 c가 아니라 act e·en으로 보낸다(multi.js, 같은 말 반복 막기에 걸리지 않게)
- const bar=createChatBar({quick:QUICK,maxLength:60,onSay:sayText});
- // 이모트(인사·한숨·기지개)도 말하기 줄 칩으로(인사는 서 있을 때 행동 원 작은 단추에도 있음 — 피우는 중에도 인사할 수 있게)
- bar.chips.insertAdjacentHTML('beforeend',EMOTES.map(e=>`<button type="button" data-emote="${e.k}" aria-label="${e.t}">${e.i} ${e.t}</button>`).join(''));
- bar.chips.addEventListener('click',e=>{const b=e.target.closest('[data-emote]');if(b){e.stopPropagation();doEmote(b.dataset.emote);}},true);
+ const bar=createChatBar({maxLength:60,onSay:sayText,onClose:()=>setChat(false)});
  for(const ev of ['keydown','keyup'])bar.input.addEventListener(ev,e=>{e.stopPropagation();if(ev==='keydown'&&e.code==='Escape')setChat(false);});
  root.appendChild(bar.el);frame.watchChat(bar.el);
  const chatBtn=document.createElement('button');chatBtn.type='button';chatBtn.className='uf-chat-btn';chatBtn.setAttribute('aria-label','채팅 열기');chatBtn.setAttribute('aria-expanded','false');
@@ -188,19 +169,19 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
 
  // ── 채팅·말풍선
  const bubbles=new Map(); // id → {el,t,avatar}
- const avatarOf=id=>id==='me'?ctx.player:npcs.avatars.find(a=>a.id===id)??ctx.multi?.avatarOf?.(id); // 같이 피우는 사람(multi.js)은 서버 id로 찾는다
+ const avatarOf=id=>id==='me'?ctx.player:ctx.multi?.avatarOf?.(id); // 같이 피우는 사람(multi.js)은 서버 id로 찾는다
  function addLog(id,name,text){
   chatRows=[...chatRows,{name,text,me:id==='me'}].slice(-30);bar.lines(chatRows);if(!chatOpen&&id!=='me'){unread=Math.min(99,unread+1);setChat(false);}
  }
  function bubble(id,name,text){
   const av=avatarOf(id);if(!av)return;let o=bubbles.get(id);
-  if(!o){const el=document.createElement('div');el.className='lg-bub';bubLayer.appendChild(el);o={el};bubbles.set(id,o);}
-  o.avatar=av;o.t=5+Math.min(4,text.length/14);o.el.classList.remove('out');o.el.innerHTML=`<small>${esc(name)}</small>${esc(text)}`;
+  if(!o){const el=document.createElement('div');el.className='uf-bub lg-bub';bubLayer.appendChild(el);o={el};bubbles.set(id,o);}
+  o.avatar=av;o.t=BUBBLE_SECS;o.el.classList.remove('out');o.el.innerHTML=`<small>${esc(id==='me'?'나':name)}</small>${esc(text)}`;void o.el.offsetWidth;o.el.classList.add('on');
  }
  const onChat=e=>{const {id,name,text}=e.detail??{};if(!text)return;addLog(id,name||'동동이',text);bubble(id,name||'동동이',text);};
  window.addEventListener('lounge:chat',onChat);
  // 같이 피우는 사람이 누른 인사(multi.js가 act e·en을 받아 보냄): 내 인사와 같은 그림으로 말풍선·채팅 줄
- window.addEventListener('lounge:remote-emote',e=>{const {id,name,emote}=e.detail??{};const em=EMOTES.find(x=>x.k===emote);if(!em||!id)return;addLog(id,name||'손님',em.i);bubble(id,name||'손님',em.i);});
+ window.addEventListener('lounge:remote-emote',e=>{const {id,name,emote}=e.detail??{};const i=REMOTE_EMOJI[emote];if(!i||!id)return;addLog(id,name||'손님',i);bubble(id,name||'손님',i);});
  // 흡연 쪽 state(out·ready·lighting·smoking·inhale·exhale·flick·finished·dispose·done)를 단추 단계로 따라간다. 콘솔·자동 점검으로 피워도 단추가 맞게 바뀐다.
  window.addEventListener('lounge:smoke',e=>{const d=e.detail??{};if(d.id!==ctx.player.id)return;const s=String(d.state??d.stage??'');
   setStage(s==='done'||s==='idle'?'idle':s==='dispose'?'dropping':s==='out'||s==='ready'?'held':s==='finished'?'butt':'lit');});
@@ -296,7 +277,7 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
   else if(a==='snd'){save({muted:!profile.muted});renderSnd();frame.refreshTab();}
  });
  // 키보드 단축(PC): Enter로 말하기 줄 열고 입력칸에
- addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement!==bar.input&&modal.hidden&&!e.isComposing){setChat(true);bar.setTyping(true);bar.input.focus();e.preventDefault();}});
+ addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement!==bar.input&&modal.hidden&&!e.isComposing){setChat(true);bar.input.focus();e.preventDefault();}});
  renderSnd();renderNote();
  if(!profile.seenIntro||!profile.nickname)lobby(false);else{profile.stats.lastVisit!==today()&&save({stats:{...profile.stats,visits:(profile.stats.visits||0)+1,lastVisit:today()}});}
 
@@ -312,7 +293,7 @@ export function createHud({ctx,npcs,smoker,audio,timeState,TIME_PRESETS,profile,
     if(!hide){const w=innerWidth,h=innerHeight;o.el.style.transform=`translate(${(v.x*.5+.5)*w}px,${(-v.y*.5+.5)*h}px) translate(-50%,-100%)`;}
    }
    noteT-=dt;if(noteT<=0||(stampInfo&&performance.now()>stampUntil)){noteT=2;if(stampInfo&&performance.now()>stampUntil)stampInfo=null;renderNote();} // 도장 알림 카드는 7초 뒤 저절로 사라진다
-   socialT-=dt;if(socialT<=0){socialT=.2;renderSocial();layoutActs();} // 할 일 칩(spots 대상 표시)도 0.2초마다 다시 매긴다
+   layoutT-=dt;if(layoutT<=0){layoutT=.2;layoutActs();} // 할 일 칩(spots 대상 표시)도 0.2초마다 다시 매긴다
    // 꾹 단추 막대: 들이마신 정도(draw)와 지금 맛
    const db=smokeBox.querySelector('.lg-draw');
    if(db){const st=smoker.status?.()??{},on=st.hold&&st.state==='inhale';

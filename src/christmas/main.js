@@ -414,11 +414,11 @@ addEventListener('keydown',e=>{const a=document.activeElement;if(a&&(a.tagName==
  else if(e.code==='Escape'){if(deco.on){if(hud.pending!==null)pendingMark(null);else setDecorate(false);}else if(gifts.open)gifts.closeAll();else if(snowman.decoOpen)snowman.closeDeco();else if(campfire.sitting)campfire.stand();else hud.closeSheet();}});
 
 // 채팅(공용 창, 크리스마스 자리·문구)
-// 모닥불 둘레 6m 안 사람의 말풍선은 조금 크고 오래(6초, 체험설계 §5-3)
+// 모닥불 둘레 6m 안 사람의 말풍선은 오래(6초, 체험설계 §5-3). 모양은 11-19 채팅 통일로 세 콘텐츠 같은 풍선
 const byFire=(x,z)=>Math.hypot(x-CAMPFIRE.x,z-CAMPFIRE.z)<FIRE.talkR;
-const chat=installHikingChat({ns:'xmas',cls:'xc-chat',chipSelector:null,frame:hud.frame,title:'💬 광장 사람들',quick:['메리 크리스마스!','안녕하세요','트리 예뻐요','같이 꾸며요','🎄'],
+const chat=installHikingChat({ns:'xmas',cls:'xc-chat',frame:hud.frame,
  notice:'전화번호·주소·SNS 아이디는 적지 마세요. 채팅은 저장되지 않아요.',lookup:id=>screenPos(id),
- bubbleFor:id=>{const p=id===multi.id||id==='me'?player:multi.sampleOf(id);return p&&byFire(p.x,p.z)?{ms:FIRE.bubbleMs,big:true}:null;}});
+ bubbleFor:id=>{const p=id===multi.id||id==='me'?player:multi.sampleOf(id);return p&&byFire(p.x,p.z)?{ms:FIRE.bubbleMs}:null;}});
 
 // ── 서버 고르기(등산·흡연장과 같은 창): 허브 → 크리스마스 카드 → 서버 카드 전체 화면 → 광장. 혼자 둘러보기도 된다.
 const pick=createServerPick({experience:'christmas',serverUrl:multi.server,serverOff:currentChoice().source==='file-off',defaultName:profile.nickname,

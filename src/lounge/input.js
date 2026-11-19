@@ -5,7 +5,7 @@ import {feedbackOpen} from '../feedback.js';
 
 // 담배 키(PC): Space·F 꾹 = 들이마시기(누르는 동안), R 링·N 코로·T 프렌치, 1~4 담배 고르기(꺼낼 때),
 // B 불 빌리기, G 한 대 권하기·받기. onAction(f(name,down))로 받는다.
-export const SMOKE_KEYS=Object.freeze({Space:'draw',KeyF:'draw',KeyR:'ring',KeyN:'nose',KeyT:'french',Digit1:'kind1',Digit2:'kind2',Digit3:'kind3',Digit4:'kind4',KeyB:'borrow',KeyG:'give'});
+export const SMOKE_KEYS=Object.freeze({Space:'draw',KeyF:'draw',KeyR:'ring',KeyN:'nose',KeyT:'french',Digit1:'kind1',Digit2:'kind2',Digit3:'kind3',Digit4:'kind4'});
 
 export function createInput({canvas,mobile}){
  const keys=new Set(),lookCbs=[],zoomCbs=[],actionCbs=[];let looking=false,stick=null,runToggle=false;

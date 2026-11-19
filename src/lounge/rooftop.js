@@ -2,7 +2,7 @@
 // 그래픽은 온라인 등산 그대로: 소품은 concept-kit 형상 + trail-props 마감(finishTrailModel: 툰 재질·뒤집은 껍질 외곽선, 텍스처 없음),
 // 벤치는 온라인 등산 산길 벤치 원형(makeTrailProp('bench')), 도심 원경은 toon.styleCity(「너의 이름은」 도심 셰이더: 낮 파스텔·노을 윤곽빛·밤 창 불빛).
 // 크기는 동동이 키 1.0m 기준(벤치 좌판 0.44m는 산길 벤치와 같다). 좌표: x 오른쪽, -Z 앞(스폰에서 바라보는 쪽), 바닥 y=0.
-// 자리(spots)는 "걸어가서 서는 곳"이다(NPC·자동 이동이 그 점까지 걷는다). 재떨이 몸통·벤치 좌판 위치는 at·seat에 따로 둔다.
+// 자리(spots)는 "걸어가서 서는 곳"이다(자동 이동이 그 점까지 걷는다). 재떨이 몸통·벤치 좌판 위치는 at·seat에 따로 둔다.
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {v,ell,capsule,at,part} from '../toon/concept-kit.js';

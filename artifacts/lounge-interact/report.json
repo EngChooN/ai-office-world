@@ -1,5 +1,5 @@
 {
- "at": "2026-11-17T09:25:35.337Z",
+ "at": "2026-11-19T02:28:33.026Z",
  "pageUrl": "http://127.0.0.1:5233",
  "wsUrl": "ws://127.0.0.1:8833",
  "rows": [
@@ -37,7 +37,7 @@
   },
   {
    "who": "대표PC",
-   "button": "수첩 접기·펴기",
+   "button": "금연 수첩 탭",
    "mine": true,
    "seen": null,
    "note": "",
@@ -45,10 +45,18 @@
   },
   {
    "who": "대표PC",
-   "button": "상황 단추(다시)",
+   "button": "상황 탭(다시)",
    "mine": true,
    "seen": null,
    "note": "상황·시간은 각자 화면 설정",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "인사 두 번(작은 「인사」 단추)",
+   "mine": true,
+   "seen": true,
+   "note": "한숨·기지개 단추는 없음: true",
    "ok": true
   },
   {
@@ -109,10 +117,26 @@
   },
   {
    "who": "대표PC",
-   "button": "인사·한숨·기지개(4번)",
+   "button": "채팅 중 행동 단추 모두 숨김(피우는 중)",
    "mine": true,
-   "seen": true,
-   "note": "같은 인사 두 번도 상대에게 두 번",
+   "seen": null,
+   "note": "",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "말하기 줄 = 입력칸·보내기·✕",
+   "mine": true,
+   "seen": null,
+   "note": "빠른 말·동작 칩 없음",
+   "ok": true
+  },
+  {
+   "who": "대표PC",
+   "button": "✕로 닫기",
+   "mine": true,
+   "seen": null,
+   "note": "닫으면 큰 단추가 돌아옴",
    "ok": true
   },
   {
@@ -261,7 +285,7 @@
   },
   {
    "who": "손님폰",
-   "button": "⋯ 더 보기",
+   "button": "말하기 줄 열기(피우는 중)·행동 단추 숨김",
    "mine": true,
    "seen": null,
    "note": "",
@@ -269,9 +293,9 @@
   },
   {
    "who": "손님폰",
-   "button": "인사 두 번",
+   "button": "✕로 닫기",
    "mine": true,
-   "seen": true,
+   "seen": null,
    "note": "",
    "ok": true
   },
@@ -373,14 +397,6 @@
   },
   {
    "who": "대표PC",
-   "button": "키 B·G(NPC 없음)",
-   "mine": true,
-   "seen": null,
-   "note": "NPC를 안 부른 옥상: 할 일 없음·오류 없음",
-   "ok": true
-  },
-  {
-   "who": "대표PC",
    "button": "키 E(가까운 할 일)",
    "mine": true,
    "seen": true,
@@ -407,10 +423,10 @@
  "errors": [],
  "failed": 0,
  "serverLog": [
-  "{\"at\":\"2026-11-17T09:25:34.640Z\",\"event\":\"start\",\"port\":8833,\"host\":\"127.0.0.1\",\"dataDir\":\"/Users/pc-2311001/gwanak-hiking/artifacts/lounge-interact/data\",\"origins\":\"*(모두 허용)\",\"reports\":0,\"chatBanned\":127}",
-  "{\"at\":\"2026-11-17T09:25:34.640Z\",\"event\":\"warn\",\"message\":\"ALLOWED_ORIGINS가 비어 모든 페이지 주소를 허용합니다\"}",
-  "{\"at\":\"2026-11-17T09:26:34.637Z\",\"event\":\"summary\",\"clients\":2,\"rooms\":1,\"replaced\":0,\"pairOffers\":0,\"pairDenied\":0,\"pairs\":0,\"pairEnds\":0,\"joined\":2,\"chats\":2,\"chatLimited\":0,\"smokes\":30,\"acts\":15,\"badExperience\":0,\"wrongExperience\":0,\"full\":0,\"stateAccepted\":272,\"rateDropped\":0,\"teleportRejected\":0,\"resynced\":0,\"jumps\":1,\"relayed\":0,\"animals\":0,\"animalDup\":0,\"reports\":0,\"hidden\":0,\"invalid\":0,\"snapshots\":258,\"tree\":0,\"treeDenied\":0,\"treeResets\":0,\"play\":0}",
-  "{\"at\":\"2026-11-17T09:27:34.638Z\",\"event\":\"summary\",\"clients\":3,\"rooms\":1,\"replaced\":0,\"pairOffers\":0,\"pairDenied\":0,\"pairs\":0,\"pairEnds\":0,\"joined\":3,\"chats\":2,\"chatLimited\":0,\"smokes\":47,\"acts\":32,\"badExperience\":0,\"wrongExperience\":0,\"full\":0,\"stateAccepted\":603,\"rateDropped\":0,\"teleportRejected\":0,\"resynced\":0,\"jumps\":3,\"relayed\":0,\"animals\":0,\"animalDup\":0,\"reports\":0,\"hidden\":0,\"invalid\":0,\"snapshots\":553,\"tree\":0,\"treeDenied\":0,\"treeResets\":0,\"play\":0}",
+  "{\"at\":\"2026-11-19T02:28:31.948Z\",\"event\":\"start\",\"port\":8833,\"host\":\"127.0.0.1\",\"dataDir\":\"/Users/pc-2311001/gwanak-hiking/artifacts/lounge-interact/data\",\"origins\":\"*(모두 허용)\",\"reports\":0,\"chatBanned\":127}",
+  "{\"at\":\"2026-11-19T02:28:31.949Z\",\"event\":\"warn\",\"message\":\"ALLOWED_ORIGINS가 비어 모든 페이지 주소를 허용합니다\"}",
+  "{\"at\":\"2026-11-19T02:29:31.945Z\",\"event\":\"summary\",\"clients\":2,\"rooms\":1,\"replaced\":0,\"pairOffers\":0,\"pairDenied\":0,\"pairs\":0,\"pairEnds\":0,\"joined\":2,\"chats\":2,\"chatLimited\":0,\"smokes\":25,\"acts\":13,\"badExperience\":0,\"wrongExperience\":0,\"full\":0,\"stateAccepted\":265,\"rateDropped\":0,\"teleportRejected\":0,\"resynced\":0,\"jumps\":1,\"relayed\":0,\"animals\":0,\"animalDup\":0,\"reports\":0,\"hidden\":0,\"invalid\":0,\"snapshots\":242,\"tree\":0,\"treeDenied\":0,\"treeResets\":0,\"play\":0}",
+  "{\"at\":\"2026-11-19T02:30:31.955Z\",\"event\":\"summary\",\"clients\":2,\"rooms\":1,\"replaced\":0,\"pairOffers\":0,\"pairDenied\":0,\"pairs\":0,\"pairEnds\":0,\"joined\":2,\"chats\":2,\"chatLimited\":0,\"smokes\":35,\"acts\":27,\"badExperience\":0,\"wrongExperience\":0,\"full\":0,\"stateAccepted\":573,\"rateDropped\":0,\"teleportRejected\":0,\"resynced\":0,\"jumps\":3,\"relayed\":0,\"animals\":0,\"animalDup\":0,\"reports\":0,\"hidden\":0,\"invalid\":0,\"snapshots\":528,\"tree\":0,\"treeDenied\":0,\"treeResets\":0,\"play\":0}",
   ""
  ]
 }

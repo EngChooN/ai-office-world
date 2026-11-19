@@ -36,7 +36,6 @@
 .lg-dock{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
 .lg-dock .grp{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .lg-dock .grp:empty{display:none}
-.lg-dock .grp.chips{flex-wrap:wrap!important;max-width:min(560px,100%)}
 .lg-chat{width:100%;max-width:380px;display:flex;flex-direction:column;gap:6px;align-self:flex-start}
 .lg-log{pointer-events:auto;max-height:104px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:3px;padding:6px 8px;font-size:13px;line-height:1.35;background:color-mix(in srgb,var(--paper) 86%,transparent);border:2px solid var(--rule);border-radius:12px}
 .lg-log:empty{display:none}
@@ -47,9 +46,6 @@
 
 /* 말풍선(머리 위) */
 .lg-bubbles{position:absolute;inset:0;overflow:hidden}
-.lg-bub{position:absolute;left:0;top:0;max-width:170px;padding:5px 9px;border-radius:12px;background:var(--bub);color:var(--bub-ink);border:2px solid var(--ink);font-size:13px;font-weight:700;line-height:1.3;box-shadow:2px 3px 0 rgba(80,35,12,.3);will-change:transform;transition:opacity .4s;word-break:break-all}
-.lg-bub small{display:block;font-size:10px;color:var(--ink2)}
-.lg-bub.out{opacity:0}
 
 /* 알림 */
 .lg-toast{position:absolute;left:50%;top:calc(var(--st) + 74px);transform:translateX(-50%);background:var(--paper);border:2px solid var(--stamp);color:var(--stamp);padding:8px 14px;border-radius:12px;font-weight:900;font-size:14px;box-shadow:var(--soft);transition:opacity .4s;white-space:nowrap}
@@ -81,12 +77,9 @@
  .lg-chat-toggle{display:inline-flex}
  .lg-dock{flex-direction:column;align-items:flex-end;gap:6px;margin-left:auto;max-width:100%}
  .lg-dock .grp{flex-wrap:nowrap}
- .lg-dock .chips{order:1}.lg-dock .social{order:2}.lg-dock .tools{order:3}.lg-dock .sp-hand{order:4}.lg-dock .smoke{order:5}
+ .lg-dock .tools{order:3}.lg-dock .sp-hand{order:4}.lg-dock .smoke{order:5}
  .lg-dock .sp-hand .sec{padding:0;width:44px}.lg-dock .sp-hand .sec .sp-t{display:none} /* 캔: 「☕ 한 모금」은 글까지, 캔 버리기는 그림만 */
  /* 대답 칩: 한 줄 가로 스크롤 */
- .lg-dock .grp.chips{flex-wrap:nowrap!important;max-width:calc(100vw - var(--sl) - var(--sr) - 2*var(--gap) - 52px);overflow-x:auto;justify-content:flex-start;scrollbar-width:none;padding:0 3px 3px 0;pointer-events:auto;overscroll-behavior:contain}
- .lg-dock .grp.chips::-webkit-scrollbar{display:none}
- .lg-dock .grp.chips .lg-btn{flex:0 0 auto}
  /* 흡연: 피우는 중이면 곁 단추(그림만 44px) 한 줄 위, 그 아래 오른쪽 구석에 엄지 크기 꾹 단추 */
  .lg-dock .smoke{flex-wrap:wrap;max-width:min(100%,300px)}
  .lg-dock .smoke[data-stage=lit]{max-width:156px;gap:6px}
@@ -112,7 +105,7 @@
  .lg-dock{flex-direction:column;align-items:flex-end}
 }
 @media (max-width:420px){.lg-note{width:176px}.lg-note .big{font-size:19px}.lg-btn{padding:0 10px;font-size:13px}.lg-dock .lg-btn{flex:0 0 auto}}
-@media (prefers-reduced-motion:reduce){.lg-bub,.lg-toast{transition:none}.lg-note .lg-stamp{animation:none}}
+@media (prefers-reduced-motion:reduce){.lg-toast{transition:none}.lg-note .lg-stamp{animation:none}}
 
 /* 입장 안내(처음 한 번, age-gate.js) — 연디자인 docs/흡연장/입장안내-2026-11-13.md 값 그대로. 수첩 종이 톤, 단추 44px 이상.
    로딩 화면(50)·서버 카드(130)보다 먼저 보여야 해서 #app 밖 body에 fixed·140으로 띄운다. 설정 「다시 보기」는 .lg-modal 안에 같은 카드. */
@@ -156,7 +149,7 @@
    자리를 받지 않은 아래 단추(한숨·기지개는 말하기 줄 칩, ⋯ 없앰)와 「상황」 단추는 숨긴다. */
 #app.lg-uf .lg-dock button:not([data-uf]),#app.lg-uf .lg-more,#app.lg-uf .sp-dock{display:none!important}
 #app.lg-uf .lg-dock [data-uf]{display:inline-flex!important} /* 휴대폰 「⋯」 안 접힘 규칙(.tools:not(.open)) 무시 */
-:root[data-uf-heavy] #app.lg-uf [data-uf],:root[data-uf-win=chat] #app.lg-uf [data-uf^=s],:root[data-uf-win=chat] #app.lg-uf [data-uf=todo],:root[data-uf-kb] #app.lg-uf [data-uf]{display:none!important} /* 위 줄이 틀의 숨김 규칙보다 세서 다시 적음 */
+:root[data-uf-heavy] #app.lg-uf [data-uf],:root[data-uf-win=chat] #app.lg-uf [data-uf],:root[data-uf-kb] #app.lg-uf [data-uf]{display:none!important} /* 위 줄이 틀의 숨김 규칙보다 세서 다시 적음 */
 #app.lg-uf .lg-dock .lg-draw{background-color:var(--uf-red)!important;border:0!important}
 #app.lg-uf .lg-dock .lg-draw[data-uf=big] .ic-row{display:flex;flex-direction:column;align-items:center;gap:1px}
 #app.lg-uf .lg-dock .lg-draw[data-uf=big] .ic-txt{font-size:11px;line-height:1.1;white-space:normal;max-width:64px}

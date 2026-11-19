@@ -69,7 +69,7 @@ try{
  check('① PC: 다른 사람 29명이 모두 동동이로 보임',sa.multi.people.filter(p=>p.shown).length===29&&bodies(sa).dongdong===29,{bodies:bodies(sa),count:sa.multi.people.length});
  check('① 휴대폰: 29명 보임(가까운 6명 동동이 + 나머지 가벼운 동동이)',sb.multi.people.filter(p=>p.shown).length===29&&bodies(sb).dongdong===6&&bodies(sb).lite===23,{bodies:bodies(sb)});
  const chip=await A.evaluate(()=>document.querySelector('.xh-place')?.textContent);
- check('① 연결 칩 30/30',/눈마을 광장 1서버 ·\s*30\/30/.test(chip),{chip});
+ check('① 연결 칩 30/30',/(눈마을 광장 )?1서버 ·\s*30\/30/.test(chip),{chip});
  const lookB=sa.multi.people.find(p=>p.name==='둘')?.look;
  check('① 상대 옷이 그 사람이 고른 옷(act)',lookB?.outfit==='sweater'&&lookB?.scarf==='stripe',{lookB});
  // 움직임: 봇 위치가 바뀌는지
@@ -96,7 +96,7 @@ try{
  const rep='눈 온다';
  for(let k=0;k<3;k++){await sleep(2100);await A.evaluate(t=>{const f=document.querySelector('.hc-panel form');f.elements.text.value=t;f.requestSubmit();},rep);}
  await until(()=>A.evaluate(()=>window.__ev.some(e=>e.type==='xmas:chat-limit'&&e.reason==='repeat')),5000);
- const repState=await A.evaluate(()=>({input:document.querySelector('.hc-panel input').value,hint:document.querySelector('.hc-hint')?.textContent,mine:window.__ev.filter(e=>e.type==='xmas:chat'&&e.me&&e.text==='눈 온다').length}));
+ const repState=await A.evaluate(()=>({input:document.querySelector('.hc-panel input').value,hint:document.querySelector('.uf-chatbar .uf-lines .hint')?.textContent,mine:window.__ev.filter(e=>e.type==='xmas:chat'&&e.me&&e.text==='눈 온다').length}));
  check('④ 같은 말 세 번째는 막힘·글이 입력칸에 남음',repState.mine===2&&repState.input==='눈 온다'&&/연속 두 번/.test(repState.hint),repState);
  // 30초 쉬기: 봇이 빠르게 연타 → 3번 막히면 mute
  const flood=bots[5];for(let k=0;k<8;k++){flood.say(`도배${k}`);await sleep(60);}

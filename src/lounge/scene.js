@@ -1,5 +1,5 @@
 // 상황 고르기(B6): 출근 전 한 대(아침)·점심 먹고 한 대(낮)·퇴근길 한 대(노을)·회식 후 한 대(밤).
-// 시간대는 main.js의 기존 setTime(낮·노을·밤 프리셋)을 그대로 쓰고, 'lounge:scene' {id}를 보낸다(NPC 화제는 npc.js가 받아서 바꾼다).
+// 시간대는 main.js의 기존 setTime(낮·노을·밤 프리셋)을 그대로 쓰고, 'lounge:scene' {id}를 보낸다.
 // 분위기는 <html data-scene>으로만 알린다(spots.css가 화면 가장자리에 아주 옅은 색을 얹는다). 단추·패널은 spots.js가 만든다. icon = 아이콘 이름(src/icons, 아이콘-규칙-v1 §7-3).
 export const SCENES=Object.freeze({
  morning:Object.freeze({id:'morning',icon:'s-scene-morning',label:'출근 전 한 대',sub:'아침 · 쌀쌀해요',time:'day',mood:'chilly'}),
@@ -21,7 +21,7 @@ export function createScene({setTime,dispatch,save,profile=null,root=globalThis.
   return s;
  }
  function clear(){if(!current)return;current=null;mark(null);save?.({scene:null});}
- // 설정에서 시간을 다른 것으로 바꾸면 상황 분위기는 내린다(NPC 화제는 그대로 둔다).
+ // 설정에서 시간을 다른 것으로 바꾸면 상황 분위기는 내린다.
  const onTime=e=>{const m=e.detail?.mode;if(current&&m&&m!==SCENES[current].time)clear();};
  globalThis.addEventListener?.('lounge:time',onTime);
  return {

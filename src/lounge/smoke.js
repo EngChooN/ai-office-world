@@ -3,11 +3,10 @@
 // 팔만 두 관절 IK(src/hiker-ik.js legTargets)로 덮어쓰고, 원래 자세와 weight로 섞는다. 동동이 원본은 고치지 않는다.
 // 소품·연기는 온라인 등산 소품과 같은 형상 도우미(concept-kit·trail-props) + 툰 단색 재질 + 얇은 외곽선이다.
 // 연기 뭉게는 등산 「헥헥 입김」(trail-props puff)과 같은 형상을 조금 회색으로 쓴다.
-// 상태가 바뀔 때마다 window 'lounge:smoke' {id,state,puffs,left,lit,isPlayer,kind,quality,trick,first,amount}. NPC도 같은 함수를 쓴다(isPlayer:false면 혼자 알아서 피운다).
+// 상태가 바뀔 때마다 window 'lounge:smoke' {id,state,puffs,left,lit,isPlayer,kind,quality,trick,first,amount}. 같이 피우는 다른 사람 담배도 같은 함수(isPlayer:false, multi.js가 받은 상태대로 부름).
 // v2 맛(기획서 v2 A1·A2·A5·A6): drawStart/drawEnd로 누르는 동안 들이마시고(누른 시간 → quality), 크게·오래·바람 따라 내뿜고,
 // 내뿜는 중 짧게 탭하면 링, trick('ring'|'nose'|'french'), start(kind)로 순한 맛·독한 맛·멘솔·시가. 숫자는 smoke-feel.js.
-// v2 함께(기획서 v2 B1·B4): lightFrom()은 남의 불로 붙이기(내 라이터 없이), lend(target,mode)는 NPC가 라이터·담배 끝을 남의 담배 끝에 대 주기,
-// tip()은 지금 담배 끝 위치, cloud(p,amount)는 같이 내뿜었을 때 큰 구름.
+// (11-19: NPC 전용이던 불 빌리기 lightFrom·불 대 주기 lend·같이 내뿜기 구름 cloud·혼자 피우기 auto는 NPC와 함께 지움)
 import * as THREE from 'three';
 import {legTargets} from '../hiker-ik.js';
 import {v,ell,part} from '../toon/concept-kit.js';
@@ -29,7 +28,6 @@ const DRAW_FULL=.75,DRAW_TAIL=.3;        // 한 모금에서 처음 0.75초만 �
 const BUSY=new Set(['lighting','inhale','exhale','flick']); // 이 동작 중에 온 단추는 끝난 뒤에 한다
 const LIGHTER_UP=.05;                    // 라이터를 장갑 위로 내놓는 높이(장갑 반지름 0.056에 묻히지 않게)
 export const FLAME_AT=.62;              // 내 라이터 불꽃이 보이기 시작하는 lighting 시각(초)
-const LEND_FLAME_AT=.55;                // 불 대 주기(lend)에서 불꽃이 보이는 시각(초)
 const BUTT_FLIGHT=.45;                  // 꽁초가 재떨이까지 날아가는 시간(초)
 // 담배 치수(m). 동동이 1.0m에 맞춘 만화 크기(실제보다 굵고 짧다).
 export const CIG=Object.freeze({r:.0095,filter:.024,paper:.066,ashMax:.026});
@@ -71,9 +69,8 @@ function buildLighter(toonify){
  return {g,flame};
 }
 
-// auto: 혼자 알아서 불 붙이고·피우고·버린다(기본 꺼짐 — 지금 NPC는 npc.js가 start·light·puff·flick·dispose를 직접 부른다).
 // ashtrays(): 재떨이 목록 [{x,z,at:{x,y,z}}]. 안 주면 rooftop.spots.ashtrays(window.lounge)를 찾아본다.
-export function createSmoker(avatar,{toon,world,audio,isPlayer=true,profile=null,auto=false,ashtrays=null}={}){
+export function createSmoker(avatar,{toon,world,audio,isPlayer=true,profile=null,ashtrays=null}={}){
  const toonify=toon?.toonify,hiker=avatar.hiker,model=hiker.model,root=avatar.root,id=avatar.id;
  const B=n=>model.getObjectByName('mixamorig'+n);
  const bones={Head:B('Head'),RightArm:B('RightArm'),RightForeArm:B('RightForeArm'),RightHand:B('RightHand'),LeftArm:B('LeftArm'),LeftForeArm:B('LeftForeArm'),LeftHand:B('LeftHand')};
@@ -105,7 +102,7 @@ export function createSmoker(avatar,{toon,world,audio,isPlayer=true,profile=null
 
  // ── 소품
  const cig=buildCigarette(toonify),lighter=buildLighter(toonify);world.add(cig.g,lighter.g);
- // 뭉게 개수 상한: NPC는 예전대로 LIMITS의 절반, 내 담배는 큰 연기를 위해 LIMITS만큼(PC 60·휴대폰 24)
+ // 뭉게 개수 상한: 다른 사람 담배는 LIMITS의 절반, 내 담배는 큰 연기를 위해 LIMITS만큼(PC 60·휴대폰 24)
  const fxCap=isPlayer?Math.max(16,LIMITS.trailEffects??60):Math.max(10,Math.round((LIMITS.trailEffects??60)*.5));
  const fx=[];
  // grow: 다 자라는 시점(0~1), wind: 옥상 바람을 따르는 정도
@@ -134,7 +131,7 @@ export function createSmoker(avatar,{toon,world,audio,isPlayer=true,profile=null
  // 맛: kind(담배 종류), hold(꾹 누르는 중)·held(누른 시간)·drew(들이마신 시간), quality·amount·trick(이번 내뿜기), first(불 붙인 뒤 첫 내뿜기)
  const S={state:'idle',t:0,puffs:0,left:1,ash:0,lit:false,heat:0,wR:0,wL:0,wait:0,atAshtray:null,nextPuff:0,emitAt:0,wispAt:0,ashSaid:false,soundFlags:{},
   kind:cigKind(profile?.cigKind),hold:false,held:0,drew:0,draw:0,quality:null,amount:0,trick:null,first:false,exhaled:false,exLen:SMOKE_SECONDS.exhale,emitted:0,planned:0,
-  pendingTrick:null,tapAt:-1,rings:0,pause:0,borrowed:false,lend:null};
+  pendingTrick:null,tapAt:-1,rings:0,pause:0};
  const curR=new V3(),curL=new V3();let curInit=false;
  const say=(extra={})=>window.dispatchEvent(new CustomEvent('lounge:smoke',{detail:{id,state:S.state,puffs:S.puffs,left:+S.left.toFixed(2),lit:S.lit,isPlayer,
   kind:S.kind,quality:S.quality,trick:S.trick,first:S.first,amount:S.amount,...(S.state==='done'?{atAshtray:!!S.atAshtray}:{}),...extra}}));
@@ -164,25 +161,13 @@ export function createSmoker(avatar,{toon,world,audio,isPlayer=true,profile=null
   get active(){return S.state!=='idle';},
   get state(){return S.state;},
   // 🚬 한 대 꺼내기
-  // 동작 중에 누른 단추는 하나만 기억했다가 그 동작이 끝나면 한다(NPC가 조금 일찍 불러도 빠지지 않게).
+  // 동작 중에 누른 단추는 하나만 기억했다가 그 동작이 끝나면 한다(조금 일찍 불러도 빠지지 않게).
   // kind: 'mild'|'strong'|'menthol'|'cigar'(안 주면 지난번 고른 것)
   start(kind){if(S.state!=='idle')return false;if(kind)S.kind=cigKind(kind);applyKind();
-   Object.assign(S,{puffs:0,left:1,ash:0,lit:false,heat:0,atAshtray:null,wait:0,queued:null,hold:false,held:0,drew:0,draw:0,quality:null,amount:0,trick:null,first:false,exhaled:false,pendingTrick:null,borrowed:false});go('out');return true;},
+   Object.assign(S,{puffs:0,left:1,ash:0,lit:false,heat:0,atAshtray:null,wait:0,queued:null,hold:false,held:0,drew:0,draw:0,quality:null,amount:0,trick:null,first:false,exhaled:false,pendingTrick:null});go('out');return true;},
   get kind(){return S.kind;},
   // 🔥 라이터(꺼내 든 상태에서). 꺼내기 전이면 꺼내기부터.
-  light(){if(S.state==='idle')return api.start();if(S.state==='out')return queue('light');if(S.state!=='ready')return false;S.borrowed=false;go('lighting');return true;},
-  // 남의 불로 붙이기(불 빌리기·맞불): 담배를 입에 물고 빨아들이기만 한다. 라이터는 상대(lend)가 든다.
-  lightFrom(){if(S.state==='out')return queue('lightFrom');if(S.state!=='ready')return false;S.borrowed=true;go('lighting');return true;},
-  // 불 대 주기(NPC): target()이 주는 자리(남의 담배 끝)에 sec초 동안 'lighter'면 왼손 라이터를, 'tip'이면 내 담배 끝(맞불)을 댄다.
-  lend(target,mode='lighter',sec=2.6){S.lend={target,mode,len:sec,t:0,clicked:false};return true;},
-  get lending(){return !!S.lend;},
-  // 지금 담배 끝(월드). 담배를 안 들었으면 null.
-  tip(){return cig.g.visible?lastTip.clone():null;},
-  // 같이 내뿜었을 때 큰 구름: p(월드 {x,y,z}) 둘레에 크게 자라 6~8초 머무는 뭉게를 몇 개 낸다(이 담배의 뭉게 상한 안에서).
-  cloud(p,amount=1){const c=new V3(p.x,p.y,p.z),n=Math.max(4,Math.min(Math.round(fxCap*.35),Math.round(6+6*amount)));
-   for(let i=0;i<n;i++){const a=i/n*Math.PI*2,off=v(Math.cos(a)*.18*Math.random(),(Math.random()-.3)*.12,Math.sin(a)*.18*Math.random());
-    effect('smoke',c.clone().add(off),{vel:off.clone().multiplyScalar(.6).add(v(0,.05,0)),life:6+2*Math.random(),r0:.04,r1:.24+.1*Math.random(),lift:.03,drag:.8,grow:.3,wind:1});}
-   return n;},
+  light(){if(S.state==='idle')return api.start();if(S.state==='out')return queue('light');if(S.state!=='ready')return false;go('lighting');return true;},
   // 한 모금(들이마시기 → 내뿜기, 짧게 탭한 기본 모금). 불 안 붙였으면 불부터.
   puff(){if(S.state==='ready')return api.light();if(BUSY.has(S.state))return queue('puff');if(S.state!=='smoking')return false;S.hold=false;S.held=0;S.drew=0;go('inhale');return true;},
   // 꾹 누르는 모금: 누르는 동안 들이마신다. 0.25초 안에 떼면 기본 모금. 내뿜는 중에 짧게 탭하면 링.
@@ -211,24 +196,22 @@ export function createSmoker(avatar,{toon,world,audio,isPlayer=true,profile=null
   dispose(atAshtray){if(BUSY.has(S.state)||S.state==='out')return queue('dispose',atAshtray);if(!['ready','smoking','finished'].includes(S.state))return false;
    S.atAshtray=atAshtray===undefined?nearAshtray():(atAshtray||null);go('dispose');return true;},
   blocksMove(){return S.state==='lighting'||S.state==='dispose';},
-  status(){return {id,state:S.state,puffs:S.puffs,left:+S.left.toFixed(2),ash:+(S.ash/CIG.ashMax).toFixed(2),lit:S.lit,heat:+S.heat.toFixed(2),arm:+S.wR.toFixed(2),smoke:fx.length,smokeCap:fxCap,auto,
+  status(){return {id,state:S.state,puffs:S.puffs,left:+S.left.toFixed(2),ash:+(S.ash/CIG.ashMax).toFixed(2),lit:S.lit,heat:+S.heat.toFixed(2),arm:+S.wR.toFixed(2),smoke:fx.length,smokeCap:fxCap,
    draw:+S.draw.toFixed(2),kind:S.kind,hold:S.hold,held:+S.held.toFixed(2),quality:S.quality,trick:S.trick,amount:S.amount};},
-  set auto(on){auto=!!on;},get auto(){return auto;},
   // 소품·효과를 모두 치운다(아바타를 지울 때)
   remove(){for(const f of fx)world.remove(f.o);fx.length=0;for(const b of butts)world.remove(b.g);butts.length=0;world.remove(cig.g,lighter.g);ohMouth?.parent?.remove(ohMouth);},
   apply(dt,{moving=false}={}){
    updateFx(dt);updateButts(dt);
-   if(S.state==='idle'&&S.wR<=0&&!S.lend){cig.g.visible=lighter.g.visible=false;if(ohMouth)ohMouth.visible=false;return;}
+   if(S.state==='idle'&&S.wR<=0){cig.g.visible=lighter.g.visible=false;if(ohMouth)ohMouth.visible=false;return;}
    S.t+=dt;const t=S.t,T=SMOKE_SECONDS;
    let toMouth=0,raiseL=0,flame=0,tap=0,pocket=0,drop=0,inhaling=0,exhaling=0,show=true;
    switch(S.state){
     case 'out':pocket=bump(0,.25,.45,.85,t);show=t>.35;if(t>=T.out)go('ready');break;
-    case 'ready':if(auto&&t>.6)api.light();break;
-    case 'lighting':toMouth=bump(0,.45,1.75,2.2,t);if(!S.borrowed){raiseL=bump(.25,.65,1.55,1.95,t);flame=bump(FLAME_AT,FLAME_AT+.06,1.5,1.58,t);}
-     if(t>FLAME_AT-LIGHTER_LEAD&&!S.borrowed)sound('lighter'); // '화'가 불꽃이 보이는 순간(FLAME_AT)에 오게 미리 부른다
+    case 'lighting':toMouth=bump(0,.45,1.75,2.2,t);raiseL=bump(.25,.65,1.55,1.95,t);flame=bump(FLAME_AT,FLAME_AT+.06,1.5,1.58,t);
+     if(t>FLAME_AT-LIGHTER_LEAD)sound('lighter'); // '화'가 불꽃이 보이는 순간(FLAME_AT)에 오게 미리 부른다
      if(t>1.05&&!S.lit){S.lit=true;S.heat=1;sound('inhale','light-inhale');}if(t>1.05)inhaling=bump(1.05,1.2,1.45,1.6,t);
-     if(t>=T.lighting){S.borrowed=false;go('smoking');S.nextPuff=1.2+Math.random()*1.5;}break;
-    case 'smoking':if(auto){S.wait+=dt;if(S.wait>S.nextPuff){S.wait=0;S.nextPuff=3.5+Math.random()*3.5;if(S.ash>CIG.ashMax*.6&&Math.random()<.7)api.flick();else api.puff();}}break;
+     if(t>=T.lighting)go('smoking');break;
+    case 'smoking':break;
     case 'inhale':
      if(S.hold){ // 꾹 누르는 동안: 입에 물고 계속 빨아들인다. 3초 넘으면 콜록.
       S.held+=dt;toMouth=smooth(0,.45,t);inhaling=smooth(.35,.5,t);if(t>.35)sound('inhale');
@@ -244,17 +227,9 @@ export function createSmoker(avatar,{toon,world,audio,isPlayer=true,profile=null
      if(t>.3)sound('ash');
      if(t>.3&&S.ash>0){const tip=tipWorld();for(let i=0;i<3;i++)effect('ash',tip.clone().add(v((Math.random()-.5)*.02,0,(Math.random()-.5)*.02)),{vel:v(0,-.1,0),life:.7,r0:.004,r1:.007,gravity:2.5,lift:0,drag:.5});S.ash=0;}
      if(t>=T.flick)go('smoking');break;
-    case 'finished':if(auto&&t>.8)api.dispose();break;
     case 'dispose':drop=bump(0,.4,.75,1.05,t);show=t<.55;if(t>=.55&&!S.released){S.released=true;releaseButt();}
      if(t>=T.dispose){S.released=false;S.lit=false;go('done');S.state='idle';}break;
    }
-   // 불 대 주기(lend): 라이터는 왼손을 올려 불꽃을, 맞불은 오른손 담배 끝을 상대 담배 끝으로
-   let lendTo=null,lendTip=0;
-   if(S.lend){const Ld=S.lend;Ld.t+=dt;const k=Ld.t,n=Ld.len;lendTo=Ld.target?.()??null;
-    if(Ld.mode==='tip')lendTip=lendTo?bump(.2,.7,n-.6,n-.2,k):0;
-    else if(lendTo){raiseL=Math.max(raiseL,bump(.15,.55,n-.6,n-.2,k));const f=bump(LEND_FLAME_AT,LEND_FLAME_AT+.07,n-.8,n-.7,k);flame=Math.max(flame,f);
-     if(k>LEND_FLAME_AT-LIGHTER_LEAD&&!Ld.clicked){Ld.clicked=true;audio?.play?.('lighter',isPlayer?{}:{at:root.position});}}
-    if(k>=n)S.lend=null;}
    // 팔 섞기 비율: 담배를 든 동안 1, 버리고 나면 0으로
    const wantR=S.state==='idle'?0:1;S.wR=wantR>S.wR?Math.min(wantR,S.wR+dt/.3):Math.max(wantR,S.wR-dt/.35);
    S.wL=raiseL;
@@ -274,7 +249,6 @@ export function createSmoker(avatar,{toon,world,audio,isPlayer=true,profile=null
    const atMouth=m.clone().addScaledVector(mouthDir,CIG.filter+.02).addScaledVector(U,-.045).addScaledVector(F,-.01);
    const low=sh.clone().addScaledVector(L,-.04).addScaledVector(U,-.19).addScaledVector(F,.15);
    const wantRW=hold.clone().lerp(chest,pocket).lerp(atMouth,toMouth).lerp(low,drop);
-   if(lendTip>0)wantRW.lerp(new V3(lendTo.x,lendTo.y,lendTo.z).addScaledVector(F,-(CIG.filter+CIG.paper*S.left)*.9),lendTip);
    if(!curInit){curR.copy(root.worldToLocal(hold.clone()));curL.copy(curR);curInit=true;}
    curR.lerp(root.worldToLocal(wantRW.clone()),1-Math.exp(-dt*14));
    solveArm('Right',root.localToWorld(curR.clone()),axis(-.45,-.35,-1),smooth(0,1,S.wR));
@@ -297,7 +271,7 @@ export function createSmoker(avatar,{toon,world,audio,isPlayer=true,profile=null
    lastTip.copy(filterPos).addScaledVector(dir,CIG.filter+len+S.ash);
 
    // ── 라이터(왼손): 담배 끝 아래로 손을 올리고 딸깍·불꽃
-   if(S.wL>.001){const tipNow=S.lend?.mode==='lighter'&&lendTo?new V3(lendTo.x,lendTo.y,lendTo.z):lastTip.clone();
+   if(S.wL>.001){const tipNow=lastTip.clone();
     const wantLW=tipNow.clone().addScaledVector(U,-(LIGHTER_UP+.06)).addScaledVector(L,.015).addScaledVector(F,-.005);
     curL.lerp(root.worldToLocal(wantLW.clone()),1-Math.exp(-dt*14));
     solveArm('Left',root.localToWorld(curL.clone()),axis(.45,-.35,-1),smooth(0,1,S.wL));model.updateMatrixWorld(true);

@@ -87,6 +87,9 @@ try{
  row(A.nm,'설정 열기·닫기',await tryPress(A,'[data-uf-tab=set]')&&await until(A,()=>!!document.querySelector('[data-uf-panel=set] [data-t]'),null,2000)&&await tryPress(A,'.uf-x')&&await until(A,()=>document.querySelector('.uf-sheet').hidden,null,2000),null);
  row(A.nm,'금연 수첩 탭',await tryPress(A,'.uf-menu-btn')&&await tryPress(A,'[data-uf-tab=note]')&&await until(A,()=>/일째|마디/.test(document.querySelector('[data-uf-panel=note]')?.textContent??''),null,2000),null);
  row(A.nm,'상황 탭(다시)',await tryPress(A,'[data-uf-tab=scene]')&&await until(A,()=>!!document.querySelector('[data-uf-panel=scene] [data-scene]'),null,2000)&&await tryPress(A,'.sp-panel .sp-keep')&&await until(A,()=>document.querySelector('.uf-sheet').hidden,null,2000),null,'상황·시간은 각자 화면 설정');
+ // 11-19: 인사 👋는 불붙이기 전 행동 원 작은 「인사」 단추에만(한숨·기지개는 없앰). 같은 인사 두 번도 상대에게 두 번
+ const ew0=await B.evaluate(()=>window.__emotes.length);
+ row(A.nm,'인사 두 번(작은 「인사」 단추)',await tryPress(A,'[data-a=emote][data-k=wave][data-uf]')&&await tryPress(A,'[data-a=emote][data-k=wave][data-uf]')&&await until(A,()=>document.querySelectorAll('.uf-bub').length>0,null,2000),await until(B,n=>window.__emotes.length>=n+2,ew0,6000),'한숨·기지개 단추는 없음: '+await A.evaluate(()=>!document.querySelector('[data-k=sigh],[data-k=stretch],[data-emote]')));
  row(A.nm,'꺼내기·그만두기',await tryPress(A,'[data-a=take]')&&await tryPress(A,'[data-a=cancel]')&&await until(A,()=>document.querySelector('.lg-dock .smoke').dataset.stage==='idle',null,2000),null);
  await tryPress(A,'[data-a=take]');
  const kindOk=await tryPress(A,'[data-a=kind][data-k=cigar]')&&await until(A,()=>window.lounge.smoker.status().kind==='cigar'&&window.lounge.smoker.status().state!=='idle',null,3000);
@@ -103,10 +106,12 @@ try{
  await until(A,()=>window.lounge.smoker.status().state==='smoking',null,10000);
  await tryPress(A,'[data-a=tricks]'); // 묘기 닫기
  row(A.nm,'재 털기',await tryPress(A,'[data-a=flick]')&&await until(A,()=>window.lounge.smoker.status().state==='flick',null,3000),await seenA("r.smoke==='flick'",6000));
- const ew0=await B.evaluate(()=>window.__emotes.length);
- await tryPress(A,'.uf-chat-btn');for(const k of ['wave','wave','sigh','stretch'])await tryPress(A,`.uf-chatbar [data-emote=${k}]`); // 이모트는 말하기 줄 칩(인사는 서 있을 때 작은 단추에도 — 아래 재떨이로 뒤 확인)
- row(A.nm,'인사·한숨·기지개(4번)',await until(A,()=>document.querySelectorAll('.lg-bub').length>0,null,2000),await until(B,n=>window.__emotes.length>=n+4,ew0,6000),'같은 인사 두 번도 상대에게 두 번');
- await A.fill('.uf-chatbar input','다들 안녕');await tryPress(A,'.uf-chatbar [type=submit]');await tryPress(A,'.uf-chat-btn');
+ // 11-19 채팅 통일: 열면 입력칸·보내기·✕만, 행동 단추는 피우는 중에도 모두 숨김(A안), ✕로 닫힘
+ await tryPress(A,'.uf-chat-btn');
+ row(A.nm,'채팅 중 행동 단추 모두 숨김(피우는 중)',await until(A,()=>[...document.querySelectorAll('[data-uf]')].every(b=>getComputedStyle(b).display==='none'),null,2000),null);
+ row(A.nm,'말하기 줄 = 입력칸·보내기·✕',await A.evaluate(()=>{const c=document.querySelector('.uf-chatbar');return c.querySelectorAll('button').length===2&&!!c.querySelector('.uf-send')&&!!c.querySelector('.uf-close')&&!c.querySelector('[data-say],[data-emote],.uf-pen');}),null,'빠른 말·동작 칩 없음');
+ await A.fill('.uf-chatbar input','다들 안녕');await tryPress(A,'.uf-chatbar [type=submit]');
+ row(A.nm,'✕로 닫기',await tryPress(A,'.uf-chatbar .uf-close')&&await until(A,()=>document.querySelector('.uf-chatbar').hidden&&!!document.querySelector('[data-uf=big]')&&getComputedStyle(document.querySelector('[data-uf=big]')).display!=='none',null,2000),null,'닫으면 큰 단추가 돌아옴');
  row(A.nm,'채팅 보내기',true,await until(B,()=>[...document.querySelectorAll('.uf-chatbar .uf-lines p')].some(p=>p.textContent.includes('다들 안녕')),null,6000));
  // 자판기·캔
  await aim(A,'vending');
@@ -138,7 +143,7 @@ try{
  // ── B(휴대폰)가 탭
  await B.evaluate(()=>window.lounge.teleport(-1.5,1.5,0));await sleep(800);
  row(B.nm,'채팅 열기',await tryPress(B,'.uf-chat-btn')&&await until(B,()=>!document.querySelector('.uf-chatbar').hidden,null,2000),null);
- await tryPress(B,'.uf-pen');await B.fill('.uf-chatbar input','폰에서 왔어요');await tryPress(B,'.uf-chatbar [type=submit]');await B.evaluate(()=>document.activeElement?.blur());await tryPress(B,'.uf-chat-btn');
+ await B.fill('.uf-chatbar input','폰에서 왔어요');await tryPress(B,'.uf-chatbar [type=submit]');await B.evaluate(()=>document.activeElement?.blur());await tryPress(B,'.uf-chat-btn');
  row(B.nm,'채팅 보내기',true,await until(A,()=>[...document.querySelectorAll('.uf-chatbar .uf-lines p')].some(p=>p.textContent.includes('폰에서 왔어요')),null,6000));
  await tryPress(B,'[data-a=take]');
  row(B.nm,'꺼내기→멘솔',await tryPress(B,'[data-a=kind][data-k=menthol]')&&await until(B,()=>window.lounge.smoker.status().kind==='menthol',null,3000),await seenB("r.kind==='menthol'&&r.smoke!=='idle'"));
@@ -150,10 +155,8 @@ try{
  row(B.nm,'묘기 프렌치',await tryPress(B,'[data-a=trick][data-k=french]')&&await until(B,()=>window.lounge.smoker.status().trick==='french',null,8000),await seenB("r.trick==='french'",10000));
  await until(B,()=>window.lounge.smoker.status().state==='smoking',null,10000);await tryPress(B,'[data-a=tricks]');
  row(B.nm,'재 털기',await tryPress(B,'[data-a=flick]')&&await until(B,()=>window.lounge.smoker.status().state==='flick',null,3000),await seenB("r.smoke==='flick'",6000));
- const ea0=await A.evaluate(()=>window.__emotes.length);
- row(B.nm,'말하기 줄 열기(피우는 중)',await tryPress(B,'.uf-chat-btn')&&await until(B,()=>!document.querySelector('.uf-chatbar').hidden,null,2000),null);
- await tryPress(B,'.uf-chatbar [data-emote=wave]');await tryPress(B,'.uf-chatbar [data-emote=wave]');await tryPress(B,'.uf-chat-btn');
- row(B.nm,'인사 두 번',true,await until(A,n=>window.__emotes.length>=n+2,ea0,6000));
+ row(B.nm,'말하기 줄 열기(피우는 중)·행동 단추 숨김',await tryPress(B,'.uf-chat-btn')&&await until(B,()=>!document.querySelector('.uf-chatbar').hidden&&[...document.querySelectorAll('[data-uf]')].every(b=>getComputedStyle(b).display==='none'),null,2000),null);
+ row(B.nm,'✕로 닫기',await tryPress(B,'.uf-chatbar .uf-close')&&await until(B,()=>document.querySelector('.uf-chatbar').hidden,null,2000),null);
  await aim(B,'vending');
  row(B.nm,'자판기(캔커피)',await tryPress(B,'.sp-mark[data-k="vending:0"]')&&await until(B,()=>window.lounge.spots.status().can.held,null,20000),await seenB("r.act?.can===2",8000));
  await aim(B,'bench');
@@ -217,8 +220,6 @@ try{
  await key2('KeyN');row(A.nm,'키 N(코로)',await until(A,()=>window.lounge.smoker.status().trick==='nose',null,8000),null);
  await until(A,()=>window.lounge.smoker.status().state==='smoking',null,10000);
  await key2('KeyR');row(A.nm,'키 R(링)',await until(A,()=>window.lounge.smoker.status().trick==='ring',null,8000),null);
- const errBefore=report.errors.length;await key2('KeyB');await key2('KeyG');await sleep(300);
- row(A.nm,'키 B·G(NPC 없음)',report.errors.length===errBefore,null,'NPC를 안 부른 옥상: 할 일 없음·오류 없음');
  await aim(A,'vending',{x:null});await A.evaluate(()=>{const L=window.lounge,v=L.rooftop.spots.vending;L.teleport(v.x,v.z+1,Math.PI);});await sleep(600);
  await key2('KeyE');row(A.nm,'키 E(가까운 할 일)',await until(A,()=>window.lounge.spots.status().can.dropping||window.lounge.spots.status().can.held,null,8000),await seenA('r.act?.can>=1',8000));
  await until(A,()=>window.lounge.spots.status().can.held&&!window.lounge.spots.status().can.sipping,null,8000);
