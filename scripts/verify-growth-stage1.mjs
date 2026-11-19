@@ -5,18 +5,20 @@
 //  invite ① ☰ 메뉴 맨 위 「친구 부르기」(세 체험) → 공유 창에 지금 서버 주소. 받은 주소로 들어온 사람이 같은 서버. 공유가 없는 PC는 복사
 //  spot   ③ 크리스마스 ?spot=sled·fight·rink·tree·sky → 그 시설 앞, 다른 사람 화면에도 같은 자리
 //   node scripts/verify-growth-stage1.mjs → artifacts/growth-stage1/report.json, *.png   (PART=zero,slow,invite,spot 로 일부만)
+//   LIVE=1 → 배포된 실제 주소(engchoon.github.io)를 열고 시험 사람은 이 맥 시험 서버에만 넣음(공개 서버에 안 들어감) → artifacts/growth-stage1-live/
 import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {startServer} from '../server/multi-server.mjs';
 import {travelSpots} from '../src/christmas/travel.js';
 
-const dir='artifacts/growth-stage1',multiPort=Number(process.env.MULTI_PORT??8799);mkdirSync(dir,{recursive:true});
+const LIVE=!!process.env.LIVE,dir=LIVE?'artifacts/growth-stage1-live':'artifacts/growth-stage1',multiPort=Number(process.env.MULTI_PORT??8799);mkdirSync(dir,{recursive:true});
 const PARTS=new Set((process.env.PART??'zero,slow,invite,spot').split(','));
-const {createServer}=await import('vite');const port=Number(process.env.PORT??5207);
-const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true,hmr:false,watch:null},logLevel:'warn'});await vite.listen();
-const pageUrl=`http://127.0.0.1:${port}`,wsUrl=`ws://127.0.0.1:${multiPort}`;
-const srv=startServer({PORT:String(multiPort),HOST:'127.0.0.1',DATA_DIR:`${dir}/data`,ALLOWED_ORIGINS:pageUrl},{quiet:true});await srv.ready;
-const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--use-angle=metal']});
+const port=Number(process.env.PORT??5207);let vite=null;
+if(!LIVE){const {createServer}=await import('vite');vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true,hmr:false,watch:null},logLevel:'warn'});await vite.listen();}
+const pageUrl=LIVE?'https://engchoon.github.io/ai-office-world':`http://127.0.0.1:${port}`,wsUrl=`ws://127.0.0.1:${multiPort}`;
+const srv=startServer({PORT:String(multiPort),HOST:'127.0.0.1',DATA_DIR:`${dir}/data`,ALLOWED_ORIGINS:LIVE?'https://engchoon.github.io':pageUrl},{quiet:true});await srv.ready;
+// 실제 주소(https) → 이 맥 시험 서버(ws://127.0.0.1)는 크롬 로컬 접속 막기를 꺼야 붙는다
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--use-angle=metal',...(LIVE?['--disable-features=LocalNetworkAccessChecks,PrivateNetworkAccessRespectPreflightResults']:[])]});
 const out={at:new Date().toISOString(),checks:{},errors:[]};let fail=false;
 const check=(name,ok,detail={})=>{out.checks[name]={ok:!!ok,...detail};if(!ok)fail=true;console.log(ok?'통과':'실패',name,JSON.stringify(detail).slice(0,300));};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -153,5 +155,5 @@ if(PARTS.has('spot')){
 }
 check('페이지 오류 0',out.errors.length===0,{errors:out.errors.slice(0,5)});
 writeFileSync(`${dir}/report.json`,JSON.stringify(out,null,1));
-await browser.close();await vite.close();await srv.close?.();
+await browser.close();await vite?.close();await srv.close?.();
 console.log(fail?'\n실패 있음':'\n모두 통과',`→ ${dir}/report.json`);process.exit(fail?1:0);
