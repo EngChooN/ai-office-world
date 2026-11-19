@@ -8,7 +8,7 @@ import {SERVERS,findServer} from './multi-protocol.js';
 
 export const INVITE_UTM=Object.freeze({utm_source:'invite',utm_medium:'share'});
 const EVENT_OF=Object.freeze({hiking:'hiking:multi-status',smoking:'lounge:multi-status',christmas:'xmas:multi-status'});
-// 보낼 글(초안 · 월드디자인·월드기획 확인 전)
+// 보낼 글(11-19 월드기획 검토: 이 형태 유지, 서버 번호·체험 이름만 실제 값. 흡연장은 과장·실제 담배 홍보로 읽힐 말 없이)
 const TITLE=Object.freeze({hiking:'온라인 등산',smoking:'온라인 흡연장',christmas:'온라인 크리스마스'});
 const PLACE=Object.freeze({hiking:'관악산',smoking:'옥상',christmas:'눈마을'});
 
