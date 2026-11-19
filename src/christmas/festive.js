@@ -13,6 +13,7 @@ import {groundGlowMaterial,haloMaterial} from './props.js';
 import {RINK,CAROUSEL,CAROUSEL_SEATS,carouselSpin,deerBob,carouselSeatAt,lookLevel,REINDEER_STATION} from './festive-layout.js';
 import {createSkySleighFleet,SLEIGH} from './sky-sleigh.js';
 import {createStarTrail} from './star-trail.js';
+import {createSkateArt} from './skate-art.js';
 
 const {Color,Matrix4}=THREE;
 const rng=seed=>{let s=seed>>>0;return ()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);};
@@ -444,6 +445,9 @@ bulbs.forEach((b,i)=>{bulbMesh.setMatrixAt(i,M.makeScale(b.s,b.s,b.s).setPositio
   const stars=createStarTrail({mobile});root.add(stars.points);
   skySleigh={fleet,stars,station:S,waiting};}
 
+ // ═════ 스케이트(시안 B 링크): 날·자세·날 자국·얼음 가루 그림(skate-art.js). 월드개발 rink-play.js가 wear·pose·drawFx로 부른다.
+ const skate=level>=2?createSkateArt({world:root,iceY:RINK.iceY,mobile}):null;
+
  // ═════ 눈 위 반짝임: 땅에 흩은 작은 점이 제각각 깜빡인다(점 하나 = 그리기 1번)
  const glints=(()=>{const n=mobile?700:1600,pos=new Float32Array(n*3),ph=new Float32Array(n);for(let i=0;i<n;i++){const a=r()*6.28,d=3.8+Math.sqrt(r())*36,x=Math.sin(a)*d,z=Math.cos(a)*d;pos.set([x,H(x,z)+.05,z],i*3);ph[i]=r()*100;}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('ph',new THREE.BufferAttribute(ph,1));
@@ -453,7 +457,7 @@ bulbs.forEach((b,i)=>{bulbMesh.setMatrixAt(i,M.makeScale(b.s,b.s,b.s).setPositio
   const p=new THREE.Points(g,m);p.name='눈 반짝임';p.frustumCulled=false;root.add(p);return m;})();
 
  let acc=0;
- return {group:root,bulbs:bulbMesh,count:{bulbs:bulbs.length,stalls:stallList.length},carousel,skySleigh,
+ return {group:root,bulbs:bulbMesh,count:{bulbs:bulbs.length,stalls:stallList.length},carousel,skySleigh,skate,
   // 노점 앞 자리(계산대 앞 1.4m, 노점을 봄) — 미리보기 30명 장면용
   stalls:stallList.map(([deg,kind])=>{const a=deg*Math.PI/180,rr=STALL_R-STALL_D/2-1.4;return {kind,x:Math.sin(a)*rr,z:Math.cos(a)*rr,heading:Math.atan2(Math.sin(a),Math.cos(a))};}),
   // view = {camera, viewHeight}: 별 크기(화면 높이 기준)를 맞춘다(없으면 지난 값)
