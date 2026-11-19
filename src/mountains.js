@@ -6,8 +6,9 @@
 import {COURSE_LENGTH} from './movement.js';
 import {STAMPS} from './interaction-data.js';
 export const MOUNTAINS=Object.freeze([
+ // 관악산 예상 시간: 걷기 공식 값 97분(11-19 대표 결정, 이전 150분)
  Object.freeze({id:'gwanak',name:'관악산',altitudeM:632,course:'관악산공원 입구 → 연주대 정상',summitName:'연주대',
-  distanceKm:Math.round(COURSE_LENGTH/100)/10,etaMin:150,stamps:STAMPS.length,difficulty:'보통',ready:true,
+  distanceKm:Math.round(COURSE_LENGTH/100)/10,etaMin:97,stamps:STAMPS.length,difficulty:'보통',ready:true,
   art:Object.freeze({ridge:[.18,.3,.42,.38,.55,.72,.86,.7,.5,.36],peak:.6})}),
  // 남산(11-19, 월드디자인 설계 v1 §8 · 대표 결정: 성곽 계단길·265m). 코스 길이 1,067m(assets/shared/namsan/course.json), 걷기 공식 26.6분 → 카드 30분
  Object.freeze({id:'namsan',name:'남산',altitudeM:265,course:'백범광장 → 남산 정상 · 성곽 계단길',summitName:'남산 정상',
