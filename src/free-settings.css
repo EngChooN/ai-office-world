@@ -22,6 +22,7 @@
 .pk-art-wrap{position:relative;flex:none;line-height:0}
 .pk-art{display:block;width:100%;border-bottom:2px dashed var(--rule)}
 .pk-tag{position:absolute;left:10px;top:10px;display:inline-flex;align-items:center;height:30px;padding:0 10px;border-radius:6px;background:var(--paper);color:var(--ink);font-size:12px;font-weight:800;line-height:1;box-shadow:1px 2px 0 var(--edge)}
+.pk-tag.pk-tag-r{left:auto;right:10px} /* 남산 '밤 전망 추천'(11-19) */
 .pk-body{display:flex;flex-direction:column;gap:7px;padding:10px 14px 12px;flex:1}
 .pk-top{display:flex;align-items:flex-start;gap:10px}
 .pk-who{flex:1;min-width:0}

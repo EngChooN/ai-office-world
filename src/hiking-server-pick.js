@@ -18,6 +18,8 @@ const entryChoice=typeof location!=='undefined'?takeEntryChoice('hiking',{mode:h
 /** 첫 입장: 선택이 있으면 그대로 들어가고, 없거나 못 쓰면 공용 입장 창(서버 고르기)을 연다. */
 export function openFirstHikingPick(){enterWith(hikingServerPick(),entryChoice,'show');}
 export const entryDecided=()=>!!entryChoice;
+/** 꺼내 둔 입장 선택(남산처럼 다른 페이지로 넘어갈 때 넘겨준다, 11-19) */
+export const entryChoiceNow=()=>entryChoice;
 export const hubPicked=entryDecided;
 export function hikingServerPick(){
  if(pick)return pick;

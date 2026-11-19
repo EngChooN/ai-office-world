@@ -25,9 +25,10 @@ test('세 페이지가 있고 각자 자기 진입 스크립트를 쓴다',()=>{
  assert.match(read('hiking/index.html'),/src="\/src\/main\.js"/);
  assert.match(read('smoking/index.html'),/src="\/src\/lounge\/main\.js"/);
 });
-test('vite 빌드 입력에 네 페이지가 모두 있다',async()=>{
+test('vite 빌드 입력에 다섯 페이지(허브·등산·등산 남산·흡연장·크리스마스)가 모두 있다',async()=>{
  const {PAGES}=await import('../vite.config.js');
- assert.deepEqual(Object.values(PAGES).sort(),['christmas/index.html','hiking/index.html','index.html','smoking/index.html']);
+ assert.deepEqual(Object.values(PAGES).sort(),['christmas/index.html','hiking/index.html','hiking/namsan/index.html','index.html','smoking/index.html']);
+ assert.match(read('hiking/namsan/index.html'),/src="\/src\/namsan\/game\.js"/);
  for(const p of Object.values(PAGES))assert.ok(existsSync(new URL('../'+p,import.meta.url)),p);
 });
 test('흡연장은 등산과 같은 에셋 경로(BASE_URL 기준 assets/toon)로 동동이 뼈대를 받는다',()=>{

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko" data-style="toon">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>남산 그림 미리보기 — 온라인 등산 (월드아트)</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#9fc3dd}canvas{display:block;touch-action:none}
+#panel{position:fixed;left:10px;top:10px;max-width:calc(100vw - 20px);padding:7px 9px;border-radius:10px;background:rgba(24,36,44,.72);color:#f4efe6;font:12px system-ui,'Apple SD Gothic Neo',sans-serif;z-index:5}
+#panel button{margin:2px;border:0;border-radius:6px;padding:4px 7px;background:#f4efe6;color:#1d2a44;cursor:pointer;font:inherit}
+#panel b{display:inline-block;min-width:36px;color:#ffd98a}#info{margin-top:4px;opacity:.85;white-space:pre-line}</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+<div id="panel">
+ <div><b>코스</b><button data-view="start">출발 광장</button><button data-view="start-back">뒤 돌아보기</button><button data-view="wall">성곽 옆</button><button data-view="stairs">큰 계단</button><button data-view="rest">전망 쉼터</button><button data-view="last">마지막 계단</button><button data-view="summit">전망탑</button><button data-view="summit-plaza">정상 광장</button></div>
+ <div><b>전망</b><button data-view="summit-south">정상→관악산</button><button data-view="summit-north">정상→북한산</button><button data-view="aerial">위에서</button><button data-view="far-south">한강에서</button></div>
+ <div><b>시간</b><a href="?time=day" style="color:#ffd98a">낮</a> · <a href="?time=dusk" style="color:#ffd98a">노을</a> · <a href="?time=night" style="color:#ffd98a">밤</a></div>
+ <div id="info">불러오는 중…</div>
+</div>
+<script type="module" src="./preview.js"></script>
+</body>
+</html>

@@ -45,6 +45,7 @@ const ss=store('sessionStorage'),ls=store('localStorage');
 export const freeState={
  free:loadFree(ss),records:loadSummits(ls),dev:devBuild(),realKind:'clear',game:null,started:false,startPick:null,listeners:new Set(),
  get unlocked(){return freeUnlocked({records:this.records,mountain:DEFAULT_MOUNTAIN,dev:this.dev});},
+ unlockedFor(mountain=DEFAULT_MOUNTAIN){return freeUnlocked({records:this.records,mountain,dev:this.dev});},
  get actual(){return actualValues({weatherKind:this.realKind});},
 };
 const notify=()=>{for(const f of freeState.listeners)try{f();}catch(e){console.error(e);}};
@@ -83,12 +84,16 @@ function routeSVG(sel,here){
  const n=START_POINTS.length,x=i=>14+i*(292/(n-1));
  return `<svg class="fs-route" viewBox="0 0 320 30" preserveAspectRatio="none" aria-hidden="true"><path d="M14 22 C70 22 90 12 140 15 S230 6 306 8" fill="none" stroke="var(--edge)" stroke-width="2.4" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>${START_POINTS.map((p,i)=>{const y=22-i*(14/(n-1));const isSel=sel===i,isHere=here===i;return `<circle cx="${x(i)}" cy="${y}" r="${isSel?6.5:isHere?5.5:3.6}" fill="${isSel?'var(--stamp)':isHere?'var(--go)':'var(--ink2)'}" ${isHere&&!isSel?'stroke="var(--paper)" stroke-width="1.5"':''}/>`;}).join('')}</svg>`;
 }
-export function panelHTML({context='game'}={}){
- const f=freeState.free,a=freeState.actual,unlocked=freeState.unlocked,dev=freeState.dev&&!summitOf(freeState.records,DEFAULT_MOUNTAIN);
+// mountain(11-19 남산): 관악산이 아닌 산 카드에서 열면 잠김은 그 산 정상 기준, 출발 지점 칸(관악산 구간)은 빼고 '이대로 오르기'만 둔다.
+export function panelHTML({context='game',mountain=DEFAULT_MOUNTAIN}={}){
+ const other=mountain!==DEFAULT_MOUNTAIN,m=mountainById(mountain);
+ const f=freeState.free,a=freeState.actual,unlocked=freeState.unlockedFor(mountain),dev=freeState.dev&&!summitOf(freeState.records,mountain);
  const st=statusLine(f,a),here=freeState.started?hereIndex(freeState.game):-1,selIdx=START_POINTS.findIndex(p=>p.id===freeState.startPick);
  const head=`<h4><span class="fs-t">${iconText('h-free-settings','자유 설정')}${dev?` <i class="nb-devmark">${iconText('c-dev','개발 버전',{size:'xs'})}</i>`:''}</span><button type="button" class="nb-close" data-free-close aria-label="자유 설정 닫기">✕</button></h4>`;
  if(!unlocked){
   const g=freeState.game,remain=g&&Number.isFinite(g.courseLength)?Math.max(0,(g.courseLength-(g.courseDistance||0))/1000):null,stamps=stampCount(loadProgress(ls));
+  if(other)return `${head}<div class="fs-cols fs-lockcols"><div class="fs-lockbox">${sealSlot(context==='pick'?84:64)}<div><b>${esc(m?.summitName??m?.name??'')}에서 완등 도장을 받으면 열려요</b><small>열리면 날씨 · 시간 · 계절을 마음대로 골라요</small></div></div>
+<div class="fs-ghost" aria-hidden="true">${['weather','time','season'].map(k=>`<div class="fs-lb">${GROUP_LABEL[k]}</div>${seg(k,{weather:WEATHER_CHOICES,time:TIME_CHOICES,season:SEASON_CHOICES}[k],null,null,true)}`).join('')}</div></div>`;
   return `${head}<div class="fs-cols fs-lockcols"><div class="fs-lockbox">${sealSlot(context==='pick'?84:64)}<div><b>연주대 정상에서 완등 도장을 받으면 열려요</b><small>${remain!==null?`정상까지 ${remain.toFixed(1)} km · `:''}스탬프 ${stamps} / ${STAMPS.length}</small><div class="nb-prog fs-prog"><i style="width:${Math.round(stamps/STAMPS.length*100)}%"></i></div><small>열리면 날씨 · 시간 · 계절 · 출발 지점을 마음대로 골라요</small></div></div>
 <div class="fs-ghost" aria-hidden="true">${['weather','time','season'].map(k=>`<div class="fs-lb">${GROUP_LABEL[k]}</div>${seg(k,{weather:WEATHER_CHOICES,time:TIME_CHOICES,season:SEASON_CHOICES}[k],null,null,true)}`).join('')}</div></div>`;
  }
@@ -97,6 +102,7 @@ export function panelHTML({context='game'}={}){
 <div class="fs-lb">시간</div>${seg('time',TIME_CHOICES,f.time,a.time)}
 <div class="fs-lb">계절</div>${seg('season',SEASON_CHOICES,f.season,a.season)}`;
  const goLabel=context==='pick'?iconText('c-enter','이대로 오르기'):iconText('h-start-here','여기서 다시 출발');
+ if(other)return `${head}<div class="fs-cols"><div class="fs-col">${left}</div><div class="fs-col"><div class="fs-go"><button type="button" class="btn-stamp" data-free-go>${goLabel}</button><small>${esc(m?.course??'')} · 처음부터 올라요</small></div></div></div>`;
  const goNote=context==='pick'?(selIdx>=0?`${START_POINTS[selIdx].label}에서 출발해요`:'고르지 않으면 원래 자리에서 출발해요'):'진행 기록은 새로 시작해요 · 완등 도장은 그대로 남아요';
  const right=`<div class="fs-lb">출발 지점<small>${here>=0?'초록 = 지금 있는 곳':'고른 곳에서 출발'}</small></div>${routeSVG(selIdx,here)}
 <div class="fs-start" role="group" aria-label="출발 지점">${START_POINTS.map((p,i)=>`<button type="button" data-free-start="${p.id}" class="${selIdx===i?'on':''}${here===i?' here':''}" aria-pressed="${selIdx===i}"><i aria-hidden="true">${i+1}</i>${esc(p.label)}</button>`).join('')}</div>
@@ -104,11 +110,12 @@ export function panelHTML({context='game'}={}){
  return `${head}<div class="fs-cols"><div class="fs-col">${left}</div><div class="fs-col">${right}</div></div>`;
 }
 // 판 안의 누름 처리(시트·산 고르기 공용). 처리했으면 true.
-export function handlePanelClick(e,{context='game',onGo=null,onClose=null}={}){
+export function handlePanelClick(e,{context='game',onGo=null,onClose=null,mountain=DEFAULT_MOUNTAIN}={}){
  const b=e.target.closest('button');if(!b||b.disabled)return false;
  const d=b.dataset;
  if('freeClose' in d){onClose?.();return true;}
- if(!freeState.unlocked)return false;
+ if(!freeState.unlockedFor(mountain))return false;
+ if(mountain!==DEFAULT_MOUNTAIN&&('freeStart' in d||'freeGo' in d)){if('freeGo' in d)onGo?.();b.blur?.();return true;} // 다른 산: 출발 지점 없음, 오르기만
  if('freeReset' in d){resetFree();}
  else if(d.freeWeather)setFree({weather:freeState.free.weather===d.freeWeather?null:d.freeWeather});
  else if(d.freeTime)setFree({time:freeState.free.time===d.freeTime?null:d.freeTime});

@@ -141,18 +141,19 @@ export function summitBoardModel(level,{title='관악산 정상',subtitle='연�
 
 // ── 4. 스탬프함: 기둥 위 우체통 모양 함(서울둘레길 스탬프함이 우체통 모양이라는 서울시 기사 근거, 색·치수 추정).
 const STAMP_GLYPHS=['門','瀑','亭','塔','庵','臺'];
-function stampLabel(number,glyph){
- return canvasTexture(`stamp:${number}:${glyph}`,256,320,(ctx,w,h)=>{
+function stampLabel(number,glyph,total=6){
+ return canvasTexture(`stamp:${number}:${glyph}:${total}`,256,320,(ctx,w,h)=>{
   ctx.fillStyle='#f4eadb';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#c2452d';ctx.lineWidth=10;ctx.strokeRect(10,10,w-20,h-20);
   ctx.fillStyle='#c2452d';ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.font=`bold 44px ${FONT}`;ctx.fillText('스탬프',w/2,58);
   ctx.beginPath();ctx.arc(w/2,170,74,0,Math.PI*2);ctx.lineWidth=8;ctx.stroke();
   ctx.font=`bold 92px "Noto Serif CJK KR","AppleMyungjo",serif`;ctx.fillText(glyph,w/2,174);
-  ctx.font=`bold 34px ${FONT}`;ctx.fillText(`${number} / 6`,w/2,282);
+  ctx.font=`bold 34px ${FONT}`;ctx.fillText(`${number} / ${total}`,w/2,282);
  });
 }
 export const STAMP_BOX={width:.36,depth:.3,body:.34,base:1.02};
-export function stampBoxModel(level,{number=1,glyph=STAMP_GLYPHS[number-1]??'山'}={}){
+// total = 산의 스탬프 수(관악산 6, 남산 4 — 11-19 월드아트). 함 모양은 같다.
+export function stampBoxModel(level,{number=1,glyph=STAMP_GLYPHS[number-1]??'山',total=6}={}){
  const b=builder(),root=new THREE.Group(),{width:W,depth:D,body:B,base}=STAMP_BOX;
  b.box('metal',0,(base-.5)/2,0,.09,base+.5,.09); // 50cm 묻음
  b.box('metal',0,base+.012,0,W*.7,.024,D*.7);
@@ -166,7 +167,7 @@ export function stampBoxModel(level,{number=1,glyph=STAMP_GLYPHS[number-1]??'山
   b.box('stampDark',0,base-.12,D/2+.02,.04,.1,.04);
  }
  b.finish(root);
- const m=level===0?textPlane(stampLabel(number,glyph),W*.62,W*.78):null;
+ const m=level===0?textPlane(stampLabel(number,glyph,total),W*.62,W*.78):null;
  if(m){m.position.set(0,base+.024+B*.62,D/2+.0095);root.add(m);}
  return root;
 }

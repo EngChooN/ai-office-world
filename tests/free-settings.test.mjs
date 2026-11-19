@@ -13,8 +13,9 @@ import {SHEETS} from '../src/hud-notebook.js';
 const memory=()=>{const m=new Map();return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v)),removeItem:k=>m.delete(k),m};};
 const seoul=(y,mo,d,h=12)=>Date.UTC(y,mo-1,d,h-9);
 
-test('산 목록: 관악산 한 곳, 카드에 필요한 값이 모두 있다', ()=>{
- assert.equal(MOUNTAINS.length,1);
+test('산 목록: 관악산(첫 카드)·남산(11-19), 카드에 필요한 값이 모두 있다', ()=>{
+ assert.equal(MOUNTAINS.length,2);assert.equal(MOUNTAINS[0].id,'gwanak');
+ for(const m of MOUNTAINS)for(const k of ['id','name','altitudeM','course','distanceKm','etaMin','stamps','difficulty','art','summitName'])assert.ok(m[k]!==undefined,`${m.id} ${k}`);
  const g=mountainById('gwanak');
  for(const k of ['id','name','altitudeM','course','distanceKm','etaMin','stamps','difficulty','art'])assert.ok(g[k]!==undefined,k);
  assert.equal(g.name,'관악산');assert.equal(g.altitudeM,632);assert.ok(g.distanceKm>4.5&&g.distanceKm<5.5);assert.equal(g.stamps,6);

@@ -37,7 +37,12 @@ for(const [v,viewport,safe,engine] of VIEWS){
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.goto(base+'?pick=on');
   await page.waitForSelector('#mountain-pick .pk-card');await page.waitForTimeout(600);
-  await page.screenshot({path:`${out}/${v}-pick.png`});check(v,'산 고르기',await audit(page,'#mountain-pick',safe));
+  // 11-19 남산 카드가 붙어 산 목록이 넘겨 보는 줄이 됐다: 카드마다 화면에 들여 놓고 따로 검사한다.
+  await page.screenshot({path:`${out}/${v}-pick.png`});check(v,'산 고르기',await audit(page,'#mountain-pick .pk-card[data-mountain=gwanak]',safe));
+  if(await page.$('#mountain-pick .pk-card[data-mountain=namsan]')){
+   await page.evaluate(()=>document.querySelector('#mountain-pick .pk-card[data-mountain=namsan] [data-pk-go]').scrollIntoView({block:'center',inline:'center'}));await page.waitForTimeout(500);
+   await page.screenshot({path:`${out}/${v}-pick-namsan.png`});check(v,'산 고르기 남산 카드',await audit(page,'#mountain-pick .pk-card[data-mountain=namsan]',safe));
+   await page.evaluate(()=>document.querySelector('#mountain-pick .pk-card[data-mountain=gwanak] [data-pk-go]').scrollIntoView({block:'center',inline:'center'}));await page.waitForTimeout(500);}
   const card=await page.evaluate(()=>({go:document.querySelector('[data-pk-go]')?.textContent,free:document.querySelector('[data-pk-free]')?.textContent,dev:!!document.querySelector('.pk-devtag'),tag:document.querySelector('.pk-tag')?.textContent,startMode:document.documentElement.dataset.startMode,started:!!window.hiking?.started}));
   report.views[v].card=card;console.log('  카드',JSON.stringify(card));
   if(card.started)fail(v,'산을 고르기 전에 게임이 시작됨');
@@ -54,7 +59,7 @@ for(const [v,viewport,safe,engine] of VIEWS){
   if(Math.abs(afterStart.s-2634)>40)fail(v,'제4쉼터에서 출발하지 않음: s='+afterStart.s);
   if(afterStart.pick)fail(v,'산 고르기 화면이 남아 있음');
   // 게임 안: 설정 탭 → 자유 설정
-  await page.click('[data-tab=settings]');await page.waitForTimeout(300);
+  await page.evaluate(()=>{if(!document.querySelector('.uf-menu-btn.on'))document.querySelector('.uf-menu-btn')?.click();document.querySelector('[data-uf-tab=settings]')?.click();});await page.waitForTimeout(300); // 11-18 공통 틀: 설정은 ☰ 메뉴 탭
   await page.screenshot({path:`${out}/${v}-settings.png`});check(v,'설정 탭',await audit(page,'[data-sheet=settings]',safe));
   await page.click('.fs-entry');await page.waitForTimeout(400);await page.screenshot({path:`${out}/${v}-free.png`});
   report.views[v].sheetBox=await page.evaluate(()=>{const r=document.querySelector('[data-sheet=free]').getBoundingClientRect();return [r.top,r.bottom,innerHeight].map(Math.round);});console.log('  시트',JSON.stringify(report.views[v].sheetBox));
@@ -129,7 +134,7 @@ for(const [v,viewport,safe,engine] of VIEWS){
   await page.screenshot({path:`${out}/${v}-pick-locked.png`});
   report.views[v].locked={...toast};if(!toast.toast||toast.dev||toast.panel)fail(v,'잠김 알림 이상 '+JSON.stringify(toast));
   await page.click('[data-pk-go]');await page.waitForFunction(()=>window.hiking?.started===true,null,{timeout:300000});await page.waitForTimeout(1500);
-  await page.click('[data-tab=settings]');await page.waitForTimeout(300);await page.click('.fs-entry');await page.waitForTimeout(400);
+  await page.evaluate(()=>{if(!document.querySelector('.uf-menu-btn.on'))document.querySelector('.uf-menu-btn')?.click();document.querySelector('[data-uf-tab=settings]')?.click();});await page.waitForTimeout(300);await page.click('.fs-entry');await page.waitForTimeout(400);
   await page.screenshot({path:`${out}/${v}-free-locked.png`});check(v,'잠긴 자유 설정',await audit(page,'[data-sheet=free]',safe));
   const lk=await page.evaluate(()=>({jump:!!document.querySelector('#section-jump')&&!document.querySelector('#section-jump').hidden,clear:!!document.querySelector('.fs-clear'),enabled:document.querySelectorAll('[data-sheet=free] [data-free-weather]:not([disabled])').length}));
   report.views[v].locked.game=lk;if(lk.jump||lk.clear||lk.enabled)fail(v,'잠김인데 열린 것이 있음 '+JSON.stringify(lk));

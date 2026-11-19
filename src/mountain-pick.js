@@ -17,7 +17,8 @@ import {summitOf} from './summit-records.js';
 import {SAVE_KEY} from './movement.js';
 import {seoulClock,sunPosition} from './daytime.js';
 import {START_EVENT} from './loading.js';
-import {hikingPickMode,openFirstHikingPick,entryDecided} from './hiking-server-pick.js';
+import {hikingPickMode,openFirstHikingPick,entryDecided,entryChoiceNow} from './hiking-server-pick.js';
+import {NAMSAN_SAVE_KEY,NAMSAN_ENTRY_KEY} from './namsan/namsan-walk.js';
 
 const q=new URLSearchParams(location.search);
 export const pickEnabled=(search=location.search,webdriver=!!navigator.webdriver)=>{const p=new URLSearchParams(search).get('pick');return p==='on'||(p!=='off'&&!webdriver);};
@@ -37,17 +38,26 @@ export function mountainArt(m,{season='autumn',time='day',w=362,h=150,gray=false
  for(let i=0;i<38;i++){const x=rnd()*w,k=Math.min(n-1.001,x/w*(n-1)),a=Math.floor(k),f=k-a,top=ridge[a][1]*(1-f)+ridge[a+1][1]*f,y=top+8+rnd()*(h-top-10),s=5+rnd()*5,c=t[Math.floor(rnd()*t.length)];
   trees+=season==='winter'?`<path d="M${x.toFixed(1)} ${y.toFixed(1)} v-${(s*1.6).toFixed(1)} m0 ${(s*.6).toFixed(1)} l-${(s*.5).toFixed(1)} -${(s*.6).toFixed(1)} m${(s*.5).toFixed(1)} ${(s*.9).toFixed(1)} l${(s*.5).toFixed(1)} -${(s*.6).toFixed(1)}" stroke="${c}" stroke-width="1.3" fill="none"/>`
    :`<circle cx="${x.toFixed(1)}" cy="${(y-s*.6).toFixed(1)}" r="${s.toFixed(1)}" fill="${c}"/>`;}
- const course=`M${sx} ${sy} C${w*.25} ${h*.82} ${w*.3} ${h*.62} ${w*.45} ${h*.6} S${px-30} ${py+30} ${px} ${py+2}`;
+ // 정상이 왼쪽인 산(남산, art.course 'zigzag-left'): 오른쪽 아래에서 출발해 봉우리 앞을 지그재그(계단)로 오른다
+ const zig=m.art?.course==='zigzag-left';
+ const course=zig?`M${w*.94} ${h*.94} C${w*.78} ${h*.9} ${w*.62} ${h*.86} ${(px+w*.16).toFixed(1)} ${(py+(h-py)*.62).toFixed(1)} L${(px-w*.05).toFixed(1)} ${(py+(h-py)*.45).toFixed(1)} L${(px+w*.07).toFixed(1)} ${(py+(h-py)*.28).toFixed(1)} L${(px-w*.03).toFixed(1)} ${(py+(h-py)*.12).toFixed(1)} L${px.toFixed(1)} ${(py+2).toFixed(1)}`
+  :`M${sx} ${sy} C${w*.25} ${h*.82} ${w*.3} ${h*.62} ${w*.45} ${h*.6} S${px-30} ${py+30} ${px} ${py+2}`;
+ // 정상 표시: 깃발, 또는 전망탑(남산 art.summit 'tower'). 밤에는 탑 불빛·산 아래 도심 불빛 점
+ const lit=time==='night',tower=m.art?.summit==='tower';
+ const peakMark=tower?`<g transform="translate(${px.toFixed(1)} ${(py+3).toFixed(1)})"><rect x="-2" y="-30" width="4" height="30" fill="#e9e1cf"/><ellipse cx="0" cy="-31" rx="6.5" ry="3" fill="${lit?'#ffd36b':'#d8d0bd'}"/><line x1="0" y1="-34" x2="0" y2="-46" stroke="#c4473a" stroke-width="1.6"/>${lit?'<circle cx="0" cy="-46" r="1.6" fill="#ff7ab8"/>':''}</g>`
+  :`<g transform="translate(${px.toFixed(1)} ${(py+2).toFixed(1)})"><line x1="0" y1="0" x2="0" y2="-20" stroke="#4a3618" stroke-width="2"/><path d="M0 -20 L14 -15 L0 -10Z" fill="#b9472f"/></g>`;
+ let city='';if(tower&&lit){let s2=3;const r2=()=>(s2=(s2*16807)%2147483647)/2147483647;for(let i=0;i<26;i++)city+=`<circle cx="${(r2()*w).toFixed(1)}" cy="${(h-2-r2()*h*.1).toFixed(1)}" r="${(.8+r2()*.9).toFixed(1)}" fill="#ffd98a" opacity=".85"/>`;}
  return `<svg class="pk-art" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid slice" aria-hidden="true"${gray?' style="filter:grayscale(1) contrast(.8) brightness(1.05)"':''}>
 <defs><linearGradient id="pks${m.id}${time}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset="1" stop-color="${sky[1]}"/></linearGradient></defs>
 <rect width="${w}" height="${h}" fill="url(#pks${m.id}${time})"/>${time==='night'?`<circle cx="${w*.82}" cy="${h*.2}" r="7" fill="#f6eccb"/>`:time==='dusk'?`<circle cx="${w*.18}" cy="${h*.52}" r="11" fill="#ffd28a" opacity=".9"/>`:''}
 <path d="${back}" fill="${g[1]}" opacity=".55"/><path d="${front}" fill="${g[0]}"/>${trees}
 <path d="${course}" fill="none" stroke="#fbf3df" stroke-width="2.4" stroke-dasharray="5 5" stroke-linecap="round"/>
-<g transform="translate(${px.toFixed(1)} ${(py+2).toFixed(1)})"><line x1="0" y1="0" x2="0" y2="-20" stroke="#4a3618" stroke-width="2"/><path d="M0 -20 L14 -15 L0 -10Z" fill="#b9472f"/></g>
-${time==='night'?`<rect width="${w}" height="${h}" fill="#0a1030" opacity=".28"/>`:''}</svg>`;
+${peakMark}
+${time==='night'?`<rect width="${w}" height="${h}" fill="#0a1030" opacity=".28"/>`:''}${city}</svg>`;
 }
 
-function hasResume(){try{const v=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');return !!v&&(v.zone!=='plaza'||(v.elapsed||0)>5);}catch{return false;}}
+function hasResume(id='gwanak'){try{if(id==='namsan'){const v=JSON.parse(localStorage.getItem(NAMSAN_SAVE_KEY)||'null');return !!v&&!v.done&&(v.s||0)>20;}
+ const v=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');return !!v&&(v.zone!=='plaza'||(v.elapsed||0)>5);}catch{return false;}}
 function headSub(){
  const c=seoulClock(Date.now()),a=freeState.actual,time=freeState.free.time??a.time,season=freeState.free.season??a.season;
  const wIcon={clear:time==='night'?'c-wx-clear-night':'c-wx-clear',overcast:'c-wx-cloud',rain:'c-wx-rain',snow:'c-wx-snow',fog:'c-wx-fog'}[freeState.free.weather??a.weather]??'c-wx-clear';
@@ -66,12 +76,12 @@ export function mountMountainPick(doc=document,win=window){
  const size=()=>{const land=matchMedia('(orientation:landscape) and (max-height:540px)').matches,port=matchMedia('(orientation:portrait)').matches;return land?{w:300,art:112,seal:70}:port?{w:Math.min(362,innerWidth-28),art:150,seal:84}:{w:400,art:220,seal:104};};
  let animateSeal=MOUNTAINS.map(m=>sealSeenOnce(m.id)),sizeSig='';
  function cards(){
-  const z=size(),a=freeState.actual,time=freeState.free.time??a.time,season=freeState.free.season??a.season,resume=hasResume();
+  const z=size(),a=freeState.actual,time=freeState.free.time??a.time,season=freeState.free.season??a.season;
   list.innerHTML=MOUNTAINS.map((m,i)=>{
-   const r=summitOf(freeState.records,m.id),soon=!m.ready,unlocked=freeState.unlocked,devOnly=freeState.dev&&!r;
-   const rec=soon?'산이 추가되면 이 카드가 열려요':r?recordHTML(r):devOnly?'아직 완등 전 · 개발 버전이라 자유 설정이 열려 있어요':'아직 오르지 않았어요 · 연주대에서 도장을 받아요';
+   const r=summitOf(freeState.records,m.id),soon=!m.ready,unlocked=freeState.unlockedFor(m.id),devOnly=freeState.dev&&!r,resume=hasResume(m.id);
+   const rec=soon?'산이 추가되면 이 카드가 열려요':r?recordHTML(r):devOnly?'아직 완등 전 · 개발 버전이라 자유 설정이 열려 있어요':`아직 오르지 않았어요 · ${esc(m.summitName??'정상')}에서 도장을 받아요`;
    return `<article class="pk-card${soon?' soon':''}" role="listitem" data-mountain="${m.id}" style="width:${z.w}px">
-<div class="pk-art-wrap">${mountainArt(m,{season:soon?'summer':season,time,w:z.w,h:z.art,gray:soon})}<span class="pk-tag">${soon?iconText('c-wait','준비 중',{size:'xs'}):(t=>t?iconText(t,seasonTag(freeState.free,a.season),{size:'xs'}):esc(seasonTag(freeState.free,a.season)))(seasonTagIcon(freeState.free,a.season))}</span></div>
+<div class="pk-art-wrap">${mountainArt(m,{season:soon?'summer':season,time,w:z.w,h:z.art,gray:soon})}<span class="pk-tag">${soon?iconText('c-wait','준비 중',{size:'xs'}):(t=>t?iconText(t,seasonTag(freeState.free,a.season),{size:'xs'}):esc(seasonTag(freeState.free,a.season)))(seasonTagIcon(freeState.free,a.season))}</span>${m.tag&&!soon?`<span class="pk-tag pk-tag-r">${esc(m.tag)}</span>`:''}</div>
 <div class="pk-body"><div class="pk-top"><div class="pk-who"><h2 class="pk-name">${esc(m.name)} <small>${m.altitudeM} m</small></h2><span class="pk-course">${esc(m.course)}</span></div><div class="pk-seal${animateSeal[i]?' fs-stamping':''}">${soon?'':sealFor(m.id,z.seal,freeState.records)}</div></div>
 <div class="pk-facts"><span>거리<b>${soon?'—':`${m.distanceKm} km`}</b></span><span>예상<b>${soon?'—':formatEta(m.etaMin)}</b></span><span>스탬프<b>${soon?'—':`${m.stamps}곳`}</b></span><span>난이도<b>${soon?'—':esc(m.difficulty)}</b></span></div>
 <p class="pk-rec">${rec}</p>
@@ -79,20 +89,25 @@ export function mountMountainPick(doc=document,win=window){
   }).join('')+(MOUNTAINS.length===1?`<div class="pk-soon" aria-label="다음 산 준비 중"><b>${iconText('h-summit','다음 산 준비 중')}</b><span>산이 늘어나면 이 자리에 카드가 붙어요</span></div>`:'');
   animateSeal=animateSeal.map(()=>false);
  }
- function render(){now.innerHTML=headSub();cards();if(!freeBox.hidden)panel.innerHTML=panelHTML({context:'pick'});applyHudTime();}
+ let freeFor='gwanak';   // 자유 설정판을 연 산
+ function render(){now.innerHTML=headSub();cards();if(!freeBox.hidden)panel.innerHTML=panelHTML({context:'pick',mountain:freeFor});applyHudTime();}
  // 산 고르기 → 서버 고르기(함께 걷기 서버 or 혼자 걷기) → 출발. 서버 창을 건너뛰면 바로 출발.
- function go(){
+ // 다른 화면을 쓰는 산(남산 m.page): 그 페이지로 넘어간다. 허브·지난 선택에서 꺼내 둔 입장 선택은 sessionStorage로 넘겨 그 페이지가 같은 입장 흐름을 이어 간다.
+ function go(id='gwanak'){
   if(root.classList.contains('leaving'))return;
+  const m=MOUNTAINS.find(x=>x.id===id);
+  if(m?.page){root.classList.add('leaving');try{const c=entryChoiceNow();if(c)win.sessionStorage.setItem(NAMSAN_ENTRY_KEY,JSON.stringify(c));}catch{}
+   win.location.assign(new URL(m.page+win.location.search,win.location.href).href);return;}
   root.classList.add('leaving');doc.documentElement.classList.remove('pk-open');
   if(hikingPickMode()==='show'||entryDecided())serverReady.then(openFirstHikingPick); // 다음은 세 체험 공용 입장 창(이름·서버). 고른 적 있으면 창 없이 바로
   else{window.__hikingStartRequested=true;win.dispatchEvent(new CustomEvent(START_EVENT));}
   setTimeout(()=>root.remove(),450);
  }
  root.addEventListener('click',e=>{
-  if(!freeBox.hidden&&freeBox.contains(e.target)){if(e.target===freeBox){freeBox.hidden=true;return;}handlePanelClick(e,{context:'pick',onGo:go,onClose:()=>{freeBox.hidden=true;}});return;}
+  if(!freeBox.hidden&&freeBox.contains(e.target)){if(e.target===freeBox){freeBox.hidden=true;return;}handlePanelClick(e,{context:'pick',mountain:freeFor,onGo:()=>go(freeFor),onClose:()=>{freeBox.hidden=true;}});return;}
   const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.pkGo)go();
-  else if(b.dataset.pkFree){if(!freeState.unlocked){say('연주대에서 완등 도장을 받으면 열려요','c-lock');return;}panel.innerHTML=panelHTML({context:'pick'});freeBox.hidden=false;panel.querySelector('button')?.focus({preventScroll:true});}
+  if(b.dataset.pkGo)go(b.dataset.pkGo);
+  else if(b.dataset.pkFree){const m=MOUNTAINS.find(x=>x.id===b.dataset.pkFree);if(!freeState.unlockedFor(m?.id)){say(`${m?.summitName??'정상'}에서 완등 도장을 받으면 열려요`,'c-lock');return;}freeFor=m.id;panel.innerHTML=panelHTML({context:'pick',mountain:freeFor});freeBox.hidden=false;panel.querySelector('button')?.focus({preventScroll:true});}
  });
  win.addEventListener('keydown',e=>{if(e.key==='Escape'&&!freeBox.hidden&&root.isConnected){freeBox.hidden=true;e.stopPropagation();}},true);
  onFreeChange(()=>{if(root.isConnected)render();});
