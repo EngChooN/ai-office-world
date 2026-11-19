@@ -14,8 +14,7 @@ import {applyAtmosphere} from './skyline-reference.js';
 import {grassClumps,updateGroundCover} from './near-detail.js';
 import {waterClearance} from './water-clearance.js';
 import {instanceGeometry} from './instance-geometry.js';
-import {twigCutout} from './foliage-material.js';
-import {patchFoliage,foliageUniforms} from './foliage-shader.js';
+import {foliageUniforms} from './foliage-shader.js';
 import {createNearTrees,NEAR_TREE_IDS} from './near-trees.js';
 import {createCullingReuse} from '../../src/culling-reuse.js';
 import {surfaceIndex} from './surface-index.js';
@@ -26,7 +25,6 @@ import {chunkBounds,createChunkCuller,boxDistanceSquared} from '../../src/chunk-
 import {createCityGrid,seoulRoadGeometry,createSeoulLandmark,bindSeoulLabels} from '../../src/city-grid.js';
 import {seoulWaterMaterial,seoulBridgeStructure,seoulRoadLights} from '../../src/city-water.js';
 import {freezeStatic,applyNatureQuality} from '../../src/static-scene.js';
-import {pineImpostorParts} from '../../src/pine-impostor.js';
 import {assignSurfaceRoute,isStairSurface} from '../../src/route-surfaces.js';
 import {createSummitFacilities,facilityTriangleCounts} from './summit-facilities.js';
 import {createDeckRailings} from './deck-railing.js';
@@ -46,35 +44,6 @@ async function readGrid(base,meta){
 const within=(g,x,z)=>x>=g.x0&&z>=g.z0&&x<=g.x0+(g.width-1)*g.spacing&&z<=g.z0+(g.height-1)*g.spacing;
 function seeded(seed){let v=seed>>>0;return()=>{v=(Math.imul(v,1664525)+1013904223)>>>0;return v/4294967296;};}
 
-// 같은 좌표 변환으로 albedo/normal/roughness를 섞어 반복 대비를 낮춘다.
-// 회전 없이 서로 다른 스케일·위상으로 섞어 tangent normal 방향 오류를 피한다.
-function deTile(material,metres){
-  material.onBeforeCompile=shader=>{
-    shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 gWorld;')
-      .replace('#include <worldpos_vertex>','#include <worldpos_vertex>\ngWorld=(modelMatrix*vec4(transformed,1.0)).xyz;');
-    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
-      varying vec3 gWorld;
-      float gWeight(){return smoothstep(-.8,.8,sin(gWorld.x*.061)+sin(gWorld.z*.047));}
-      vec4 gSample(sampler2D tex,vec2 uv){return mix(texture2D(tex,uv),texture2D(tex,uv*0.731+vec2(.37,.61)),gWeight());}
-    `);
-    for(const marker of ['map_fragment','roughnessmap_fragment','normal_fragment_maps']){
-      const source=THREE.ShaderChunk[marker].replace(/texture2D\(\s*(map|normalMap|roughnessMap)\s*,\s*(vMapUv|vNormalMapUv|vRoughnessMapUv)\s*\)/g,'gSample( $1, $2 )');
-      shader.fragmentShader=shader.fragmentShader.replace(`#include <${marker}>`,source);
-    }
-  };
-  material.customProgramCacheKey=()=>`gwanak-detile-v1-${metres}`;
-  return material;
-}
-async function loadMaterials(base,manifest){
-  const loader=new THREE.TextureLoader(),materials={};
-  for(const [key,m] of Object.entries(manifest.materials)){
-    const [map,normalMap,roughnessMap]=await Promise.all([m.diff,m.nor_gl,m.rough].map(file=>loader.loadAsync(base+file)));
-    map.colorSpace=THREE.SRGBColorSpace;
-    for(const t of [map,normalMap,roughnessMap]){t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=4;}
-    materials[key]=applyAtmosphere(deTile(new THREE.MeshStandardMaterial({map,normalMap,roughnessMap,roughness:1,normalScale:new THREE.Vector2(.7,.7)}),m.metres),manifest.atmosphere);
-  }
-  return materials;
-}
 export function gridMesh(x0,z0,size,step,height,material,metres){
   const count=Math.max(1,Math.ceil(size/step)),positions=[],uv=[],indices=[];
   for(let j=0;j<=count;j++)for(let i=0;i<=count;i++){
@@ -145,51 +114,35 @@ function disposeGeometry(object){object.traverse(o=>{if(o.geometry)o.geometry.di
 /** 준비된 generated/만 읽는다. 자료가 없으면 합성 지형으로 대체하지 않고 오류를 반환한다.
  * 원경 다운로드는 streamFar()를 호출할 때 시작한다. scene/render 설정은 호출자가 소유한다.
  */
-/** style·materialFactory(기획서 §2.3): materialFactory가 있으면(카툰) PBR 텍스처·HDR을 받지 않고 그 재질을 쓴다.
- * toon={toonify,patchFoliage,styleCity}는 카툰 모듈이 주는 GLB·도시 변환 함수다. 실사는 둘 다 넘기지 않는다.
+/** materialFactory·toon(꼭 필요): 카툰 모듈(src/toon/index.js)이 주는 지형·노면 재질과 GLB·도시 변환 함수(toonify·patchFoliage·styleCity·natureParts).
+ * 실사 PBR 텍스처·HDR·지형 셰이더 분기는 2026-11-19에 지웠다(11-06 실사 모드 제거의 남은 코드).
  * 지형·식생은 chunkBase(assets/shared/chunks/)의 200m 청크 목록으로 카메라 주변만 붙이고 멀어지면 해제한다.
  */
-export async function loadLandscape({base='/assets/realistic/generated/',maxContactMapSize=8192,style='realistic',materialFactory=null,toon=null,chunkBase=null,terrainRadius=1,vegetationRadius=5}={}){
+export async function loadLandscape({base='/assets/realistic/generated/',maxContactMapSize=8192,materialFactory=null,toon=null,chunkBase=null,terrainRadius=1,vegetationRadius=5}={}){
   if(!base.endsWith('/'))base+='/';
   chunkBase??=base.replace(/realistic\/generated\/$/,'shared/chunks/');if(!chunkBase.endsWith('/'))chunkBase+='/';
-  const toonMode=!!materialFactory;
+  if(!materialFactory||!toon)throw new Error('카툰 재질(materialFactory)과 변환 함수(toon)가 필요합니다');
   let manifest;
   try{manifest=await readJSON(base+'manifest.json');}catch{manifest=await readJSON(base+'inventory.json');}
   manifest.atmosphere={...manifest.atmosphere,haze:LOOK_PROFILE.haze,contrastStops:[[0,1],[2000,.95],[5000,.82],[8000,.68],[12000,.55],[15000,.46],[25000,.25],[40000,.08]]};
-  const status={style:toonMode?'toon':style,source:manifest.inventoryFallback?'파일 목록':'manifest',cityChunks:0,buildings:0,waterPolygons:0,errors:[],ready:false};
+  const status={style:'toon',source:manifest.inventoryFallback?'파일 목록':'manifest',cityChunks:0,buildings:0,waterPolygons:0,errors:[],ready:false};
   if(manifest.version!==1)throw new Error('미지원 자산 버전');
   if(!manifest.observation||!manifest.atmosphere||!manifest.directionCaptures)throw new Error('서울 원경 기준 갱신 후 prepare.mjs 재실행 필요');
-  // 실사 모드는 2026-11-06 없앴다: 실사 PBR 텍스처·HDR·지형 셰이더(terrain-material.js)는 더 불러오지 않는다(빌드에도 들어가지 않는다).
-  if(!toonMode)throw new Error('카툰 재질(materialFactory)이 필요합니다 — 실사 모드는 제거됨');
-  const [near,routeSource,materials,sky,chunkIndex,shaders]=await Promise.all([
-    readGrid(base,manifest.near),readJSON(base+manifest.route),
-    toonMode?{...materialFactory.materials()}:loadMaterials(base,manifest),
-    null,
-    readJSON(chunkBase+'index.json'),
-    null
-  ]);
+  const [near,routeSource,chunkIndex]=await Promise.all([readGrid(base,manifest.near),readJSON(base+manifest.route),readJSON(chunkBase+'index.json')]);
+  const materials={...materialFactory.materials()};
   if(chunkIndex.schemaVersion!==1||chunkIndex.chunkSize!==200)throw new Error('미지원 청크 목록');
   const route=assignSurfaceRoute(routeSource);
-  if(sky)sky.mapping=THREE.EquirectangularReflectionMapping;
   const group=new THREE.Group();group.name='GwanakRealistic';
   const terrain=new THREE.Group();terrain.name='NearTerrain';group.add(terrain);
   terrain.userData.metricKind='지형 청크';
-  const blended=toonMode?materialFactory.terrain():shaders.terrainMaterial(materials,manifest.materials);
+  const blended=materialFactory.terrain();
   // 청크를 해제해도 공용 재질은 남긴다(disposeObject3D가 userData.shared를 건너뛴다).
   blended.userData.shared=true;
   const contactOcclusion=createContactOcclusion(near,{route,maxMapSize:maxContactMapSize,enabled:new URLSearchParams(location.search).get('contactAO')!=='off'});
   contactOcclusion.apply(blended);status.contactOcclusion=contactOcclusion.status;
   // 폭 안쪽과 어깨를 수평화하며 24m에 걸쳐 DSM으로 복귀한다.
   let paved,stoneStairs,woodStairs,pathMaterials;
-  if(toonMode){({paved,stoneStairs,woodStairs}=materials);pathMaterials=materialFactory.pathMaterials();}
-  else{
-  paved=shaders.pavedMaterial(materials,manifest.materials);
-  stoneStairs=materials.stone.clone();woodStairs=materials.wood.clone();stoneStairs.side=woodStairs.side=THREE.DoubleSide;
-  for(const [copy,source]of [[stoneStairs,materials.stone],[woodStairs,materials.wood]]){copy.onBeforeCompile=source.onBeforeCompile;copy.customProgramCacheKey=source.customProgramCacheKey;}
-  Object.assign(materials,{paved,stoneStairs,woodStairs});
-  // 돌길·암릉도 가장자리를 주변 지형 색으로 맞추고 노이즈 마스크로 녹인다(직선 경계 방지).
-  pathMaterials={soil:shaders.trailMaterial(materials,manifest.materials),rock:shaders.rockTrailMaterial(materials,manifest.materials,'stone'),paved,stairs:stoneStairs,deck_stairs:woodStairs,ridge:shaders.rockTrailMaterial(materials,manifest.materials,'granite')};
-  }
+  ({paved,stoneStairs,woodStairs}=materials);pathMaterials=materialFactory.pathMaterials();
   // 노면·계단 재질은 접촉 음영에서 제외한다. 아래 지형도 지도에서 경로 폭을 보호한다.
   const pathPoints=densifyRoute(route);
   const path=ribbon(pathPoints,pathMaterials,manifest.materials.soil.metres);path.name='등산로 노면';group.add(path);
@@ -254,7 +207,7 @@ export async function loadLandscape({base='/assets/realistic/generated/',maxCont
   const clearStairs=stairTerrainClearance(pathPoints);
   const baseGeometries=[8,4,2].map(stride=>clearStairs(rectangularGrid(near,(x,z)=>floorHeight(x,z)-.09,stride)));
   // 카툰: 상시 바닥은 정밀 청크 뒤로 깊이를 밀어 둔다(급경사에서 두 지형이 거의 겹치면 암반 명암이 점점이 깨진다).
-  const baseMesh=new THREE.Mesh(baseGeometries[2],toonMode&&materialFactory.terrainUnderlay?materialFactory.terrainUnderlay(blended):blended);baseMesh.receiveShadow=true;baseMesh.name='NearDEM8m';baseMesh.userData.metricKind='8m 상시 지형';group.add(baseMesh);
+  const baseMesh=new THREE.Mesh(baseGeometries[2],materialFactory.terrainUnderlay?materialFactory.terrainUnderlay(blended):blended);baseMesh.receiveShadow=true;baseMesh.name='NearDEM8m';baseMesh.userData.metricKind='8m 상시 지형';group.add(baseMesh);
   // 배치 전에 동일한 64m/2m 삼각형과 계단 회랑 보정을 조회한다.
   // 청크가 아직 스트리밍되지 않아도 최종 근경 지형과 같은 높이를 얻는다.
   const rockTerrainIndices=new Map();
@@ -463,16 +416,11 @@ export async function loadLandscape({base='/assets/realistic/generated/',maxCont
       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();
       // 근경 아래 2m 오프셋. 원경 DSM을 과장하지 않는다.
       const mesh=new THREE.Mesh(g,applyAtmosphere(new THREE.MeshStandardMaterial({color:0x334b28,roughness:1,polygonOffset:true,polygonOffsetFactor:2,polygonOffsetUnits:2}),manifest.atmosphere));mesh.position.y=-2;holder.add(mesh);
-      // 카툰은 토지피복 사진을 받지 않고 단색 원경 바닥을 쓴다.
-      if(manifest.seoulLandcover&&!toonMode){
-        const map=await new THREE.TextureLoader().loadAsync(base+manifest.seoulLandcover);map.colorSpace=THREE.SRGBColorSpace;map.flipY=false;map.anisotropy=4;
-        const uv=g.attributes.uv,pos=g.attributes.position;for(let i=0;i<uv.count;i++)uv.setXY(i,(pos.getX(i)+30000)/60000,(pos.getZ(i)+30000)/60000);uv.needsUpdate=true;
-        mesh.material.map=map;mesh.material.color.set(0xffffff);mesh.material.needsUpdate=true;
-      }
+      // 원경 바닥은 단색(토지피복 사진은 실사 때만 썼다).
       // 서울 간선도로·교량·거리 불빛(seoul-surface.json, 약 10MB)은 streamRoads()가 준비 완료 뒤 따로 붙인다(2026-11-06 첫 로딩 단축).
       // 카툰: 랜드마크도 도심과 같은 재질(창 격자·밤 불빛)로. 도심 스타일이 없을 때만 일반 툰 재질.
-      for(const p of manifest.landmarks)holder.add(toon?(cityStyle?.applyLandmark?cityStyle.applyLandmark(createSeoulLandmark(p,manifest.atmosphere)):toon.toonify(createSeoulLandmark(p,manifest.atmosphere),{kind:'prop'})):createSeoulLandmark(p,manifest.atmosphere));
-      if(toon)toon.toonify(mesh,{kind:'prop'});
+      for(const p of manifest.landmarks)holder.add(cityStyle?.applyLandmark?cityStyle.applyLandmark(createSeoulLandmark(p,manifest.atmosphere)):toon.toonify(createSeoulLandmark(p,manifest.atmosphere),{kind:'prop'}));
+      toon.toonify(mesh,{kind:'prop'});
       if(disposed){disposeGeometry(holder);throw new Error('해제한 자산');}
       farGroup=holder;group.add(holder);freezeStatic(holder);return holder;
     })().catch(e=>{farPromise=null;throw e;});
@@ -488,7 +436,7 @@ export async function loadLandscape({base='/assets/realistic/generated/',maxCont
       const roadMesh=new THREE.Mesh(roads,applyAtmosphere(new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.DoubleSide}),manifest.atmosphere));roadMesh.name='서울 간선도로·교량';holder.add(roadMesh);
       // 교량 측판·교각과 밤 거리 불빛(산풍경 city-water.js). 불빛은 도시 격자가 시각·화질에 맞춰 켜고 끈다.
       const bridges=new THREE.Mesh(seoulBridgeStructure(surface.roads,(x,z)=>gridHeight(grid,x,z)),roadMesh.material);bridges.name='서울 교량 측판·교각';holder.add(bridges);
-      if(toon){toon.toonify(roadMesh,{kind:'prop'});toon.toonify(bridges,{kind:'prop'});}
+      toon.toonify(roadMesh,{kind:'prop'});toon.toonify(bridges,{kind:'prop'});
       const lamps=seoulRoadLights(surface.roads,(x,z)=>gridHeight(grid,x,z));cityStyle?.styleNightLight(lamps);holder.add(lamps);
       // 카툰: 간선도로 차량 불빛 줄기(src/toon/city.js). 실사는 cityStyle이 없다.
       cityStyle?.styleRoads?.(surface.roads,(x,z)=>gridHeight(grid,x,z),holder);city.addNightLights(lamps);status.seoulLamps=lamps.userData.lampCount;status.seoulRoads=surface.roads.length;status.seoulBridges=surface.roads.filter(r=>r.bridge).length;
@@ -534,23 +482,11 @@ export async function loadLandscape({base='/assets/realistic/generated/',maxCont
     // DSM의 교량·둑·보간값이 수면을 덮지 않도록 실제 물 윤곽 안의 원경 바닥만 낮춘다.
     const ground=farGroup.children.find(o=>o.isMesh)?.geometry;
     if(ground){const pos=ground.attributes.position,p=new THREE.Vector2();for(let i=0;i<pos.count;i++){p.set(pos.getX(i),-pos.getZ(i));if(waterMasks.some(m=>m.box.containsPoint(p)&&insideRing(p,m.points)&&!m.holes.some(h=>insideRing(p,h))))pos.setY(i,Math.min(pos.getY(i),4));}pos.needsUpdate=true;ground.computeVertexNormals();}
-    if(waterGeometries.length){const merged=mergeGeometries(waterGeometries,false);waterGeometries.forEach(g=>g.dispose());/* 한강 물빛: 물결·하늘 반사·노을·밤 불빛 일렁임(산풍경 city-water.js) */holder.add(new THREE.Mesh(merged,toonMode?(cityStyle?.riverMaterial?.()??materialFactory.water()):applyAtmosphere(seoulWaterMaterial(),manifest.atmosphere)));}
+    if(waterGeometries.length){const merged=mergeGeometries(waterGeometries,false);waterGeometries.forEach(g=>g.dispose());/* 한강 물빛: 물결·하늘 반사·노을·밤 불빛 일렁임(산풍경 city-water.js) */holder.add(new THREE.Mesh(merged,cityStyle?.riverMaterial?.()??materialFactory.water()));}
     if(disposed){disposeGeometry(holder);throw new Error('해제한 자산');}if(waterGroup){waterGroup.traverse(o=>{if(o.material&&!o.material.userData.shared)o.material.dispose();});disposeGeometry(waterGroup);}waterGroup=holder;group.add(holder);freezeStatic(holder);return holder;
   }
-  function applyEnvironment(scene,renderer){
-    const old={background:scene.background,environment:scene.environment,fog:scene.fog,toneMapping:renderer.toneMapping,exposure:renderer.toneMappingExposure,colorSpace:renderer.outputColorSpace};
-    scene.background=sky;scene.environment=sky;
-    // 실사 룩 체크리스트 §2·§4. 대비는 재질의 거리 셰이더에서 조절한다.
-    scene.fog=new THREE.Fog(manifest.atmosphere.haze,0,60000);
-    renderer.toneMapping=THREE.NeutralToneMapping;renderer.toneMappingExposure=1;
-    renderer.outputColorSpace=THREE.SRGBColorSpace;
-    const az=THREE.MathUtils.degToRad(manifest.atmosphere.sunBearing),alt=THREE.MathUtils.degToRad(manifest.atmosphere.sunAltitude);
-    const sun=new THREE.DirectionalLight(0xfff1de,2.2);sun.position.set(Math.sin(az)*Math.cos(alt)*1000,Math.sin(alt)*1000,-Math.cos(az)*Math.cos(alt)*1000);scene.add(sun);
-    const ambient=new THREE.HemisphereLight(0xdcecff,0x4d4639,.35);scene.add(ambient);
-    return ()=>{sun.removeFromParent();ambient.removeFromParent();if(scene.background===sky)scene.background=old.background;if(scene.environment===sky)scene.environment=old.environment;scene.fog=old.fog;renderer.toneMapping=old.toneMapping;renderer.toneMappingExposure=old.exposure;renderer.outputColorSpace=old.colorSpace;};
-  }
   freezeStatic(group);
-  return {group,get manifest(){return manifest;},status,route,interactionProps,entranceReady:()=>plazaReady,materials,sky,rawHeight,floorHeight,surfaceHeight,treeNear:(x,z,r)=>nearTrees.nearest(x,z,r),update,streamFar,streamRoads,streamCity,finalizeCities:()=>city.finalize(),streamWater,applyEnvironment,
+  return {group,get manifest(){return manifest;},status,route,interactionProps,entranceReady:()=>plazaReady,materials,rawHeight,floorHeight,surfaceHeight,treeNear:(x,z,r)=>nearTrees.nearest(x,z,r),update,streamFar,streamRoads,streamCity,finalizeCities:()=>city.finalize(),streamWater,
     collisionObjects:()=>[path,...chunks.values()],
     cameraCollisionObjects(a,b){
       // 붐과 근평면 폭을 포함한 XZ 상자. 정적 월드 좌표 지형만 대상으로 한다.
@@ -616,16 +552,15 @@ export async function loadLandscape({base='/assets/realistic/generated/',maxCont
  * placements=[{x,z,scale:1,yaw:0}]. 종류별 소나무/참나무/화강암을 따로 호출한다.
  */
 const natureCache=new Map();
-let graniteRockMaterial,graniteRockFaceMaterial;
-// toon={toonify,patchFoliage}: 카툰은 단색 GLB를 MeshToon으로 바꾸고(잎 카드는 덩어리 메시) 카툰 바람결 셰이더를 쓴다.
+// toon={toonify,patchFoliage,natureParts}: 단색 GLB를 MeshToon으로 바꾸고(잎 카드는 덩어리 메시) 카툰 바람결 셰이더를 쓴다.
 // 반환 geometry·재질은 여러 청크가 함께 쓰므로 userData.shared로 표시한다(청크 해제 때 남는다).
-function natureModel(url,rock=false,toon=null){
+function natureModel(url,rock,toon){
  const key=`${url}:${rock}`;
- // 카툰 전용 자연물(src/toon/nature.js): 같은 id·LOD 파일명이면 GLB를 받지 않고 새로 만든 모양을 쓴다. 실사는 toon=null.
- const toonParts=!natureCache.has(key)&&toon?.natureParts?.(url);if(toonParts)natureCache.set(key,Promise.resolve(toonParts));
+ // 카툰 전용 자연물(src/toon/nature.js): 같은 id·LOD 파일명이면 GLB를 받지 않고 새로 만든 모양을 쓴다.
+ const toonParts=!natureCache.has(key)&&toon.natureParts?.(url);if(toonParts)natureCache.set(key,Promise.resolve(toonParts));
  if(!natureCache.has(key))natureCache.set(key,new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url).then(gltf=>{
-  if(toon)toon.toonify(gltf.scene,{kind:'nature'});
-  const foliage=material=>toon?toon.patchFoliage(material,{name:material.name,pine:/pine/.test(url)}):patchFoliage(twigCutout(material),{pine:/pine/.test(url)});
+  toon.toonify(gltf.scene,{kind:'nature'});
+  const foliage=material=>toon.patchFoliage(material,{name:material.name,pine:/pine/.test(url)});
   const parts=[];gltf.scene.updateMatrixWorld(true);gltf.scene.traverse(o=>{if(!o.isMesh)return;if(o.isSkinnedMesh)throw new Error('식생 스킨 미지원');const geometry=instanceGeometry(o.geometry,o.matrixWorld);parts.push({geometry,material:rock?o.material:foliage(o.material)});});
   const buckets=new Map();for(const part of parts){
    if(Array.isArray(part.material))continue;
@@ -641,7 +576,7 @@ function natureModel(url,rock=false,toon=null){
   return result;
  }));return natureCache.get(key);
 }
-async function addInstances({levels,placements,height,rockGround,materials,kind,id,nearDetail=false,forestTint,protectedSites=[],nearTrees=null,toon=null}){
+async function addInstances({levels,placements,height,rockGround,materials,kind,id,nearDetail=false,forestTint,protectedSites=[],nearTrees=null,toon}){
   if(!levels?.length||!placements?.length)throw new Error('LOD 모델과 배치 정보 필요');
   if(kind==='rock'&&protectedSites.length){
     // 북·북동 전망 구역의 장식 바위만 낮춘다. 실제 DSM 암반 지형은 유지한다.
@@ -652,8 +587,8 @@ async function addInstances({levels,placements,height,rockGround,materials,kind,
       const stretch=(p.stretch??[p.scale??1,p.scale??1,p.scale??1]).map(v=>v*.18);
       return {...p,scale:1,stretch};
     });
-    // 카툰 전용: 정상부 절리 암봉(가로 1.1·높이 2.2~3.4배로 늘린 배치)은 키 큰 돌기둥으로 읽힌다. 높이를 줄이고 옆으로 퍼진 둥근 암괴로 바꾼다(참고 04_06·05_18).
-    if(toon)placements=placements.map(p=>{const s=p.stretch,w=s&&Math.max(s[0],s[2]);return !s||s[1]<w*1.4?p:{...p,stretch:[w*1.7,w*1.1+(s[1]-w)*.12,w*1.7]};});
+    // 정상부 절리 암봉(가로 1.1·높이 2.2~3.4배로 늘린 배치)은 키 큰 돌기둥으로 읽힌다. 높이를 줄이고 옆으로 퍼진 둥근 암괴로 바꾼다(참고 04_06·05_18).
+    placements=placements.map(p=>{const s=p.stretch,w=s&&Math.max(s[0],s[2]);return !s||s[1]<w*1.4?p:{...p,stretch:[w*1.7,w*1.1+(s[1]-w)*.12,w*1.7]};});
     // 모든 LOD의 실제 메시 범위와 배치 회전·비균일 크기를 포함한 보수적 반경.
     let radius=0;
     for(const level of levels)for(const {geometry} of await natureModel(level.url,true,toon)){
@@ -677,18 +612,13 @@ async function addInstances({levels,placements,height,rockGround,materials,kind,
   // 근경 입체 나무로 넘기는 수종은 청크에서 원본 LOD0를 빼고 사진판만 남긴다.
   const pooled=nearTrees&&kind==='tree'&&NEAR_TREE_IDS.includes(id)&&levels.some(l=>!l.url.endsWith('-lod0.glb'));
   for(const level of levels.filter((l,i,a)=>a.findIndex(v=>v.url===l.url)===i&&!(pooled&&l.url.endsWith('-lod0.glb')))){
-    const parts=level.representation==='impostor'&&level.url.endsWith('pine-impostor-atlas-v1.png')?await pineImpostorParts(placements):await natureModel(level.url,kind==='rock',toon),holder=new THREE.Group();
+    const parts=await natureModel(level.url,kind==='rock',toon),holder=new THREE.Group();
     for(const part of parts)part.material.userData.shared=true; // 사진판 판 geometry는 배치마다 새로 만들므로 해제 대상이다
     // 원본 입체 식생의 실제 최하단을 밑동으로 사용한다. 사진판의 투명 여백은 옮기지 않는다.
     const groundOffset=kind!=='rock'&&level.url.endsWith('-lod0.glb')?Math.min(...parts.map(p=>{p.geometry.computeBoundingBox();return p.geometry.boundingBox.min.y;})):0;
     for(const {geometry,material} of parts){
-      // 카툰은 바위 GLB의 툰 재질을 그대로 쓴다(화강암 PBR 텍스처 없음).
-      if(kind==='rock'&&!toon&&!graniteRockMaterial)graniteRockMaterial=new THREE.MeshStandardMaterial({map:materials.granite.map,normalMap:materials.granite.normalMap,roughnessMap:materials.granite.roughnessMap,color:0xb1b5b8,roughness:1,normalScale:new THREE.Vector2(.55,.55)});
-      if(graniteRockMaterial){graniteRockMaterial.userData.shared=true;graniteRockMaterial.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',THREE.ShaderChunk.map_fragment+'\nfloat stoneLuma=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));diffuseColor.rgb=stoneLuma*vec3(.94,.98,1.0);');};graniteRockMaterial.customProgramCacheKey=()=> 'granite-rock-neutral-v1';}
-      // rock_face_*는 뒷면이 뚫린 절벽면 스캔이다. 뒤에서 보면 앞면 조각만 남아 공중 파편처럼 보이므로 양면으로 그린다.
-      if(kind==='rock'&&!toon&&String(id).startsWith('rock_face')&&!graniteRockFaceMaterial){graniteRockFaceMaterial=graniteRockMaterial.clone();graniteRockFaceMaterial.side=THREE.DoubleSide;graniteRockFaceMaterial.onBeforeCompile=graniteRockMaterial.onBeforeCompile;graniteRockFaceMaterial.customProgramCacheKey=graniteRockMaterial.customProgramCacheKey;graniteRockFaceMaterial.userData.shared=true;}
-      const rockMaterial=toon?material:String(id).startsWith('rock_face')?graniteRockFaceMaterial:graniteRockMaterial;
-      const mesh=new THREE.InstancedMesh(geometry,kind==='rock'?rockMaterial:material,placements.length),dummy=new THREE.Object3D();
+      // 바위도 GLB의 툰 재질을 그대로 쓴다(화강암 PBR 텍스처는 실사 때만 썼다).
+      const mesh=new THREE.InstancedMesh(geometry,material,placements.length),dummy=new THREE.Object3D();
       placements.forEach((p,i)=>{dummy.position.set(p.x-cx,groundYs[i]-(p.supportDrop||0)-lod.position.y-((p.embed||0)+groundOffset)*(p.scale||1),p.z-cz);dummy.rotation.set(level.representation==='impostor'?0:p.pitch||0,level.representation==='impostor'?0:p.yaw||0,level.representation==='impostor'?0:p.roll||0);dummy.scale.set(...(p.stretch??[p.scale||1,p.scale||1,p.scale||1]));dummy.updateMatrix();mesh.setMatrixAt(i,dummy.matrix);});
       mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();mesh.castShadow=false;mesh.receiveShadow=true;holder.add(mesh);
       if(forestTint!==undefined||placements.some(p=>p.forestTint!==undefined)){const tint=new THREE.Color();for(let i=0;i<placements.length;i++)mesh.setColorAt(i,tint.set(placements[i].forestTint??forestTint??0xffffff));mesh.instanceColor.needsUpdate=true;}

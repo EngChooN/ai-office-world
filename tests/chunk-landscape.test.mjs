@@ -41,8 +41,9 @@ test('load-landscape: 청크 스트리머로 지형·식생을 붙이고, 공용
  assert.match(src,/radius:vegetationRadius,load:loadVegetationChunk,attach:attachVegetation,detach:detachVegetation/);
  assert.match(src,/blended\.userData\.shared=true/);
  assert.match(src,/part\.geometry\.userData\.shared=true/);
- // 실사 모드 제거(2026-11-06): 카툰 재질 없이는 시작하지 않고, PBR 텍스처 로더·HDR·실사 지형 셰이더를 불러오지 않는다.
- assert.match(src,/if\(!toonMode\)throw new Error/);
+ // 실사 모드 제거(2026-11-06 화면, 11-19 남은 코드): 카툰 재질·변환 없이는 시작하지 않고, PBR 텍스처·HDR·실사 지형 셰이더·화강암 재질을 쓰지 않는다.
+ assert.match(src,/if\(!materialFactory\|\|!toon\)throw new Error/);
+ assert.doesNotMatch(src,/toonMode|loadMaterials|deTile|graniteRockMaterial|seoulLandcover&&|applyEnvironment\(scene|twigCutout|pineImpostorParts/);
  assert.doesNotMatch(src,/import\('three\/addons\/loaders\/RGBELoader\.js'\)|import\('\.\/terrain-material\.js'\)/);
  // 기존 충돌·접지 API는 청크 메시를 대상으로 한다.
  assert.match(src,/collisionObjects:\(\)=>\[path,\.\.\.chunks\.values\(\)\]/);

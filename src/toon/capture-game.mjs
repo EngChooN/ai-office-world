@@ -1,9 +1,9 @@
-// 실제 게임 화면 광장·정상 캡처(카툰/실사). 빌드 미리보기 서버를 띄운 뒤:
-//   node src/toon/capture-game.mjs [http://127.0.0.1:4173] [출력 폴더] [접미사(before|after)] [toon,realistic] [probe]
+// 실제 게임 화면 광장·정상 캡처(카툰. 실사 모드는 11-06 화면·11-19 코드에서 지움). 빌드 미리보기 서버를 띄운 뒤:
+//   node src/toon/capture-game.mjs [http://127.0.0.1:4173] [출력 폴더] [접미사(before|after)] [toon] [probe]
 // window.hiking.ready()와 window.hiking.chunks.ready()를 기다린 뒤 찍는다. probe를 주면 카메라 근처 메시 재질을 덤프한다.
 import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
-const [base='http://127.0.0.1:4173',out='artifacts/toon-fix-2026-11-05',suffix='after',styles='toon,realistic',probe]=process.argv.slice(2);
+const [base='http://127.0.0.1:4173',out='artifacts/toon-fix-2026-11-05',suffix='after',styles='toon',probe]=process.argv.slice(2);
 mkdirSync(out,{recursive:true});
 const SHOTS=[['start','entrance','12:00'],['summit','summit','16:40']];
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--use-angle=metal']});

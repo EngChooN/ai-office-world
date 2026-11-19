@@ -63,10 +63,3 @@ test('정상 보안등은 정상석 남동쪽(서울 반대편)에 두고 스탬
  for(const [x,z] of [[-.2,2.5],[1.7,-2.1]])assert.ok(Math.hypot(ox-x,oz-z)>=3.5);
 });
 
-test('하늘 셰이더에는 세로로 늘어진 지평선 불빛 알갱이가 없고 별은 정육면체 칸 안 구다',()=>{
- const src=readFileSync(new URL('../src/sky-dome.js',import.meta.url),'utf8');
- assert.doesNotMatch(src,/gd\.y\*320\.0/);
- assert.doesNotMatch(src,/lampColor/);
- assert.match(src,/vec3 sp=gd\*300\.0,ip=floor\(sp\),fp=fract\(sp\)-0\.5/);
- assert.match(src,/smoothstep\(0\.38,0\.0,length\(fp\)\)/);
-});

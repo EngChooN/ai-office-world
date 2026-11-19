@@ -34,9 +34,9 @@ export class FootstepSelector{
 }
 
 export class FootstepAudio{
-  constructor({base,enabled=true,onChange=()=>{},random=Math.random,style='realistic',contextFactory=()=>new (globalThis.AudioContext||globalThis.webkitAudioContext)()}={}){
+  constructor({base,enabled=true,onChange=()=>{},random=Math.random,contextFactory=()=>new (globalThis.AudioContext||globalThis.webkitAudioContext)()}={}){
     this.base=base;this.enabled=enabled;this.onChange=onChange;this.contextFactory=contextFactory;this.selector=new FootstepSelector(random);
-    this.context=null;this.volume=.7;this.peaks=new Map();this.buffers=new Map();this.active=new Set();this.logs=[];this.errors=[];this.received=0;this.dropped={muted:0,locked:0,loading:0,paused:0,thinned:0};this.style=style;this.gate=style==='toon'?toonStepGate():null;
+    this.context=null;this.volume=.7;this.peaks=new Map();this.buffers=new Map();this.active=new Set();this.logs=[];this.errors=[];this.received=0;this.dropped={muted:0,locked:0,loading:0,paused:0,thinned:0};this.style='toon';this.gate=toonStepGate(); // 카툰 '톡톡'(두 걸음에 한 번). 실사 발소리 경로는 11-19에 지움
     // 바이트만 미리 받는다. AudioContext 생성·디코딩·재생은 사용자 입력 이후다.
     this.encoded=new Map(Object.values(SOUND_BANKS).flat().map(file=>[file,fetch(base+file).then(r=>{if(!r.ok)throw new Error(`${file}: HTTP ${r.status}`);return r.arrayBuffer();}).then(bytes=>({bytes}),error=>({error:error.message}))]));
   }

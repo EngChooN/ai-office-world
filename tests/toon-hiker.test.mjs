@@ -204,15 +204,15 @@ test('카툰 쌍안경: 가슴 폭의 1/3 이하 작은 카툰 쌍안경, 눈에
  for(const a of h.interaction.arms)assert.ok(a.targetError<.01,`쌍안경 손 ${a.targetError}`);
 });
 
-test('카툰 발소리: 앞 소리에서 0.24초 안의 걸음은 건너뛰어 걷기·뛰기 모두 초당 3~4번, 계단 한 칸 한 걸음은 모두 난다. 실사는 그대로',()=>{
+test('카툰 발소리: 앞 소리에서 0.24초 안의 걸음은 건너뛰어 걷기·뛰기 모두 초당 3~4번, 계단 한 칸 한 걸음은 모두 난다(발소리는 카툰 한 가지)',()=>{
  const count=(rate,sec=10)=>{const gate=toonStepGate();let n=0;for(let i=1;i<=rate*sec;i++)if(gate({elapsed:i/rate}))n++;return n/sec;};
  const walk=count(1.37/(WALK_STRIDE.flat*TOON_STRIDE.walk)),run=count(1.37*TOON_RUN_SPEED/(WALK_STRIDE.flat*TOON_STRIDE.run)),stairs=count(STAIR_WALK_CADENCE*1.15);
  assert.ok(walk>=2.9&&walk<=4.1,`걷기 초당 ${walk}`);assert.ok(run>=2.9&&run<=4.2,`뛰기 초당 ${run}`);assert.ok(Math.abs(stairs-STAIR_WALK_CADENCE*1.15)<.11,`계단 초당 ${stairs}`);
  // 남은 소리는 좌우를 번갈아 낸다
  const g=toonStepGate(),pans=[0,.3,.6,.9].map(t=>g({elapsed:t})?.pan);assert.deepEqual(pans,[.08,-.08,.08,-.08]);
  assert.ok(TOON_FOOTSTEP.rate>1.2&&TOON_FOOTSTEP.gainDb<=-4&&TOON_FOOTSTEP.maxDuration<=.15,'가볍고 작은 톡톡');
- const real=new FootstepAudio({base:'',enabled:false}),toon=new FootstepAudio({base:'',enabled:false,style:'toon'});
- assert.equal(real.gate,null);assert.ok(toon.gate);
- for(let i=1;i<=10;i++){real.play({material:'soil',step:i,elapsed:i*.16});toon.play({material:'soil',step:i,elapsed:i*.16});}
- assert.equal(real.dropped.thinned,0);assert.equal(toon.dropped.thinned,5);
+ const toon=new FootstepAudio({base:'',enabled:false});
+ assert.ok(toon.gate);assert.equal(toon.style,'toon');
+ for(let i=1;i<=10;i++)toon.play({material:'soil',step:i,elapsed:i*.16});
+ assert.equal(toon.dropped.thinned,5);
 });

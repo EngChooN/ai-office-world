@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {writeFileSync,readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 const index=JSON.parse(readFileSync('assets/realistic/generated/nature/index.json'));
-const inputs=['assets/realistic/generated/nature/index.json','assets/realistic/terrain-material.js','assets/realistic/load-landscape.js','assets/realistic/near-detail.js','assets/realistic/instance-geometry.js','assets/realistic/foliage-material.js','src/realistic-models.js','src/look-profile.js','src/rendering.js',...index.library.flatMap(m=>m.levels.map(f=>'assets/realistic/generated/nature/'+f))];
+const inputs=['assets/realistic/generated/nature/index.json','assets/realistic/load-landscape.js','assets/realistic/near-detail.js','assets/realistic/instance-geometry.js','src/realistic-models.js','src/look-profile.js','src/rendering.js',...index.library.flatMap(m=>m.levels.map(f=>'assets/realistic/generated/nature/'+f))];
 const hashes=()=>Object.fromEntries(inputs.map(p=>[p,createHash('sha256').update(readFileSync(p)).digest('hex')]));
 const inputHashes=hashes();
 const baseURL=process.env.BASE_URL??'http://127.0.0.1:5176';

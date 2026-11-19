@@ -1,0 +1,67 @@
+{
+ "hiking-day-pc": {
+  "style": "toon",
+  "saved": null,
+  "render": "toon",
+  "fps": null,
+  "errors": [],
+  "bad": []
+ },
+ "hiking-day-phone": {
+  "style": "toon",
+  "saved": null,
+  "render": "toon",
+  "fps": null,
+  "errors": [],
+  "bad": []
+ },
+ "hiking-night-pc": {
+  "style": "toon",
+  "saved": null,
+  "render": "toon",
+  "fps": null,
+  "errors": [],
+  "bad": []
+ },
+ "hiking-night-phone": {
+  "style": "toon",
+  "saved": null,
+  "render": "toon",
+  "fps": null,
+  "errors": [],
+  "bad": []
+ },
+ "smoking-pc": {
+  "style": null,
+  "saved": null,
+  "render": null,
+  "fps": 59.988002382360825,
+  "errors": [],
+  "bad": []
+ },
+ "smoking-phone": {
+  "style": null,
+  "saved": null,
+  "render": null,
+  "fps": 60.22312175236775,
+  "errors": [],
+  "bad": []
+ },
+ "christmas-pc": {
+  "style": null,
+  "saved": null,
+  "render": null,
+  "fps": null,
+  "errors": [],
+  "bad": []
+ },
+ "christmas-phone": {
+  "style": null,
+  "saved": null,
+  "render": null,
+  "fps": null,
+  "errors": [],
+  "bad": []
+ },
+ "fails": []
+}

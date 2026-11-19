@@ -28,31 +28,14 @@ export function stanceWarp(c,common,clipStance){
  return base+(h<common?h/common*clipStance:clipStance+(h-common)/(.5-common)*(.5-clipStance));
 }
 // 이미 읽은 glTF로 등산객을 만든다(노드 테스트에서 파일을 직접 파싱해 쓴다).
-// 남성 가슴: 원본 MPFB 몸이 가슴 양쪽(x ±7.5cm, 높이 1.255m)을 가운데보다 1.5cm 앞으로 내밀어 여성형으로 보인다.
-// 몸·상의·칼라·지퍼·어깨끈을 같은 양만큼 뒤로 눌러 겹침 간격은 그대로 두고, 노멀은 같은 기울기로 돌린다.
-export const CHEST_FLATTEN={x:.075,y:1.255,rx:.075,ry:.085,depth:.013,frontFrom:.03,frontTo:.08};
-export function flattenChest(model){
- const {x:cx,y:cy,rx,ry,depth,frontFrom,frontTo}=CHEST_FLATTEN;
- model.traverse(o=>{if(!o.isSkinnedMesh||!/^human(jacket|collar|zipper|straps)?$/i.test(o.name.replace(/[:._]/g,'')))return;
-  const g=o.geometry;if(g.userData.chestFlattened)return;g.userData.chestFlattened=true; // 여럿이 복제해도 형상은 한 번만
-  const p=g.attributes.position,n=g.attributes.normal;
-  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
-   const front=MathUtils.smoothstep(z,frontFrom,frontTo);if(!front)continue;
-   let d=0,dx=0,dy=0;
-   for(const s of [-1,1]){const u=(x-s*cx)/rx,v=(y-cy)/ry,r2=u*u+v*v;if(r2>=1)continue;const f=1-r2;d+=f*f;dx+=-4*f*u/rx;dy+=-4*f*v/ry;}
-   if(!d)continue;
-   const a=depth*front;p.setZ(i,z-a*d);
-   if(n){const nz=n.getZ(i);N.set(n.getX(i)+a*dx*nz,n.getY(i)+a*dy*nz,nz).normalize();n.setXYZ(i,N.x,N.y,N.z);}}
-  p.needsUpdate=true;if(n)n.needsUpdate=true;g.computeBoundingBox();g.computeBoundingSphere();});
-}
-// 몸마다 다른 치수. 기본값은 실사 등산객(Hiker.glb) 측정값이고, 카툰 캐릭터(src/toon/link-hiker.js)는 scene.userData.hikerProfile로 덮는다.
+// 몸마다 다른 치수. 기본값은 예전 실사 등산객(Hiker.glb) 측정값을 바탕값으로 남긴 것이고, 동동이(src/toon/link-hiker.js)는 scene.userData.hikerProfile로 덮는다.
+// (11-19: 실사 몸 전용 가슴 다듬기 flattenChest·실사 쌍안경 모양은 지움. 이 파일 이름은 여러 곳이 불러 그대로 둠)
 // animSteps: 클립의 한 걸음 길이(걷기·뛰기·계단/바위), runStride: 뛸 때 걸음 길이 배율, chest*: 가슴에 건 쌍안경 자리, eye/mouthLocal: 머리 뼈 기준 눈·입, seat: SEAT 덮어쓰기.
 export const DEFAULT_HIKER_PROFILE=Object.freeze({kind:'realistic',animSteps:null,runStride:1.16,chestY:1.21,chestMesh:'jacket',chestFront:-.19,eyeLocal:[-.0025,.0995,.115],mouthLocal:[0,.015,.10],seat:null,strideScale:null,runSpeed:null,dressable:true,binoLean:0,standSlack:.02});
 export function createRealisticHiker(gltf,{height=1.7}={}){
  const model=gltf.scene,root=new Group(),prof={...DEFAULT_HIKER_PROFILE,...(model.userData?.hikerProfile??{})},seat={...SEAT,...(prof.seat??{})},link=prof.kind==='link'||prof.kind==='toon';
  // 셀카·쌍안경·휴대폰 자리(몸마다 다름). 카툰 동동이는 머리가 커서 얼굴이 어깨보다 한참 앞이고 팔이 짧다.
- const SF={...SELFIE,...(prof.selfie??{})},GP={binoEye:.095,binoTorso:[.4,.25],binoStyle:'realistic',binoDepth:.036,phoneForward:.27,phoneDown:.15,shrug:0,protract:0,...(prof.gadget??{})},poleLength=prof.poleLength??1.10;
- flattenChest(model);
+ const SF={...SELFIE,...(prof.selfie??{})},GP={binoEye:.095,binoTorso:[.4,.25],binoStyle:'toon',binoDepth:.036,phoneForward:.27,phoneDown:.15,shrug:0,protract:0,...(prof.gadget??{})},poleLength=prof.poleLength??1.10;
  root.add(model);model.rotation.y=Math.PI;model.updateMatrixWorld(true); // glTF는 +Z가 앞, 이 앱의 앞(heading 0)은 -Z
  const box=new Box3().setFromObject(model),k=height/HIKER_HEIGHT;model.scale.multiplyScalar(k);model.position.y=-box.min.y*k;model.updateMatrixWorld(true);
  const bone=n=>model.getObjectByName('mixamorig'+n);
@@ -146,7 +129,7 @@ export function createRealisticHiker(gltf,{height=1.7}={}){
  const headPitch0=headPitch(),facePitch=()=>headPitch()-headPitch0;
  let teaLean=0;
  // 쌍안경·휴대폰. 쌍안경은 평소 가슴(Spine2)에 목끈으로 걸려 있고, 휴대폰은 오른쪽 허리 주머니에 있다가 손에 쥐면 보인다.
- const gadgetController=createGadgetController(),gadgetProps=createGadgetProps({style:GP.binoStyle}),BINO_GRIPS=GP.binoStyle==='toon'?TOON_BINO_GRIPS:GRIPS.binoculars,spine2=spine[2],UP=new Vector3(0,1,0);
+ const gadgetController=createGadgetController(),gadgetProps=createGadgetProps(),BINO_GRIPS=GP.binoStyle==='toon'?TOON_BINO_GRIPS:GRIPS.binoculars,spine2=spine[2],UP=new Vector3(0,1,0);
  let gadget=gadgetController.update(0);root.add(gadgetProps.phone,...gadgetProps.straps);
  // 얼굴 정면·위 방향(머리 뼈 로컬)과 두 눈 중심(눈 메시 측정, 머리 뼈 로컬 m). 불러온 자세의 얼굴을 수평 정면으로 본다.
  const headQ0=head.getWorldQuaternion(new Quaternion()).invert(),faceLocal=new Vector3(0,0,-1).applyQuaternion(headQ0),faceUpLocal=new Vector3(0,1,0).applyQuaternion(headQ0);

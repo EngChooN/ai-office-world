@@ -71,15 +71,15 @@ export const BINOCULARS_SIZE=Object.freeze({length:.145,width:.126,barrel:.029,e
 export const PHONE_SIZE=Object.freeze({width:.07,height:.15,depth:.008});
 // 카툰 동동이(키 1m)용 작은 카툰 쌍안경: 폭 9.8cm(가슴 폭 0.33m의 1/3 이하)·길이 8.6cm, 굵고 짧은 경통에 둥근 테.
 export const TOON_BINOCULARS_SIZE=Object.freeze({length:.086,width:.098,barrel:.021,eye:.028,back:.044});
-// style: 'toon'이면 쌍안경을 TOON_BINOCULARS_SIZE 카툰 쌍안경으로 만든다(휴대폰·셀카봉은 같다).
-export function createGadgetProps({style='realistic'}={}){
+// 쌍안경은 TOON_BINOCULARS_SIZE 카툰 쌍안경(11-19: 실사 쌍안경 모양은 지움. BINOCULARS_SIZE는 손 잡는 자리 계산 바탕값으로 남김).
+export function createGadgetProps(){
  const black=new MeshStandardMaterial({color:0x151617,roughness:.7}),green=new MeshStandardMaterial({color:0x26382b,roughness:.82}),
   glass=new MeshStandardMaterial({color:0x1d2b3a,roughness:.08,metalness:.5}),coat=new MeshStandardMaterial({color:0x5c6f7b,roughness:.15,metalness:.6});
  const part=(parent,geometry,mat,[x,y,z],rx=0,rz=0)=>{const m=new Mesh(geometry,mat);m.position.set(x,y,z);m.rotation.set(rx,0,rz);m.castShadow=m.receiveShadow=true;parent.add(m);return m;};
  const along=Math.PI/2; // 원기둥 축(+Y)을 Z축으로
  // 쌍안경: 짙은 녹색 고무 경통 두 개, 검정 대물 테·접안 컵·가운데 다리·초점 바퀴. 끈 고리는 접안 쪽 바깥.
  const binoculars=new Group();binoculars.name='Gadget.Binoculars';let lugs;
- if(style==='toon'){
+ {
   // 카툰: 청록 경통 두 개(배낭 색), 빨간 대물 테, 검은 접안 컵, 가운데 다리. 접안 컵 끝이 +Z 0.044m, 대물 유리가 -Z 0.042m.
   const T=TOON_BINOCULARS_SIZE,teal=new MeshStandardMaterial({color:0x2f8f88,roughness:.6}),red=new MeshStandardMaterial({color:0xd9473e,roughness:.55}),dark=new MeshStandardMaterial({color:0x2b3a40,roughness:.7});
   for(const s of [-1,1]){const x=s*T.eye;
@@ -92,17 +92,7 @@ export function createGadgetProps({style='realistic'}={}){
   part(binoculars,new BoxGeometry(.02,.014,.044),dark,[0,.004,-.002]);
   part(binoculars,new CylinderGeometry(.008,.008,.014,12),red,[0,.016,.016],0,Math.PI/2);
   lugs=[-1,1].map(s=>{const g=new Group();g.position.set(s*.053,.003,.018);binoculars.add(g);return g;});
- }else{
- for(const s of [-1,1]){const x=s*BINOCULARS_SIZE.eye;
-  part(binoculars,new CylinderGeometry(.029,.027,.112,16),green,[x,0,-.012],along);
-  part(binoculars,new CylinderGeometry(.031,.031,.02,16),black,[x,0,-.064],along);
-  part(binoculars,new CylinderGeometry(.023,.023,.002,16),glass,[x,0,-.0745],along);
-  part(binoculars,new CylinderGeometry(.021,.024,.03,14),black,[x,0,.06],along);
-  part(binoculars,new CylinderGeometry(.015,.015,.002,12),coat,[x,0,.0752],along);
-  part(binoculars,new BoxGeometry(.006,.012,.012),black,[s*.06,.004,.035]);}
- part(binoculars,new BoxGeometry(.03,.018,.075),black,[0,.006,-.005]);
- part(binoculars,new CylinderGeometry(.011,.011,.02,14),black,[0,.021,.032],0,Math.PI/2);
- lugs=[-1,1].map(s=>{const g=new Group();g.position.set(s*.064,.004,.035);binoculars.add(g);return g;});}
+ }
  // 목끈: 고리에서 목 양옆까지 곧은 띠 두 가닥. 위치는 매 프레임 맞춘다.
  const strapMat=new MeshStandardMaterial({color:0x1b1c1d,roughness:.9});
  const straps=[0,1].map(i=>{const m=new Mesh(new BoxGeometry(.012,1,.003),strapMat);m.name=`Gadget.Binoculars.Strap${i}`;m.castShadow=true;return m;});

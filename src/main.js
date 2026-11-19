@@ -66,8 +66,8 @@ const failLoading=e=>{if(started)return;const detail=loading.fail(e);rejectReady
 window.addEventListener('error',e=>{if(!started&&loading.phase==='loading')failLoading(e.error??e.message);});
 window.addEventListener('unhandledrejection',e=>{if(!started&&loading.phase==='loading')failLoading(e.reason);});
 window.hiking={started:false,ready:()=>readyPromise,start:()=>{startRequested=true;beginHike();return started;},loading:()=>loading.snapshot()};
-// 그래픽은 카툰 하나다(2026-11-06 실사 모드 제거). 공용 모듈의 style 인자는 'toon'으로 고정해 넘긴다.
-const style='toon';window.hiking.style=style;
+// 그래픽은 카툰 하나다(2026-11-06 실사 모드 화면 제거, 11-19 남은 코드 제거). 예전에 저장된 'gwanak-graphics-style' 값은 읽지 않고 지운다.
+window.hiking.style='toon';try{localStorage.removeItem('gwanak-graphics-style');}catch{}
 window.addEventListener(START_EVENT,()=>window.hiking.start());
 const $=id=>document.getElementById(id);let saved=null,storageOK=true;try{saved=localStorage.getItem(SAVE_KEY);}catch{storageOK=false;}
 // ?start=entrance|gate|demo|summit. 저장이 없는 첫 실행은 광장 출발이다.
@@ -84,7 +84,7 @@ let soundEnabled=true;try{soundEnabled=localStorage.getItem(SOUND_SAVE_KEY)!=='f
 const sharedSound=loadShared();if(sharedSound.has)soundEnabled=sharedSound.sound;
 const audioDebug=new URLSearchParams(location.search).has('audioDebug');
 function updateAudioUI(){const a=audio.snapshot();$('sound-toggle').setAttribute('aria-pressed',String(a.enabled));$('sound-toggle').querySelector('span').textContent=a.enabled?'소리 켜짐':'소리 꺼짐';for(const el of document.querySelectorAll('[data-sound-ic]'))el.innerHTML=icon('c-sound',{size:el.dataset.iconSize||'m',off:!a.enabled});$('sound-toggle').title=a.errors.length?'일부 소리 재생 오류 · 조작 안내의 소리 출처 참고':a.context==='입력 대기'?'클릭하거나 키를 누르면 소리를 시작합니다':a.decoded<a.total?'발소리 준비 중':'발소리 켜기/끄기';if(audioDebug){$('sound-debug').hidden=false;$('sound-debug').textContent='발소리 확인 · '+a.context+' · '+a.decoded+'/'+a.total+'개\n'+a.logs.slice(-8).map(r=>`${r.step}걸음 ${r.material} #${String(r.variant).padStart(2,'0')} ${r.pan<0?'왼':'오른'}\n  ${r.eventElapsed.toFixed(3)}s · ${r.rate.toFixed(3)}배 · ${r.variationDb.toFixed(2)}dB`).join('\n');}}
-const audio=new FootstepAudio({base:`${import.meta.env.BASE_URL}sounds/`,enabled:soundEnabled,onChange:updateAudioUI,style}); // 카툰은 가벼운 '톡톡' 소리를 두 걸음에 한 번
+const audio=new FootstepAudio({base:`${import.meta.env.BASE_URL}sounds/`,enabled:soundEnabled,onChange:updateAudioUI}); // 카툰은 가벼운 '톡톡' 소리를 두 걸음에 한 번
 let userVolume=.7;try{const stored=localStorage.getItem(VOLUME_SAVE_KEY);if(stored!==null&&Number.isFinite(Number(stored)))userVolume=Math.max(0,Math.min(1,Number(stored)));}catch{}
 if(sharedSound.has)userVolume=sharedSound.volume;
 audio.setVolume(userVolume);
@@ -110,15 +110,15 @@ const toon=await guard(Promise.resolve().then(()=>createToonStyle({renderer,scen
 markLoad('toon');
 // 계절: 서울 날짜(?season=로 바꿀 수 있음). hiking.setSeason(이름|null='날짜대로'), 'hiking:free-settings'·'hiking:set-season' 이벤트로도 바꾼다.
 // 다시 로딩하지 않고 셰이더 값만 바뀐다. 바뀌면 'hiking:season' 이벤트를 보낸다.
-const seasons=createSeasonController({onChange:st=>{toon?.setSeason(st.season);window.dispatchEvent(new CustomEvent('hiking:season',{detail:{...st,label:SEASON_LABEL[st.season]}}));}});
-toon?.setSeason(seasons.season,{instant:true});
-window.hiking.setSeason=(value,{instant=false}={})=>{if(!seasons.set(value))return false;if(instant)toon?.setSeason(seasons.season,{instant:true});return {...seasons.state};};
-window.hiking.season=()=>({...seasons.state,label:SEASON_LABEL[seasons.season],weights:toon?.status.season?.weights??null});
+const seasons=createSeasonController({onChange:st=>{toon.setSeason(st.season);window.dispatchEvent(new CustomEvent('hiking:season',{detail:{...st,label:SEASON_LABEL[st.season]}}));}});
+toon.setSeason(seasons.season,{instant:true});
+window.hiking.setSeason=(value,{instant=false}={})=>{if(!seasons.set(value))return false;if(instant)toon.setSeason(seasons.season,{instant:true});return {...seasons.state};};
+window.hiking.season=()=>({...seasons.state,label:SEASON_LABEL[seasons.season],weights:toon.status.season?.weights??null});
 window.addEventListener('hiking:set-season',e=>seasons.set(e.detail?.season??e.detail));
 // 자유 설정(free-settings-ui.js): 바뀐 칸만 온다. 시간은 ?time= 처리(daytime.js), 날씨는 ?weather= 처리(weather.js)를 그대로 쓴다. 다시 로딩하지 않는다.
 // 같은 탭에서 다시 열리면(sessionStorage) 고른 값을 처음부터 적용한다.
 const freeAtLoad=(()=>{try{return loadFree(sessionStorage);}catch{return loadFree(null);}})();let weatherCtl=null,freeWeather=freeAtLoad.weather;
-if(freeAtLoad.season){seasons.set(freeAtLoad.season);toon?.setSeason(seasons.season,{instant:true});}
+if(freeAtLoad.season){seasons.set(freeAtLoad.season);toon.setSeason(seasons.season,{instant:true});}
 setTimeOverride(freeAtLoad.time?presetClock(freeAtLoad.time):null);
 window.addEventListener('hiking:free-settings',e=>{const d=e.detail||{};
  if('season' in d)seasons.set(d.season);
@@ -126,11 +126,11 @@ window.addEventListener('hiking:free-settings',e=>{const d=e.detail||{};
  if('weather' in d){freeWeather=d.weather;weatherCtl?.setOverride(d.weather);}
 });
 setInterval(()=>seasons.tick(),60000);
-const landscape=await guard(loadLandscape({base:`${import.meta.env.BASE_URL}assets/realistic/generated/`,chunkBase:`${import.meta.env.BASE_URL}assets/shared/chunks/`,maxContactMapSize:renderer.capabilities.maxTextureSize,style,materialFactory:toon?.materialFactory??null,toon:toon&&{toonify:toon.toonify,patchFoliage:toon.patchFoliage,styleCity:toon.styleCity,natureParts:toon.natureParts}}));loading.set('terrain',.6);
+const landscape=await guard(loadLandscape({base:`${import.meta.env.BASE_URL}assets/realistic/generated/`,chunkBase:`${import.meta.env.BASE_URL}assets/shared/chunks/`,maxContactMapSize:renderer.capabilities.maxTextureSize,materialFactory:toon.materialFactory,toon:{toonify:toon.toonify,patchFoliage:toon.patchFoliage,styleCity:toon.styleCity,natureParts:toon.natureParts}}));loading.set('terrain',.6);
 // 카툰: 시설·입구·계단·풀 등 이미 만든 메시 재질을 MeshToon으로 바꾼다(같은 원본 재질은 캐시). 도시·원경·물은 load-landscape가 따로 칠한다.
 markLoad('landscape');
-const toonifyLandscape=()=>{if(toon)for(const child of landscape.group.children)if(!['SeoulCity2km','SeoulFar','HanRiverAndWater'].includes(child.name))toon.toonify(child,{kind:'prop'});};toonifyLandscape();
-toon?.attachLandscape?.(landscape);
+const toonifyLandscape=()=>{for(const child of landscape.group.children)if(!['SeoulCity2km','SeoulFar','HanRiverAndWater'].includes(child.name))toon.toonify(child,{kind:'prop'});};toonifyLandscape();
+toon.attachLandscape?.(landscape);
 const walkingGround=createWalkingGround(landscape);
 // 광장(zone 'plaza')은 경로와 무관한 x,z. 높이는 landscape.surfaceHeight(길 안 노면 규칙)를 쓴다.
 const worldPosition=()=>state.zone==='plaza'?[state.plaza.x,walkingGround.height(state.plaza.x,state.plaza.z,false),state.plaza.z]:state.zone==='summit'?[state.summit.x,walkingGround.summit.height(state.summit.x,state.summit.z),state.summit.z]:positionAt(state.s,state.lateral,walkingGround);
@@ -139,7 +139,7 @@ const freeZone=()=>state.zone==='plaza'||state.zone==='summit';
 const offTrailNow=()=>state.zone==='route'&&isOffTrail(state.s,state.lateral);
 const baseHeading=()=>state.zone==='plaza'?state.plaza.heading:state.zone==='summit'?state.summit.heading:sample(state.s).heading;
 const floorHeight=s=>s===state.s?worldPosition()[1]:positionAt(s,state.lateral,walkingGround)[1];
-const lighting=setupRendering(renderer,scene,camera,mobile,landscape.sky,{style,toon});
+const lighting=setupRendering(renderer,scene,camera,mobile,{toon});
 weatherCtl=lighting.environment?.weather??null;if(freeWeather)weatherCtl?.setOverride(freeWeather);
 const {TerrainStream}=await import('./terrain.js');const terrain=new TerrainStream(scene,landscape,camera);
 const startingPosition=worldPosition();camera.position.set(startingPosition[0],startingPosition[1]+1.6,startingPosition[2]);await guard(Promise.resolve(terrain.update()));await guard(landscape.terrainReady(startingPosition));markLoad('first-chunk');loading.set('terrain',.8);
@@ -150,14 +150,14 @@ async function streamAvailableCities(onProgress=()=>{}){if(cityBusy)return;cityB
 let backgroundCities=null;const startBackgroundCities=()=>backgroundCities??=landscape.streamRoads().catch(e=>{landscape.status.errors.push(`도로: ${e.message}`);}).then(()=>streamAvailableCities()).then(()=>markLoad('cities'));
 setInterval(async()=>{try{if(await landscape.refreshManifest()){await landscape.streamWater();void streamAvailableCities();}}catch(e){landscape.status.errors.push(e.message);}},30000);
 const natureBase=`${import.meta.env.BASE_URL}assets/toon/nature/`;
-const initialNatureReady=loadOptionalModels(landscape,natureBase,f=>loading.set('nature',.95*f),{position:startingPosition,impostors:false}).then(r=>{toonifyLandscape();return r;}).catch(e=>landscape.status.errors.push(e.message));
+const initialNatureReady=loadOptionalModels(landscape,natureBase,f=>loading.set('nature',.95*f),{position:startingPosition}).then(r=>{toonifyLandscape();return r;}).catch(e=>landscape.status.errors.push(e.message));
 // 날씨·시각 환경은 지형과 함께 시작하고 여기서 완료를 기다린다.
 const environmentReady=guard(Promise.resolve(lighting.environmentReady)).then(()=>loading.set('environment',.3));
 let firstHeading=true;const hikerUrl=`${import.meta.env.BASE_URL}assets/toon/models/hiker/HikerRig.glb`; // 뼈대만 남긴 14KB(원본 2MB, assets/source/build-toon-hiker-rig.mjs)
 const hiker=await guard(loadToonHiker(hikerUrl));loading.done('hikers');markLoad('hiker');const avatar=hiker.scene;scene.add(avatar);
 // 셰이더 미리 준비: 지형·하늘·등산객 재질이 생긴 지금 compileAsync를 걸어 두면, GPU가 숲 배치(CPU) 동안 병렬로 컴파일하고 뒤의 prepare()는 캐시를 쓴다(2026-11-06).
 void lighting.compile().then(()=>markLoad('early-compile')).catch(()=>{});
-if(toon)toon.toonify(avatar,{kind:'character'});avatar.traverse(o=>{if(o.isMesh){o.castShadow=!o.userData.outline;o.receiveShadow=!o.userData.noReceiveShadow;}});
+toon.toonify(avatar,{kind:'character'});avatar.traverse(o=>{if(o.isMesh){o.castShadow=!o.userData.outline;o.receiveShadow=!o.userData.noReceiveShadow;}});
 const look=createLook(),autoView=createAutoView();let moving=false,speed=0,last=performance.now(),saveAt=last,uiAt=0,frameSum=0,frames=0,quality=qualityMode==='auto'?(mobile?0:2):Number(qualityMode),qualityWindow=performance.now(),goodWindows=0;const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;const touchQuery=matchMedia('(pointer: coarse)');const updateDevice=()=>document.body.classList.toggle('touch',touchQuery.matches||navigator.maxTouchPoints>0);touchQuery.addEventListener('change',updateDevice);updateDevice();
 const adaptiveQuality=new AdaptiveQuality(quality);
 // 비용 분리 검수에서만 같은 DPR·그림자 조건을 고정한다. 일반 실행에는 적용하지 않는다.
@@ -357,7 +357,7 @@ loading.set('facilities',ready.facilities?1:.5);if(!ready.facilities)failLoading
 const sOfReference=m=>{const g=route.segments.find(seg=>seg.b.referenceMetres>=m)??route.segments.at(-1),a=g.a.referenceMetres,b=g.b.referenceMetres;return g.start+Math.max(0,Math.min(1,(m-a)/((b-a)||1)))*g.length;};
 const facilityPoints=FACILITY_LAMPS.map(f=>{const anchor=f.anchor&&landscape.status.summitFacilities?.sites?.find(site=>site.id===f.anchor);if(anchor)return {x:anchor.x+f.offset[0],z:anchor.z+f.offset[1],tx:anchor.x,tz:anchor.z,height:f.height};const s=f.metres!==undefined?sOfReference(f.metres):route.length-f.fromEnd,[cx,,cz]=positionAt(s,0,walkingGround),[x,,z]=positionAt(s,f.side,walkingGround);return {x,z,tx:cx,tz:cz,height:f.height};});
 const night=createNightLighting({scene,renderer,place:(s,l)=>positionAt(s,l,walkingGround),groundHeight:(x,z)=>walkingGround.height(x,z,false),gatePoint:fromGate,facilityPoints,routeLength:route.length});
-if(toon)toon.styleNightLighting(night.root);
+toon.styleNightLighting(night.root);
 let multi=null;
 let pairSteer=false,pairPace=1; // 같이 등산하기: 이번 프레임 옆 키 입력·넘긴 속도 배율(아래 pairStep). 프레임이 await 사이에 돌 수 있어 multi 옆에 둔다
 // 함께 걷기(?multi 또는 HUD 참가). 켜지 않으면 코드를 불러오지도 않는다.
@@ -443,7 +443,7 @@ let envInfo={};window.addEventListener('hiking:environment',e=>{envInfo=e.detail
  // 자동걷기 즐길거리(산스장·벤치·먼지털이기·동물). 자리는 풍경이 정한 landscape.status.trailProps, 동작은 src/toon/hiker-acts.js.
  // 즐길거리 효과음: 발소리와 같은 AudioContext·마스터(음량)·켜기/끄기를 따른다. 화면이 가려지면 멈춘다.
  const trailSound=createTrailSound({context:()=>audio.context,destination:()=>audio.master,enabled:()=>audio.enabled&&!document.hidden,base:`${import.meta.env.BASE_URL}sounds/trail/`});
- trail=createTrailWorld({scene,camera,hiker,landscape,toonify:toon?.toonify,sound:trailSound,auto:{get:()=>state.auto,set:v=>{state.auto=v;}},env:()=>({season:seasons.season,hour:parseInt(lighting.environment?.info?.timeLabel??envInfo.timeLabel??'',10)})});window.hiking.trailSound=()=>trailSound.snapshot();window.hiking.trail=trail;installTrailHud();
+ trail=createTrailWorld({scene,camera,hiker,landscape,toonify:toon.toonify,sound:trailSound,auto:{get:()=>state.auto,set:v=>{state.auto=v;}},env:()=>({season:seasons.season,hour:parseInt(lighting.environment?.info?.timeLabel??envInfo.timeLabel??'',10)})});window.hiking.trailSound=()=>trailSound.snapshot();window.hiking.trail=trail;installTrailHud();
  // 즐길거리 도장: 역기 10회 → '산스장 득근', 에어건 → '깨끗한 신발'(수첩)
  window.addEventListener('hiking:trail',e=>{const t=e.detail?.type;if(t==='gym-lift-done')interaction.award?.('gym');else if(t==='airgun-done')interaction.award?.('shoes');});
  window.hiking.interaction=()=>({view:interaction.view,action:interaction.action,progress:JSON.parse(JSON.stringify(interaction.progress)),tagsOn:interaction.tagsOn,frameOn:interaction.frameOn,bino:interaction.bino,cooldowns:interaction.cooldowns(),sites:interaction.cands.map(c=>({id:c.id,action:c.action,x:c.x,z:c.z,y:c.y}))});window.hiking.interactionApi=interaction;
