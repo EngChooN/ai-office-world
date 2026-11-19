@@ -171,6 +171,7 @@ mountRestUI();installHudToggle();installGadgetUI();installNotebookHud();window.h
 const interactionUI=mountInteractionUI();
 const INTERACTION_COMMANDS=['interact','choice-1','choice-2','choice-3','panel-close','page-prev','page-next','stamps-toggle','card-open','labels-toggle','stretch','emote-menu','emote-pick'];
 let interaction=null,trail=null;
+let multi=null;   // 입력(bindInput)·프레임이 로딩 중에도 읽으므로 여기서 먼저 선언(아래에서 선언하면 로딩 중 키를 누를 때 "Cannot access 'multi' before initialization", 11-19)
 function command(id,value){if(!started)return;if(document.querySelector('dialog[open]')&&!['map-toggle','help-toggle'].includes(id))return;
  if(interaction){if(id==='escape'){if(interaction.anyPanel())interaction.handle('panel-close');return;}if(INTERACTION_COMMANDS.includes(id)){if(id==='stamps-toggle'||id==='card-open')closeGadget(state);interaction.handle(id,value);updateUI();return;}}
  // 기구(쌍안경·휴대폰). 앉기·차·자동 걷기를 고르면 기구를 내린다.
@@ -358,7 +359,6 @@ const sOfReference=m=>{const g=route.segments.find(seg=>seg.b.referenceMetres>=m
 const facilityPoints=FACILITY_LAMPS.map(f=>{const anchor=f.anchor&&landscape.status.summitFacilities?.sites?.find(site=>site.id===f.anchor);if(anchor)return {x:anchor.x+f.offset[0],z:anchor.z+f.offset[1],tx:anchor.x,tz:anchor.z,height:f.height};const s=f.metres!==undefined?sOfReference(f.metres):route.length-f.fromEnd,[cx,,cz]=positionAt(s,0,walkingGround),[x,,z]=positionAt(s,f.side,walkingGround);return {x,z,tx:cx,tz:cz,height:f.height};});
 const night=createNightLighting({scene,renderer,place:(s,l)=>positionAt(s,l,walkingGround),groundHeight:(x,z)=>walkingGround.height(x,z,false),gatePoint:fromGate,facilityPoints,routeLength:route.length});
 toon.styleNightLighting(night.root);
-let multi=null;
 let pairSteer=false,pairPace=1; // 같이 등산하기: 이번 프레임 옆 키 입력·넘긴 속도 배율(아래 pairStep). 프레임이 await 사이에 돌 수 있어 multi 옆에 둔다
 // 함께 걷기(?multi 또는 HUD 참가). 켜지 않으면 코드를 불러오지도 않는다.
 // 서버 주소: ?server=wss://… → 빌드 변수 VITE_MULTI_SERVER_URL → 공개 파일 multi-server.json → 기억한 값 → 없으면 이 브라우저 창끼리(BroadcastChannel).
