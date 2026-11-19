@@ -9,6 +9,7 @@
 //  - 행동 단추 자리 매기기 ufPlace(): 단추에 data-uf="big|s1..s5|todo"를 달면 CSS가 오른쪽 아래 원 둘레에 놓는다
 // 콘텐츠별 규칙(무슨 단추·무슨 탭인지)은 각 콘텐츠가 정한다. 이 틀은 자리와 열림·닫힘만 안다.
 import {icon} from './icons/icon.js';
+import {trackInviteRoom,inviteUrl,inviteText,shareInvite} from './invite.js';
 // CSS는 브라우저에서만(노드 테스트가 이 파일을 읽을 수 있게 — hiking-chat-ui 등과 같은 방식)
 const loadCss=()=>{if(globalThis.document&&!loadCss.done){loadCss.done=true;import('./ui-frame.css').catch(()=>{});}};
 
@@ -88,7 +89,8 @@ export function createChatBar({doc=document,win=window,onSay=()=>false,onClose=(
 // extra: 콘텐츠 전용 위 단추 [{id,ic,label,onClick}] (💬 앞에 놓임, 크리스마스 🗺 지도)
 // tabs: ☰ 메뉴 탭 [{id,label,ic,render(body),onOpen?(body),onClose?()}]. render는 처음 열 때 한 번, onOpen은 열 때마다
 // quick: 메뉴 맨 위 빠른 줄(등산 소리·라디오·시각) render(el) — 없으면 안 그림
-export function createUiFrame({doc=document,win=window,exp='',extra=[],tabs=[],quick=null,menuLabel='메뉴'}={}){
+// invite: 메뉴 맨 위 「친구 부르기」 한 줄(11-19 접속 유도 ①, src/invite.js). 세 체험은 기본으로 켜짐, false면 안 그림
+export function createUiFrame({doc=document,win=window,exp='',extra=[],tabs=[],quick=null,menuLabel='메뉴',invite=['hiking','smoking','christmas'].includes(exp)}={}){
  loadCss();
  const root=doc.documentElement;root.classList.add('uf');if(exp)root.dataset.ufExp=exp;
  const mk=(tag,cls,html='')=>{const e=doc.createElement(tag);if(cls)e.className=cls;if(html)e.innerHTML=html;return e;};
@@ -101,9 +103,18 @@ export function createUiFrame({doc=document,win=window,exp='',extra=[],tabs=[],q
  const menuBtn=mk('button','uf-rb uf-menu-btn',icon('c-menu',{size:'m',fallback:'☰'}));menuBtn.type='button';menuBtn.setAttribute('aria-label',menuLabel);menuBtn.setAttribute('aria-haspopup','dialog');menuBtn.setAttribute('aria-expanded','false');
  tr.append(menuBtn);
  // 메뉴 창
- const sheet=mk('section','uf-sheet',`<i class="uf-grip" aria-hidden="true"></i>${quick?'<div class="uf-quick"></div>':''}<nav class="uf-tabs" role="tablist"></nav><div class="uf-body"></div>`);
+ const sheet=mk('section','uf-sheet',`<i class="uf-grip" aria-hidden="true"></i>${invite?`<button type="button" class="uf-invite">${icon('c-multi-join',{size:'m',fallback:'👋'})}<span><b>친구 부르기</b><small data-uf-invite-sub></small></span></button>`:''}${quick?'<div class="uf-quick"></div>':''}<nav class="uf-tabs" role="tablist"></nav><div class="uf-body"></div>`);
  sheet.hidden=true;sheet.setAttribute('role','dialog');sheet.setAttribute('aria-label',menuLabel);
  const tabBar=sheet.querySelector('.uf-tabs'),body=sheet.querySelector('.uf-body'),quickEl=sheet.querySelector('.uf-quick');
+ // ── 친구 부르기: 지금 서버 방은 체험의 상태 이벤트로 안다. 누르면 공유 창 → 복사 → 주소 보여 주기
+ const inviteBtn=sheet.querySelector('.uf-invite'),inviteSub=sheet.querySelector('[data-uf-invite-sub]'),invRoom=invite?trackInviteRoom(exp,{win,onChange:()=>paintInvite()}):null;
+ let invNote='',invT=0;
+ const paintInvite=()=>{if(inviteSub)inviteSub.textContent=invNote||(invRoom?.room()?'지금 이 서버로 바로 들어와요':'이 체험 주소를 보내요');};
+ inviteBtn?.addEventListener('click',async()=>{
+  const room=invRoom.room(),r=await shareInvite({url:inviteUrl(win.location.href,{exp,room}),text:inviteText(exp,room),title:doc.title,nav:win.navigator,win});
+  invNote=r==='copied'?'주소를 복사했어요. 친구에게 붙여 보내세요':r==='shared'?'보냈어요':'';paintInvite();
+  clearTimeout(invT);if(invNote)invT=setTimeout(()=>{invNote='';paintInvite();},3000);
+ });
  const panels=new Map();
  for(const t of tabs){
   const b=mk('button','uf-tab',`${icon(t.ic,{size:'m',fallback:t.fb})}<span>${esc(t.label)}</span>`);b.type='button';b.dataset.ufTab=t.id;b.setAttribute('role','tab');b.setAttribute('aria-selected','false');tabBar.append(b);
@@ -124,7 +135,7 @@ export function createUiFrame({doc=document,win=window,exp='',extra=[],tabs=[],q
   body.scrollTop=0;
  }
  function setOpen(on,id=null){
-  if(on){if(id)tab=id;if(!open){open=true;sheet.hidden=false;quick?.(quickEl);openWin('menu',{doc,win});}showTab(tab);}
+  if(on){if(id)tab=id;if(!open){open=true;sheet.hidden=false;paintInvite();quick?.(quickEl);openWin('menu',{doc,win});}showTab(tab);}
   else if(open){open=false;sheet.hidden=true;panels.get(tab)?.t.onClose?.();closeWin('menu',{doc,win});}
   menuBtn.classList.toggle('on',open);menuBtn.setAttribute('aria-expanded',String(open));
  }

@@ -23,7 +23,7 @@ import {createXmasAvatar} from './avatar.js';
 import {createLiteDongdong} from './lite.js';
 import {festiveLevel,skyFor,tuneEnv,tunePipeline} from './festive.js'; // 「밝고 화려하게」 시안 B = 기본(11-17 대표 결정), ?look=festive = 시안 A, ?look=classic = 예전 화면
 import {SPAWN,TREE,TARGETS,CAMPFIRE,MAILBOX,CARD_BOARD,SNOWMAN_YARD,SNOWBALL_YARD,SLED_RUN,BIG_PLAZA} from './layout.js';
-import {TRAVEL,travelSpots,mapShapes,runBlocked} from './travel.js'; // 넓힌 광장 달리기·바로가기 지도(시안 B, 11-17 5차)
+import {TRAVEL,travelSpots,mapShapes,runBlocked,spotFromSearch} from './travel.js'; // 넓힌 광장 달리기·바로가기 지도(시안 B, 11-17 5차)
 import {createTravelUi} from './travel-ui.js';
 import {setSledFeel,sledFeelFrom} from './sled.js';
 setSledFeel(sledFeelFrom()); // 썰매 조작감 2: 11-17 대표 결정으로 모든 화면 기본(주소로 바꾸는 길 없음)
@@ -345,6 +345,9 @@ if(BIG_PLAZA&&village.festive){
   where:()=>({x:player.x,z:player.z,heading:player.heading}),
   others:()=>multi.people().filter(p=>!p.muted&&p.sample).map(p=>({x:p.sample.x,z:p.sample.z}))})};
 }
+// 장면 바로가기 주소 ?spot=(11-19 접속 유도 ③): 시작 자리를 입구 대신 그 시설 앞으로(어두워짐 없이, 서버 입장 전이라 첫 위치로 그대로 감)
+{const s=travel?spotFromSearch(location.search,travel.spots):null;
+ if(s){const p=collideXmas(s.x,s.z,cols);player.place(p.x,p.z,s.heading);cam.yaw=s.heading;addEventListener('xmas:ready',()=>hud.say(`${s.label} 앞이에요`,2),{once:true});}}
 addEventListener('xmas:multi-join',()=>{net.resetLocal();campfire.stand();carousel.act('mg:off');skyPlay.stop();if(sledPlay.mode!=='none')sledPlay.act('sled:off');sledPlay.resetCourse();});
 addEventListener('xmas:multi-leave',()=>{sledPlay.resetCourse();});
 addEventListener('xmas:multi-leave',()=>{net.resetLocal();});

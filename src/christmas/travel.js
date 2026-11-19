@@ -32,6 +32,12 @@ export function travelSpots({carousel=true,rink=true,sky=false}={}){
  ];
  return list;
 }
+// 장면 바로가기 주소(11-19 접속 유도 ③, 릴스 끝 → 그 장면): ?spot=<목적지 id>(sled·fight·rink·tree·sky 등 위 목록) → 입장 직후 그 시설 앞.
+// 모르는 값·꺼진 시설(회전목마·링크·하늘 썰매가 없는 화면)이면 null = 평소처럼 입구.
+export function spotFromSearch(search='',spots=[]){
+ const id=new URLSearchParams(search).get('spot');
+ return id?spots.find(s=>s.id===id.trim().toLowerCase())??null:null;
+}
 // 지도 범위(세계 좌표): 마을 울타리 + 북쪽 산기슭(케이블카 승강장 뒤)까지. 산 꼭대기(썰매 출발대)는 지도 위 가장자리에 붙여 화살표로 그린다(edge).
 export function mapBounds(pad=3){return {x0:-BOUNDS.r-pad,x1:BOUNDS.r+pad,z0:-BOUNDS.r-16,z1:BOUNDS.r+pad};}
 // 세계 → 지도(0~1)

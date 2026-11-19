@@ -33,12 +33,14 @@ export function pickHubTime({forced=null,setting='auto',elevation=NaN}={}){
  if(['day','dusk','night'].includes(setting))return setting;
  return hubTime(elevation);
 }
+// 0명일 때 글(11-19 접속 유도 ④): 「0명」·「아무도 없어요」 대신 처음 온 사람에게 먼저 들어가 보라고. 숫자를 부풀리지 않는다
+export const ZERO_TEXT='첫 번째로 들어가 보세요';
 // 체험 한 곳의 인원 글자(장소 깃발·카드·다른 곳 목록)
 export function statusHTML(view,{long=false}={}){
  if(view.state==='checking')return `<span class="hb-st hb-st-wait">${icon('c-net-connecting',{size:'xs'})}인원 확인 중</span>`;
  if(view.state==='off')return `<span class="hb-st hb-st-off">${icon('c-server-off',{size:'xs'})}${long?'서버가 쉬는 중 · 혼자 하기는 돼요':'혼자 하기만'}</span>`;
  const n=view.here??0;
- return `<span class="hb-st hb-st-on${n?'':' hb-st-zero'}">${icon('c-people',{size:'xs'})}${n?`<b>${n}명</b> 함께하는 중`:'지금은 아무도 없어요'}</span>`;
+ return `<span class="hb-st hb-st-on${n?'':' hb-st-zero'}">${icon('c-people',{size:'xs'})}${n?`<b>${n}명</b> 함께하는 중`:ZERO_TEXT}</span>`;
 }
 // 서버 줄(판). picked = 고른 서버 id
 export function serverListHTML(e,view,picked){
@@ -80,7 +82,8 @@ export function mountHub(doc=document,{base=import.meta.env.BASE_URL,storage=glo
 
  // ── 위 띠(두 모양 공용)
  const onlineHTML=()=>{const tot=hubTotal(st.net),v=hubServerView('hiking',st.net);
-  return v.state==='on'?`<span class="hb-st hb-st-on">${icon('c-people',{size:'xs'})}<b>${tot??0}명</b><i>지금 접속 중</i></span>`:statusHTML(v);};
+  return v.state!=='on'?statusHTML(v):tot?`<span class="hb-st hb-st-on">${icon('c-people',{size:'xs'})}<b>${tot}명</b><i>지금 접속 중</i></span>`
+   :`<span class="hb-st hb-st-on hb-st-zero">${icon('c-people',{size:'xs'})}<i>${ZERO_TEXT}</i></span>`;};
  const soundBtn=()=>`<button type="button" class="hb-btn${shared.sound?' is-on':''}" data-a="sound" aria-pressed="${shared.sound}" aria-label="${shared.sound?'소리 끄기':'소리 켜기'}">${icon(shared.sound?'c-sound':'c-sound-off',{size:'m'})}<span class="lbl">${shared.sound?'소리 켜짐':'소리 꺼짐'}</span></button>`;
  const topHTML=()=>`<header class="hb-top"><h1 class="hb-brand">${st.layout==='map'?compass:dongdong({outfit:'hike',cls:'hb-brand-dd'})}<span>온라인 메타버스${st.layout==='map'?'<small>동동이 마을 지도</small>':''}</span></h1>
 <span class="hb-online" data-live="online" aria-live="polite">${onlineHTML()}</span>${soundBtn()}<button type="button" class="hb-btn" data-a="settings" aria-haspopup="dialog" aria-label="설정">${icon('c-settings',{size:'m'})}<span class="lbl">설정</span></button></header>`;

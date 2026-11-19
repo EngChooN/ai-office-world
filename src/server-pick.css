@@ -13,6 +13,8 @@
 .sp-sum[hidden]{display:none}
 .sp-sum span{flex:1;padding:6px 10px;border-radius:10px;background:var(--paper2,#f4e7c8);box-shadow:inset 0 0 0 1.5px var(--rule,#d9c79d)}
 .sp-sum b{font-size:17px;color:var(--ink,#4a3618)}
+.sp-sum span[hidden]{display:none}
+.sp-sum .sp-first{flex:2;color:var(--ink,#4a3618)}
 .sp-note{margin:0;padding:8px 10px;border-radius:10px;font-size:13px;font-weight:800;line-height:1.4;background:var(--paper2,#f4e7c8);border:2px dashed var(--rule,#d9c79d)}
 .sp-note[hidden]{display:none}
 .sp-note[data-tone=bad]{border-color:var(--low,#c8553d);color:var(--low,#c8553d)}

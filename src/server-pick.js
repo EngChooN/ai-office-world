@@ -19,6 +19,13 @@ import {rememberEntry} from './entry.js';
 export const NAME_KEY='gwanak-multi-name';   // 등산 함께 걷기 카드와 같은 저장값(닉네임 재사용)
 export const REFRESH_MS=5000;
 export const FETCH_TIMEOUT_MS=4000;
+// 11-19 접속 유도 ②: 휴대폰 첫 접속은 게임 파일과 같이 받느라 첫 확인이 4초를 넘기 쉽다. 한 번 실패로 빨간 실패 화면을 띄우지 않고
+// 「확인 중」을 유지한 채 RETRY_MS 뒤 더 긴 제한(RETRY_TIMEOUT_MS)으로 한 번 더 본다. 연달아 FAIL_LIMIT번 실패해야 '연결할 수 없어요'.
+export const RETRY_MS=1000;
+export const RETRY_TIMEOUT_MS=8000;
+export const FAIL_LIMIT=2;
+/** 실패 한 번 뒤 상태: 연달아 실패한 횟수(fails)가 FAIL_LIMIT보다 적으면 지난 상태를 그대로 두고(처음이면 'loading') 곧 다시 본다 */
+export function afterFail(prev,fails){return fails>=FAIL_LIMIT?{net:'error',retry:false}:{net:prev==='ok'?'ok':'loading',retry:true};}
 export const PICK_LABELS=Object.freeze({
  hiking:Object.freeze({art:'mountain',title:'함께 걷기 서버',icon:'👋',ic:'c-exp-hiking',solo:'혼자 걷기',soloIcon:'🥾',leave:'나가서 혼자 걷기',anon:'등산객XXXX'}),
  smoking:Object.freeze({art:'rooftop',title:'같이 피우기 서버',icon:'👥',ic:'c-exp-smoking',solo:'혼자 피우기',soloIcon:'🚬',leave:'나가서 혼자 피우기',anon:'손님XXXX'}),
@@ -76,7 +83,7 @@ export function createServerPick({experience='hiking',serverUrl=null,serverOff=f
  setTimer=setTimeout,clearTimer=clearTimeout}={}){
  const L=PICK_LABELS[experience]??PICK_LABELS.hiking,local=!serverUrl,url=healthUrl(serverUrl);
  const st={open:false,health:null,net:local?'local':'loading',current:null,note:null,closable:false};
- let root=null,timer=null,seq=0,abort=null;
+ let root=null,timer=null,seq=0,abort=null,fails=0;
  let saved='';try{saved=storage?.getItem(NAME_KEY)??'';}catch{}
  let name=cleanPickName(saved||defaultName);
 
@@ -86,7 +93,7 @@ export function createServerPick({experience='hiking',serverUrl=null,serverOff=f
   root.innerHTML=`<div class="sp-scrim" data-sp="scrim"></div>
 <section class="sp-card" role="dialog" aria-modal="true" aria-labelledby="sp-title-${experience}">
  <header class="sp-head"><h2 id="sp-title-${experience}"><em aria-hidden="true">${icon(L.ic,{size:'s',fallback:L.icon})}</em>${esc(L.title)}</h2><p class="sp-lead">들어갈 서버를 고르세요</p><button type="button" class="sp-x" data-sp="close" aria-label="서버 고르기 닫기">✕</button></header>
- <p class="sp-sum" aria-live="polite"><span>지금 접속 <b data-sp-here>…</b>명</span><span>전체 <b data-sp-total>…</b>명</span></p>
+ <p class="sp-sum" aria-live="polite"><span data-sp-n>지금 접속 <b data-sp-here>…</b>명</span><span class="sp-first" data-sp-first hidden>아직 아무도 없어요 · 첫 번째로 들어가 보세요</span><span data-sp-all>전체 <b data-sp-total>…</b>명</span></p>
  <p class="sp-note" role="status" hidden></p>
  <ul class="sp-list" role="list"></ul>
  <label class="sp-name">닉네임 <small>(${NET.nameMax}자까지 · 비우면 ${esc(L.anon)})</small><input name="sp-name" type="text" maxlength="${NET.nameMax}" placeholder="${esc(L.anon)}" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"></label>
@@ -114,8 +121,11 @@ export function createServerPick({experience='hiking',serverUrl=null,serverOff=f
   root.querySelector('.sp-x').hidden=!st.closable;
   const sum=root.querySelector('.sp-sum');sum.hidden=local||off;
   root.querySelector('[data-sp-here]').textContent=tot.here??'…';root.querySelector('[data-sp-total]').textContent=tot.total??'…';
+  // 0명(11-19 접속 유도 ④): 「지금 접속 0명」 대신 첫 번째로 들어가 보라는 한 줄. 다른 체험에 사람이 있으면 전체 수는 그대로 보임
+  const zero=tot.here===0&&!st.current;root.querySelector('[data-sp-n]').hidden=zero;root.querySelector('[data-sp-first]').hidden=!zero;root.querySelector('[data-sp-all]').hidden=zero&&!tot.total;
   const note=root.querySelector('.sp-note'),msg=st.note==='full'?{tone:'warn',text:'방금 꽉 찼어요. 다른 서버를 고르거나 잠시 뒤 다시 골라 주세요.'}
    :off?{tone:'bad',text:`서버에 연결할 수 없어요. 지금은 ${L.solo}만 할 수 있어요.`}
+   :st.net==='loading'&&fails>0?{tone:'local',ic:'c-net-connecting',text:'서버를 확인하고 있어요. 잠시만 기다려 주세요.'}
    :local?{tone:'local',ic:serverOff?'c-server-off':'c-net-local',text:serverOff?`지금은 서버가 꺼져 있어요. ${L.solo}만 할 수 있어요.`:`서버 주소가 없어요. 지금은 ${L.solo}만 할 수 있어요.`}:null;
   note.hidden=!msg;if(msg){note.dataset.tone=msg.tone;if(msg.ic)note.innerHTML=iconText(msg.ic,msg.text,{size:'xs'});else note.textContent=msg.text;}
   const focused=doc.activeElement?.closest?.('[data-sp-server]')?.dataset.spServer??null,list=root.querySelector('.sp-list');
@@ -136,18 +146,19 @@ export function createServerPick({experience='hiking',serverUrl=null,serverOff=f
  async function refresh(){
   if(local||!url||!fetchImpl){render();return;}
   const my=++seq;abort?.abort?.();const ctl=typeof AbortController==='function'?new AbortController():null;abort=ctl;
-  const to=setTimer(()=>ctl?.abort(),FETCH_TIMEOUT_MS);
+  const to=setTimer(()=>ctl?.abort(),fails?RETRY_TIMEOUT_MS:FETCH_TIMEOUT_MS);
   try{
    const r=await fetchImpl(url,{cache:'no-store',signal:ctl?.signal});
    if(!r.ok)throw new Error(`HTTP ${r.status}`);
    const h=await r.json();if(my!==seq)return;
    if(!h?.servers)throw new Error('servers 없음');
-   st.health=h;st.net='ok';
-  }catch{if(my!==seq)return;st.health=null;st.net='error';}
+   st.health=h;st.net='ok';fails=0;
+  }catch{if(my!==seq)return;fails++;const a=afterFail(st.net,fails);st.net=a.net;if(a.net==='error')st.health=null;}
   finally{clearTimer(to);}
   render();
  }
- function loop(){clearTimer(timer);if(!st.open||local)return;timer=setTimer(async()=>{await refresh();loop();},REFRESH_MS);}
+ // 실패 뒤 아직 '연결할 수 없어요'가 아니면 곧(RETRY_MS) 다시, 아니면 5초마다
+ function loop(){clearTimer(timer);if(!st.open||local)return;timer=setTimer(async()=>{await refresh();loop();},fails&&fails<FAIL_LIMIT?RETRY_MS:REFRESH_MS);}
  // open({current:지금 들어가 있는 서버 id|null, note:'full'|null, closable})
  function open({current=null,note=null,closable=!!current}={}){
   if(!root&&doc?.body)build(); // 화면이 없으면(node 시험) 상태·콜백만 움직인다
@@ -156,7 +167,7 @@ export function createServerPick({experience='hiking',serverUrl=null,serverOff=f
   if(had){name=loadPickName(storage)||cleanPickName(defaultName);const input=root?.querySelector('input');if(input&&input!==doc.activeElement)input.value=name;}
   Object.assign(st,{open:true,current,note,closable});
   if(root)root.dataset.mode=!current&&(!closable||note==='full')?'entry':'switch';
-  if(!local&&st.net!=='ok')st.net='loading';
+  if(!local&&st.net!=='ok'){st.net='loading';fails=0;}
   if(root){root.hidden=false;doc.documentElement.classList.add('sp-open');}
   render();const first=refresh().then(loop);
   if(root&&!matchMediaSafe('(pointer:coarse)'))(root.querySelector('.sp-row:not([disabled])')??root.querySelector('.sp-solo'))?.focus({preventScroll:true});

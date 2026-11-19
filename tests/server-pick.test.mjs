@@ -6,14 +6,14 @@ import {readFileSync,mkdtempSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {SERVERS,SERVER_MAX,findServer,serverRoomName} from '../src/multi-protocol.js';
-import {healthUrl,serverPickMode,pickRows,pickTotals,rowLabel,createServerPick,cleanPickName,NAME_KEY,REFRESH_MS,PICK_LABELS} from '../src/server-pick.js';
+import {healthUrl,serverPickMode,pickRows,pickTotals,rowLabel,createServerPick,cleanPickName,NAME_KEY,REFRESH_MS,RETRY_MS,RETRY_TIMEOUT_MS,FETCH_TIMEOUT_MS,FAIL_LIMIT,afterFail,PICK_LABELS} from '../src/server-pick.js';
 import {startServer} from '../server/multi-server.mjs';
 
 const read=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const memStore=(init={})=>{const m=new Map(Object.entries(init));return {getItem:k=>m.has(k)?m.get(k):null,setItem:(k,v)=>m.set(k,String(v)),map:m};};
 // 가짜 타이머: run()으로 걸린 것 하나씩 실행
 function fakeTimers(){const q=new Map();let n=0;return {set:(fn,ms)=>{q.set(++n,{fn,ms});return n;},clear:id=>q.delete(id),
- get pending(){return [...q.values()];},async runRefresh(){const e=[...q.entries()].find(([,v])=>v.ms===REFRESH_MS);if(!e)return false;q.delete(e[0]);await e[1].fn();return true;}};}
+ get pending(){return [...q.values()];},async runRefresh(ms=REFRESH_MS){const e=[...q.entries()].find(([,v])=>v.ms===ms);if(!e)return false;q.delete(e[0]);await e[1].fn();return true;}};}
 const HEALTH=(h=3,s=1,max=30)=>({ok:true,total:h+s,servers:{hiking:[{id:'1',name:'관악산 1서버',count:h,max}],smoking:[{id:'1',name:'옥상 1서버',count:s,max}]}});
 const okFetch=body=>{const calls=[];const f=async(url)=>{calls.push(url);const b=typeof body==='function'?body():body;return {ok:true,status:200,json:async()=>b};};f.calls=calls;return f;};
 
@@ -82,14 +82,28 @@ test('서버 모드: 열면 /health를 받고 5초마다 다시, 닫으면 멈�
  await tm.runRefresh();assert.equal(p.state.rows[0].count,4);assert.equal(f.calls.length,2);
  p.close();assert.equal(p.isOpen,false);assert.equal(await tm.runRefresh(),false,'닫으면 예약이 없다');
 });
-test('서버에 연결이 안 되면 error: 혼자 걷기만(줄은 인원 모름)',async()=>{
+test('서버에 연결이 안 되면 error: 혼자 걷기만(줄은 인원 모름) — 11-19부터 두 번 연달아 실패해야',async()=>{
  const tm=fakeTimers();const bad=async()=>{throw new Error('ECONNREFUSED');};
  const p=createServerPick({experience:'hiking',serverUrl:'ws://127.0.0.1:9/',fetchImpl:bad,doc:null,storage:memStore(),setTimer:tm.set,clearTimer:tm.clear});
- await p.open();assert.equal(p.state.net,'error');assert.equal(p.state.rows[0].count,null);
+ await p.open();assert.equal(p.state.net,'loading','첫 실패는 아직 확인 중');assert.equal(await tm.runRefresh(RETRY_MS),true,'1초 뒤 다시');
+ assert.equal(p.state.net,'error');assert.equal(p.state.rows[0].count,null);
  const p2=createServerPick({experience:'hiking',serverUrl:'ws://x/',fetchImpl:async()=>({ok:false,status:502,json:async()=>({})}),doc:null,storage:memStore(),setTimer:tm.set,clearTimer:tm.clear});
- await p2.open();assert.equal(p2.state.net,'error','HTTP 오류도 연결 안 됨');
+ await p2.open();await tm.runRefresh(RETRY_MS);assert.equal(p2.state.net,'error','HTTP 오류도 연결 안 됨');
  const p3=createServerPick({experience:'hiking',serverUrl:'ws://x/',fetchImpl:okFetch({ok:true,rooms:0}),doc:null,storage:memStore(),setTimer:tm.set,clearTimer:tm.clear});
- await p3.open();assert.equal(p3.state.net,'error','servers가 없는 옛 서버는 고를 수 없음');
+ await p3.open();await tm.runRefresh(RETRY_MS);assert.equal(p3.state.net,'error','servers가 없는 옛 서버는 고를 수 없음');
+});
+test('11-19 접속 유도 ②: 휴대폰 첫 확인이 늦어 한 번 실패해도 빨간 화면 없이 확인 중 → 다시 받으면 서버 목록',async()=>{
+ assert.deepEqual(afterFail('loading',1),{net:'loading',retry:true});assert.deepEqual(afterFail('ok',1),{net:'ok',retry:true},'보던 인원은 한 번 실패로 지우지 않음');
+ assert.deepEqual(afterFail('loading',FAIL_LIMIT),{net:'error',retry:false});
+ assert.ok(RETRY_TIMEOUT_MS>FETCH_TIMEOUT_MS,'다시 볼 때는 더 오래 기다림');
+ const tm=fakeTimers(),limits=[];let n=0;
+ const set=(fn,ms)=>{limits.push(ms);return tm.set(fn,ms);};
+ const f=async()=>{if(n++===0)throw Object.assign(new Error('늦음'),{name:'AbortError'});return {ok:true,status:200,json:async()=>HEALTH(0,2)};};
+ const p=createServerPick({experience:'hiking',serverUrl:'wss://srv.example/',fetchImpl:f,doc:null,storage:memStore(),setTimer:set,clearTimer:tm.clear});
+ await p.open();assert.equal(p.state.net,'loading');assert.ok(limits.includes(FETCH_TIMEOUT_MS));
+ await tm.runRefresh(RETRY_MS);assert.ok(limits.includes(RETRY_TIMEOUT_MS),'두 번째는 긴 제한');
+ assert.equal(p.state.net,'ok');assert.deepEqual(p.state.totals,{here:0,total:2});
+ assert.ok(tm.pending.some(t=>t.ms===REFRESH_MS),'붙은 뒤에는 다시 5초마다');
 });
 test('들어간 뒤 다시 열기: 지금 서버 표시, 혼자 단추는 나가기(left:true), full 알림',async()=>{
  const solos=[];const p=createServerPick({experience:'smoking',serverUrl:null,doc:null,storage:memStore(),onSolo:d=>solos.push(d)});

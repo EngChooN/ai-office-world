@@ -119,8 +119,10 @@ test('서버 받아 오기: 공개 파일 주소의 /health를 받고, 꺼짐·�
  assert.equal((await off.start()).net,'off');
  const none=createHubServers({choose:async()=>{throw new Error('x');},fetchImpl,setTimer:()=>0,clearTimer:()=>{}});
  assert.equal((await none.start()).net,'none');
- const err=createHubServers({choose:async()=>({server:'wss://abc.example/',source:'file'}),fetchImpl:async()=>({ok:false,status:502}),setTimer:()=>0,clearTimer:()=>{}});
- assert.equal((await err.start()).net,'error');
+ // 11-19 접속 유도 ②: 첫 실패 한 번은 '확인 중' 그대로, 1초 뒤 다시 실패해야 error
+ const et=[];const err=createHubServers({choose:async()=>({server:'wss://abc.example/',source:'file'}),fetchImpl:async()=>({ok:false,status:502}),setTimer:(f,ms)=>{et.push({f,ms});return et.length;},clearTimer:()=>{}});
+ assert.equal((await err.start()).net,'checking');
+ const retry=et.find(t=>t.ms===1000);assert.ok(retry,'1초 뒤 다시 보기 예약');await retry.f();assert.equal(err.state.net,'error');err.stop();
 });
 
 // ── 화면 조각
@@ -147,7 +149,7 @@ test('들어가기 단추: 켜짐 = 고른 서버로·혼자, 확인 중 = 들�
  const list=serverListHTML(h,on,'1');
  assert.equal((list.match(/data-srv=/g)??[]).length,3);assert.match(list,/data-srv="2" disabled/);assert.match(list,/aria-pressed="true"/);
  assert.match(serverListHTML(h,hubServerView('hiking',{net:'off'}),null),/서버가 쉬고 있어요/);
- assert.match(statusHTML(on),/45명/);assert.match(statusHTML(hubServerView('smoking',{net:'ok',health:health()})),/아무도 없어요/);
+ assert.match(statusHTML(on),/45명/);assert.match(statusHTML(hubServerView('smoking',{net:'ok',health:health()})),/첫 번째로 들어가 보세요/);
  assert.match(statusHTML(hubServerView('hiking',{net:'checking'})),/인원 확인 중/);
 });
 test('체험 4칸(등산·흡연장·크리스마스·다음 체험), 지도 자리·그림·색·아이콘이 모두 있다', ()=>{
