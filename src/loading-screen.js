@@ -26,10 +26,12 @@ export function describeLoading(detail){
 export function mountLoadingScreen(root=document.getElementById('loading-screen')){
  if(!root)return null;
  const $=s=>root.querySelector(s),bar=$('.ls-fill'),pct=$('.ls-percent'),label=$('.ls-label'),tip=$('.ls-tip'),steps=$('.ls-steps'),action=$('.ls-action'),msg=$('.ls-message'),track=$('.ls-track');
+ // 산마다 다른 안내 문구: root의 data-tips(JSON 배열). 없으면 관악산 TIPS(관악산 화면은 그대로)
+ let tips=TIPS;try{const t=JSON.parse(root.dataset.tips??'null');if(Array.isArray(t)&&t.length)tips=t;}catch{}
  steps.innerHTML=LOADING_STAGES.map(s=>`<li data-stage="${s.id}">${s.label}</li>`).join('');
- let tipIndex=Math.floor(Date.now()/1000)%TIPS.length,lastSignal=performance.now(),phase='loading',hidden=false;
- const showTip=()=>{tip.classList.add('swap');setTimeout(()=>{tip.textContent=TIPS[tipIndex%TIPS.length];tip.classList.remove('swap');tipIndex++;},260);};
- tip.textContent=TIPS[tipIndex++%TIPS.length];
+ let tipIndex=Math.floor(Date.now()/1000)%tips.length,lastSignal=performance.now(),phase='loading',hidden=false;
+ const showTip=()=>{tip.classList.add('swap');setTimeout(()=>{tip.textContent=tips[tipIndex%tips.length];tip.classList.remove('swap');tipIndex++;},260);};
+ tip.textContent=tips[tipIndex++%tips.length];
  const tipTimer=setInterval(showTip,TIP_MS);
  function render(detail){
   const v=describeLoading(detail);phase=v.phase;lastSignal=performance.now();

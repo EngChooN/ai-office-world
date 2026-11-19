@@ -11,16 +11,6 @@ body.touch #joystick:not(.on):not(.used)::after{content:'손가락 댄 자리에
 #look-zone{display:none}
 .ns-source{left:calc(env(safe-area-inset-left) + 8px);bottom:calc(env(safe-area-inset-bottom) + 4px);font:600 10px/1.3 -apple-system,"Apple SD Gothic Neo",sans-serif;color:#fffc;text-shadow:0 1px 2px #0009;pointer-events:none;max-width:calc(100vw - 130px);white-space:normal}
 /* 로딩 */
-#ns-loading{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(180deg,#0d2a25,#173f36 45%,#2d5a45);color:#f1e4c4;font-family:"Apple SD Gothic Neo","Pretendard",-apple-system,sans-serif;transition:opacity .6s,visibility .6s}
-#ns-loading.leaving{opacity:0;visibility:hidden;pointer-events:none}
-.ns-ld-card{width:min(560px,calc(100% - 28px));margin-bottom:max(40px,calc(env(safe-area-inset-bottom) + 16px));padding:22px 20px 16px;border-radius:6px 6px 14px 14px;background:#3b3024;box-shadow:2px 3px 0 #17110a,0 18px 40px rgba(20,12,2,.45)}
-.ns-ld-brand{margin:0 0 2px;font-size:12px;letter-spacing:2px;color:#c9b48c}.ns-ld-brand b{font-size:19px;margin-right:8px;color:#f1e4c4}
-.ns-ld-card h1{margin:0 0 12px;font-size:18px;font-weight:900}
-.ns-ld-row{display:flex;justify-content:space-between;font-size:13px;font-weight:800;margin-bottom:6px}
-.ns-ld-track{height:10px;border-radius:4px;background:#2a2219;overflow:hidden}.ns-ld-track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#9cc27a,#e5b453);transition:width .3s}
-.ns-ld-tip{margin:12px 0 0;padding-top:10px;border-top:1px dashed #5a4a35;font-size:13px;line-height:1.55;color:#c9b48c}
-.ns-ld-msg{margin:8px 0 0;font-size:13px;color:#e5b453}.ns-ld-msg:empty{display:none}
-#ns-loading[data-phase=error] .ns-ld-msg{color:#f3a48c}
 /* 큰 단추(걷기·멈추기) — 위치·크기는 ui-frame [data-uf=big] */
 .ns-big{display:flex;border:0;cursor:pointer}
 .ns-big .ns-big-ic{font-size:24px;line-height:1}

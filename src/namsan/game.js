@@ -5,7 +5,9 @@
 //  - 공통 화면 틀(ui-frame: 위 알약·💬·☰·큰 단추) · 채팅(hiking-chat-ui) · 함께 걷기(multi-client, 방만 남산 방) · 입장(entry.js·server-pick.js 공용 창)
 // 걷기 규칙은 namsan-walk.js(three 없음, 시험 tests/namsan-game.test.mjs). 점검 scripts/verify-namsan-game.mjs.
 // 콘솔 window.namsan: status()·jump(s)·setAuto(on)·multi() (점검·개발용)
-import {serverReady} from '../server-link-pin.js';   // 맨 먼저: 함께 걷기 서버 주소 고르기(관악산 산 고르기와 같은 순서)
+import {serverReady} from '../server-link-pin.js';
+import '../loading-screen.js';
+import {createLoadingTracker,createStabilityCounter,LOADING_EVENT} from '../loading.js';   // 맨 먼저: 함께 걷기 서버 주소 고르기(관악산 산 고르기와 같은 순서)
 import * as THREE from 'three';
 import '../icons/icons.css';
 import './game.css';
@@ -34,6 +36,7 @@ import {recordSummit,summitOf,loadSummits,sealDate} from '../summit-records.js';
 import {sealSVG} from '../free-settings-ui.js';
 import {loadNamsanData,createNamsanGround,courseAt,NAMSAN} from './namsan-data.js';
 import {buildNamsan} from './namsan-art.js';
+import {createNightLighting} from '../night-lighting.js';
 import {NAMSAN_SAVE_KEY,NAMSAN_ENTRY_KEY,NAMSAN_SERVERS,isNamsanRoom,namsanRoom,namsanHealth,createWalkState,saveData,stepWalk,walkHeight,heightAt,remainOf,jumpTo,wrapAngle,placeOf,walkable} from './namsan-walk.js';
 
 const q=new URLSearchParams(location.search),BASE=import.meta.env.BASE_URL,$=s=>document.querySelector(s);
@@ -42,10 +45,12 @@ const mobile=matchMedia('(pointer: coarse)').matches||navigator.maxTouchPoints>0
 if(mobile)document.body.classList.add('touch');
 window.namsan={started:false};
 // ── 로딩 화면 ──
-const ld=$('#ns-loading'),ldSet=(pct,label)=>{ld.querySelector('[data-ns-ld-fill]').style.width=`${Math.round(pct)}%`;ld.querySelector('[data-ns-ld-pct]').textContent=`${Math.round(pct)}%`;if(label)ld.querySelector('[data-ns-ld-label]').textContent=label;};
-const ldFail=e=>{ld.dataset.phase='error';ld.querySelector('[data-ns-ld-msg]').textContent=`불러오지 못했어요: ${e?.message??e}. 새로고침해 보세요.`;console.error(e);};
+// 관악산과 같은 로딩 화면(loading-screen.js·loading.js 그대로, 단계 칩·바뀌는 안내·첫 프레임 안정 확인). 안내 문구만 남산(index.html data-tips)
+const loading=createLoadingTracker({emit:detail=>window.dispatchEvent(new CustomEvent(LOADING_EVENT,{detail}))});
+const ldFail=e=>{console.error(e);loading.fail(e);};
 window.addEventListener('unhandledrejection',e=>{if(!window.namsan.started)ldFail(e.reason);});
-ldSet(2,'그림 준비');
+window.addEventListener('error',e=>{if(!window.namsan.started&&loading.phase==='loading')ldFail(e.error??e.message);});
+loading.set('terrain',.02);
 
 // ── 입장(세 체험 공통 흐름 그대로): 산 고르기가 넘겨준 선택 → (주소로 바로 왔으면) 이 기기의 지난 선택 → 없으면 공용 입장 창 한 번 ──
 const multiMode=q.has('multi'),pickMode=hikingPickMode();
@@ -75,7 +80,7 @@ const canvas=$('#world');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
 const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,30000);
 const toon=await createToonStyle({renderer,scene,camera,mobile});
-ldSet(10,'하늘·빛');
+loading.set('environment',.3);
 // 계절·시간·날씨: 관악산과 같은 규칙(서울 날짜, ?season=·?time=·?weather=, 산 고르기 자유 설정 값은 sessionStorage로 같은 탭에 남음)
 const free=(()=>{try{return loadFree(sessionStorage);}catch{return loadFree(null);}})();
 const seasons=createSeasonController({onChange:st=>toon.setSeason(st.season)});
@@ -90,22 +95,34 @@ for(const child of landscape.group.children)if(!['SeoulCity2km','SeoulFar','HanR
 scene.add(landscape.group); // 관악산 풀밭(toon.attachLandscape)은 관악산 길을 따르므로 붙이지 않는다(그림 인계 §3-3)
 const lighting=setupRendering(renderer,scene,camera,mobile,{toon});
 if(free.weather)lighting.environment?.weather?.setOverride(free.weather);
-ldSet(30,'남산 지형');
+loading.set('terrain',.6);
 const data=await loadNamsanData(`${BASE}assets/shared/namsan/`);
 const G=createNamsanGround(data);
-ldSet(50,'성곽·계단·숲');
+loading.done('terrain');loading.set('nature',.2);
 // 휴대폰: 길에서 먼 나무를 덜 심고(200m 안은 그대로) 지형 칸을 크게 묶어 그리기 횟수를 줄인다(11-19 측정: 숲이 휴대폰 삼각형의 약 70%, 지형 칸 500~700번)
 const MOBILE_KEEP=d=>d<60?1:d<200?.7:d<400?.35:d<800?.15:.08;
 const ns=buildNamsan({G,data,toon,mobile,...(mobile&&q.get('lite')!=='0'?{terrainTile:250,forestKeep:MOBILE_KEEP,forestNear:30}:{})});scene.add(ns.root);
+loading.done('nature');loading.done('facilities');
 await landscape.streamFar();await landscape.streamWater();
+let lowerRoads=()=>{};
 // 원경: 관악산 원경 땅이 남산 판을 뚫지 않게 남산 판 안쪽만 내리고, 원경의 「N서울타워」 모형은 숨긴다(게임 속 전망탑으로 대신, 그림 인계 §3-1)
 {const far=landscape.group.getObjectByName('SeoulFar'),B=G.bounds;
  far?.traverse(o=>{if(/N서울타워/.test(o.name))o.visible=false;});
- const ground=far?.children.find(o=>o.isMesh)?.geometry;if(ground){const p=ground.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);if(x>B.x0+20&&x<B.x1-20&&z>B.z0+20&&z<B.z1-20)p.setY(i,Math.min(p.getY(i),G.ground(x,z)-12));}p.needsUpdate=true;ground.computeVertexNormals();}}
-ldSet(70,'동동이');
+ // 원경 땅과 간선도로(「서울 간선도로·교량」)를 같이 내린다 — 도로만 남으면 백범광장 왼쪽에 검은 경사면처럼 솟아 보였다(11-19)
+ const lower=geo=>{const p=geo.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);if(x>B.x0+20&&x<B.x1-20&&z>B.z0+20&&z<B.z1-20)p.setY(i,Math.min(p.getY(i),G.ground(x,z)-12));}p.needsUpdate=true;geo.computeVertexNormals();geo.computeBoundingSphere();};
+ const ground=far?.children.find(o=>o.isMesh)?.geometry;if(ground)lower(ground);
+ // 간선도로·교량·거리 불빛은 준비 뒤 streamRoads()로 붙으니 그때 내린다(아래 도심 받기)
+ lowerRoads=()=>far?.traverse(o=>{if((o.isMesh||o.isPoints||o.isLineSegments)&&!o.isInstancedMesh&&o.geometry!==ground&&o.geometry?.attributes?.position&&!o.userData.nsLowered){o.userData.nsLowered=true;lower(o.geometry);}});}
+// 밤 조명(관악산 night-lighting.js 그대로): 코스 가로등 27m 간격(성곽이 대부분 오른쪽이라 왼쪽 가장자리 밖), 두 광장 둘레 등, 헤드랜턴.
+// 남산 코스는 1.1km라 관악산 「공원 구간」(1,075m) 안 = 길 전체에 가로등이 있고 헤드랜턴은 저절로 켜지지 않는다(관악산 공원 구간과 같음)
+const nsPlace=(s,l)=>{const k=courseAt(G.points,s),x=k.x-k.nx*(l+.25),z=k.z-k.nz*(l+.25);return [x,heightAt(G,x,z),z];};
+const ring=(P,n,r,a0=0)=>Array.from({length:n},(_,i)=>{const a=a0+i/n*Math.PI*2;return {x:P.x+Math.cos(a)*r,z:P.z+Math.sin(a)*r,tx:P.x,tz:P.z,height:4};});
+const night=createNightLighting({scene,renderer,place:nsPlace,groundHeight:(x,z)=>G.ground(x,z),facilityPoints:[...ring(G.startPlaza,4,G.startPlaza.r-3,.4),...ring(G.plaza,6,G.plaza.r-4,.2)],routeLength:G.points.at(-1).s});
+toon.styleNightLighting?.(night.root);
+loading.set('hikers',.2);
 const hikerUrl=`${BASE}assets/toon/models/hiker/HikerRig.glb`;
 const hiker=await loadToonHiker(hikerUrl);const avatar=hiker.scene;toon.toonify(avatar,{kind:'character'});
-avatar.traverse(o=>{if(o.isMesh){o.castShadow=!o.userData.outline;o.receiveShadow=!o.userData.noReceiveShadow;}});scene.add(avatar);
+avatar.traverse(o=>{if(o.isMesh){o.castShadow=!o.userData.outline;o.receiveShadow=!o.userData.noReceiveShadow;}});scene.add(avatar);loading.done('hikers');
 
 // ── 상태(이어 오르기: 이 기기에 저장, 함께 걷기 ?multi 주소는 저장 안 함) ──
 let saved=null;try{saved=JSON.parse(localStorage.getItem(NAMSAN_SAVE_KEY)??'null');}catch{}
@@ -190,7 +207,7 @@ joinMulti=({room=null,name=null}={})=>{multiBusy=multiBusy.then(async()=>{
  const r=isNamsanRoom(room)?room:namsanRoom();
  multiStatus({state:'connecting',room:r,count:0,transport:multiServer()?'server':'local'});
  const {mountMultiplayer}=await import('../multi-client.js');
- multi=await mountMultiplayer({scene,camera,night:null,hikerUrl,prepareGltf:prepareToonHikerGltf,groundHeight:(x,z)=>heightAt(G,x,z),command,room:r,name,serverUrl:multiServer(),local:multiLocal,toonify:toon.toonify});
+ multi=await mountMultiplayer({scene,camera,night,hikerUrl,prepareGltf:prepareToonHikerGltf,groundHeight:(x,z)=>heightAt(G,x,z),command,room:r,name,serverUrl:multiServer(),local:multiLocal,toonify:toon.toonify});
  window.hiking.multiApi=multi;
 }).catch(e=>{console.warn('함께 걷기 참가 실패',e);multiStatus({state:'offline',room:room||'',count:0,transport:multiServer()?'server':'local'});});return multiBusy;};
 function leaveMultiNow(){if(!multi)return;multi.dispose();multi=null;window.hiking.multiApi=null;}
@@ -209,7 +226,7 @@ window.addEventListener('hiking:command',e=>command(e.detail?.id,e.detail?.value
 // ── 매 프레임 ──
 const fwd=new THREE.Vector3(),lookGoal=new THREE.Vector3(),camGoal=new THREE.Vector3();
 let prevAuto=st.auto,t0=performance.now(),last=performance.now(),saveAt=0,uiAt=0,first=true,cameraReady=false,stairsNow=false,fpsN=0,fpsSum=0,fpsWin=performance.now(),metrics=null;
-const night=()=>lighting.environment?.current?.night??0;
+const nightK=()=>lighting.environment?.current?.night??0;
 function frame_(now){
  requestAnimationFrame(frame_);
  const dtRaw=Math.min(.1,(now-last)/1000);last=now;const started=window.namsan.started,dt=started?dtRaw:0;
@@ -228,6 +245,7 @@ function frame_(now){
  if(st.auto!==prevAuto){prevAuto=st.auto;paintBig();}
  const y=walkHeight(G,st),heading=camBase+look.yaw;
  avatar.position.set(st.x,y,st.z);
+ avatar.visible=view==='third';   // 1인칭은 내 몸을 숨긴다(관악산 main.js와 같음 — 안 숨기면 카메라가 머리 속이라 화면이 까맣게 보임)
  if(first){hiker.snapTo(st.heading);first=false;}
  else if(moving)hiker.turnTo(direct?heading:r.heading,dtRaw);
  const k=courseAt(G.points,st.s),slope=moving?(()=>{const a=courseAt(G.points,st.s-1.5),b=courseAt(G.points,st.s+1.5);return (b.y-a.y)/3*Math.sign(Math.cos(r.heading-k.heading));})():0;
@@ -245,12 +263,14 @@ function frame_(now){
   const gy=G.ground(camGoal.x,camGoal.z)+.5;if(camGoal.y<gy)camGoal.y=gy;camera.position.copy(camGoal);}
  {const co=window.namsan.cameraOverride;if(co){camera.position.fromArray(co.p);lookGoal.fromArray(co.t);}}
  camera.lookAt(lookGoal);cameraReady=true;
- landscape.update(camera,quality);ns.update(now/1000,night());
+ landscape.update(camera,quality);ns.update(now/1000,nightK());
+ night.update(dtRaw,{camera,avatar,view,selfie:false,zone:'route',s:st.s,hiker});
  if(multi)multi.update(dtRaw,now/1000,view);
  lighting.render(avatar.position);
  if(now-uiAt>200){uiAt=now;paintHud();}
  if(started&&now-saveAt>1000){saveAt=now;save();}
  if(!document.hidden&&dtRaw>0){fpsN++;fpsSum+=dtRaw;}
+ if(!loadReady){const ok=stability.sample(dtRaw*1000,false);loading.set('stabilizing',Math.min(.99,stability.fraction));if(ok){loadReady=true;loading.ready();beginHike();}}
  if(now-fpsWin>3000){metrics={fps:fpsN/Math.max(1e-3,fpsSum),calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries};fpsN=fpsSum=0;fpsWin=now;}
  if(adaptive.sample(dtRaw*1000,!document.hidden&&cameraReady,now-t0,lighting.status?.ao))resize();
 }
@@ -265,19 +285,19 @@ window.namsan.status=()=>({started:window.namsan.started,x:st.x,z:st.z,y:walkHei
 window.namsan.jump=s=>{jumpTo(G,st,s);shortcut=true;camBase=st.heading;look.yaw=0;return window.namsan.status();};
 window.namsan.setAuto=on=>{st.auto=!!on;paintBig();return st.auto;};
 window.namsan.multi=()=>multi?.info()??null;
-if(q.has('debug'))Object.assign(window,{__ns:ns,__scene:scene,__land:landscape.group});   // 점검용(?debug)
+if(q.has('debug'))Object.assign(window,{__ns:ns,__scene:scene,__land:landscape.group,__camera:camera,__THREE:THREE});   // 점검용(?debug)
 
 // ── 준비 ──
-ldSet(85,'셰이더 준비');
-await lighting.prepare?.();
-ldSet(100,'출발 준비 끝');
+await lighting.prepare?.();loading.done('environment');
+// 첫 프레임 안정(관악산과 같은 규칙: 100ms 안 프레임이 12번 이어지면 준비 완료)
+const stability=createStabilityCounter();let loadReady=false;
 window.namsan.ready=true;
 requestAnimationFrame(frame_);
 // 도심 건물(서울 서·동 묶음)은 출발 뒤 뒤에서 이어 받는다(관악산과 같은 순서). 휴대폰은 도시 칸 상한(device-profile)을 그대로 따른다.
-(async()=>{try{await landscape.streamRoads();for(const c of landscape.manifest.cityChunks.filter(c=>/^seoul-/.test(c.id))){await landscape.streamCity(c.id);if(LIMITS.cityChunkGapMs)await new Promise(r=>setTimeout(r,LIMITS.cityChunkGapMs));}await landscape.finalizeCities?.();}catch(e){console.warn('도심 건물',e);}window.namsan.cityDone=true;})();
+(async()=>{try{await landscape.streamRoads();lowerRoads();for(const c of landscape.manifest.cityChunks.filter(c=>/^seoul-/.test(c.id))){await landscape.streamCity(c.id);if(LIMITS.cityChunkGapMs)await new Promise(r=>setTimeout(r,LIMITS.cityChunkGapMs));}await landscape.finalizeCities?.();}catch(e){console.warn('도심 건물',e);}window.namsan.cityDone=true;})();
 beginHike=()=>{
- if(!wantStart||window.namsan.started)return;
- window.namsan.started=true;ld.classList.add('leaving');setTimeout(()=>ld.remove(),700);
+ if(!wantStart||window.namsan.started||!loadReady)return;
+ window.namsan.started=true;loading.start();
  if(pendingJoin)joinMulti(pendingJoin);
  if(st.s>20&&!st.done)say('지난번 자리에서 이어 올라요');
  window.dispatchEvent(new CustomEvent('hiking:started'));
