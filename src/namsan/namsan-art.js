@@ -8,6 +8,8 @@ import {trailSignModel,stampBoxModel} from '../../assets/realistic/interaction-p
 import {markerStone} from '../../assets/realistic/summit-facilities.js';
 import {bench} from '../toon/trail-props.js';
 import {NAMSAN,courseAt} from './namsan-data.js';
+import {buildNamsanBus} from './namsan-bus-art.js';
+import {buildNamsanLamps} from './namsan-lamps-art.js';
 
 export const NAMSAN_COLORS=Object.freeze({
  wall:'#fffaf0',wallCap:'#bdb39d',stairTop:[.68,.67,.63],stairSide:[.55,.54,.50],curb:[.62,.60,.55],
@@ -56,7 +58,9 @@ export function buildNamsanTerrain(G,material,{tile=100,mobile=false}={}){
   // 칸 크기를 키우면(월드개발 11-19 휴대폰 그리기 횟수 줄이기, tile>100) 칸 가운데 대신 칸에서 가장 가까운 거리로 촘촘함을 정한다(길 옆 칸이 거칠어지지 않게)
   const sx=Math.min(tile,x1-tx),sz=Math.min(tile,z1-tz),near=(px,pz)=>tile>100?Math.hypot(Math.max(tx-px,0,px-tx-sx),Math.max(tz-pz,0,pz-tz-sz)):Math.hypot(tx+sx/2-px,tz+sz/2-pz);
   const cd=tile>100?(()=>{let d=1e9;for(let i=0;i<pts.length;i+=3)d=Math.min(d,near(pts[i].x,pts[i].z));return d;})():courseDist(tx+sx/2,tz+sz/2),plazaD=near(G.plaza.x,G.plaza.z);
-  const step=(cd<130||plazaD<120?2:cd<600?4:8)*(mobile?2:1),nx=Math.max(1,Math.round(sx/step)),nz=Math.max(1,Math.round(sz/step));
+  // 순환버스 차로 60m 안도 2m(차로 둘레 깎은 땅이 굵은 칸 사이로 차로 위에 솟지 않게)
+  const bd=G.bus?(()=>{let d=1e9;const bp=G.bus.points;for(let i=0;i<bp.length;i+=4)d=Math.min(d,Math.hypot(Math.max(tx-bp[i].x,0,bp[i].x-tx-sx),Math.max(tz-bp[i].z,0,bp[i].z-tz-sz)));return d;})():1e9;
+  const step=(cd<130||plazaD<120||bd<20?2:cd<600?4:8)*(mobile?2:1),nx=Math.max(1,Math.round(sx/step)),nz=Math.max(1,Math.round(sz/step));
   const pos=[],nor=[],uv=[],idx=[],e=.8;
   const push=(x,z,y)=>{const hx=G.ground(x+e,z)-G.ground(x-e,z),hz=G.ground(x,z+e)-G.ground(x,z-e),l=Math.hypot(hx,2*e,hz);pos.push(x,y,z);nor.push(-hx/l,2*e/l,-hz/l);uv.push(x/60,z/60);};
   for(let j=0;j<=nz;j++)for(let i=0;i<=nx;i++){const x=tx+sx*i/nx,z=tz+sz*j/nz;push(x,z,G.ground(x,z));}
@@ -135,14 +139,12 @@ export function buildStoneStairs(G){
 export const WALL={lowR:7,lowParapet:.6,thick:2.2,height:3.6,parapetH:1.05,parapetT:.7,merlon:3,gap:.45,embed:1.2,sample:1.5};
 // 쉼터 둘레(NAMSAN.rest.s ± lowR)는 성곽을 낮춘다: 몸체 윗면을 땅 높이까지 내려 전망 단으로 쓰고, 바깥 여장만 0.6m 난간처럼 남긴다(남서쪽 전망이 성곽에 막히지 않게, 게임 연출).
 export function wallLowZone(G){const m=courseAt(G.points,NAMSAN.rest.s);return {x:m.x,z:m.z,r:WALL.lowR};}
-export function buildFortressWall(G,walls){
- const low=wallLowZone(G),lowK=p=>{const d=Math.hypot(p.x-low.x,p.z-low.z);return d<low.r?1:d<low.r+6?1-(d-low.r)/6:0;};
- const group=new THREE.Group();group.name='한양도성 성곽';
- const body=[],caps=[],parapets=[];let length=0;const clear=NAMSAN.pathWidth/2+WALL.thick/2+.5,report=[];
- for(const w of walls){
-  // 1.5m 간격으로 다시 찍기
+// 성곽 한 줄의 가운데 선(1.5m 간격, 코스와 겹치는 곳은 한쪽으로 민 뒤)과 방향. 그림(buildFortressWall)과 가로등 배치(namsan-lamps-art.js)가 같이 쓴다. w.courseSide를 적는다.
+export function wallLine(G,w){
+ const clear=NAMSAN.pathWidth/2+WALL.thick/2+.5;
+ {// 1.5m 간격으로 다시 찍기
   const P=[];for(let i=0;i<w.points.length-1;i++){const a=w.points[i],b=w.points[i+1],L=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(L/WALL.sample));for(let k=0;k<n;k++)P.push({x:a.x+(b.x-a.x)*k/n,z:a.z+(b.z-a.z)*k/n});}
-  P.push({...w.points.at(-1)});if(P.length<2)continue;
+  P.push({...w.points.at(-1)});if(P.length<2)return null;
   // OSM에서 길이 성곽 선 바로 위(1~2m)에 그려진 곳이 많아, 점마다 가까운 쪽으로 밀면 성곽이 길 양쪽을 오간다.
   // 그래서 성곽 한 줄은 한쪽으로만 민다: 코스 오른쪽(오르는 사람 기준)에 있는 점이 많으면 오른쪽, 아니면 왼쪽. 비기면 땅이 낮은 쪽.
   let pushed=0,vote=0;const frame=hit=>{const q=G.points[hit.index],r=G.points[hit.index+1]??q,L=Math.hypot(r.x-q.x,r.z-q.z)||1;return {cx:q.x+(r.x-q.x)*hit.t,cz:q.z+(r.z-q.z)*hit.t,nx:-(r.z-q.z)/L,nz:(r.x-q.x)/L};};
@@ -152,8 +154,16 @@ export function buildFortressWall(G,walls){
    // 민 점과 안 민 점 사이 꺾임을 앞뒤 두 점씩 부드럽게
    for(let pass=0;pass<2;pass++)for(let i=1;i<P.length-1;i++)if(near[i]&&(!near[i-1]||!near[i+1])){P[i].x=(P[i-1].x+P[i].x*2+P[i+1].x)/4;P[i].z=(P[i-1].z+P[i].z*2+P[i+1].z)/4;}
    w.courseSide=side;}
-  // 방향·바깥쪽
   const N=P.map((p,i)=>{const a=P[Math.max(0,i-1)],b=P[Math.min(P.length-1,i+1)],L=Math.hypot(b.x-a.x,b.z-a.z)||1;return {nx:-(b.z-a.z)/L,nz:(b.x-a.x)/L,tx:(b.x-a.x)/L,tz:(b.z-a.z)/L};});
+  return {P,N,pushed};}
+}
+export function buildFortressWall(G,walls){
+ const low=wallLowZone(G),lowK=p=>{const d=Math.hypot(p.x-low.x,p.z-low.z);return d<low.r?1:d<low.r+6?1-(d-low.r)/6:0;};
+ const group=new THREE.Group();group.name='한양도성 성곽';
+ const body=[],caps=[],parapets=[];let length=0;const report=[];
+ for(const w of walls){
+  const line=wallLine(G,w);if(!line)continue;const {P,N,pushed}=line;
+  // 바깥쪽
   let lean=0;P.forEach((p,i)=>{lean+=G.ground(p.x+N[i].nx*6,p.z+N[i].nz*6)-G.ground(p.x-N[i].nx*6,p.z-N[i].nz*6);});const out=lean>0?-1:1; // 낮은 쪽
   const gMax=P.map((p,i)=>Math.max(G.ground(p.x+N[i].nx*WALL.thick/2,p.z+N[i].nz*WALL.thick/2),G.ground(p.x-N[i].nx*WALL.thick/2,p.z-N[i].nz*WALL.thick/2)));
   const gMin=P.map((p,i)=>Math.min(G.ground(p.x+N[i].nx*(WALL.thick/2+.6),p.z+N[i].nz*(WALL.thick/2+.6)),G.ground(p.x-N[i].nx*(WALL.thick/2+.6),p.z-N[i].nz*(WALL.thick/2+.6))));
@@ -254,7 +264,7 @@ export function buildLanterns(G,{every=28}={}){
  const pm=new THREE.Mesh(mergeGeometries(post),std(NAMSAN_COLORS.lampPost));pm.name='등불 기둥';pm.castShadow=true;group.add(pm);
  const lm=new THREE.Mesh(mergeGeometries(lamp),std('#f6ead2',{emissive:new THREE.Color(NAMSAN_COLORS.lampGlow),emissiveIntensity:0}));lm.name='등불 빛';group.add(lm);
  [...post,...lamp].forEach(g=>g.dispose());
- group.userData={spots,update:night=>{if(lm.material.emissive)lm.material.emissiveIntensity=night*1.4;}};
+ group.userData={spots,update:night=>{if(lm.material.emissive)lm.material.emissiveIntensity=night*1.0;}};
  return group;
 }
 
@@ -306,13 +316,9 @@ export function buildTrailFurniture(G){
 // 정상 광장 둘레 벤치·등(게임 소품)
 export function buildPlazaProps(G){
  const P=G.plaza,group=new THREE.Group();group.name='정상 광장 소품';const tw=NAMSAN.tower;
- for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.3,r=P.r-3.2,x=P.x+Math.cos(a)*r,z=P.z+Math.sin(a)*r;if(Math.hypot(x-tw.x,z-tw.z)<26)continue;const b=bench();b.position.set(x,P.y+.04,z);b.rotation.y=Math.atan2(Math.cos(a),Math.sin(a));group.add(b);}
- const posts=[],lamps=[];
- for(let i=0;i<10;i++){const a=i/10*Math.PI*2,r=P.r-1.4,x=P.x+Math.cos(a)*r,z=P.z+Math.sin(a)*r;if(Math.hypot(x-tw.x,z-tw.z)<24)continue;
-  const p=new THREE.CylinderGeometry(.07,.09,3.4,8);p.translate(x,P.y+1.74,z);posts.push(p);const l=new THREE.SphereGeometry(.26,12,8);l.translate(x,P.y+3.55,z);lamps.push(l);}
- const pm=new THREE.Mesh(mergeGeometries(posts),std(NAMSAN_COLORS.lampPost));pm.name='광장 가로등 기둥';pm.castShadow=true;group.add(pm);
- const lm=new THREE.Mesh(mergeGeometries(lamps),std('#fff4de',{emissive:new THREE.Color(NAMSAN_COLORS.lampGlow),emissiveIntensity:0}));lm.name='광장 가로등 빛';group.add(lm);
- group.userData.update=night=>{if(lm.material.emissive)lm.material.emissiveIntensity=night*1.6;};
+ const onBus=(x,z)=>G.bus&&(G.bus.nearest(x,z).distance<G.bus.points[0].width/2+2.2||G.bus.cycle.nearest(x,z).distance<3.2); // 순환버스 차로·세우는 칸 위는 비움
+ for(let i=0;i<6;i++){const a=i/6*Math.PI*2+.3,r=P.r-3.2,x=P.x+Math.cos(a)*r,z=P.z+Math.sin(a)*r;if(Math.hypot(x-tw.x,z-tw.z)<26||onBus(x,z))continue;const b=bench();b.position.set(x,P.y+.04,z);b.rotation.y=Math.atan2(Math.cos(a),Math.sin(a));group.add(b);}
+ group.userData.update=()=>{}; // 광장 가로등은 namsan-lamps-art.js(쌍등)로 옮김(11-19 밤 가로등)
  return group;
 }
 
@@ -323,7 +329,8 @@ export function buildForest(G,forest,natureParts,{nearDist=120,maxTrees=Infinity
  if(mobile)nearDist=Math.min(nearDist,60);
  const group=new THREE.Group();group.name='남산 숲';
  const buckets=new Map();let n=0;
- for(const [id,x,z,scale,yaw] of forest.trees){if(n++>=maxTrees)break;const hit=G.nearest(x,z);if(keep){const f=keep(hit.distance);if(f<1&&(((Math.sin(x*12.9898+z*78.233)*43758.5453)%1+1)%1)>=f)continue;}else if(mobile&&hit.distance>200&&((x*7.3+z*3.1)|0)%2)continue;const lod=hit.distance<nearDist?1:2,k=`${id}:${lod}:${Math.floor(x/400)},${Math.floor(z/400)}`; /* 400m 칸으로 나눠 화면 밖 칸은 안 그림 */if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push([x,z,scale,yaw]);}
+ const busClear=G.bus?G.bus.points[0].width/2+2.5:0; // 순환버스 차로 위·연석 옆 2.5m 안에는 나무를 심지 않는다
+ for(const [id,x,z,scale,yaw] of forest.trees){if(n++>=maxTrees)break;if(busClear&&G.bus.nearest(x,z).distance<busClear)continue;const hit=G.nearest(x,z);if(keep){const f=keep(hit.distance);if(f<1&&(((Math.sin(x*12.9898+z*78.233)*43758.5453)%1+1)%1)>=f)continue;}else if(mobile&&hit.distance>200&&((x*7.3+z*3.1)|0)%2)continue;const lod=hit.distance<nearDist?1:2,k=`${id}:${lod}:${Math.floor(x/400)},${Math.floor(z/400)}`; /* 400m 칸으로 나눠 화면 밖 칸은 안 그림 */if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push([x,z,scale,yaw]);}
  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3(),p=new THREE.Vector3(),up=new THREE.Vector3(0,1,0);let tris=0;
  for(const [k,list] of buckets){const [id,lod,cellKey]=k.split(':'),parts=natureParts(`${id}-lod${lod}.glb`);if(!parts)continue;
   for(const part of parts){const im=new THREE.InstancedMesh(part.geometry,part.material,list.length);im.name=`남산 숲 ${id} LOD${lod} ${cellKey}`;
@@ -341,12 +348,18 @@ export function buildNamsan({G,data,toon,forest=true,mobile=false,terrainTile=10
  // 쉼터는 성곽이 지나는 쪽(낮춘 단 위)에 둔다. 성곽이 없으면 남서쪽.
  {const lz=wallLowZone(G),near=data.walls.find(w=>w.courseSide&&w.points.some(p=>Math.hypot(p.x-lz.x,p.z-lz.z)<lz.r));if(near){G.restSide=near.courseSide;G.restOnWall=true;}}
  const tower=buildViewTower();tower.position.set(NAMSAN.tower.x,G.plaza.y,NAMSAN.tower.z);
- const plaza=buildPlaza(G.plaza,{name:'정상 광장'}),start=buildPlaza(G.startPlaza,{name:'출발 광장',ring:false});
+ // 순환버스 차로가 정상 광장으로 들어오는 곳은 돌 테를 끊는다
+ const busCut=G.bus?(()=>{const P=G.plaza,pt=G.bus.points.find(p=>Math.hypot(p.x-P.x,p.z-P.z)<P.r+.5);return pt?[{a:Math.atan2(pt.z-P.z,pt.x-P.x),w:Math.atan((G.bus.points[0].width/2+.8)/P.r)}]:null;})():null;
+ const plaza=buildPlaza(G.plaza,{name:'정상 광장',cutTo:busCut}),start=buildPlaza(G.startPlaza,{name:'출발 광장',ring:false});
  const lanterns=buildLanterns(G),furniture=buildTrailFurniture(G),plazaProps=buildPlazaProps(G);
  const props=new THREE.Group();props.name='남산 시설';props.add(path,stairs,wall,tower,plaza,start,lanterns,plazaProps);
  toon.toonify(props,{kind:'prop'});toon.toonify(furniture,{kind:'prop',keepMaps:true});
  root.add(terrain,props,furniture);
+ // 밤 가로등(월드아트 11-19): 코스·계단·광장·쉼터·정류장 등 + 성곽 벽 비춤. 불빛은 그림 효과, 실제 광원은 night-lighting.js lampPoints로(월드개발 연결)
+ const lamps=buildNamsanLamps(G,{walls:data.walls,lanterns:lanterns.userData.spots,items:furniture.userData.items});toon.toonify(lamps.userData.body,{kind:'prop'});root.add(lamps);
+ // 순환버스(월드아트 11-19): 차로·정류장·하차 지점·버스 한 대. 움직임은 월드개발(ns.bus.bus를 placeOnLane으로 옮김)
+ const bus=G.bus?buildNamsanBus(G):null;if(bus){toon.toonify(bus.root,{kind:'prop',keepMaps:true});root.add(bus.root);}
  let trees=null;if(forest&&data.forest&&toon.natureParts){trees=buildForest(G,data.forest,toon.natureParts,{mobile,keep:forestKeep,...(forestNear?{nearDist:forestNear}:{})});root.add(trees);}
- const update=(t,night)=>{tower.userData.update(t,night);lanterns.userData.update(night);plazaProps.userData.update(night);};
- return {root,terrain,path,stairs,wall,tower,plaza,start,lanterns,furniture,plazaProps,trees,update};
+ const update=(t,night)=>{tower.userData.update(t,night);lanterns.userData.update(night);plazaProps.userData.update(night);lamps.userData.update(night);bus?.update(t,night);};
+ return {root,terrain,path,stairs,wall,tower,plaza,start,lanterns,furniture,plazaProps,lamps,trees,bus,update};
 }

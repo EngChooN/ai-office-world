@@ -13,6 +13,8 @@ import {presetClock} from '../free-settings.js';
 import {loadToonHiker} from '../toon/link-hiker.js';
 import {loadNamsanData,createNamsanGround,courseAt,NAMSAN} from './namsan-data.js';
 import {buildNamsan,TOWER} from './namsan-art.js';
+import {placeOnLane,seatInBus,BUS} from './namsan-bus-art.js';
+import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
 
 const q=new URLSearchParams(location.search),BASE=import.meta.env.BASE_URL;
 if(q.get('hud')==='0')document.getElementById('panel')?.remove();
@@ -64,9 +66,28 @@ const VIEWS={
  'summit-plaza':()=>{const st=ns.furniture.userData.items.find(i=>i.kind==='summit-stone'),dx=st.x-tw.x,dz=st.z-tw.z,l=Math.hypot(dx,dz);placeHiker(1064,0);camera.position.set(st.x+dx/l*13+dz/l*4,P.y+3.4,st.z+dz/l*13-dx/l*4);controls.target.set(tw.x,P.y+9,tw.z);fov=70;},
  'summit-south':()=>{placeHiker(1066,0);const e=G.points.at(-1);camera.position.set(P.x-10,P.y+6,P.z+30);controls.target.set(0,200,0);},
  'summit-north':()=>{camera.position.set(P.x,P.y+6,P.z-30);controls.target.set(4120,400,-21438);},
+ // 순환버스(11-19): 정류장에 선 버스 + 창 너머 앉은 동동이, 산허리 차로를 오르는 버스, 정상 하차 지점
+ 'bus-start':()=>{busAt(G.bus.stops.start.s,true);const st=G.bus.stops.start,b=ns.bus.bus,f=new THREE.Vector3(0,0,1).applyQuaternion(b.quaternion),r=new THREE.Vector3(-1,0,0).applyQuaternion(b.quaternion);
+  placeHikerAt(st.x+f.x*3.4,st.z+f.z*3.4,Math.atan2(-r.x,-r.z));camera.position.copy(b.position).addScaledVector(r,10).addScaledVector(f,12);camera.position.y+=3.2;controls.target.copy(b.position).addScaledVector(r,1.5).add(V(0,1.3,0));},
+ 'bus-rider':()=>{busAt(G.bus.stops.start.s,true);const b=ns.bus.bus,f=new THREE.Vector3(0,0,1).applyQuaternion(b.quaternion),r=new THREE.Vector3(-1,0,0).applyQuaternion(b.quaternion);
+  hiker.scene.position.set(0,-50,0);camera.position.copy(b.position).addScaledVector(r,-4.4).addScaledVector(f,1.4);camera.position.y+=2.1;controls.target.copy(b.position).addScaledVector(f,-.6).add(V(0,1.3,0));fov=50;},
+ 'bus-road':()=>{const s=1180;busAt(s,false);const b=ns.bus.bus,f=new THREE.Vector3(0,0,1).applyQuaternion(b.quaternion),r=new THREE.Vector3(-1,0,0).applyQuaternion(b.quaternion);
+  hiker.scene.position.set(0,-50,0);camera.position.copy(b.position).addScaledVector(f,16).addScaledVector(r,-7);camera.position.y+=4.5;controls.target.copy(b.position).add(V(0,1.2,0));},
+ 'bus-summit':()=>{const st=G.bus.stops.summit;busAt(st.s,true);const b=ns.bus.bus,f=new THREE.Vector3(0,0,1).applyQuaternion(b.quaternion);
+  placeHikerAt(st.x+(tw.x-st.x)*.05,st.z+(tw.z-st.z)*.05,Math.atan2(tw.x-st.x,tw.z-st.z));const dx=st.x-tw.x,dz=st.z-tw.z,l=Math.hypot(dx,dz);
+  camera.position.set(st.x+dx/l*16+f.x*-10,P.y+6,st.z+dz/l*16+f.z*-10);controls.target.set(tw.x*.15+st.x*.85,P.y+5,tw.z*.15+st.z*.85);fov=66;},
+ 'bus-cut':()=>{const s=880;busAt(s,false);const b=ns.bus.bus,f=new THREE.Vector3(0,0,1).applyQuaternion(b.quaternion),r=new THREE.Vector3(-1,0,0).applyQuaternion(b.quaternion);
+  hiker.scene.position.set(0,-50,0);camera.position.copy(b.position).addScaledVector(f,-22).addScaledVector(r,3);camera.position.y+=9;controls.target.copy(b.position).addScaledVector(f,10).add(V(0,1,0));},
+ 'bus-night':()=>{VIEWS['bus-start']();},
+ 'bus-aerial':()=>{hiker.scene.position.set(0,-50,0);busAt(1180,false);const m=G.bus.points[Math.floor(G.bus.points.length*.55)];camera.position.set(m.x-420,m.y+520,m.z+380);controls.target.set(m.x+40,m.y,m.z-60);},
  aerial:()=>{camera.position.set(G.points[0].x-900,780,G.points[0].z-700);controls.target.set(tw.x-200,140,tw.z+100);},
  'far-south':()=>{camera.position.set(tw.x-500,75,tw.z+3200);controls.target.set(tw.x,190,tw.z);},
 };
+// 버스 장면 도우미: 버스를 차로 s에 세우고 앉은 동동이 3명(창 너머)
+const riders=[];
+function busAt(s,doorsOpen=false){const b=ns.bus?.bus;if(!b)return;placeOnLane(b,G.bus.cycle,s);b.userData.setDoors(doorsOpen?1:0);
+ if(!riders.length)for(const i of [6,9,13]){const a=cloneSkinned(hiker.scene);seatInBus(b,a,i);riders.push(a);}}
+function placeHikerAt(x,z,yaw){hiker.scene.position.set(x,G.ground(x,z)+.05,z);hiker.scene.rotation.y=yaw;}
 let view=q.get('view')??'start';
 let fov=null;
 function setView(name){view=name;fov=null;(VIEWS[name]??VIEWS.start)();resize();controls.update();lighting.setShadowFocus?.(hiker.scene.position);}

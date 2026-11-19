@@ -35,7 +35,8 @@ function decalMatrix(out,x,y,z,yaw,sx,sz,ground){
  return out.compose(_p.set(x,y+.07,z),_q,_s.set(sx,1,sz));
 }
 
-export function createNightLighting({scene,renderer=null,place,groundHeight,gatePoint=null,facilityPoints=[],search=globalThis.location?.search??'',routeLength=0,nowMs=Date.now}){
+export function createNightLighting({scene,renderer=null,place,groundHeight,gatePoint=null,facilityPoints=[],lampPoints=null,drawLamps=true,search=globalThis.location?.search??'',routeLength=0,nowMs=Date.now}){
+ // lampPoints(남산, 11-19): 가로등 자리를 직접 받는다({x,y,z,lx,ly,lz,boost,kind}). 주면 공원 구간 등은 만들지 않는다. drawLamps:false면 기둥·바닥 빛·후광을 그리지 않고 실제 광원 풀만 가까운 등에 붙인다(그림은 콘텐츠 쪽). 둘 다 안 주면 예전 그대로(관악산).
  const q=new URLSearchParams(search),timeParam=q.get('time'),legacySun=q.has('sun')&&!timeParam;
  const root=new THREE.Group();root.name='night-lighting';scene.add(root);
  const ground=groundHeight??(()=>0);
@@ -45,7 +46,8 @@ export function createNightLighting({scene,renderer=null,place,groundHeight,gate
   const y=ground(x,z),dx=tx-x,dz=tz-z,n=Math.hypot(dx,dz)||1,ux=dx/n,uz=dz/n,arm=.85*(height/LAMP_HEIGHT);
   lamps.push({x,y,z,boost,height,kind,yaw:Math.atan2(-uz,ux),lx:x+ux*arm,ly:y+height-.12,lz:z+uz*arm});
  };
- for(const s of lampStations()){const [x,,z]=place(s,PARK_LAMP_LATERAL),[cx,,cz]=place(s,0);addLamp(x,z,cx,cz,1,LAMP_HEIGHT,'park');}
+ if(lampPoints)for(const p of lampPoints)lamps.push({x:p.x,y:p.y??ground(p.x,p.z),z:p.z,boost:p.boost??1,height:p.height??LAMP_HEIGHT,kind:p.kind??'park',yaw:0,lx:p.lx??p.x,ly:p.ly??(p.y??ground(p.x,p.z))+LAMP_HEIGHT-.12,lz:p.lz??p.z});
+ else for(const s of lampStations()){const [x,,z]=place(s,PARK_LAMP_LATERAL),[cx,,cz]=place(s,0);addLamp(x,z,cx,cz,1,LAMP_HEIGHT,'park');}
  if(gatePoint)for(const l of PLAZA_LAMPS){const p=gatePoint(l.gx,l.gz),c=gatePoint(0,l.gz);addLamp(p.x,p.z,c.x,c.z,l.boost,LAMP_HEIGHT,'plaza');}
  for(const f of facilityPoints)addLamp(f.x,f.z,f.tx,f.tz,.7,f.height??3.2,'facility');
  const N=lamps.length;
@@ -70,7 +72,7 @@ export function createNightLighting({scene,renderer=null,place,groundHeight,gate
  });
  haloGeo.setAttribute('position',new THREE.BufferAttribute(haloPos,3));haloGeo.setDrawRange(0,N);
  const haloPoints=new THREE.Points(haloGeo,halos);
- for(const o of [poles,bulbs,decals,haloPoints]){o.frustumCulled=false;root.add(o);}
+ for(const o of [poles,bulbs,decals,haloPoints]){o.frustumCulled=false;o.visible=drawLamps;root.add(o);}
  decals.renderOrder=2;haloPoints.renderOrder=3;
  // 실제 점광원 풀(그림자 없음). 가까운 가로등에 붙어 다닌다.
  const pool=Array.from({length:REAL_LIGHT_COUNT},()=>{const l=new THREE.PointLight(LAMP_COLOR,0,20,2);l.castShadow=false;l.userData.lamp=-1;root.add(l);return l;});

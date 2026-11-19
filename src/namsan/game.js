@@ -113,11 +113,13 @@ let lowerRoads=()=>{};
  const ground=far?.children.find(o=>o.isMesh)?.geometry;if(ground)lower(ground);
  // 간선도로·교량·거리 불빛은 준비 뒤 streamRoads()로 붙으니 그때 내린다(아래 도심 받기)
  lowerRoads=()=>far?.traverse(o=>{if((o.isMesh||o.isPoints||o.isLineSegments)&&!o.isInstancedMesh&&o.geometry!==ground&&o.geometry?.attributes?.position&&!o.userData.nsLowered){o.userData.nsLowered=true;lower(o.geometry);}});}
-// 밤 조명(관악산 night-lighting.js 그대로): 코스 가로등 27m 간격(성곽이 대부분 오른쪽이라 왼쪽 가장자리 밖), 두 광장 둘레 등, 헤드랜턴.
+// 밤 조명(관악산 night-lighting.js): 헤드랜턴과 실제 광원 풀. 남산 가로등 그림이 없을 때만 예전처럼 27m 등·두 광장 둘레 등을 직접 그린다.
 // 남산 코스는 1.1km라 관악산 「공원 구간」(1,075m) 안 = 길 전체에 가로등이 있고 헤드랜턴은 저절로 켜지지 않는다(관악산 공원 구간과 같음)
 const nsPlace=(s,l)=>{const k=courseAt(G.points,s),x=k.x-k.nx*(l+.25),z=k.z-k.nz*(l+.25);return [x,heightAt(G,x,z),z];};
 const ring=(P,n,r,a0=0)=>Array.from({length:n},(_,i)=>{const a=a0+i/n*Math.PI*2;return {x:P.x+Math.cos(a)*r,z:P.z+Math.sin(a)*r,tx:P.x,tz:P.z,height:4};});
-const night=createNightLighting({scene,renderer,place:nsPlace,groundHeight:(x,z)=>G.ground(x,z),facilityPoints:[...ring(G.startPlaza,4,G.startPlaza.r-3,.4),...ring(G.plaza,6,G.plaza.r-4,.2)],routeLength:G.points.at(-1).s});
+const LAMP_REAL=.55; // 실제 광원 세기 비율: 남산 등은 관악산(27m)보다 촘촘하고 바닥 빛을 그림이 따로 그려서 줄임
+// 11-19 밤 가로등(월드아트): 기둥·바닥 빛·후광은 남산 그림(ns.lamps)이 그리고, night-lighting은 실제 광원 4개만 가까운 남산 등에 붙인다(관악산 27m 등·광장 등은 만들지 않음)
+const night=createNightLighting({scene,renderer,place:nsPlace,groundHeight:(x,z)=>G.ground(x,z),lampPoints:ns.lamps?.userData.spots.filter(l=>l.real!==false).map(l=>({...l,boost:l.boost*LAMP_REAL}))??null,drawLamps:!ns.lamps,facilityPoints:ns.lamps?[]:[...ring(G.startPlaza,4,G.startPlaza.r-3,.4),...ring(G.plaza,6,G.plaza.r-4,.2)],routeLength:G.points.at(-1).s});
 toon.styleNightLighting?.(night.root);
 loading.set('hikers',.2);
 const hikerUrl=`${BASE}assets/toon/models/hiker/HikerRig.glb`;
@@ -282,6 +284,7 @@ function paintHud(){
 }
 window.namsan.status=()=>({started:window.namsan.started,x:st.x,z:st.z,y:walkHeight(G,st),s:st.s,best:st.best,auto:st.auto,done:st.done,stamps:[...st.stamps],elapsed:st.elapsed,view,speed,stairs:stairsNow,
  multi:multi?.info()??null,metrics,memory:performance.memory?{usedMB:Math.round(performance.memory.usedJSHeapSize/1048576)}:null,summitOpen:!summitBox.hidden,course:G.points.at(-1).s});
+window.namsan.lampStats=()=>ns.lamps?.userData.count??null;window.namsan.lampsVisible=v=>{if(ns.lamps)ns.lamps.visible=!!v;}; // 점검용: 가로등 그림 켜고 끄기(성능 비교)
 window.namsan.jump=s=>{jumpTo(G,st,s);shortcut=true;camBase=st.heading;look.yaw=0;return window.namsan.status();};
 window.namsan.setAuto=on=>{st.auto=!!on;paintBig();return st.auto;};
 window.namsan.multi=()=>multi?.info()??null;
