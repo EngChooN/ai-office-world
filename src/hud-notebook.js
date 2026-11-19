@@ -6,9 +6,7 @@
 import {staminaView} from './hud.js';
 import {installFeedback} from './feedback.js';
 import {DONATE_URL} from './donate.js';
-import {checkpoints} from './route.js';
-import {GATE_S} from './plaza.js';
-import {COURSE_LENGTH} from './movement.js';
+import {checkpoints,GATE_S,COURSE_LENGTH} from './mountains/gwanak.js';   // 관악산 산 정의(통합 2단계)
 import {icon} from './icons/icon.js';
 
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

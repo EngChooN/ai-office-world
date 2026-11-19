@@ -7,9 +7,8 @@ import {WEATHER_CHOICES,TIME_CHOICES,SEASON_CHOICES,normalizeFree,isManual,loadF
 import {loadSummits,summitOf,clearSummits,sealDate,recordLine,SEAL_SEEN_KEY} from './summit-records.js';
 import {mountainById,DEFAULT_MOUNTAIN} from './mountains.js';
 import {jumpTargets} from './section-jump.js';
-import {route} from './route.js';
+import {route,STAMPS} from './mountains/gwanak.js';   // 관악산 산 정의(통합 2단계)
 import {loadProgress,stampCount} from './interaction-logic.js';
-import {STAMPS} from './interaction-data.js';
 import {icon,iconText} from './icons/icon.js';
 
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));

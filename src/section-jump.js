@@ -1,8 +1,7 @@
 // 개발용 구간 이동: 화면 구석 버튼 → 목록에서 고르면 그 지점으로 순간 이동한다. 끄려면 아래 설정값 하나만 false로 바꾼다.
 // 주소에 ?jump=off(또는 ?dev=off)를 붙이면 그 접속에서만 숨긴다(캡처·점검용).
 // 이 조건은 '개발 버전'(free-settings.js devBuild) 하나로 모았다. 자유 설정이 완등 없이 열리는 조건과 같다.
-import {checkpoints} from './route.js';
-import {PLAZA_START,GATE_S} from './plaza.js';
+import {checkpoints,PLAZA_START,GATE_S} from './mountains/gwanak.js';   // 관악산 산 정의(통합 2단계)
 import {DEV_BUILD,devBuild} from './free-settings.js';
 import {icon} from './icons/icon.js';
 export const SECTION_JUMP_ENABLED=DEV_BUILD;

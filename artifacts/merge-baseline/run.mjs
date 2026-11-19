@@ -13,7 +13,7 @@ const JOBS=[
  ['no-realistic',{}],['namsan-game',{PAGE_URL:'http://127.0.0.1:5173'}]];
 const only=process.env.ONLY?.split(',');const res=[];
 for(const [name,env] of JOBS){if(only&&!only.includes(name))continue;const t0=Date.now();const log=createWriteStream(`${dir}/${name}.log`);
- const code=await new Promise(r=>{const c=spawn(process.execPath,[`scripts/verify-${name}.mjs`],{env:{...process.env,...env},stdio:['ignore','pipe','pipe']});c.stdout.pipe(log);c.stderr.pipe(log);
+ const code=await new Promise(r=>{const c=spawn(process.execPath,[`scripts/verify-${name}.mjs`],{env:Object.fromEntries(Object.entries({...process.env,...env}).filter(([k])=>k!=="ONLY")),stdio:['ignore','pipe','pipe']});c.stdout.pipe(log);c.stderr.pipe(log);
   const kill=setTimeout(()=>{c.kill('SIGKILL');},25*60000);c.on('close',k=>{clearTimeout(kill);r(k);});});
  res.push({name,code,sec:Math.round((Date.now()-t0)/1000)});console.log(name,code,Math.round((Date.now()-t0)/1000)+'s');writeFileSync(`${dir}/summary.json`,JSON.stringify(res,null,1));}
 for(const s of servers)await s.close();pv.httpServer.close();process.exit(0);

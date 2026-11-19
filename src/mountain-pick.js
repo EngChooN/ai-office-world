@@ -14,7 +14,7 @@ import {seasonTag,seasonTagIcon} from './free-settings.js';
 import {iconText} from './icons/icon.js';
 import {freeState,onFreeChange,panelHTML,handlePanelClick,sealFor,recordHTML,sealSeenOnce,applyHudTime,mountFreeSettingsHud} from './free-settings-ui.js';
 import {summitOf} from './summit-records.js';
-import {SAVE_KEY} from './movement.js';
+import {SAVE_KEY} from './mountains/gwanak.js';   // 관악산 이어 오르기 키(산 정의)
 import {seoulClock,sunPosition} from './daytime.js';
 import {START_EVENT} from './loading.js';
 import {hikingPickMode,openFirstHikingPick,entryDecided,entryChoiceNow} from './hiking-server-pick.js';

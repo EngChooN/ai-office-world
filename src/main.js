@@ -6,16 +6,15 @@ import './section-jump.css';
 import {mountRestUI} from './rest-ui.js';
 import {installHudToggle} from './hud-toggle.js';
 import {installGadgetUI,viewfinderCrop} from './gadget-ui.js';
-import {route,sample,MATERIALS,isStairs,checkpoints,DEMO_START,durationBetween,geographicToLocal,floorHeight as routeFloorHeight} from './route.js';
-import {initialState,restore,SAVE_KEY,advance,setPose,positionAt,isOffTrail,playerPosition,setPlayerPosition,courseDistance,COURSE_LENGTH,strideAt,strideScaleFor,onStairs,lateralLimit,ROUTE_MIN_S} from './movement.js';
-import {summitWalkMap,ROUTE_END,projectToRoute,SUMMIT_CENTER} from './summit.js';
+// 관악산 전용 코스·위치 모델·정상·광장은 산 정의 한 파일에서 읽는다(통합 2단계, 자리만 옮기기)
+import {GWANAK,route,sample,MATERIALS,isStairs,checkpoints,DEMO_START,durationBetween,geographicToLocal,floorHeight as routeFloorHeight,
+ initialState,restore,SAVE_KEY,advance,setPose,positionAt,isOffTrail,playerPosition,setPlayerPosition,courseDistance,COURSE_LENGTH,strideAt,strideScaleFor,onStairs,lateralLimit,ROUTE_MIN_S,
+ summitWalkMap,ROUTE_END,projectToRoute,SUMMIT_CENTER,insidePlaza,fromGate} from './mountains/gwanak.js';
+import {inForbid,FACILITY_LAMPS,routeMeasure,STREAM_SPOTS} from './mountains/gwanak-world.js';
 import {routeNudge} from './pair-walk.js';
-import {inForbid} from './animal-lanes.js';
 import {sectionJumpEnabled,jumpTargets,summitSpot,mountSectionJump} from './section-jump.js';
 import {createLoadingTracker,createStabilityCounter,LOADING_EVENT,START_EVENT} from './loading.js';
-import {insidePlaza,fromGate} from './plaza.js';
 import {createNightLighting} from './night-lighting.js';
-import {FACILITY_LAMPS} from './night-lighting-config.js';
 import {movementHeading} from './hiker-facing.js';
 import {createToonStyle} from './toon/index.js';
 import {createSeasonController,SEASON_LABEL} from './season.js';
@@ -40,8 +39,6 @@ import {createTrailSound} from './trail-sound.js';
 import {installTrailHud} from './trail-hud.js';
 import {canEatChocolate,eatChocolate,tickChocolate} from './trail-rules.js';
 import {createInteractionSound} from './interaction-sound.js';
-import {routeMeasure} from '../assets/realistic/interaction-sites.js';
-import {STREAM_SPOTS} from './interaction-data.js';
 import {createFrameMetrics} from './performance-metrics.js';
 import {AdaptiveQuality} from './adaptive-quality.js';
 import './hud-v2.css';
@@ -308,7 +305,7 @@ function frame(now,background=false){
  if(started&&now-saveAt>700){save();saveAt=now;}
  if(!started&&loading.phase==='loading')checkStability(frameSeconds*1000,now);
  if((state.summitArrived||(state.zone==='route'&&state.s>=route.length))&&!summitShown){summitShown=true;state.summitArrived=true;$('summit-summary').textContent=`이번 체험 ${state.distance.toFixed(1)}m · 걸은 시간 ${time(state.elapsed)} · ${state.steps}걸음 · 상승 ${state.ascent.toFixed(1)}m · ${state.sessions}회 접속. DSM 지형 체험 기록입니다.`;// 완등 기록(산 고르기·지도 도장, 자유 설정 열림). 구간 이동으로 정상에 간 경우는 이 화면이 뜨지 않으므로 기록되지 않는다.
-if(!multiMode){try{const record=recordSummit(localStorage,'gwanak',{date:seoulClock(Date.now()).date,sec:state.shortcut?null:state.elapsed});window.dispatchEvent(new CustomEvent('hiking:summit-record',{detail:{id:'gwanak',record}}));}catch{}}
+if(!multiMode){try{const record=recordSummit(localStorage,GWANAK.summitId,{date:seoulClock(Date.now()).date,sec:state.shortcut?null:state.elapsed});window.dispatchEvent(new CustomEvent('hiking:summit-record',{detail:{id:'gwanak',record}}));}catch{}}
 $('summit').showModal();save();}
  if(!document.hidden&&frameSeconds>0){frameSum+=frameSeconds;frames++;}
  if(now-qualityWindow>4000){
