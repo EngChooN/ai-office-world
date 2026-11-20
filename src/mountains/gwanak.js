@@ -61,3 +61,5 @@ export const GWANAK=Object.freeze({
   ambientSourceLabel:'환경음 원본·제작자·작품 URL·CC0 이용 조건 전체 표',
  }),
 });
+// 걷기 부품(통합 4단계, 11-20). 공통 본체는 위치 모델을 이것으로만 읽는다. 약속 src/walker.js
+export {gwanakWalker as walker} from './gwanak-walker.js';
