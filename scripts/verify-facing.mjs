@@ -1,3 +1,7 @@
+// 몸 방향·발 축·접지·카메라 고정 점검(3인칭, 평지 8방향·비탈 4방향·바위).
+// 11-04 962c46f(docs/변경기록-2026-11-04-조작-카메라.md (5))부터 직접 걸을 때 몸은 이동 방향이 아니라 카메라가 보는 쪽을 향한다(바라본 채 뒷걸음·옆걸음).
+// 그래서 몸 방향 기준을 「이동 방향」에서 「카메라 방향」으로 바꾸고, 이동 방향은 키에 맞는 카메라 기준 각도(뒤=+π, 왼쪽=+π/2 …)로 따로 본다.
+// 사용: BASE_URL=http://127.0.0.1:5411/hiking/ OUT=… node scripts/verify-facing.mjs
 import {waitChunks} from './lib/chunk-wait.mjs';
 import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
@@ -5,19 +9,19 @@ import assert from 'node:assert/strict';
 import {initialState,SAVE_KEY} from '../src/movement.js';
 import {route,sample} from '../src/route.js';
 import {headingDelta} from '../src/hiker-facing.js';
-const dir='artifacts/facing';mkdirSync(dir,{recursive:true});
+const dir=process.env.OUT??'artifacts/facing',base=process.env.BASE_URL??'http://127.0.0.1:5178/hiking/';mkdirSync(dir,{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
 const rows=[],errors=[];
+const P=Math.PI,MOVE_OFFSET={forward:0,up:0,back:P,down:P,left:P/2,right:-P/2,'forward-left':P/4,'forward-right':-P/4,'back-left':3*P/4,'back-right':-3*P/4};
 try{
  const rock=route.segments.find(p=>p.material==='ridge'&&p.length>8);
  for(const [area,s] of [['flat',1800],['slope',3900],['rock',rock.start+2]]){
   const context=await browser.newContext({viewport:{width:1440,height:900}});
-  await context.addInitScript(({key,state})=>{localStorage.setItem(key,JSON.stringify(state));localStorage.setItem('gwanak-sound-enabled','false');},{key:SAVE_KEY,state:{...initialState(),s,view:'third',paused:false}});
+  await context.addInitScript(({key,state})=>{localStorage.setItem(key,JSON.stringify(state));localStorage.setItem('gwanak-sound-enabled','false');},{key:SAVE_KEY,state:{...initialState(),s,view:'third'}});
   await context.route('**/@vite/client',r=>r.fulfill({contentType:'application/javascript',body:`export const createHotContext=()=>({accept(){},dispose(){},prune(){},on(){},invalidate(){},data:{}});export const updateStyle=(id,css)=>{let e=document.getElementById(id);if(!e){e=document.createElement('style');e.id=id;document.head.append(e);}e.textContent=css;};export const removeStyle=id=>document.getElementById(id)?.remove();export const injectQuery=url=>url;export class ErrorOverlay extends HTMLElement {}`}));
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('http://127.0.0.1:5178/hiking/?quality=balanced');await page.waitForFunction(()=>window.hiking?.started&&window.hiking?.landscape().natureReady&&!hiking.rendering().compiling,null,{timeout:240000});console.log('준비',area,s,sample(s).slope);
+  await page.goto(base+'?quality=balanced');await page.waitForFunction(()=>window.hiking?.started&&window.hiking?.landscape().natureReady&&!hiking.rendering().compiling,null,{timeout:240000});console.log('준비',area,s,sample(s).slope);
   await page.evaluate(()=>{const base=__hiker.ground;__hiker.ground=args=>{const result=base(args);window.__facingContacts=result;return result;};});
-  if((await page.evaluate(()=>hiking.snapshot())).paused)await page.keyboard.press('Space');
   // 정상 조작으로 가까운 3인칭 시점 선택.
   await page.locator('#world').hover();await page.mouse.wheel(0,-220);await page.waitForTimeout(300);
   const specs=area==='flat'?[['forward',['w']],['back',['s']],['left',['a']],['right',['d']],['forward-left',['w','a']],['forward-right',['w','d']],['back-left',['s','a']],['back-right',['s','d']]]:[['up',['w']],['down',['s']],['left',['a']],['right',['d']]];
@@ -27,7 +31,9 @@ try{
   for(const [id,keys] of specs){
    const before=await read();for(const k of keys)await page.keyboard.down(k);await page.waitForTimeout(800);const start=await read();await page.waitForTimeout(400);const moving=await read();
    const dx=moving.position[0]-start.position[0],dz=moving.position[2]-start.position[2];assert.ok(Math.hypot(dx,dz)>.01,`${area}/${id}: 실제 이동 없음`);
-   const target=Math.atan2(-dx,-dz),error=Math.abs(headingDelta(moving.heading,target));assert.ok(error<.12,`${area}/${id}: 몸 방향 오차 ${error}`);
+   // 몸 = 카메라 방향(11-04 결정). 이동 = 카메라 방향 + 키별 각도(앞 0, 뒤 π, 왼 +π/2, 오른 −π/2, 대각 ±π/4·±3π/4).
+   const look=Math.atan2(moving.orientation.camera[0]-moving.position[0],moving.orientation.camera[2]-moving.position[2]),error=Math.abs(headingDelta(moving.heading,look));assert.ok(error<.12,`${area}/${id}: 몸 방향(카메라 쪽) 오차 ${error}`);
+   const moveDir=Math.atan2(-dx,-dz),moveError=Math.abs(headingDelta(moveDir,look+MOVE_OFFSET[id]));assert.ok(moveError<.12,`${area}/${id}: 이동 방향 오차 ${moveError}`);
    const feet=moving.legs.map(l=>{const [x,z]=l.direction;return (-Math.sin(moving.heading)*x-Math.cos(moving.heading)*z)/Math.hypot(x,z);});const footAxes=moving.legs.map(l=>{const [x,z]=l.direction;return {forward:(-Math.sin(moving.heading)*x-Math.cos(moving.heading)*z)/l.length,lateral:(Math.cos(moving.heading)*x-Math.sin(moving.heading)*z)/l.length};});
    rows.push({area,id,footAxes,feet,moving});
    assert.ok(footAxes.every(a=>Math.abs(a.lateral)<.4&&a.forward>-.3),`${area}/${id}: 발 축 ${JSON.stringify(footAxes)}`);
@@ -36,7 +42,7 @@ try{
    const cameraYaw=Math.atan2(moving.orientation.camera[0]-moving.position[0],moving.orientation.camera[2]-moving.position[2]);
    const beforeYaw=Math.atan2(before.orientation.camera[0]-before.position[0],before.orientation.camera[2]-before.position[2]);assert.ok(Math.abs(headingDelta(cameraYaw,beforeYaw))<.03,`${area}/${id}: 카메라 방향 변함`);
    assert.ok(moving.contacts.every(c=>c.penetration<.012&&(!c.planted||c.error<.012)),`${area}/${id}: 발 접지 오차`);
-   const row={area,id,error,feet,footAxes,cameraTurn:headingDelta(cameraYaw,beforeYaw),before,start,moving,stopped};rows[rows.length-1]=row;console.log(area,id,'오차',error.toFixed(4),'발 정렬',feet.map(x=>x.toFixed(3)));
+   const row={area,id,error,moveError,feet,footAxes,cameraTurn:headingDelta(cameraYaw,beforeYaw),before,start,moving,stopped};rows[rows.length-1]=row;console.log(area,id,'몸 오차',error.toFixed(4),'이동 오차',moveError.toFixed(4),'발 정렬',feet.map(x=>x.toFixed(3)));
   }
   await context.close();
  }

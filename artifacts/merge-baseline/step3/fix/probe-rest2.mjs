@@ -1,0 +1,14 @@
+import {chromium} from '@playwright/test';
+import {initialState,SAVE_KEY} from '../../../../src/movement.js';
+const b=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
+const c=await b.newContext({viewport:{width:1440,height:900}});
+await c.addInitScript(({state,key})=>{if(!sessionStorage.getItem('rest-seed')){localStorage.setItem(key,JSON.stringify(state));sessionStorage.setItem('rest-seed','1');}localStorage.setItem('gwanak-sound-enabled','false');},{state:{...initialState(),s:1800,stamina:15},key:SAVE_KEY});
+const p=await c.newPage();
+await p.goto('http://127.0.0.1:5413/hiking/?quality=balanced');
+await p.waitForFunction(()=>window.hiking?.started&&window.hiking?.landscape().natureReady&&!hiking.rendering().compiling,null,{timeout:240000});
+const s=async l=>console.log(l,JSON.stringify(await p.evaluate(()=>({pose:hiking.snapshot().pose,view:hiking.snapshot().view,tea:hiking.snapshot().teaRemaining,sl:__hiker.interaction.sitLinear,drink:__hiker.interaction.drink,eye:__hiker.eyeHeight,act:document.activeElement?.className}))));
+await p.keyboard.press('c');await p.waitForTimeout(1200);await s('sat');
+await p.click('.uf-menu-btn');await p.click('[data-uf-tab="rest"]');await p.click('#nb-sheet-rest [data-proxy="sit"]');await p.click('.uf-sheet .uf-x');await s('menu');
+await p.keyboard.press('c');await p.waitForTimeout(1000);await s('stood');
+await p.keyboard.press('v');await s('v');await p.keyboard.press('c');await p.waitForTimeout(1000);await s('c');await p.keyboard.press('t');await s('t0');await p.waitForTimeout(1250);await s('t1');
+await b.close();

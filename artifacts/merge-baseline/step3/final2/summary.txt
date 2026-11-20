@@ -1,0 +1,26 @@
+radio exit=0 (따로 돌림)
+trail-buttons exit=0 536s
+interaction exit=0 250s
+free-settings exit=1 221s
+trail-dropin-route exit=0 731s
+DONE
+free-settings exit=1 210s
+DONE
+free-settings exit=0 208s
+DONE
+controls-camera exit=0 60s
+facing exit=0 63s
+hud-toggle exit=0 49s
+mobile-buttons exit=0 28s
+mobile-pages exit=0 148s
+hiking-interactions exit=0 174s
+hiker-interactions exit=0 75s
+rest-integration exit=0 43s
+DONE
+ALLDONE
+trail-buttons exit=0 493s
+trail-dropin-route exit=1 647s
+DONE
+trail-buttons exit=0 542s
+trail-dropin-route exit=0 734s
+DONE

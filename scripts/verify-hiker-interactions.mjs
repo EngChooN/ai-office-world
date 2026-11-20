@@ -3,10 +3,13 @@ import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync,readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {initialState,SAVE_KEY} from '../src/movement.js';
-const dir='artifacts/hiker-interactions';mkdirSync(dir,{recursive:true});
+// 주소·결과 폴더: BASE_URL(기본은 예전 5175 /hiking/)·OUT
+const base=process.env.BASE_URL??'http://127.0.0.1:5175/hiking/',dir=process.env.OUT??'artifacts/hiker-interactions';mkdirSync(dir,{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
 console.log('브라우저 실행 완료');
 const rows=[],errors=[];
+// 앉은 눈높이: 0.85m는 실사 등산객(키 1.6m) 값. 11-05 ff5b8a2부터 동동이(1.0m) 몸 치수를 쓰고 11-06 실사 모드를 없애 0.552m(docs/변경기록-2026-11-05-카툰-동동이.md「눈높이 서기 0.695m·앉기 0.552m」)
+const SEATED_EYE=.552;
 try{
  let context,page;
  const openAt=async s=>{
@@ -15,7 +18,7 @@ try{
   // 검증 탭에서 CSS 적용은 유지하고 개발 서버 자동 새로고침만 끈다.
   await context.route('**/@vite/client',r=>r.fulfill({body:`export const createHotContext=()=>({accept(){},dispose(){},prune(){},on(){},invalidate(){},data:{}});export const updateStyle=(id,css)=>{let e=document.getElementById(id);if(!e){e=document.createElement('style');e.id=id;document.head.append(e);}e.textContent=css;};export const removeStyle=id=>document.getElementById(id)?.remove();export const injectQuery=url=>url;export class ErrorOverlay extends HTMLElement {}`,contentType:'application/javascript'}));
   page=await context.newPage();page.on('pageerror',e=>{errors.push(e.message);console.log('페이지 오류',e.message);});
-  await page.goto('http://127.0.0.1:5175/hiking/?quality=balanced');await page.waitForFunction(()=>window.hiking?.started&&window.hiking?.landscape().ready&&hiking.landscape().natureReady&&!hiking.rendering().compiling,null,{timeout:240000});
+  await page.goto(base+'?quality=balanced');await page.waitForFunction(()=>window.hiking?.started&&window.hiking?.landscape().ready&&hiking.landscape().natureReady&&!hiking.rendering().compiling,null,{timeout:240000});
  };
  const diagnostic=setInterval(async()=>{try{console.log('준비 상태',await page?.evaluate(()=>({ready:window.hiking?.landscape().ready,nature:window.hiking?.landscape().natureReady,compiling:window.hiking?.rendering().compiling})));}catch{}},30000);diagnostic.unref();
  const selected=process.env.ONLY?.split(',');if(selected)rows.push(...JSON.parse(readFileSync(`${dir}/results.json`)).rows.filter(r=>!selected.includes(r.id)));
@@ -36,12 +39,12 @@ try{
   if(spec.pose!=='stand')await page.evaluate(()=>{if(hiking.snapshot().pose==='stand')window.dispatchEvent(new CustomEvent('hiking:command',{detail:{id:'sit'}}));});
   await page.waitForTimeout(2800);
   await page.evaluate(()=>__hikingPerformance.reset());await page.waitForTimeout(5000);
-  const metrics=await page.evaluate(()=>({performance:__hikingPerformance.report(),interaction:__hiker.interaction,eyeHeight:__hiker.eyeHeight,state:hiking.snapshot()}));
+  const metrics=await page.evaluate(()=>({performance:__hikingPerformance.report(),interaction:__hiker.interaction,eyeHeight:__hiker.eyeHeight,profileEye:__hiker.profile?.eyeHeight,state:hiking.snapshot()}));
   await page.keyboard.up('w');await page.keyboard.up('Shift');
   await (await waitChunks(page)).screenshot({path:`${dir}/${spec.id}.png`});rows.push({...spec,...data,...metrics});console.log(spec.id,metrics.performance.fps,JSON.stringify(metrics.interaction));
  }
  writeFileSync(`${dir}/results.json`,JSON.stringify({rows,errors},null,2));
- for(const row of rows){assert.ok(Math.abs(row.state.s-row.s)<50,`${row.id}: 촬영 위치 불일치`);assert.ok(row.performance.fps>=40,`${row.id}: 40fps 미달`);for(const p of row.interaction.poles){assert.ok(p.error<.002,`${row.id}: 팁 지면 오차 ${p.error}`);assert.ok(p.gripError<.002);}if(row.pose!=='stand')assert.equal(row.eyeHeight,.85);}
+ for(const row of rows){assert.ok(Math.abs(row.state.s-row.s)<50,`${row.id}: 촬영 위치 불일치`);assert.ok(row.performance.fps>=40,`${row.id}: 40fps 미달`);for(const p of row.interaction.poles){assert.ok(p.error<.002,`${row.id}: 팁 지면 오차 ${p.error}`);assert.ok(p.gripError<.002);}if(row.pose!=='stand')assert.equal(row.eyeHeight,SEATED_EYE);}
  clearInterval(diagnostic);
  writeFileSync(`${dir}/results.json`,JSON.stringify({rows,errors},null,2));assert.equal(errors.length,0);
 }finally{await browser.close();process.exitCode=errors.length?1:0;}

@@ -1,0 +1,47 @@
+[
+ {
+  "name": "entrance-integration",
+  "code": 0,
+  "sec": 2
+ },
+ {
+  "name": "start-choice",
+  "code": 0,
+  "sec": 44
+ },
+ {
+  "name": "mobile-buttons",
+  "code": 1,
+  "sec": 45
+ },
+ {
+  "name": "mobile-pages",
+  "code": 1,
+  "sec": 24
+ },
+ {
+  "name": "hud-toggle",
+  "code": 1,
+  "sec": 48
+ },
+ {
+  "name": "ui-frame",
+  "code": 1,
+  "sec": 2
+ },
+ {
+  "name": "free-settings",
+  "code": 1,
+  "sec": 35
+ },
+ {
+  "name": "no-realistic",
+  "code": 0,
+  "sec": 129
+ },
+ {
+  "name": "namsan-game",
+  "code": 0,
+  "sec": 129
+ }
+]

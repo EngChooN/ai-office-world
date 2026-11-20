@@ -23,7 +23,8 @@ for(const [name,viewport,safe,mobile] of VIEWS){
  const ok=(what,pass,info='')=>{checks.push({what,pass:!!pass,info});console.log(name,pass?'✓':'✗',what,info);};
  const load=async(url)=>{await page.goto(url);await page.waitForFunction(()=>window.hiking?.started&&window.hiking.trail&&window.hiking.landscape().natureReady,null,{timeout:300000});
   await page.evaluate(()=>document.querySelectorAll('dialog[open]').forEach(d=>d.close()));
-  await page.addStyleTag({content:`:root{--sl:${safe.sl}px!important;--sr:${safe.sr}px!important;--st:${safe.st}px!important;--sb:${safe.sb}px!important}#resume-note{display:none!important}`});await sleep(1200);};
+  // 11-18 공통 화면 틀(src/ui-frame.css)은 안전 영역을 --uf-sl·--uf-sr·--uf-st·--uf-sb(env())로 읽으므로 그 변수도 같이 덮는다.
+  await page.addStyleTag({content:`:root{--sl:${safe.sl}px!important;--sr:${safe.sr}px!important;--st:${safe.st}px!important;--sb:${safe.sb}px!important;--uf-sl:${safe.sl}px!important;--uf-sr:${safe.sr}px!important;--uf-st:${safe.st}px!important;--uf-sb:${safe.sb}px!important}#resume-note{display:none!important}`});await sleep(1200);};
  // 버튼 검사 + 실제 탭
  const tapSel=async(sel,what)=>{await page.waitForSelector(sel,{state:'visible',timeout:15000});
   const r=await page.evaluate(([sel,safe])=>{const el=document.querySelector(sel),b=el.getBoundingClientRect(),hit=document.elementFromPoint(b.left+b.width/2,b.top+b.height/2);
@@ -45,14 +46,21 @@ for(const [name,viewport,safe,mobile] of VIEWS){
  // 🍫 먹기
  const c0=await page.evaluate(()=>({n:window.hiking.snapshot().chocolates,chip:document.querySelector('#choco-count').textContent}));
  await tapSel('#choco','🍫 먹기');await sleep(700);
- const c1=await page.evaluate(()=>({n:window.hiking.snapshot().chocolates,left:window.hiking.snapshot().chocoLeft,chip:document.querySelector('#choco-count').textContent,boost:document.querySelector('#choco-boost').hidden?null:document.querySelector('#choco-boost').textContent,disabled:document.querySelector('#choco').disabled,inCard:(()=>{const c=document.querySelector('.nb-card').getBoundingClientRect(),b=document.querySelector('#choco-boost').getBoundingClientRect();return b.right<=c.right+1&&b.left>=c.left-1;})(),acts:window.hiking.trail.status().acts}));
- ok('초콜릿 5→4개·⚡ 칩·버튼 막힘',c0.n===5&&c1.n===4&&/4\/5/.test(c1.chip)&&/⚡ 빨라짐 0:(2\d|30)/.test(c1.boost??'')&&c1.disabled&&c1.inCard,JSON.stringify({c0,c1:{...c1,acts:undefined}}));
+ // ⚡ 글자는 abf11a1(이모지 → 제작 아이콘 교체)부터 h-boost 아이콘이라 글자 대신 아이콘이 있는지 본다.
+ // 11-18 공통 틀부터 진행 카드(.nb-card, ⚡ 칩이 든 간식 줄)는 위 왼쪽 진행 알약(.hk-pill)을 눌러야 펼쳐진다. 펼쳐서 칩이 카드 안인지 본다.
+ await page.click('.hk-pill');await sleep(300);
+ const c1=await page.evaluate(()=>({n:window.hiking.snapshot().chocolates,left:window.hiking.snapshot().chocoLeft,chip:document.querySelector('#choco-count').textContent,boost:document.querySelector('#choco-boost').hidden?null:document.querySelector('#choco-boost').textContent,boostIcon:!!document.querySelector('#choco-boost [data-ic="h-boost"],#choco-boost svg'),disabled:document.querySelector('#choco').disabled,inCard:(()=>{const c=document.querySelector('.nb-card').getBoundingClientRect(),b=document.querySelector('#choco-boost').getBoundingClientRect();return b.right<=c.right+1&&b.left>=c.left-1;})(),acts:window.hiking.trail.status().acts}));
+ await page.click('.hk-pill');await sleep(200);
+ ok('초콜릿 5→4개·⚡ 칩·버튼 막힘',c0.n===5&&c1.n===4&&/4\/5/.test(c1.chip)&&/^\s*빨라짐 0:(2\d|30)/.test(c1.boost??'')&&c1.boostIcon&&c1.disabled&&c1.inCard,JSON.stringify({c0,c1:{...c1,acts:undefined}}));
  if(mobile)await page.tap('#choco',{force:true}).catch(()=>{});else await page.click('#choco',{force:true}).catch(()=>{});await sleep(300);
  ok('효과 중 다시 눌러도 안 줄어듦',await page.evaluate(()=>window.hiking.snapshot().chocolates)===4);
  await shot('1-choco');
  // 말풍선 층: HUD(z 6) 위, 알림(z 32) 아래
- const z=await page.evaluate(()=>{const zi=s=>+getComputedStyle(document.querySelector(s)).zIndex;return {bubble:zi('#trail-bubble'),hud:zi('.nb-card'),bar:zi('#trail-bar'),alert:zi('#interaction-ui')};});
- ok('말풍선 층 HUD < 말풍선 < 알림',z.hud<z.bubble&&z.bar<z.bubble&&z.bubble<z.alert,JSON.stringify(z));
+ // 11-18 공통 틀부터 늘 보이는 HUD = 위 왼쪽 알약 줄(.hk-topl)·위 오른쪽 💬☰(.uf-tr)·오른쪽 아래 행동 원(#auto). .nb-card는 알약을 눌러 여는 카드가 됐다.
+ const z=await page.evaluate(()=>{const zi=s=>+getComputedStyle(document.querySelector(s)).zIndex;return {bubble:zi('#trail-bubble'),hud:Math.max(zi('.hk-topl'),zi('.uf-tr'),zi('#auto')),hudParts:{pill:zi('.hk-topl'),menu:zi('.uf-tr'),action:zi('#auto')},bar:zi('#trail-bar'),alert:zi('#interaction-ui')};});
+ // 11-18 공통 틀은 늘 보이는 HUD(알약 45·☰ 46·행동 원 30)를 일부러 맨 위 층에 두고 자리로 나눈다(말풍선·알림과 겹치지 않는 자리). 그래서 층은 「즐길거리 줄 < 말풍선 < 알림」만 보고,
+ // HUD와는 아래 「말풍선 화면 안」에서 실제로 겹치지 않는지 본다.
+ ok('말풍선 층 즐길거리 줄 < 말풍선 < 알림',z.bar<z.bubble&&z.bubble<z.alert,JSON.stringify(z));
  // 자동걷기 들르기: 걷기 도장을 누르고 들르기 버튼이 뜨면 누른다
  await tapSel('#auto','걷기(자동)');
  let offer=null;try{await page.waitForSelector('#trail-chip[data-mode=offer] .tc-offer',{timeout:60000});offer=await page.evaluate(()=>{const b=document.querySelector('.tc-offer');return {act:b.dataset.act,id:b.dataset.id,label:b.textContent};});}catch{}
@@ -72,12 +80,14 @@ for(const [name,viewport,safe,mobile] of VIEWS){
  await shot('2-airgun-near');
  await tapSel('#trail-chip [data-act=airgun]','💨 신발 털기');
  await page.waitForFunction(()=>window.__trailLastSay?.text?.includes('모자'),null,{timeout:15000}).catch(()=>{});
- const bub=await page.evaluate(()=>{const b=document.querySelector('#trail-bubble'),r=b.getBoundingClientRect();return {on:b.classList.contains('on'),text:b.textContent,inside:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight};});
- ok('말풍선 화면 안',bub.on&&bub.inside,JSON.stringify(bub));await shot('3-airgun-bubble');
+ const bub=await page.evaluate(()=>{const b=document.querySelector('#trail-bubble'),r=b.getBoundingClientRect();return {on:b.classList.contains('on'),text:b.textContent,inside:r.left>=0&&r.right<=innerWidth&&r.top>=0&&r.bottom<=innerHeight,
+  underHud:['.hk-topl','.uf-tr','#auto'].filter(s=>{const e=document.querySelector(s);if(!e)return false;const h=e.getBoundingClientRect();return h.width>0&&r.left<h.right&&r.right>h.left&&r.top<h.bottom&&r.bottom>h.top;})};});
+ ok('말풍선 화면 안·HUD와 안 겹침',bub.on&&bub.inside&&!bub.underHud.length,JSON.stringify(bub));await shot('3-airgun-bubble');
  await waitIdle();
  const shoes=await page.evaluate(()=>window.hiking.interaction().progress.fun?.shoes);ok("수첩 '깨끗한 신발' 칸",!!shoes);
  // 수첩에 보이는지
- await tapSel('#stamps','수첩');await sleep(600);
+ // 11-18 공통 틀부터 아래 탭 줄(#stamps)은 ☰ 메뉴 창 안의 「수첩」 탭이다.
+ await tapSel('.uf-menu-btn','☰ 메뉴');await sleep(300);await tapSel('.uf-tab[data-uf-tab=book]','수첩 탭');await sleep(600);
  const book=await page.evaluate(()=>[...document.querySelectorAll('.ix-fun-slot')].map(e=>({got:e.classList.contains('got'),t:e.textContent})));
  ok('수첩 즐길거리 칸 2개, 신발 찍힘',book.length===2&&book.find(b=>/신발/.test(b.t))?.got,JSON.stringify(book));await shot('4-book');
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('hiking:command',{detail:{id:'stamps-toggle'}})));await sleep(400);

@@ -76,7 +76,7 @@
 :root.uf [data-uf=s4]{right:calc(var(--uf-cx) + var(--uf-r)*2 - var(--uf-sm)/2 - 20px)!important;bottom:calc(var(--uf-cy) - var(--uf-sm)/2)!important}
 :root.uf [data-uf=s5]{right:calc(var(--uf-cx) + var(--uf-r)*2 + var(--uf-d) - var(--uf-sm)/2 - 34px)!important;bottom:calc(var(--uf-cy) + var(--uf-d)*.55 - var(--uf-sm)/2)!important}
 /* 할 일 칩: 흰 알약 + 초록 테두리, 작은 단추 위(여러 개면 위로 쌓임) */
-:root.uf [data-uf=todo]{right:calc(var(--uf-sr) + 12px)!important;bottom:calc(var(--uf-cy) + var(--uf-r) + var(--uf-sm)/2 + 14px + var(--uf-k,0)*50px)!important;height:42px!important;min-height:42px!important;width:auto!important;max-width:min(260px,calc(100vw - 150px))!important;
+:root.uf [data-uf=todo]{right:calc(var(--uf-sr) + 12px)!important;bottom:calc(var(--uf-cy) + var(--uf-r) + var(--uf-sm)/2 + 14px + var(--uf-k,0)*50px)!important;height:44px!important;min-height:44px!important;width:auto!important;max-width:min(260px,calc(100vw - 150px))!important;
  flex-direction:row!important;gap:6px!important;padding:0 14px 0 10px!important;border-radius:21px!important;background:#fffaf0!important;color:var(--uf-ink)!important;border:2px solid var(--uf-grn)!important;box-shadow:0 3px 10px rgba(40,25,10,.2)!important;font-size:13px!important;overflow:hidden}
 :root.uf [data-uf=todo]::after{display:none!important}
 /* 짧은 글(data-uf-t)이 있으면 원래 글은 숨기고 그 글을 그림 아래에 */

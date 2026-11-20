@@ -7,6 +7,7 @@ import {SAVE_KEY,COURSE_LENGTH} from '../movement.js';
 import {PROGRESS_KEY} from '../interaction-logic.js';
 import {FREE_START_KEY} from '../free-settings.js';
 import {STAMPS} from '../interaction-data.js';
+import {TIPS} from '../loading-screen.js';
 
 // 코스(GPX 337점·노면·체크포인트·걷기 시간)
 export {route,sample,MATERIALS,isStairs,checkpoints,DEMO_START,durationBetween,geographicToLocal,floorHeight} from '../route.js';
@@ -32,4 +33,31 @@ export const GWANAK=Object.freeze({
  checkpoints,
  stampCount:STAMPS.length,
  routePointCount:route.length,
+ // 화면 글(통합 3단계, 11-20). 공통 화면 틀 src/frame/hiking-body.html의 data-mt 자리를 src/mountain-text.js가 이 값으로 채운다.
+ // 관악산 값은 틀에 적힌 글과 한 글자도 다르지 않다(자리만 옮기기). 남산 정의(5단계)는 같은 키를 남산 글로 채운다.
+ text:Object.freeze({
+  pageTitle:'산길 · 관악산 온라인 등반',
+  canvasLabel:'관악산 정상 접근 3D 시범 공간',
+  brandEn:'GWANAK TRAIL',
+  loadingTitle:'산길 · 관악산 서울대 계곡 코스',
+  loadingTips:TIPS,
+  goalLabel:'연주대까지 ',
+  plazaHint:'일주문으로 걸어가면 시작돼요',
+  mapSubtitle:'관악산공원 입구 → 연주대 · GPX 참고 경로',
+  startEntrance:'입구 일주문에서 시작',
+  startEntranceTitle:'관악산공원 일주문 앞 광장에서 처음부터 걷습니다',
+  startDemo:'545m 구간에서 시작',
+  startDemoTitle:'평활 고도 545m 이상 첫 구간에서 시작합니다',
+  courseNote:'체크포인트 5곳은 임시 위치입니다. 정상 632m 기준 DSM 정렬 · 길 폭·계단 분류는 임시입니다.',
+  sealName:'관악산',sealSummit:'연주대',sealAltitude:'632 m',
+  // 완등 카드 한 줄 요약 끝말(main.js가 거리·시간·걸음 뒤에 붙인다)
+  summitNote:'DSM 지형 체험 기록입니다.',
+  footstepNote:'발소리는 가공한 임시음입니다. 실제 관악산 계단 녹음·귀 검수는 대기 중입니다.',
+  motionNote:'계단·바위 오르기와 둘러보기는 Quaternius 동작을 해당 상황에 맞춰 재생합니다. 실제 관악산 등산객 동작 검수는 대기 중입니다.',
+  terrainCredit:'지형: Copernicus DEM 30m 표면 높이 보간 · 서울 건물 연결 — produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. 재질·하늘: Poly Haven (CC0). 건물·물: © OpenStreetMap contributors (ODbL). 건물 높이 미상은 9m 가정, 랜드마크 형상은 근사입니다.',
+  // 환경음 출처(설정 「소리 출처」 칸, main.js가 붙임)
+  ambientCredits:'환경음은 실제 관악산 녹음이 아닌 CC0 임시음입니다. 구간·거리·고도·음량은 추정이며 현장·귀 검수 전입니다. 물·숲 바람·능선 바람·새: Thimras (Park Ambiences), 까마귀: fvcalderan (Crow)·zeroisnotnull (Crow Caw), 정상 웅성임: StarNinjas (Crowd Shouting/Speaking Ambience), 먼 도시: IgnasD (High Traffic Road Sounds). 목탁: 산디자인 자체 합성 임시음. 모노 32kHz 변환·크로스페이드·음량 정규화.',
+  ambientSourcePath:'environment/출처-이용조건.md',
+  ambientSourceLabel:'환경음 원본·제작자·작품 URL·CC0 이용 조건 전체 표',
+ }),
 });

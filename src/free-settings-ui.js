@@ -7,7 +7,7 @@ import {WEATHER_CHOICES,TIME_CHOICES,SEASON_CHOICES,normalizeFree,isManual,loadF
 import {loadSummits,summitOf,clearSummits,sealDate,recordLine,SEAL_SEEN_KEY} from './summit-records.js';
 import {mountainById,DEFAULT_MOUNTAIN} from './mountains.js';
 import {jumpTargets} from './section-jump.js';
-import {route,STAMPS} from './mountains/gwanak.js';   // 관악산 산 정의(통합 2단계)
+import {GWANAK,route,STAMPS} from './mountains/gwanak.js';   // 관악산 산 정의(통합 2단계)
 import {loadProgress,stampCount} from './interaction-logic.js';
 import {icon,iconText} from './icons/icon.js';
 
@@ -163,7 +163,7 @@ export function mountFreeSettingsHud(doc=document,win=window){
  win.addEventListener('hiking:summit-record',()=>{
   refreshRecords();const r=summitOf(freeState.records,DEFAULT_MOUNTAIN);if(!r||!summitSeal)return;
   const land=matchMedia('(orientation:landscape) and (max-height:540px)').matches;
-  summitSeal.className='nb-seal fs-summit-seal';summitSeal.innerHTML=sealSVG(land?104:150,{name:'관악산',date:sealDate(r.first),count:r.count});
+  summitSeal.className='nb-seal fs-summit-seal';summitSeal.innerHTML=sealSVG(land?104:150,{name:GWANAK.name,date:sealDate(r.first),count:r.count});
   summitSeal.classList.remove('fs-stamping');void summitSeal.offsetWidth;summitSeal.classList.add('fs-stamping');
   setTimeout(()=>{try{navigator.vibrate?.(15);}catch{}},420);
   if(summitLink)summitLink.hidden=false;

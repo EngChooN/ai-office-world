@@ -8,9 +8,9 @@
 import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync,readFileSync} from 'node:fs';
 
-const dir='artifacts/radio-2026-11-08';mkdirSync(dir,{recursive:true});
+const dir=process.env.OUT??'artifacts/radio-2026-11-08';mkdirSync(dir,{recursive:true});
 const manifest=JSON.parse(readFileSync('assets/radio/manifest.json','utf8'));
-let vite=null,pageUrl=process.env.PAGE_URL;
+let vite=null,pageUrl=process.env.PAGE_URL??(process.env.BASE_URL&&new URL(process.env.BASE_URL).origin); // BASE_URL(예: http://127.0.0.1:5413/hiking/)이면 그 서버를 쓴다
 if(!pageUrl){const {createServer}=await import('vite');const port=Number(process.env.PORT??5203);vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true,hmr:false},logLevel:'warn'});await vite.listen();pageUrl=`http://127.0.0.1:${port}`;}
 const origin=new URL(pageUrl).origin;
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--autoplay-policy=no-user-gesture-required']});
@@ -32,6 +32,8 @@ const level=()=>p.evaluate(()=>hiking.radio.audio?.level()??-Infinity);
 async function avgLevel(ms=1200){const v=[];const t=Date.now();while(Date.now()-t<ms){v.push(await level());await sleep(60);}const f=v.filter(Number.isFinite);return f.length?20*Math.log10(Math.sqrt(f.reduce((s,x)=>s+10**(x/10),0)/f.length)):-Infinity;}
 const shot=async name=>{await p.screenshot({path:`${dir}/${name}.png`});out.steps.push({k:'캡처',name});};
 const VIEWS=[['세로',390,844],['가로',844,390],['PC',1920,1080]];
+// 11-18 공통 화면 틀(87babf7)부터 꼬리표(시각·소리·라디오)는 ☰ 메뉴 창 맨 위 빠른 줄 안에 있다. 칩이 안 보이면 ☰를 열고 누른다.
+async function tapRadioTag(){if(!(await p.locator('#radio-tag').isVisible()))await p.click('.uf-menu-btn');await p.click('#radio-tag');}
 async function shots3(name){for(const [label,w,h] of VIEWS){await p.setViewportSize({width:w,height:h});await sleep(450);await shot(`${name}-${label}-${w}x${h}`);}await p.setViewportSize({width:1280,height:760});await sleep(200);}
 
 try{
@@ -62,14 +64,15 @@ out.lengthMismatch=out.files.filter(f=>Math.abs(f.duration-f.expected)>=1.5).map
  check('소리 파일 14개 모두 재생(중간 2.6초 소리·끝까지 재생)',okFiles.length===14,{통과:okFiles.length,길이다름:out.lengthMismatch,파일:out.files.map(f=>`${f.file} ${f.error??`${f.duration?.toFixed(1)}s 재생${f.played?.toFixed(1)}s ${f.rmsDb?.toFixed(1)}dB 끝${f.endError??f.endedAfter?.toFixed(1)+'s'}`}`)});
 
  // ── ② 조작
- await p.click('#radio-tag');await p.waitForSelector('.rd:not([hidden])');
+ await tapRadioTag();await p.waitForSelector('.rd:not([hidden])');
  await shots3('01-꺼짐');
  await p.click('.rd-power');
  await p.waitForFunction(()=>hiking.radio.audio?.on&&hiking.radio.state.audio?.deckState==='playing',null,{timeout:20000});
  await sleep(1500);
  const st1=await R(()=>({stxt:document.querySelector('.rd-stxt').textContent,name:document.querySelector('.rd-name').textContent,info:document.querySelector('.rd-info small').textContent,mix:hiking.radio.state.audio.mix}));
+ // 91.9는 서울 시각으로 곡·위치가 정해져 조용한 대목(예: Reawakening 앞부분 약 −57dB)에 걸릴 수 있다. 무음(−∞)만 아니면 되게 −65dB로 본다(11-20).
  const lvOn=await avgLevel();out.levels.on919=lvOn;
- check('전원 → 91.9 수신(잡음 0)',st1.mix.noise===0&&st1.mix.broadcast>0&&st1.name.includes('잔잔한 음악')&&st1.stxt==='수신 좋음'&&lvOn>-50,{...st1,dB:lvOn.toFixed(1)});
+ check('전원 → 91.9 수신(잡음 0)',st1.mix.noise===0&&st1.mix.broadcast>0&&st1.name.includes('잔잔한 음악')&&st1.stxt==='수신 좋음'&&lvOn>-65,{...st1,dB:lvOn.toFixed(1)});
  await shots3('02-켜짐-919');
  // 방송 사이: 105.0 (잡음만)
  await R(()=>hiking.radio.setFreq(105));await sleep(600);
@@ -101,7 +104,7 @@ out.lengthMismatch=out.files.filter(f=>Math.abs(f.duration-f.expected)>=1.5).map
  await shots3('04-내린뒤-칩');
  // 소리 꺼짐 연동
  await R(()=>dispatchEvent(new CustomEvent('hiking:sound',{detail:{enabled:false}})));await sleep(700);
- const lvMute=await avgLevel(800);await p.click('#radio-tag');await sleep(200);
+ const lvMute=await avgLevel(800);await tapRadioTag();await sleep(200);
  const muteTxt=await R(()=>document.querySelector('.rd-stxt').textContent);
  check('전체 소리 꺼짐이면 라디오도 무음',lvMute<-80&&muteTxt==='소리 꺼짐',{dB:String(lvMute),표시:muteTxt});
  await R(()=>dispatchEvent(new CustomEvent('hiking:sound',{detail:{enabled:true}})));await sleep(500);

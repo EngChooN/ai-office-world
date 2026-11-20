@@ -1,0 +1,15 @@
+import {chromium} from '@playwright/test';
+const b=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
+const c=await b.newContext({viewport:{width:1440,height:900}});
+await c.addInitScript(()=>{localStorage.setItem('gwanak-sound-enabled','false');});
+const p=await c.newPage();
+await p.goto('http://127.0.0.1:5413/hiking/?start=demo&quality=low');
+await p.waitForFunction(()=>window.hiking?.started,null,{timeout:240000});await p.waitForTimeout(1500);
+const st=()=>p.evaluate(()=>({pose:hiking.snapshot().pose,q:document.getElementById('quality')?.textContent,sound:document.getElementById('sound-toggle')?.getAttribute('aria-pressed'),inNbSheets:!!document.querySelector('.nb-sheets #nb-sheet-rest')}));
+console.log('start',await st());
+await p.click('.uf-menu-btn');await p.click('[data-uf-tab=rest]');await p.waitForTimeout(300);
+await p.click('[data-proxy=sit]');await p.waitForTimeout(1200);console.log('after proxy sit',await st());
+await p.click('[data-uf-tab=settings]');await p.waitForTimeout(300);
+await p.click('[data-quality=high]');await p.waitForTimeout(500);console.log('after quality high',await st());
+await p.click('#nb-sheet-settings [data-proxy=sound-toggle]');await p.waitForTimeout(300);console.log('after sound proxy',await st());
+await b.close();

@@ -59,7 +59,9 @@ export function installTrailHud(doc=document,win=window){
  const px=v=>parseFloat(v)||0;
  function measureBox(){const W=win.innerWidth,H=win.innerHeight,cs=win.getComputedStyle(doc.documentElement),m=8,cw=chip.offsetWidth||140,ch=chip.offsetHeight||44;
   const tabs=app.querySelector('.nb-tabs'),tb=tabs&&tabs.offsetParent?tabs.getBoundingClientRect().top:H-px(cs.getPropertyValue('--sb'));
-  return {W,H,box:{left:px(cs.getPropertyValue('--sl'))+m+cw/2,right:W-px(cs.getPropertyValue('--sr'))-m-cw/2,top:px(cs.getPropertyValue('--st'))+m+ch+8,bottom:Math.min(H,tb)-m}};}
+  // 11-18 공통 틀: 위 줄(진행 알약 .hk-topl·💬☰ .uf-tr)이 화면 위에 늘 있어 칩이 그 아래로만 오게 한다(가로 화면에서 ☰ 밑에 깔리던 일)
+  const topRow=[...doc.querySelectorAll('.hk-topl,.uf-tr')].reduce((y,e)=>{const r=e.getBoundingClientRect();return r.height>0?Math.max(y,r.bottom):y;},0);
+  return {W,H,box:{left:px(cs.getPropertyValue('--sl'))+m+cw/2,right:W-px(cs.getPropertyValue('--sr'))-m-cw/2,top:Math.min(Math.max(px(cs.getPropertyValue('--st'))+m,topRow+m)+ch+8,Math.min(H,tb)-m),bottom:Math.min(H,tb)-m}};}
  // 상자는 1초마다 다시 잰다(안전 영역 값·칩 폭은 회전·주소창·문구에 따라 resize 없이도 바뀐다)
  function placeChip(){if(chip.hidden)return;const t=performance.now();if(!chipBox||t-chipBox.at>1000)chipBox={...measureBox(),at:t};const {W,H,box}=chipBox;
   let r=clip?chipScreen(clip,{width:W,height:H,box}):{mode:'off'};

@@ -366,7 +366,7 @@ export function createTrailWorld({scene,camera,hiker,landscape,toonify,auto,soun
    let near=null;if(!active){const c=[];for(const it of items)if(TRAIL_BUTTONS[it.kind])c.push({id:it.id,kind:it.kind,d:Math.hypot(it.x-position[0],it.z-position[2])-(it.r??0)});
     const pk=pickChipTarget(c,chipNear?.id);if(pk){near={id:pk.id,kind:pk.kind};if(pk.kind==='gym')near.act=nearestGymAct(pk.id,position,chipNear?.id===pk.id?chipNear.act:null);}}
    chipNear=near;chipTarget=active||acts.active?null:offerAt?{id:offerAt.id,kind:offerAt.kind}:auto.get()?null:near; // 즐길거리 줄 trailBarView와 같은 조건
-   const ac=acts.active,view={near:near&&(near.act?{id:near.id,kind:near.kind,act:near.act}:{id:near.id,kind:near.kind}),act:ac&&{name:ac.name,state:ac.state,reps:ac.reps??0,of:10,done:!!ac.done},stage:active?.stage??null,offer:offerAt&&{id:offerAt.id,kind:offerAt.kind,act:offerAt.act,label:offerAt.label,seconds:offerAt.seconds},auto:auto.get(),busy:!!active||!!(ac&&!acts.defs[ac.name].free)};
+   const ac=acts.active,view={near:near&&(near.act?{id:near.id,kind:near.kind,act:near.act}:{id:near.id,kind:near.kind}),act:ac&&{name:ac.name,state:ac.state,reps:ac.reps??0,of:10,done:!!ac.done},stage:active?.stage??null,offer:offerAt&&{id:offerAt.id,kind:offerAt.kind,act:offerAt.act,label:offerAt.label,icon:offerAt.icon,seconds:offerAt.seconds},auto:auto.get(),busy:!!active||!!(ac&&!acts.defs[ac.name].free)};
    const sig=JSON.stringify(view);if(sig!==viewSig){viewSig=sig;window.dispatchEvent(new CustomEvent('hiking:trail-view',{detail:view}));}
   },
   // ground() 뒤

@@ -1,0 +1,72 @@
+[
+ {
+  "name": "interaction",
+  "code": 1,
+  "sec": 156
+ },
+ {
+  "name": "hiking-interactions",
+  "code": 1,
+  "sec": 99
+ },
+ {
+  "name": "hiker-interactions",
+  "code": 1,
+  "sec": 79
+ },
+ {
+  "name": "rest-integration",
+  "code": 1,
+  "sec": 15
+ },
+ {
+  "name": "gadgets",
+  "code": 0,
+  "sec": 40
+ },
+ {
+  "name": "mobile-gadgets",
+  "code": 0,
+  "sec": 37
+ },
+ {
+  "name": "mobile-fb-photo",
+  "code": 0,
+  "sec": 32
+ },
+ {
+  "name": "trail-buttons",
+  "code": 1,
+  "sec": 107
+ },
+ {
+  "name": "trail-dropin",
+  "code": 0,
+  "sec": 43
+ },
+ {
+  "name": "trail-dropin-route",
+  "code": 1,
+  "sec": 67
+ },
+ {
+  "name": "trail-sound",
+  "code": 0,
+  "sec": 357
+ },
+ {
+  "name": "exhaustion",
+  "code": 0,
+  "sec": 48
+ },
+ {
+  "name": "radio",
+  "code": 1,
+  "sec": 141
+ },
+ {
+  "name": "arms-app",
+  "code": 0,
+  "sec": 27
+ }
+]

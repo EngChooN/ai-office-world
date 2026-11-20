@@ -10,7 +10,8 @@ export function installHudToggle(doc=document,win=window){
  doc.body.append(hint,restore);
  const hideButton=doc.getElementById('hud-hide');let timer=0;
  function apply(showHint){
-  app.classList.toggle('hud-hidden',hidden);restore.dataset.on=String(hidden);hideButton?.setAttribute('aria-pressed',String(hidden));
+  app.classList.toggle('hud-hidden',hidden);doc.body.classList.toggle('hud-hidden',hidden); // 공통 틀(11-18)이 #app 밖 body에 붙인 알약·☰·할 일 칩은 hiking-frame.css가 이 class로 숨긴다
+  restore.dataset.on=String(hidden);hideButton?.setAttribute('aria-pressed',String(hidden));
   clearTimeout(timer);
   if(hidden&&showHint){hint.dataset.show='true';timer=setTimeout(()=>{hint.dataset.show='false';},HINT_MS);}else hint.dataset.show='false';
  }

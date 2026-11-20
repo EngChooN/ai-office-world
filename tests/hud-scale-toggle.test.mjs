@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readPage} from '../scripts/html-include.mjs';
 import {readFileSync} from 'node:fs';
 import {installHudToggle,HUD_SAVE_KEY} from '../src/hud-toggle.js';
 const read=f=>readFileSync(new URL('../'+f,import.meta.url),'utf8');
@@ -14,7 +15,7 @@ test('H 키는 input·main의 이벤트로만 오고 HUD 모듈은 keydown을 �
  const src=read('src/hud-toggle.js');
  assert.ok(!/keydown|KeyH/.test(src.replace(/\/\/.*/g,'')));
  assert.match(read('src/input.js'),/KeyH:'hud-toggle'/);
- assert.match(read('hiking/index.html'),/id="hud-hide"/);
+ assert.match(readPage('hiking/index.html'),/id="hud-hide"/);
  assert.match(read('src/style.css'),/#app\.hud-hidden>\*:not\(#joystick\):not\(#look-zone\):not\(dialog\)/);
 });
 test('이벤트 한 번에 한 번만 바뀌고 저장된다',()=>{

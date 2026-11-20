@@ -3,7 +3,7 @@
 // 사용: 개발 서버(5310) → node scripts/verify-trail-dropin-route.mjs · 결과: artifacts/trail-hud/dropin-route.json
 import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
-const base=process.env.BASE_URL??'http://127.0.0.1:5310/',out='artifacts/trail-hud';mkdirSync(out,{recursive:true});
+const base=process.env.BASE_URL??'http://127.0.0.1:5310/',out=process.env.OUT??'artifacts/trail-hud';mkdirSync(out,{recursive:true});
 const {initialState}=await import('../src/movement.js');
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist','--use-angle=metal']});
 const ctx=await browser.newContext({viewport:{width:844,height:390},isMobile:true,hasTouch:true,deviceScaleFactor:2});
@@ -25,7 +25,11 @@ for(const site of sites){
  while(Date.now()-t0<90000){
   const o=await page.evaluate(()=>{const b=document.querySelector('#trail-chip[data-mode=offer] .tc-offer');return b&&{id:b.dataset.id,act:b.dataset.act};});
   if(o&&!row.offers.some(x=>x.id===o.id))row.offers.push(o);
-  if(o?.id===site.id&&!tapped){tapped=true;row.offerAt=+((Date.now()-t0)/1000).toFixed(1);await page.tap('.tc-offer');await page.waitForTimeout(400);row.played=await page.evaluate(()=>!!window.hiking.trail.status().active);}
+  if(o?.id===site.id&&!tapped){row.offerAt=+((Date.now()-t0)/1000).toFixed(1);
+   // 11-18 공통 틀부터 들르기 단추는 오른쪽 아래 할 일 칩(data-uf=todo)이다. 못 누르면 멈추지 않고 그 자리 결과에 남기고 다음 자리로 간다.
+   row.offerRect=await page.evaluate(()=>{const b=document.querySelector('.tc-offer'),r=b?.getBoundingClientRect();return r&&{rect:[r.left,r.top,r.width,r.height].map(Math.round),inView:r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight,uf:b.dataset.uf??null};});
+   try{await page.tap('.tc-offer',{timeout:8000});tapped=true;}catch(e){row.tapError=e.message.split('\n')[0];break;}
+   await page.waitForTimeout(400);row.played=await page.evaluate(()=>!!window.hiking.trail.status().active);}
   if(tapped){const s=await page.evaluate(()=>({a:window.hiking.trail.status().active,auto:window.hiking.snapshot().auto,s:window.hiking.snapshot().s}));if(!s.a&&s.auto){row.backToAuto=true;row.doneAt=+((Date.now()-t0)/1000).toFixed(1);await page.waitForTimeout(2500);row.movedOn=(await page.evaluate(()=>window.hiking.snapshot().s))>s.s;break;}}
   await page.waitForTimeout(250);
  }

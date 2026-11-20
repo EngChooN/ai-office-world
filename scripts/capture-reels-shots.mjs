@@ -51,7 +51,7 @@ try{for(const name of names.length?names:Object.keys(scenes)){
  const file=`${out}/${name}.png`;await (await waitChunks(page)).screenshot({path:file});
  // 풍경만: HUD 숨기기(화면 버튼과 같은 이벤트) + 남는 '화면 보이기' 단추·조이스틱 자리·출처 줄도 감춘다(출처는 캡션에 적는다).
  await page.evaluate(()=>window.dispatchEvent(new CustomEvent('hiking:hud-toggle')));
- await page.addStyleTag({content:'.hud-restore,.hud-hint,#joystick,#source-line,.source-line,#section-jump{display:none!important}'});await page.waitForTimeout(600);
+ await page.addStyleTag({content:'.hud-restore,.hud-hint,#joystick,#source-line,.source-line,#section-jump{display:none!important}body{visibility:hidden!important}canvas{visibility:visible!important}'});await page.waitForTimeout(600); // 11-18 공통 화면 틀(위 알약·☰·할 일 칩)도 숨기려고 그림 판만 남김
  await page.screenshot({path:`${out}/${name}-clean.png`});
  const info=await page.evaluate(()=>{const o=window.hiking.orientation(),s=window.hiking.snapshot();return {zone:s.zone,s:Math.round(s.s),view:s.view,cameraBearing:Math.round(((-o.cameraHeading*180/Math.PI)%360+360)%360*10)/10,pitchDeg:Math.round(o.pitch*180/Math.PI*10)/10,season:window.hiking.season().season,dpr:window.devicePixelRatio,env:document.getElementById('env-chip')?.innerText.replace(/\s+/g,' ')};});
  results[name]={label:sc.label,url,seed:seed?{s:seed.s,lateral:seed.lateral,view:seed.view}:null,wantBearing:bearing===null?null:Math.round(bearing*10)/10,...info,file,errors};

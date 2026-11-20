@@ -69,5 +69,6 @@ export function installHikingFrame({doc=document,win=window}={}){
   ufPlace(doc.body,{big:auto,small:[run,bino,phone],todo,labels});
  }
  layout();setInterval(layout,250);
+ win.addEventListener('hiking:trail-view',()=>win.requestAnimationFrame(layout)); // 들르기 단추는 뜨자마자 할 일 칩 자리로(0.25초 기다리지 않게)
  return frame;
 }

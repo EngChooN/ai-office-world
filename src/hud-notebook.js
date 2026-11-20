@@ -73,7 +73,7 @@ export function installNotebookHud(doc=document,win=window){
  fillIcons(app);
  const root=doc.documentElement,body=doc.body,$=s=>app.querySelector(s),all=s=>[...doc.querySelectorAll(s)];
  const send=(id,value)=>win.dispatchEvent(new CustomEvent('hiking:command',{detail:{id,value}}));
- const stamp=doc.getElementById('auto'),ctx=$('.nb-ctx'),tabs=$('.nb-tabs'),sheets=$('.nb-sheets');
+ const stamp=doc.getElementById('auto'),ctx=$('.nb-ctx'),tabs=$('.nb-tabs');
  if(new URLSearchParams(win.location?.search??'').has('multi'))body.classList.add('nb-multi');
  // ── 진행 카드 접기: 휴대폰 세로에서는 카드가 풍경을 많이 가려 처음엔 접고(상태·속도·스테미너만), 고른 상태는 기억한다 ──
  const card=$('.nb-card'),fold=doc.getElementById('card-fold');
@@ -127,7 +127,9 @@ export function installNotebookHud(doc=document,win=window){
  const DAY_KO={day:'낮',dusk:'노을',night:'밤'};
  installFeedback({exp:'hiking',openEvent:'hiking:feedback-open',doc,win,
   state:()=>({시간대:envView.day?`${DAY_KO[envView.day]}${envView.time?` · ${envView.time}`:''}`:'',날씨:envView.weather||''})});
- sheets.addEventListener('click',e=>{
+ // 시트는 11-18부터 ☰ 메뉴 탭 안으로 옮겨져(hiking-frame.js) .nb-sheets 밖에 있다 → 문서에서 받고 시트 안 누르기만 본다
+ doc.addEventListener('click',e=>{
+  if(!e.target.closest?.('.nb-sheet'))return;
   if(e.target.closest('[data-sheet-close]')){setSheet(null);return;}
   const b=e.target.closest('button');if(!b)return;
   if(b.dataset.proxy){doc.getElementById(b.dataset.proxy)?.click();b.blur();}

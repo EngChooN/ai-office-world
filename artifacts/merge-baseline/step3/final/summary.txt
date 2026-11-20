@@ -1,0 +1,14 @@
+controls-camera exit=0 64s
+facing exit=0 66s
+hud-toggle exit=0 52s
+mobile-buttons exit=0 29s
+mobile-pages exit=0 152s
+free-settings exit=1 228s
+interaction exit=1 177s
+hiking-interactions exit=0 173s
+hiker-interactions exit=0 75s
+rest-integration exit=0 42s
+trail-buttons exit=1 315s
+trail-dropin-route exit=1 543s
+radio exit=1 112s
+DONE

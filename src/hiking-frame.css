@@ -36,6 +36,13 @@ body.hk-card-open .hk-pill{background:var(--uf-ink);color:#fff}
 .uf-panel .nb-sheet.uf-moved>h4{display:none}
 .uf-panel .nb-sheet.uf-moved{display:block;padding:0 2px 4px}
 .uf-panel .nb-sheet.uf-moved[hidden]{display:none!important}
+/* 자유 설정(.fs-panel)은 예전 넓은 시트(PC 680·가로 590px)용 두 칸 배치라 ☰ 창(가로·PC 폭 340px) 안에서는 세로 화면처럼 한 칸으로 쌓는다(단추 겹침·글자 잘림, 11-20) */
+.uf-panel .fs-panel .fs-cols{grid-template-columns:1fr}
+.uf-panel .fs-panel .fs-start{grid-template-columns:repeat(4,minmax(0,1fr))}
+.uf-panel .fs-panel .fs-start button{flex-direction:column;justify-content:center;gap:1px;padding:2px;font-size:11px;text-align:center;white-space:normal;line-height:1.1;min-height:48px}
+.uf-panel .fs-panel .fs-start button i{width:18px;height:18px;font-size:10px}
+.uf-panel .fs-panel .fs-seg button{flex-direction:column;gap:2px;font-size:12px}
+.uf-panel .fs-panel .fs-go small{display:block}
 .uf-panel .hk-map-body{display:block;padding:0 2px}
 .uf-panel .hk-map-body .nb-mapbox{width:100%;max-height:30dvh}
 .uf-panel .hk-map-body .nb-mapbox svg{width:100%;height:auto;max-height:30dvh}
@@ -55,3 +62,8 @@ body.hk-uf #auto[data-uf=big][data-mode=hidden]{display:none!important}
 /* 간식 먹기 할 일 칩: 초콜릿 그림 + 「간식 먹기 5/5」 */
 body.hk-uf .hk-eat:not([data-uf]){display:none!important}
 body.hk-uf .hk-eat.off[data-uf]{opacity:.6}
+/* 들르기(.tc-offer)는 할 일 칩 자리(data-uf=todo, position:fixed)로 간다. 대상을 따라다니는 #trail-chip의 transform·will-change가 남아 있으면 그 칩 기준으로 놓여 화면 밖으로 나가므로 들르기 동안은 끈다 */
+body.hk-uf #app #trail-chip[data-mode=offer]{transform:none!important;will-change:auto}
+body.hk-uf #app #trail-chip .tc-offer:not([data-uf]){visibility:hidden} /* 할 일 칩 자리를 받기 전(뜬 직후 한 순간)에는 대상 위 자리에 비치지 않게 */
+/* 화면 숨기기(H·설정 「화면 숨기기」): #app 밖 body에 붙인 틀 요소도 같이 숨긴다(hud-toggle.js가 body.hud-hidden) */
+body.hk-uf.hud-hidden :is(.hk-topl,.uf-tr,.hk-eat){visibility:hidden!important;pointer-events:none!important}

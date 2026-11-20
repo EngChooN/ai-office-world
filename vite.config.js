@@ -1,5 +1,6 @@
 import {defineConfig} from 'vite';
 import {resolve} from 'node:path';
+import {htmlInclude} from './scripts/html-include.mjs';
 // GitHub Pages 하위 경로 배포는 BASE_PATH=/ai-office-world/ 로 빌드한다(scripts/deploy-pages.mjs). 기본은 '/'.
 const base=process.env.BASE_PATH||'/';
 // 다중 페이지(2026-11-08 메타버스 통합): / 허브 · /hiking/ 온라인 등산 · /smoking/ 온라인 흡연장 · /christmas/ 온라인 크리스마스(11-16).
@@ -8,4 +9,4 @@ const base=process.env.BASE_PATH||'/';
 export const PAGES={main:'index.html',hiking:'hiking/index.html',namsan:'hiking/namsan/index.html',smoking:'smoking/index.html',christmas:'christmas/index.html'};
 // 의견 보내기(src/feedback.js)의 「빌드」 줄에 쓰는 빌드 날짜(서울)
 const BUILD_DATE=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
-export default defineConfig({base,define:{__BUILD_DATE__:JSON.stringify(BUILD_DATE)},build:{sourcemap:true,chunkSizeWarningLimit:1500,rollupOptions:{input:Object.fromEntries(Object.entries(PAGES).map(([k,v])=>[k,resolve(import.meta.dirname,v)]))}}});
+export default defineConfig({base,plugins:[htmlInclude()],define:{__BUILD_DATE__:JSON.stringify(BUILD_DATE)},build:{sourcemap:true,chunkSizeWarningLimit:1500,rollupOptions:{input:Object.fromEntries(Object.entries(PAGES).map(([k,v])=>[k,resolve(import.meta.dirname,v)]))}}});

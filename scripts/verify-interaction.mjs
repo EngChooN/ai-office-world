@@ -2,20 +2,27 @@
 // 데스크톱은 키보드로, 아이폰 13 세로·가로는 터치(탭)로 각 상호작용을 실제로 누른다. 콘솔 오류가 하나라도 있으면 실패로 끝난다.
 import {waitChunks} from './lib/chunk-wait.mjs';
 import {chromium,devices} from '@playwright/test';import {mkdirSync,writeFileSync} from 'node:fs';
-const port=process.env.PORT??5197,dir='artifacts/interaction',pass=process.env.PASS??'desktop,mobile,multi';mkdirSync(dir,{recursive:true});
+const port=process.env.PORT??5197,dir=process.env.OUT??'artifacts/interaction',pass=process.env.PASS??'desktop,mobile,multi';mkdirSync(dir,{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
 const errors=[],out={steps:[]},log=(k,v={})=>{out.steps.push({k,...v});console.log(k,JSON.stringify(v).slice(0,300));};
-const url=(q='')=>`http://127.0.0.1:${port}/?start=gate&time=11:00&weather=clear&quality=low${q}`;
+// BASE_URL(예: http://127.0.0.1:5412/hiking/)을 주면 그 주소를 쓴다. 기본은 예전처럼 루트(등산 옵션이 붙으면 /hiking/로 넘어감)
+const base=process.env.BASE_URL??`http://127.0.0.1:${port}/`,hikingBase=/\/hiking\/$/.test(base)?base:base.replace(/\/?$/,'/hiking/');
+const url=(q='')=>`${base}?start=gate&time=11:00&weather=clear&quality=low${q}`;
 async function open(context,name,q=''){
  await context.addInitScript(()=>{localStorage.setItem('gwanak-sound-enabled','false');});
  const p=await context.newPage();p.on('pageerror',e=>errors.push(name+': '+e.message));p.on('console',m=>{if(m.type()==='error')errors.push(name+': '+m.text());});
- await p.goto(url(q));await p.waitForFunction(()=>window.hiking?.started&&window.hiking?.landscape().ready&&!hiking.rendering().compiling,null,{timeout:240000});
+ // 기다림 600초: 다른 점검이 같이 돌 때(부하 평균 80~100) 도심 32칸·간선도로(10MB)를 다 받기까지 4분을 넘겼다(11-20 측정, 도로 파일만 58초)
+ await p.goto(url(q));await p.waitForFunction(()=>window.hiking?.started&&window.hiking?.landscape().ready&&!hiking.rendering().compiling,null,{timeout:600000});
  await p.addStyleTag({content:'#resume-note{display:none!important}'});await p.waitForTimeout(800);return p;
 }
 const view=p=>p.evaluate(()=>hiking.interaction().view),prog=p=>p.evaluate(()=>hiking.interaction().progress),snap=p=>p.evaluate(()=>hiking.snapshot());
 const jump=async(p,id,back=3,face=true,along=0)=>{const ok=await p.evaluate(({id,back,face,along})=>hiking.jumpNear(id,{back,face,along}),{id,back,face,along});if(!ok)throw new Error('이동 실패 '+id);await p.waitForTimeout(700);};
 const shot=(p,name)=>p.screenshot({path:`${dir}/${name}.jpg`,type:'jpeg',quality:80});
-const tapPill=async(p,i=0)=>{const b=p.locator('.ix-pill').nth(i);await b.waitFor({state:'visible',timeout:5000});await b.tap();};
+// 11-06 d4fb93c 등산 수첩부터 세상 속 상호작용 줄은 화면 알약(.ix-pill)이 아니라 오른쪽 아래 빨간 도장(#auto, data-stamp=interact)·상황 꼬리표(.nb-alt choice-N)다.
+const tapPill=async(p,i=0)=>{if(i===0){await p.waitForFunction(()=>document.body.dataset.stamp==='interact',null,{timeout:5000});await p.locator('#auto').tap();return;}
+ const b=p.locator(`.nb-alt[data-cmd=choice-${i+1}]`);await b.waitFor({state:'visible',timeout:5000});await b.tap();};
+// 11-18 87babf7 공통 틀부터 수첩·쉬기는 ☰ 메뉴 탭이다.
+const menuTab=async(p,tab)=>{await p.locator('.uf-menu-btn').tap();await p.locator(`[data-uf-tab=${tab}]`).tap();await p.waitForTimeout(300);};
 const drain=async p=>{await p.keyboard.down('Shift');await p.keyboard.down('w');await p.waitForTimeout(9000);await p.keyboard.up('w');await p.keyboard.up('Shift');};
 
 // ═══ 데스크톱 1440×900 ═══
@@ -63,7 +70,7 @@ if(pass.includes('desktop')){
  writeFileSync(`${dir}/완등카드-1080x1350.png`,Buffer.from(card.url.split(',')[1],'base64'));log('완등 카드',{w:card.w,h:card.h,stamps:Object.keys((await prog(p)).stamps).length});
  await p.keyboard.press('Escape');await p.waitForTimeout(200);await p.keyboard.press('j');await p.waitForTimeout(400);await shot(p,'20-notebook-6of6');await p.keyboard.press('j');
  // 저장 유지: 새로고침 뒤에도 스탬프 6개
- await p.reload();await p.waitForFunction(()=>window.hiking?.started&&window.hiking?.landscape().ready,null,{timeout:240000});log('저장 유지',{stamps:Object.keys((await prog(p)).stamps).length});
+ await p.reload();await p.waitForFunction(()=>window.hiking?.started&&window.hiking?.landscape().ready,null,{timeout:600000});log('저장 유지',{stamps:Object.keys((await prog(p)).stamps).length});
  // 6) 쌍안경 이름표(정상)
  await jump(p,'stamp-6',4,false);await p.keyboard.press('b');await p.waitForTimeout(600);
  const aim=async target=>{for(let k=0;k<30;k++){const h=await p.evaluate(()=>hiking.orientation().cameraHeading),b=((-h*180/Math.PI)%360+360)%360,d=((target-b+540)%360)-180;if(Math.abs(d)<.8)return b;await p.keyboard.down(d>0?'e':'q');await p.waitForTimeout(Math.min(700,Math.max(30,Math.abs(d)/63*1000*.55)));await p.keyboard.up(d>0?'e':'q');await p.waitForTimeout(250);}return null;};
@@ -78,6 +85,8 @@ if(pass.includes('desktop')){
  await jump(p,'stamp-6',4);await p.keyboard.press('p');await p.waitForTimeout(700);v=await view(p);log('폰 틀 알약',{kind:v?.kind,label:v?.rows[0].label});await shot(p,'25-phone-frame-pill');
  await p.keyboard.press('f');await p.waitForTimeout(500);await p.keyboard.press('Space');await p.waitForTimeout(600);await shot(p,'26-phone-frame-on');log('폰 틀 켜고 촬영',{frame:(await p.evaluate(()=>hiking.interaction().frameOn)),photo:await p.evaluate(()=>hiking.lastPhoto)});await p.keyboard.press('p');
  // 8) 구간 이동과 함께
+ // 11-18 공통 틀(87babf7): 설정 시트(개발용 칸의 구간 이동 포함)는 ☰ 메뉴 「설정」 탭 안 → 메뉴를 열고 탭을 누른 뒤 구간 이동을 연다
+ await p.locator('.uf-menu-btn').click();await p.locator('[data-uf-tab=settings]').click();await p.waitForTimeout(200);
  await p.locator('.sj-toggle').click();await p.waitForTimeout(200);await shot(p,'27-section-jump-open');await p.locator('[data-jump=gate]').click();await p.waitForTimeout(600);log('구간 이동 뒤',{view:await view(p),panels:await p.evaluate(()=>document.querySelectorAll('.ix-board:not([hidden]),.ix-book:not([hidden]),.ix-card:not([hidden])').length)});
  // 9) 키 겹침: Q/E 회전은 그대로, 알약 없으면 F 정면 보기
  await jump(p,'sign-1352',3,false,-40);const y0=await p.evaluate(()=>hiking.orientation().yaw);await p.keyboard.down('e');await p.waitForTimeout(500);await p.keyboard.up('e');const y1=await p.evaluate(()=>hiking.orientation().yaw);await p.keyboard.press('f');await p.waitForTimeout(1500);const y2=await p.evaluate(()=>hiking.orientation().yaw),vF=await view(p);
@@ -88,14 +97,14 @@ if(pass.includes('desktop')){
 async function mobile(name,device){
  const ctx=await browser.newContext({...devices[device],deviceScaleFactor:2});const p=await open(ctx,name);const n=name;
  await p.evaluate(()=>{localStorage.removeItem('gwanak-interaction:v1');});
- await jump(p,'spring');let v=await view(p);log(n+' 약수 알약',{label:v?.rows[0].label,round:await p.locator('.ix-pill').first().evaluate(e=>{const r=e.getBoundingClientRect();return [Math.round(r.width),Math.round(r.height)];})});await shot(p,`${n}-01-pill-round`);
+ await jump(p,'spring');let v=await view(p);log(n+' 약수 알약',{label:v?.rows[0].label,round:await p.locator('#auto').evaluate(e=>{const r=e.getBoundingClientRect();return [Math.round(r.width),Math.round(r.height)];})});await shot(p,`${n}-01-pill-round`);
  await tapPill(p);await p.waitForTimeout(1300);await shot(p,`${n}-02-drink`);await p.waitForTimeout(2600);log(n+' 약수',{drinks:(await prog(p)).drinks});
  await jump(p,'stamp-2',4);await tapPill(p);await p.waitForTimeout(450);await shot(p,`${n}-03-stamp-toast`);log(n+' 스탬프',{n:Object.keys((await prog(p)).stamps).length});
  await jump(p,'sign-1352');await tapPill(p);await p.waitForTimeout(350);await shot(p,`${n}-04-sign-sheet`);log(n+' 이정표 시트',{open:await p.locator('.ix-board').isVisible()});await p.locator('.ix-board [data-a=close]').tap();await p.waitForTimeout(200);
  await jump(p,'board-valley');await tapPill(p);await p.waitForTimeout(350);await shot(p,`${n}-05-board-sheet`);await p.locator('.ix-board [data-a=close]').tap();
  await jump(p,'cairn',3.5);await p.waitForTimeout(300);await shot(p,`${n}-06-cairn-pill`);
- await p.locator('.ix-quick [data-q=stamps-toggle]').tap();await p.waitForTimeout(400);await shot(p,`${n}-07-notebook`);log(n+' 수첩',{open:await p.locator('.ix-book').isVisible()});await p.locator('.ix-book [data-a=close]').tap();
- await p.locator('.ix-quick [data-q=stretch]').tap();await p.waitForTimeout(1300);await shot(p,`${n}-08-stretch`);await p.waitForTimeout(3300);log(n+' 스트레칭',{count:(await prog(p)).stretches});
+ await menuTab(p,'book');await p.waitForTimeout(400);await shot(p,`${n}-07-notebook`);log(n+' 수첩',{open:await p.locator('.ix-book').isVisible()});await p.locator('.uf-x').tap();await p.waitForTimeout(300);
+ await menuTab(p,'rest');await p.locator('#nb-sheet-rest [data-cmd=stretch]').tap();await p.waitForTimeout(1300);await shot(p,`${n}-08-stretch`);await p.waitForTimeout(3300);log(n+' 스트레칭',{count:(await prog(p)).stretches});
  // 정상: 쌍안경(터치) + 폰 틀
  await jump(p,'stamp-6',4); await tapPill(p);await p.waitForTimeout(400);log(n+' 정상 스탬프',{n:Object.keys((await prog(p)).stamps).length});await shot(p,`${n}-09-summit-stamp`);
  await ctx.close();
@@ -105,7 +114,7 @@ if(pass.includes('mobile')){await mobile('iphone-portrait','iPhone 13');await mo
 if(pass.includes('multi')){
  const ctx=await browser.newContext({viewport:{width:1100,height:680},deviceScaleFactor:1});
  const open2=async name=>{const p=await ctx.newPage();p.on('pageerror',e=>errors.push(name+': '+e.message));p.on('console',m=>{if(m.type()==='error')errors.push(name+': '+m.text());});
-  await p.goto(`http://127.0.0.1:${port}/hiking/?multi=ix&name=${encodeURIComponent(name)}&start=entrance&time=13:00&weather=clear&quality=balanced&outfit=${name==='하늘'?2:4}`);await p.waitForFunction(()=>window.hiking?.started&&window.hiking?.multi,null,{timeout:180000});return p;};
+  await p.goto(`${hikingBase}?multi=ix&name=${encodeURIComponent(name)}&start=entrance&time=13:00&weather=clear&quality=balanced&outfit=${name==='하늘'?2:4}`);await p.waitForFunction(()=>window.hiking?.started&&window.hiking?.multi,null,{timeout:180000});return p;};
  const A=await open2('하늘'),B=await open2('바다');await A.bringToFront();await A.waitForTimeout(1200);
  const pb=await B.evaluate(()=>hiking.position());await A.evaluate(({x,z,h})=>hiking.multiApi.teleport({zone:'plaza',x,z,heading:h}),{x:pb.x-Math.sin(pb.heading)*3,z:pb.z-Math.cos(pb.heading)*3,h:pb.heading+Math.PI});await A.waitForTimeout(2200);
  const v=await A.evaluate(()=>hiking.interaction().view);log('멀티 알약',{label:v?.rows?.[0]?.label});await (await waitChunks(A)).screenshot({path:`${dir}/28-multi-greet-pill.jpg`,type:'jpeg',quality:80});

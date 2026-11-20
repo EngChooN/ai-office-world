@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readPage} from '../scripts/html-include.mjs';
 import {readFileSync,existsSync} from 'node:fs';
 import {route,sample,speedFor,entrancePolygon,DEMO_START,ENTRANCE_START,blockedByGate} from '../src/route.js';
 import {initialState,restore,advance,positionAt,playerPosition,setPlayerPosition,courseDistance,COURSE_LENGTH,ROUTE_MIN_S,setPose,RUN_MULTIPLIER} from '../src/movement.js';
@@ -127,7 +128,7 @@ test('main.js 연결: 로딩 전 입력·시간 차단, 광장 표시·zone 신�
  assert.match(main,/saved\?restore\(saved\):initialState\(\{start:'plaza'\}\)/);
  assert.match(main,/window\.hiking=\{started:false,ready:\(\)=>readyPromise/);
  assert.match(main,/surfaceHeight|walkingGround\.height\(state\.plaza\.x,state\.plaza\.z,false\)/);
- const html=readFileSync(new URL('../hiking/index.html',import.meta.url),'utf8');
+ const html=readPage('hiking/index.html');
  assert.match(html,/<link rel="icon" href="\/og\/favicon-hiking\.svg"/);assert.ok(existsSync(new URL('../public/og/favicon-hiking.svg',import.meta.url)));
  assert.equal(entranceConfig.hypothesis,'B');
 });

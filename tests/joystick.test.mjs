@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readPage} from '../scripts/html-include.mjs';
 import {readFileSync} from 'node:fs';
 import {STICK,stickDirection,stickFollow,clampStickBase} from '../src/joystick.js';
 const R=STICK.radius,at=(deg,r=.8)=>{const a=deg*Math.PI/180;return [Math.sin(a)*R*r,-Math.cos(a)*R*r];};
@@ -29,6 +30,6 @@ test('기준점은 화면 안쪽으로 눌러 고정',()=>{
 test('입력 연결: 왼쪽 절반 터치는 조이스틱, 마우스·기구 사용 중은 둘러보기',()=>{
  const src=readFileSync(new URL('../src/input.js',import.meta.url),'utf8');
  assert.match(src,/e\.pointerType==='mouse'\|\|e\.clientX>=window\.innerWidth\/2\|\|mode\(\)!=='none'/);
- const html=readFileSync(new URL('../hiking/index.html',import.meta.url),'utf8');
+ const html=readPage('hiking/index.html');
  for(const id of ['binoculars','phone','view','headlamp','face-forward','stamps','stretch','map-toggle','sound-toggle','hud-hide','help-toggle','auto','sit','tea','run'])assert.ok(html.includes(`id="${id}"`),id);
 });

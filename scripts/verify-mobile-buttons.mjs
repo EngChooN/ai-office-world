@@ -1,6 +1,9 @@
-// 아이폰 세로(390×844)·가로(844×390)에서 책갈피 탭 5개·시점 칩·도장·도장 둘레 칩이 안전 영역 안에 보이고 눌리는지 확인한다(2026-11-06).
+// 아이폰 세로(390×844)·가로(844×390)에서 ☰ 단추·☰ 메뉴 탭 5개·시점 칩·도장·도장 둘레 칩이 안전 영역 안에 보이고 눌리는지 확인한다(2026-11-06).
 // 헤드리스 WebKit은 env(safe-area-inset-*)가 0이라 아이폰 13 노치·홈 막대 값을 HUD 변수(--sl·--sr·--st·--sb)로 넣어 흉내 낸다.
-// 사용: npm run preview(4173) → node scripts/verify-mobile-buttons.mjs  · 결과: artifacts/mobile-buttons/
+// 11-18 87babf7 공통 화면 틀부터 아래 책갈피 탭 줄(지도·수첩·배낭·쉬기·설정)은 ☰ 메뉴 창 안의 탭이다. 그래서 화면에서는 ☰ 단추(.uf-menu-btn)를 보고,
+// ☰을 연 뒤 메뉴 탭 5개([data-uf-tab])를 같은 기준(보임·안전 영역 안·가려지지 않음·40px 이상)으로 본다. 틀은 안전 영역을 --uf-s* 변수로 받아 같이 흉내 낸다.
+// 구간 이동은 ☰ → 설정 탭 → 「구간 이동」으로 연다.
+// 사용: npm run preview(4173) → node scripts/verify-mobile-buttons.mjs  · 결과: artifacts/mobile-buttons/ (BASE_URL=http://127.0.0.1:5411/hiking/ 처럼 주소를 바꿀 수 있음)
 import {webkit,devices} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
 const base=process.env.BASE_URL??'http://127.0.0.1:4173/',out=process.env.OUT??'artifacts/mobile-buttons';mkdirSync(out,{recursive:true});
@@ -12,10 +15,9 @@ for(const [name,viewport,safe] of VIEWS){
  const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base+'?start=entrance&time=11:00&weather=clear');
  await page.waitForFunction(()=>window.hiking?.started===true,null,{timeout:300000});
- await page.addStyleTag({content:`:root{--sl:${safe.sl}px!important;--sr:${safe.sr}px!important;--st:${safe.st}px!important;--sb:${safe.sb}px!important}#resume-note{display:none!important}`});
+ await page.addStyleTag({content:`:root{--sl:${safe.sl}px!important;--sr:${safe.sr}px!important;--st:${safe.st}px!important;--sb:${safe.sb}px!important;--uf-sl:${safe.sl}px!important;--uf-sr:${safe.sr}px!important;--uf-st:${safe.st}px!important;--uf-sb:${safe.sb}px!important}#resume-note{display:none!important}`});
  await page.waitForTimeout(1500);
- const check=await page.evaluate(safe=>{
-  const sel=['#map-toggle','#stamps','[data-tab=backpack]','[data-tab=rest]','[data-tab=settings]','#view','#auto','#run','#binoculars','#phone'];
+ const measure=(sel)=>page.evaluate(([safe,sel])=>{
   const box={l:safe.sl,t:safe.st,r:innerWidth-safe.sr,b:innerHeight-safe.sb};
   const rows=sel.map(s=>{const el=document.querySelector(s);if(!el)return {sel:s,missing:true};const r=el.getBoundingClientRect(),cs=getComputedStyle(el);
    const visible=r.width>0&&r.height>0&&cs.display!=='none'&&cs.visibility!=='hidden';
@@ -28,23 +30,31 @@ for(const [name,viewport,safe] of VIEWS){
    if(round(rows[i].sel)&&round(rows[j].sel)){const d=Math.hypot(a[0]+a[2]/2-b[0]-b[2]/2,a[1]+a[3]/2-b[1]-b[3]/2);if(d<(Math.min(a[2],a[3])+Math.min(b[2],b[3]))/2)overlaps.push([rows[i].sel,rows[j].sel]);continue;}
    if(a[0]<b[0]+b[2]&&a[0]+a[2]>b[0]&&a[1]<b[1]+b[3]&&a[1]+a[3]>b[1])overlaps.push([rows[i].sel,rows[j].sel]);}
   return {rows,overlaps};
- },safe);
+ },[safe,sel]);
+ const check=await measure(['.uf-menu-btn','#view','#auto','#run','#binoculars','#phone']);
+ // ☰ 메뉴 탭 5개(예전 책갈피 탭 #map-toggle·#stamps·[data-tab=backpack|rest|settings] 자리)
+ await page.tap('.uf-menu-btn');await page.waitForTimeout(400);
+ const menuTabs=await measure(['map','book','backpack','rest','settings'].map(t=>`[data-uf-tab=${t}]`));
+ await page.screenshot({path:`${out}/${name}-menu.png`});
+ await page.tap('.uf-x');await page.waitForTimeout(300);
+ const menuClosed=await page.evaluate(()=>!window.hikingFrame?.isOpen);
  // 시점 칩을 실제로 눌러 1인칭↔3인칭이 바뀌는지
  const v0=await page.evaluate(()=>hiking.snapshot().view);await page.tap('#view');await page.waitForTimeout(400);const v1=await page.evaluate(()=>hiking.snapshot().view);
  const label=await page.evaluate(()=>document.querySelector('#view span').textContent);
  await page.waitForTimeout(800);
  await page.screenshot({path:`${out}/${name}.png`});
  await page.tap('#view');await page.waitForTimeout(300);
- // 구간 이동(개발용): 설정 탭 → 구간 이동 → 목록이 보이는지
- await page.tap('[data-tab=settings]');await page.waitForTimeout(300);
+ // 구간 이동(개발용): ☰ → 설정 탭 → 구간 이동 → 목록이 보이는지
+ await page.tap('.uf-menu-btn');await page.waitForTimeout(300);await page.tap('[data-uf-tab=settings]');await page.waitForTimeout(300);
  const jumpBtn=await page.evaluate(()=>{const b=document.querySelector('#section-jump .sj-toggle');const r=b?.getBoundingClientRect();return !!r&&r.width>0&&r.height>0&&!document.querySelector('#section-jump').hidden;});
  if(jumpBtn){await page.tap('#section-jump .sj-toggle');await page.waitForTimeout(300);}
  const jumpList=await page.evaluate(()=>[...document.querySelectorAll('.nb-jump [data-jump]')].filter(b=>b.getBoundingClientRect().height>0).length);
  await page.screenshot({path:`${out}/${name}-jump.png`});
- const bad=check.rows.filter(r=>r.missing||!r.visible||!r.inside||!r.tappable||r.size<40);
- const viewToggled=v0!==v1;if(bad.length||check.overlaps.length||!viewToggled||errors.length||!jumpBtn||!jumpList)failed++;
- report[name]={safe,jumpBtn,jumpList,viewBefore:v0,viewAfter:v1,viewToggled,label,bad,overlaps:check.overlaps,rows:check.rows,errors};
- console.log(name,'시점',v0,'→',v1,'라벨',label,'| 문제',bad.map(b=>b.sel+(b.missing?' 없음':!b.visible?' 안보임':!b.inside?' 안전영역밖':!b.tappable?' 가려짐':' 작음')),'| 겹침',check.overlaps,'| 오류',errors,'| 구간 이동',jumpBtn,jumpList+'곳');
+ const isBad=r=>r.missing||!r.visible||!r.inside||!r.tappable||r.size<40;
+ const bad=[...check.rows,...menuTabs.rows].filter(isBad),overlaps=[...check.overlaps,...menuTabs.overlaps];
+ const viewToggled=v0!==v1;if(bad.length||overlaps.length||!menuClosed||!viewToggled||errors.length||!jumpBtn||!jumpList)failed++;
+ report[name]={safe,jumpBtn,jumpList,viewBefore:v0,viewAfter:v1,viewToggled,label,bad,overlaps,rows:check.rows,menuTabs:menuTabs.rows,menuClosed,errors};
+ console.log(name,'시점',v0,'→',v1,'라벨',label,'| 문제',bad.map(b=>b.sel+(b.missing?' 없음':!b.visible?' 안보임':!b.inside?' 안전영역밖':!b.tappable?' 가려짐':' 작음')),'| 겹침',overlaps,'| ☰ 닫힘',menuClosed,'| 오류',errors,'| 구간 이동',jumpBtn,jumpList+'곳');
  await context.close();
 }
 await browser.close();

@@ -7,6 +7,7 @@ import {mountRestUI} from './rest-ui.js';
 import {installHudToggle} from './hud-toggle.js';
 import {installGadgetUI,viewfinderCrop} from './gadget-ui.js';
 // 관악산 전용 코스·위치 모델·정상·광장은 산 정의 한 파일에서 읽는다(통합 2단계, 자리만 옮기기)
+import {applyMountainText} from './mountain-text.js';
 import {GWANAK,route,sample,MATERIALS,isStairs,checkpoints,DEMO_START,durationBetween,geographicToLocal,floorHeight as routeFloorHeight,
  initialState,restore,SAVE_KEY,advance,setPose,positionAt,isOffTrail,playerPosition,setPlayerPosition,courseDistance,COURSE_LENGTH,strideAt,strideScaleFor,onStairs,lateralLimit,ROUTE_MIN_S,
  summitWalkMap,ROUTE_END,projectToRoute,SUMMIT_CENTER,insidePlaza,fromGate} from './mountains/gwanak.js';
@@ -86,8 +87,10 @@ let userVolume=.7;try{const stored=localStorage.getItem(VOLUME_SAVE_KEY);if(stor
 if(sharedSound.has)userVolume=sharedSound.volume;
 audio.setVolume(userVolume);
 const ambient=new AmbientAudio({base:`${import.meta.env.BASE_URL}sounds/ambient/`,enabled:soundEnabled,volume:userVolume});
-const ambientCredits=document.createElement('p');ambientCredits.textContent='환경음은 실제 관악산 녹음이 아닌 CC0 임시음입니다. 구간·거리·고도·음량은 추정이며 현장·귀 검수 전입니다. 물·숲 바람·능선 바람·새: Thimras (Park Ambiences), 까마귀: fvcalderan (Crow)·zeroisnotnull (Crow Caw), 정상 웅성임: StarNinjas (Crowd Shouting/Speaking Ambience), 먼 도시: IgnasD (High Traffic Road Sounds). 목탁: 산디자인 자체 합성 임시음. 모노 32kHz 변환·크로스페이드·음량 정규화.';
-const sourceLink=document.createElement('a');sourceLink.href=`${import.meta.env.BASE_URL}environment/출처-이용조건.md`;sourceLink.textContent='환경음 원본·제작자·작품 URL·CC0 이용 조건 전체 표';sourceLink.target='_blank';sourceLink.rel='noopener';document.querySelector('.sound-credits').append(ambientCredits,sourceLink);
+// 산마다 다른 화면 글(통합 3단계): 공통 틀의 data-mt 자리를 산 정의 글로. 관악산은 틀의 글과 같다
+applyMountainText(document,GWANAK.text);
+const ambientCredits=document.createElement('p');ambientCredits.textContent=GWANAK.text.ambientCredits;
+const sourceLink=document.createElement('a');sourceLink.href=`${import.meta.env.BASE_URL}${GWANAK.text.ambientSourcePath}`;sourceLink.textContent=GWANAK.text.ambientSourceLabel;sourceLink.target='_blank';sourceLink.rel='noopener';document.querySelector('.sound-credits').append(ambientCredits,sourceLink);
 // 라디오가 켜져 있으면 환경음을 ×0.7(아래 hiking:radio). 소리 이벤트보다 먼저 선언해 둔다
 let radioOn=false;const ambientVolume=()=>audio.volume*(radioOn?.7:1);
 const unlockSound=()=>{void audio.unlock();if(audio.context)ambient.attach(audio.context,audio.master);};window.addEventListener('pointerdown',unlockSound,{capture:true,passive:true});window.addEventListener('keydown',unlockSound,{capture:true});
@@ -304,7 +307,7 @@ function frame(now,background=false){
  if(now-uiAt>150){updateUI();uiAt=now;}
  if(started&&now-saveAt>700){save();saveAt=now;}
  if(!started&&loading.phase==='loading')checkStability(frameSeconds*1000,now);
- if((state.summitArrived||(state.zone==='route'&&state.s>=route.length))&&!summitShown){summitShown=true;state.summitArrived=true;$('summit-summary').textContent=`이번 체험 ${state.distance.toFixed(1)}m · 걸은 시간 ${time(state.elapsed)} · ${state.steps}걸음 · 상승 ${state.ascent.toFixed(1)}m · ${state.sessions}회 접속. DSM 지형 체험 기록입니다.`;// 완등 기록(산 고르기·지도 도장, 자유 설정 열림). 구간 이동으로 정상에 간 경우는 이 화면이 뜨지 않으므로 기록되지 않는다.
+ if((state.summitArrived||(state.zone==='route'&&state.s>=route.length))&&!summitShown){summitShown=true;state.summitArrived=true;$('summit-summary').textContent=`이번 체험 ${state.distance.toFixed(1)}m · 걸은 시간 ${time(state.elapsed)} · ${state.steps}걸음 · 상승 ${state.ascent.toFixed(1)}m · ${state.sessions}회 접속. ${GWANAK.text.summitNote}`;// 완등 기록(산 고르기·지도 도장, 자유 설정 열림). 구간 이동으로 정상에 간 경우는 이 화면이 뜨지 않으므로 기록되지 않는다.
 if(!multiMode){try{const record=recordSummit(localStorage,GWANAK.summitId,{date:seoulClock(Date.now()).date,sec:state.shortcut?null:state.elapsed});window.dispatchEvent(new CustomEvent('hiking:summit-record',{detail:{id:'gwanak',record}}));}catch{}}
 $('summit').showModal();save();}
  if(!document.hidden&&frameSeconds>0){frameSum+=frameSeconds;frames++;}
