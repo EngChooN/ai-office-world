@@ -29,7 +29,7 @@ test('관악산은 숨는 자리가 없다(화면 그대로)', ()=>{
 test('남산은 휴대폰 카메라·땅에 앉기·스테미너·스트레칭·수첩 탭·완등 카드 자리를 숨긴다', ()=>{
  const d=fakeDoc(FRAME_KEYS);const n=applyMountainFeatures(d,NAMSAN_MOUNTAIN);
  const off=new Set(d.els.filter(e=>e.hidden).map(e=>e.dataset.feature));
- assert.deepEqual([...off].sort(),['book','groundSit','phone','stamina','stretch','summitCard']);
+ assert.deepEqual([...off].sort(),['book','groundSit','stamina','stretch','summitCard']);
  assert.equal(n,d.els.filter(e=>e.hidden).length);assert.equal(d.documentElement.dataset.mountain,'namsan');
  assert.equal(featureFlags(GWANAK.features).groundSit,true);assert.equal(featureFlags(NAMSAN_FEATURES).groundSit,false);
 });

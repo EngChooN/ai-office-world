@@ -2,10 +2,10 @@
 //  남산 페이지는 공통 화면 조각(src/frame/hiking-body.html, 관악산 글이 적혀 있음)을 쓰므로, 로딩 화면이 뜨기 전에 src/mountains/page-text.js가 이 글로 바꾼다.
 //  산 정의 src/mountains/namsan.js가 이것을 다시 내보낸다(NAMSAN_MOUNTAIN.text·features).
 // 기능 스위치: 이 산에 있는 기능만 켠다. 관악산 GWANAK.features와 같은 이름(한쪽에만 있는 기능은 false).
-//  관악산 전용(남산에 없는 것): 즐길거리(산스장·초콜릿·동물·헥헥/쥐)·라디오·휴대폰 카메라·스트레칭·스테미너·스탬프 수첩 탭·완등 기록 카드·구간별 환경음
+//  관악산 전용(남산에 없는 것): 즐길거리(산스장·초콜릿·동물·헥헥/쥐)·라디오·스트레칭·스테미너·스탬프 수첩 탭·완등 기록 카드·구간별 환경음
 //  남산 전용: 사랑의 자물쇠·순환버스·정상 야경 벤치
 export const NAMSAN_FEATURES=Object.freeze({
- stamps:true,boards:true,summitStone:true,binoculars:true,phone:false,
+ stamps:true,boards:true,summitStone:true,binoculars:true,phone:true,
  spring:true,dip:true,cairn:true,stretch:false,
  sit:'bench',tea:true,           // 앉기는 정상 벤치에서(땅에 앉기 없음), 앉으면 차 마시기
  trailFun:false,animals:false,radio:false,stamina:false,

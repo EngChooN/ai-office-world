@@ -125,7 +125,7 @@ export function createNamsanInteract({spots=[],items=[],benches=[],busStops=[],p
  function binoModel(){
   const p=player(),cam=cameraInfo(),b=headingToBearing(p.heading),vis=weatherVisibility(weather().kind);
   const half=Math.atan(Math.tan(cam.fov*Math.PI/360)*cam.aspect)*180/Math.PI/Math.max(.5,cam.zoom);
-  if(!enabled(p)||!geo)return {bearing:b,tape:[],labels:[],edges:[],focus:null,note:'전망 쉼터·정상에서 이름표가 보여요'};
+  if(!enabled(p)||!geo)return {bearing:b,tape:[],labels:[],edges:[],focus:null,note:'이름표가 보여요'};
   const rows=NS_LANDMARKS.map(lm=>{const r=landmarkAt(lm,geo(lm.lat,lm.lon),{x:p.x,z:p.z,elevation:p.elevation??0},vis);return lm.id==='lm-gwanak'&&summitCount()>0?{...r,note:`다녀온 산 · 완등 ${summitCount()}회`}:r;});
   const c=classifyLandmarks(rows,b,{halfFov:half});
   const tape=c.tape.map(r=>({id:r.id,delta:r.delta,short:r.name.replace(/ \((.*)\)/,'($1)'),directionOnly:r.directionOnly}));

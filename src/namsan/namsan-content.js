@@ -44,7 +44,7 @@ export const NS_LANDMARK_ABOUT=Object.freeze({
  'lm-seoulstation':{line:'서울의 큰 기차역',body:['전국으로 가는 고속열차와 공항철도가 떠나는 큰 기차역이에요. 옆에 붉은 벽돌 옛 역 건물이 남아 있어요.']},
 });
 // 이름표가 보이는 곳: 정상 광장 안 또는 이 높이(m) 이상(전망 쉼터 약 219~233m)
-export const NS_LANDMARK_MIN_ELEVATION=215;
+export const NS_LANDMARK_MIN_ELEVATION=0;   // 코스 어디서나(11-21: 관악산 쌍안경처럼 이름표가 보이게. 예전엔 215m 이상만)
 
 // ④ 행동(관악산 ACTIONS 시간·소리 그대로, 남산은 체력 칸이 없어 끝 문구만 다름)
 export const NS_ACTIONS=Object.freeze({

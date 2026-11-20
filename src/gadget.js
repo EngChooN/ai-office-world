@@ -64,7 +64,7 @@ export const lookScale=state=>1/Math.max(1,viewZoom(state));
 export const hazeScale=zoom=>1/Math.sqrt(Math.max(1,zoom));
 // 장면 LOD·거리 판정에 쓰는 배율. THREE.LOD는 camera.zoom을 이미 나눈다.
 export const lodZoom=camera=>Math.max(1,camera?.zoom||1);
-export function photoFilename(date=new Date()){const p=n=>String(n).padStart(2,'0');return `관악산-${date.getFullYear()}${p(date.getMonth()+1)}${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}.png`;}
+export function photoFilename(date=new Date(),mountain='관악산'){const p=n=>String(n).padStart(2,'0');return `${mountain}-${date.getFullYear()}${p(date.getMonth()+1)}${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}${p(date.getSeconds())}.png`;}
 // 셀카 카메라 위치: 머리(eye) 앞쪽(heading 기준) 팔 길이, 오른쪽 약간, pitch만큼 위아래로 돈다. 반환값은 [x,y,z].
 export function selfiePosition(eye,heading,pitch=0){
  const fx=-Math.sin(heading),fz=-Math.cos(heading),rx=Math.cos(heading),rz=-Math.sin(heading),c=Math.cos(pitch),s=Math.sin(pitch);
