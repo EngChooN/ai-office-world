@@ -77,3 +77,17 @@ body.gadget-on .ns-big,body.gadget-on .ns-run:not(.ns-bino),body.gadget-on .ns-t
 body.ns-riding .ns-run,body.ns-riding #joystick{display:none!important}
 /* 자물쇠 카드가 떠 있는 동안: 아래 단추·칩·조이스틱을 숨겨 카드와 겹치지 않게(휴대폰 세로·가로) */
 body.ns-lock-open .ns-big,body.ns-lock-open .ns-run,body.ns-lock-open .ns-todo,body.ns-lock-open #joystick{display:none!important}
+/* 11-20 월드디자인 확인 반영: 큰 단추가 행동으로 바뀜(관악산 도장과 같은 뜻) + 위 할 일 카드(공통 틀 todo 자리) */
+.ns-big .ns-big-glyph{font:900 26px/1 serif}
+.ns-big.busy{background:conic-gradient(#e08a5a var(--p,0%),#b0442f 0)!important;cursor:default}
+.ns-ctx{display:flex;flex-direction:column;align-items:stretch;gap:2px;font-family:-apple-system,"Apple SD Gothic Neo",sans-serif;text-align:left}
+.ns-ctx[hidden]{display:none!important}
+:root.uf .ns-ctx[data-uf=todo]{height:auto!important;min-height:0!important;width:min(250px,calc(100vw - 150px))!important;max-width:min(250px,calc(100vw - 150px))!important;flex-direction:column!important;align-items:stretch!important;padding:8px 10px!important;border-radius:14px!important;border:0!important;background:#fbf3df!important;gap:2px!important}
+.ns-ctx-head{font-size:14px;color:#3a2b22}.ns-ctx>small{font-size:11.5px;color:#7a6650;margin-bottom:2px}
+.ns-ctx button{display:flex;flex-direction:column;align-items:flex-start;min-height:44px;justify-content:center;padding:4px 6px;border:0;border-top:1.5px dashed #d8c7a6;background:none;color:#3a2b22;font:700 13px/1.2 inherit;cursor:pointer;text-align:left}
+.ns-ctx button small{font-size:11px;font-weight:600;color:#7a6650}
+.ns-ctx kbd{margin-left:6px;padding:0 4px;border-radius:5px;background:#3a2b22;color:#fff;font:800 10px/16px inherit}
+body.touch .ix-board kbd,body.touch .ix-board .key{display:none!important}
+body.ns-acting #joystick::after{display:none!important}
+.ns-lock-in small{font-size:12.5px}
+@media (max-height:500px) and (orientation:landscape){:root.uf .ns-ctx[data-uf=todo]{width:min(230px,40vw)!important;max-width:min(230px,40vw)!important}.ns-ctx button{min-height:44px;padding:2px 6px}}

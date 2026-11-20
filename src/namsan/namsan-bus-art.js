@@ -123,11 +123,31 @@ export function buildBus({name='남산 순환버스'}={}){
  for(const s of [-1,1]){const p=new THREE.Mesh(new THREE.PlaneGeometry(3.6,.45),sideMat);p.rotation.y=s*Math.PI/2;p.position.set(s*(hw+.012),.78,s>0?-1.0:-1.6);p.name='버스 옆 글자';root.add(p);}
  // 실내 등(밤): 천장 띠
  const ceil=new THREE.Mesh(new THREE.BoxGeometry(.3,.03,L-1.2),std('#fff6dc',{emissive:new THREE.Color('#ffe7b0'),emissiveIntensity:0}));ceil.position.set(0,BUS.windowTop-.02,0);ceil.name='버스 실내등';root.add(ceil);
+ // 밤 불빛(11-20): 앞등·뒷등 둘레 번짐 + 앞 바닥에 비치는 빛 웅덩이. 더하기 섞기 그림이라 실제 광원 0개·그리기 3번(밤이 아니면 숨김)
+ const glowTex=canvasTex(128,128,(g,w,h)=>{const r=g.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.25,'rgba(255,255,255,.55)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,w,h);});
+ const poolTex=canvasTex(128,256,(g,w,h)=>{g.save();g.scale(1,h/w*1.9);const cy=2,r=g.createRadialGradient(w/2,cy,0,w/2,cy,w/2);r.addColorStop(0,'rgba(255,255,255,.9)');r.addColorStop(.5,'rgba(255,255,255,.32)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,w,h);g.restore();}); // 앞뒤로 긴 타원(네 변 모두 0으로 흐려 네모 테가 안 보임)
+ const addMat=(color,map)=>new THREE.MeshBasicMaterial({color,map,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,fog:false,side:THREE.DoubleSide});
+ const glowGeo=(list,r)=>mergeGeometries(list.map(([x,y,z,dz])=>new THREE.PlaneGeometry(r*2,r*2).rotateY(dz<0?Math.PI:0).translate(x,y,z+dz*.02)));
+ const nightFx=[
+  [glowGeo([-1,1].map(s=>[s*(hw-.42),.82,hl+.05,1]),.34),addMat('#fff0c0',glowTex),'버스 앞등 번짐'],
+  [glowGeo([-1,1].map(s=>[s*(hw-.3),.95,-hl-.03,-1]),.3),addMat('#ff4a3a',glowTex),'버스 뒷등 번짐'],
+  [new THREE.PlaneGeometry(W+.4,7).rotateX(-Math.PI/2).translate(0,.1,hl+3.3),addMat('#ffe6a8',poolTex),'버스 앞 빛 웅덩이'],
+ ].map(([geo,mat,name])=>{const m=new THREE.Mesh(geo,mat);m.name=name;m.userData.noToon=true;m.userData.fxMat=mat;m.renderOrder=3;m.visible=false;m.castShadow=m.receiveShadow=false;root.add(m);return m;});
+ // 툰 변환(toonify)은 재질을 새로 만들어 끼우므로 밤 조절은 그때그때 메시에서 찾는다(예전엔 옛 재질을 고쳐 화면에 안 나왔음)
+ const live=()=>{const pick=n=>root.getObjectByName(n)?.material;const dest=[];root.traverse(o=>{if(o.name==='버스 행선지'&&o.material)dest.push(o.material);});
+  const gm=new Set();root.traverse(o=>{if((o.name==='버스 유리'||o.parent?.name==='버스 문')&&o.material?.transparent)gm.add(o.material);});
+  return {light:pick('light'),tail:pick('tail'),ceil:ceil.material,dest:[...new Set(dest)],glass:[...gm]};};
+ let lastN=-1;
  let rolled=0;
  root.userData={kind:'bus',size:{length:L,width:W,height:BUS.height},seats,doorSide:-1,doorZ:[...BUS.door.z],
   // 바퀴 굴리기: 지난번 뒤로 간 거리(m, 뒤로 가면 음수)
   drive(d){rolled+=d/BUS.wheelR;for(const w of wheels)w.rotation.x=rolled;},
-  setNight(n){glass.emissive.set('#ffd98a');glass.emissiveIntensity=n*.45;mats.light.emissiveIntensity=.15+n*2.4;mats.tail.emissiveIntensity=.25+n*1.2;destMat.emissiveIntensity=.35+n*.9;ceil.material.emissiveIntensity=n*2.2;},
+  // 밤 0~1: 앞등·뒷등·행선지·실내등·창(따뜻한 빛) + 번짐·빛 웅덩이. 매 프레임 불러도 값이 바뀔 때만 고친다
+  setNight(n){n=Math.max(0,Math.min(1,n));if(Math.abs(n-lastN)<.004)return;lastN=n;const M=live();
+   for(const g of M.glass){g.emissive?.set('#ffcf7a');if(g.emissive)g.emissiveIntensity=n*.6;g.opacity=.28+n*.1;}
+   if(M.light?.emissive)M.light.emissiveIntensity=.15+n*2.4;if(M.tail?.emissive)M.tail.emissiveIntensity=.25+n*1.4;
+   for(const d of M.dest)if(d.emissive)d.emissiveIntensity=.35+n*.9;if(M.ceil?.emissive)M.ceil.emissiveIntensity=n*2.2;
+   const k=Math.max(0,(n-.15)/.85);for(const [j,m] of nightFx.entries()){if(m.material!==m.userData.fxMat)m.material=m.userData.fxMat;m.visible=k>.01;m.material.opacity=k*[.8,.7,.3][j];}},
   // 문 열림 0(닫힘)~1(열림)
   setDoors(k){for(const d of doors)d.position.z=d.userData.z0+d.userData.dir*BUS.door.width*.46*k;}};
  return root;
@@ -232,7 +252,8 @@ export function buildBusStop(st,{kind='shelter'}={}){
   board.position.set(back+toRoad*D/2,1.35,-Lz/2+.06);board.name='정류장 시간표';root.add(board);
   const board2=board.clone();board2.rotation.y=Math.PI;board2.position.z=-Lz/2+.04;root.add(board2);
   root.userData.setBoard=lines=>{const old=tex;tex=boardTexture(lines);board.material.map=board.material.emissiveMap=tex;board.material.needsUpdate=true;old?.dispose();};
-  root.userData.setNight=n=>{board.material.emissiveIntensity=.08+n*.7;};
+  // 밤: 시간표 판은 스스로 아주 약하게만 빛난다(11-20 — 예전 .08+n*.7은 흰 바탕이 하얗게 번져 글이 안 읽혔음). 글은 가로등 빛으로 읽힌다
+  root.userData.setNight=n=>{for(const m of [board,board2])if(m.material.emissive){m.material.emissive.set('#ffe2b8');m.material.emissiveIntensity=.06+n*.2;}};
   root.userData.bench={x:back+toRoad*.32,y:.45,z:0,heading:toRoad>0?Math.PI/2:-Math.PI/2}; // 대기소 의자(로컬)
  }
  // 둥근 정류장 표지: 차로 가장자리 0.6m 안쪽(보도), 버스 앞문 가까이(+Z 쪽)
@@ -296,6 +317,7 @@ export function buildNamsanBus(G){
  const road=buildBusRoad(G),stop=buildBusStop(G.bus.stops.start),drop=buildSummitDropOff(G);
  const bus=buildBus();placeOnLane(bus,G.bus.cycle,G.bus.stops.start.s);bus.userData.setDoors(1);
  root.add(road,stop,drop,bus);
- const update=(t,night)=>{bus.userData.setNight(night);stop.userData.setNight?.(night);};
+ // 밤 불빛은 이 묶음에 붙은 버스 모두(월드개발이 더 만든 버스도 root에 붙이므로 같이 켜짐)
+ const update=(t,night)=>{for(const o of root.children)if(o.userData.kind==='bus')o.userData.setNight(night);stop.userData.setNight?.(night);};
  return {root,road,stop,drop,bus,update};
 }

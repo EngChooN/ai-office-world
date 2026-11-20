@@ -67,3 +67,25 @@ test('그림: 그리기 횟수·삼각형 상한, 자리 4종, 자물쇠 걸기'
  for(let t=0;t<=3;t+=.1)ia.userData.update(t,t/3,null); // 동작 끝까지(오류 없이)
  assert.ok(locks.nearestEmpty(spots.find(s=>s.kind==='loveLocks').x,spots.find(s=>s.kind==='loveLocks').z)>=0);
 });
+
+test('내 자물쇠 표시·가리지 않는 시점(11-20)', ()=>{
+ const ia=buildNamsanInteract(G,opts),{locks}=ia.userData,mk=ia.getObjectByName('내 자물쇠 표시');
+ assert.ok(mk&&mk.count===0,'처음엔 표시 없음');
+ const open=locks.slots().filter(s=>!s.filled&&s.bay===INTERACT.locks.openBay);
+ locks.hang(open[0].i,{color:'#5fb6ff',mine:true});
+ ia.userData.update(1,0,null);assert.equal(mk.count,0,'흔들리는 동안은 표시 안 함');
+ ia.userData.update(3,0,null);assert.equal(mk.count,1,'흔들림이 끝나면 내 자물쇠 표시');
+ locks.setFilled([{i:open[1].i,color:'#e8504a',mine:true},{i:open[2].i,color:'#e8504a'}]);ia.userData.update(3.1,0,null);assert.equal(mk.count,2,'남의 자물쇠는 표시 안 함');
+ locks.markMine([open[1].i]);assert.equal(mk.count,1);
+ const sp=ia.userData.spots.find(s=>s.kind==='loveLocks'),v=locks.aimView(open[3].i,sp.x,sp.z),at=open[3].at;
+ const P=G.plaza,dIn=Math.hypot(v.p[0]-P.x,v.p[2]-P.z),dSlot=Math.hypot(at[0]-P.x,at[2]-P.z);
+ assert.ok(dIn<dSlot-1,'카메라는 광장 쪽');assert.ok(Math.abs(Math.hypot(v.p[0]-at[0],v.p[2]-at[2])-2.4)<.05,'걸 자리에서 2.4m');
+});
+test('밤 빈 고리(11-20): 은빛으로 어두워져 내 자물쇠 금테(노랑)와 겹치지 않는다', ()=>{
+ const ia=buildNamsanInteract(G,opts),e=ia.getObjectByName('빈 고리'),i=ia.userData.locks.emptySlots()[0],c={};
+ ia.userData.update(0,0);const dayE=e.material.emissive.clone(),dayI=e.material.emissiveIntensity;e.getColorAt(i,c.day=e.material.color.clone());
+ ia.userData.update(1,1);const nE=e.material.emissive,nI=e.material.emissiveIntensity;e.getColorAt(i,c.night=e.material.color.clone());
+ assert.ok(nI<=dayI,`밤 빛 세기 ${nI} ≤ 낮 ${dayI}`);
+ assert.ok(nE.b>nE.r&&dayE.r>dayE.b,'밤 빛은 파랑 쪽(차가움), 낮은 크림');
+ assert.ok(c.night.b>=c.night.r-.02&&c.day.r>c.day.b,'빈 고리 몸 색도 밤엔 노랑이 빠짐');
+});

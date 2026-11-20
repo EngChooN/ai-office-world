@@ -21,10 +21,11 @@ export const INTERACT=Object.freeze({
 export const INTERACT_COLORS=Object.freeze({
  pad:'#a9a395',padDark:'#8f897c',granite:'#b5ae a2'.replace(' ',''),bamboo:'#8fb35a',bambooNode:'#6e8f43',water:'#7ec6df',waterNight:'#2c5f78',foam:'#e8f6fa',
  gravel:'#b9ad94',pole:'#4b5d53',trim:'#33413a',wood:'#7b5636',steel:'#9aa2a8',brass:'#c9a35a',heart:'#e8505f',
- empty:'#fff1c2',aim:'#ffd84a',
+ empty:'#fff1c2',emptyNight:'#8fa6bf',emptyNightBody:'#c9d4de',aim:'#ffd84a',
  locks:['#e8504a','#ff8fb0','#ffd25a','#6fcf9a','#5fb6ff','#a77bff','#f39a3c','#f2ece0','#d84a7a','#3fb3b0'],
 });
 
+const EMPTY_DAY=new THREE.Color(INTERACT_COLORS.empty),EMPTY_NIGHT=new THREE.Color(INTERACT_COLORS.emptyNight);
 const hash=n=>{const v=Math.sin(n*127.1+311.7)*43758.5453;return v-Math.floor(v);};
 const _c=new THREE.Color();
 // 꼭짓점 색 조각: 인덱스 없애고 position·normal·color만 남긴다(한 덩어리로 합치기 위해)
@@ -230,13 +231,29 @@ export function buildNamsanInteract(G,opts={}){
   const pop=new THREE.Mesh(new THREE.ShapeGeometry(heartShape(),8),new THREE.MeshBasicMaterial({color:'#ff3d6e',transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide,fog:false}));pop.name='자물쇠 하트';pop.scale.setScalar(.001);pop.userData.noToon=true;g.add(pop);
   // 걸 자리 표시: 빈 고리 위에서 오르내리는 분홍 하트(빈 자리·걸린 자리와 따로 보이게)
   const mark=new THREE.Mesh(new THREE.ShapeGeometry(heartShape(),6),new THREE.MeshStandardMaterial({color:'#ff5d7a',emissive:new THREE.Color('#ff5d7a'),emissiveIntensity:.35,side:THREE.DoubleSide}));mark.name='걸 자리 표시';mark.scale.setScalar(.09);mark.visible=false;g.add(mark);
+  // 내 자물쇠 표시(11-20): 자물쇠 뒤 금색 테두리 + 약한 빛 원. 늘 은은히 숨 쉬고, 막 건 것은 4초 동안 더 밝다
+  // 테두리(금색)와 빛 원(옅은 노랑)을 한 덩어리·꼭짓점 색(투명도 포함)으로 = 그리기 1번, 칸은 MINE_CAP개만
+  const MINE_CAP=8,tint=(geo,hex,a)=>{const c=new THREE.Color(hex),n=geo.attributes.position.count,arr=new Float32Array(n*4);for(let i=0;i<n;i++)arr.set([c.r,c.g,c.b,a],i*4);geo.setAttribute('color',new THREE.BufferAttribute(arr,4));return geo;};
+  const mineGlow=tint(new THREE.CircleGeometry(.12,16),'#fff3b0',.4);mineGlow.translate(0,0,-.004);
+  const mineGeo=mergeGeometries([mineGlow,tint(new THREE.RingGeometry(.062,.088,16),'#ffc93a',1)].map(x=>x.index?x.toNonIndexed():x));mineGeo.translate(0,-.06,0);
+  const mineMat=new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,depthWrite:false,side:THREE.DoubleSide}),mineM=new THREE.InstancedMesh(mineGeo,mineMat,MINE_CAP);
+  mineM.name='내 자물쇠 표시';mineM.userData.noToon=true;mineM.frustumCulled=false;mineM.renderOrder=2;mineM.count=0;g.add(mineM);
+  const mine=new Map(); // 자리 → 걸린 시각(clock)
   const O=new THREE.Object3D(),zero=new THREE.Matrix4().makeScale(0,0,0),col=new THREE.Color();
   const anim={i:-1,t0:0},aim={i:-1};let clock=0;
+  // 테두리는 자물쇠 몸 바로 뒤(광장 반대쪽 2.5cm)라 앞에서 보면 자물쇠를 둘러싼 금테로 보임
+  const placeMine=(s,k)=>{const r=RR+.025;O.position.set(Math.sin(s.f)*r,s.y,Math.cos(s.f)*r);O.rotation.set(0,s.f,0);O.rotateX(s.tilt*.3);O.scale.setScalar(s.scale*k);O.updateMatrix();return O.matrix;};
+  const writeMine=()=>{if(mineM.material!==mineMat)mineM.material=mineMat; // 툰 변환(toonify)이 바꿔도 빛나는 색 재질로 되돌림
+   let n=0;for(const [i,t0] of mine){const s=slots[i];if(!s?.filled||anim.i===i||n>=MINE_CAP)continue;
+    const fresh=Math.max(0,1-(clock-t0)/4),k=1+.08*Math.sin(clock*2.4+i)+fresh*.45*(.5+.5*Math.sin(clock*9));
+    mineM.setMatrixAt(n++,placeMine(s,k));}
+   mineM.count=n;mineM.instanceMatrix.needsUpdate=true;};
   const place=(s,swing=0,drop=0,k=1)=>{O.position.set(Math.sin(s.f)*RR,s.y+drop,Math.cos(s.f)*RR);O.rotation.set(0,s.f,0);O.rotateX(s.tilt*.3+swing);O.scale.setScalar(s.scale*k);O.updateMatrix();return O.matrix;};
   const write=s=>{const on=s.filled,mBody=on?place(s,anim.i===s.i?anim.swing:0,anim.i===s.i?anim.drop:0):zero;
    boxM.setMatrixAt(s.i,on&&!s.heart?mBody:zero);heartM.setMatrixAt(s.i,on&&s.heart?mBody:zero);shM.setMatrixAt(s.i,on?mBody:zero);
    emptyM.setMatrixAt(s.i,on?zero:place(s,0,0,aim.i===s.i?1.6+Math.sin(clock*6)*.25:1));
-   col.set(s.color);boxM.setColorAt(s.i,col);heartM.setColorAt(s.i,col);emptyM.setColorAt(s.i,col.set(aim.i===s.i?C.aim:C.empty));};
+   col.set(s.color);boxM.setColorAt(s.i,col);heartM.setColorAt(s.i,col);emptyM.setColorAt(s.i,aim.i===s.i?col.set(C.aim):col.copy(emptyCol));};
+  const emptyCol=new THREE.Color(C.empty),emptyNightBody=new THREE.Color(C.emptyNightBody);
   const flush=()=>{for(const m of [boxM,heartM,shM,emptyM]){m.instanceMatrix.needsUpdate=true;if(m.instanceColor)m.instanceColor.needsUpdate=true;}};
   slots.forEach(write);flush();
   const local=new THREE.Vector3(),world=s=>{g.updateMatrixWorld();return local.set(Math.sin(s.f)*RR,s.y-.07,Math.cos(s.f)*RR).applyMatrix4(g.matrixWorld).toArray().map(v=>+v.toFixed(3));};
@@ -248,16 +265,26 @@ export function buildNamsanInteract(G,opts={}){
    // 걸 자리 미리 보이기(노란 고리가 커졌다 작아짐). -1이면 끔
    aim:i=>{const prev=aim.i;aim.i=i;if(prev>=0)write(slots[prev]);if(i>=0)write(slots[i]);flush();},
    // 새 자물쇠 걸기: 위에서 내려와 흔들리다 멈추고 하트가 떠오름. 반환 = 걸린 자리 세계 좌표
-   hang:(i,{color=null,heart=null}={})=>{const s=slots[i];if(!s||s.filled)return null;s.filled=true;if(color)s.color=color;if(heart!=null)s.heart=!!heart;if(aim.i===i)aim.i=-1;
+   // mine:true면 내 자물쇠 표시도 붙음(흔들림이 끝난 뒤 4초 동안 더 밝게)
+   hang:(i,{color=null,heart=null,mine:isMine=false}={})=>{const s=slots[i];if(!s||s.filled)return null;s.filled=true;if(color)s.color=color;if(heart!=null)s.heart=!!heart;if(aim.i===i)aim.i=-1;if(isMine)mine.set(i,clock+2.2);
     anim.i=i;anim.t0=clock;anim.swing=0;anim.drop=.22;write(s);flush();pop.position.set(Math.sin(s.f)*(RR-.1),s.y+.1,Math.cos(s.f)*(RR-.1));pop.rotation.set(0,s.f,0);return world(s);},
    // 다른 사람 자물쇠·저장된 상태 그대로 칠하기: [{i,color,heart}] (없는 자리는 기본 무늬)
-   setFilled:list=>{for(const o of list){const s=slots[o.i];if(!s)continue;s.filled=true;if(o.color)s.color=o.color;if(o.heart!=null)s.heart=!!o.heart;write(s);}flush();},
-   tick:t=>{clock=t;if(aim.i>=0){const s=slots[aim.i];write(s);flush();mark.visible=true;mark.position.set(Math.sin(s.f)*(RR-.09),s.y+.1+Math.sin(t*4)*.025,Math.cos(s.f)*(RR-.09));mark.rotation.set(0,s.f,0);}else mark.visible=false;
+   setFilled:list=>{for(const o of list){const s=slots[o.i];if(!s)continue;s.filled=true;if(o.color)s.color=o.color;if(o.heart!=null)s.heart=!!o.heart;if(o.mine)mine.set(o.i,-99);write(s);}flush();writeMine();},
+   // 내 자물쇠 표시를 이 자리들로 바꿈(저장된 내 것 다시 칠할 때). 막 건 효과 없이 은은한 테두리만
+   markMine:list=>{mine.clear();for(const i of list)if(slots[i])mine.set(i,-99);writeMine();},
+   // 걸 자리가 몸에 가리지 않는 카메라 추천: 난간 앞 비스듬히(사람 반대쪽 옆 50°, 2.4m, 걸 자리보다 0.85m 위)에서 걸 자리를 봄.
+   // px,pz = 사람 자리. 반환 {p:[x,y,z], t:[x,y,z]} 세계 좌표(월드개발이 카메라에 쓸지 정함)
+   aimView:(i,px,pz)=>{const s=slots[i];if(!s)return null;const t=world(s);const ox=Math.sin(s.f+lk.a0),oz=Math.cos(s.f+lk.a0); // 난간 바깥 방향
+    const sx=Math.cos(s.f+lk.a0),sz=-Math.sin(s.f+lk.a0),side=((px-t[0])*sx+(pz-t[2])*sz)>0?-1:1,a=50*Math.PI/180,d=2.4;
+    return {p:[t[0]-ox*d*Math.cos(a)+sx*side*d*Math.sin(a),t[1]+.85,t[2]-oz*d*Math.cos(a)+sz*side*d*Math.sin(a)],t:[t[0],t[1]+.02,t[2]]};},
+   tick:t=>{clock=t;if(mine.size)writeMine();if(aim.i>=0){const s=slots[aim.i];write(s);flush();mark.visible=true;mark.position.set(Math.sin(s.f)*(RR-.09),s.y+.1+Math.sin(t*4)*.025,Math.cos(s.f)*(RR-.09));mark.rotation.set(0,s.f,0);}else mark.visible=false;
     if(anim.i>=0){const e=t-anim.t0,s=slots[anim.i];
      anim.drop=Math.max(0,.22*(1-e/.25))**1;anim.swing=e<.25?0:Math.sin((e-.25)*9)*.6*Math.exp(-(e-.25)*2.6);
      const p=Math.min(1,e/1.3);pop.scale.setScalar(.001+.22*Math.sin(Math.min(1,p*1.6)*Math.PI/2));pop.position.y=s.y+.12+p*.35;pop.material.opacity=e<.25?0:Math.min(1,2.2*(1-p));
-     write(s);flush();if(e>2.2){anim.i=-1;anim.swing=anim.drop=0;write(s);flush();pop.material.opacity=0;}}},
+     write(s);flush();if(e>2.2){anim.i=-1;anim.swing=anim.drop=0;write(s);flush();writeMine();pop.material.opacity=0;}}},
    count:()=>({slots:N,filled:slots.filter(s=>s.filled).length}),
+   // 밤 0~1: 빈 고리 몸 색을 크림 → 은회색으로(update가 밤 값이 바뀔 때만 부름)
+   night:n=>{emptyCol.set(C.empty).lerp(emptyNightBody,n);for(const s of slots)if(!s.filled)write(s);flush();},
   };
   g.userData.locks=lockApi;root.add(g);parts.locks=g;cullables.push(g);g.updateMatrixWorld(true);
   const mid=new THREE.Vector3(0,0,RR-1.3).applyMatrix4(g.matrixWorld);
@@ -269,7 +296,9 @@ export function buildNamsanInteract(G,opts={}){
   if(parts.basins)for(const r of parts.basins.userData.ripples){const k=((t*.55+r.position.x*.13)%1+1)%1;r.scale.setScalar(.6+k*2.6);r.material.opacity=.65*(1-k);}
   lockApi?.tick(t);
   const n=Math.max(0,Math.min(1,night));if(Math.abs(n-lastNight)>.005){lastNight=n;for(const m of waterMats)if(m.material.emissive)m.material.emissiveIntensity=n*m.userData.nightGlow;
-   if(parts.locks){const e=parts.locks.getObjectByName('빈 고리');if(e?.material.emissive)e.material.emissiveIntensity=.12+n*.45;}}
+   // 빈 고리: 밤에는 차가운 은빛으로 약하게(11-20 — 예전 크림색 .12+n*.45는 내 자물쇠 금테와 같은 노란 빛이라 겹쳐 보였음)
+   lockApi?.night(n);
+   if(parts.locks){const e=parts.locks.getObjectByName('빈 고리');if(e?.material.emissive){e.material.emissive.copy(EMPTY_DAY).lerp(EMPTY_NIGHT,n);e.material.emissiveIntensity=.15-n*.05;}}}
   if(camera){camera.getWorldPosition(cam);for(const o of [parts.spring,parts.basins,parts.cairn,parts.locks]){if(!o)continue;
    if(o===parts.basins){for(const c of o.children)c.visible=plan.basins.some(b=>Math.hypot(b.x-cam.x,b.z-cam.z)<INTERACT.cull);continue;}
    o.visible=Math.hypot(o.position.x-cam.x,o.position.z-cam.z)<INTERACT.cull;}}

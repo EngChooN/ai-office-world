@@ -45,3 +45,17 @@ test('버스: 치수·앉는 자리·길 위에 놓기',()=>{
  placeOnLane(bus,C,C.stops.summit.s);assert.ok(Math.abs(bus.position.y-G.plaza.y)<.05);
  placeOnLane(bus,C,C.length+5);assert.ok(Number.isFinite(bus.position.x)); // 닫힌 길은 한 바퀴 넘어도 이어짐
 });
+test('밤 불빛(11-20): 툰 변환으로 재질을 갈아 끼워도 앞등·뒷등·창·번짐이 밤에 켜진다',()=>{
+ const bus=buildBus();
+ // toonify 흉내: 메시마다 재질을 복제본으로 바꾼다(같은 재질은 같은 복제본)
+ const map=new Map();bus.traverse(o=>{if(!o.isMesh)return;const sw=m=>{if(!map.has(m))map.set(m,m.clone());return map.get(m);};o.material=Array.isArray(o.material)?o.material.map(sw):sw(o.material);});
+ const get=n=>bus.getObjectByName(n);
+ bus.userData.setNight(0);
+ assert.ok(!get('버스 앞등 번짐').visible&&!get('버스 앞 빛 웅덩이').visible,'낮에는 번짐 숨김');
+ const day=get('light').material.emissiveIntensity;
+ bus.userData.setNight(1);
+ assert.ok(get('light').material.emissiveIntensity>day+2,'앞등이 화면 재질에서 밝아짐');
+ assert.ok(get('tail').material.emissiveIntensity>1.4,'뒷등');
+ assert.ok(get('버스 유리').material.emissiveIntensity>.4,'창 불빛');
+ for(const n of ['버스 앞등 번짐','버스 뒷등 번짐','버스 앞 빛 웅덩이']){const m=get(n);assert.ok(m.visible&&m.material.opacity>.2,n);assert.equal(m.material.blending,2,`${n} 더하기 섞기`);}
+});

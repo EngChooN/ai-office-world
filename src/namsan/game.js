@@ -41,7 +41,7 @@ import {NAMSAN_ENTRY_KEY,NAMSAN_SERVERS,isNamsanRoom,namsanRoom,namsanHealth,wal
 import {createNamsanWalker} from './namsan-walker.js';
 // 통합 5단계(11-20): 남산 상호작용(약수·물확·돌탑·정상석·이정표·스탬프함·쌍안경)·사랑의 자물쇠·순환버스·정상 야경 벤치
 import {buildNamsanInteract,INTERACT_COLORS} from './namsan-interact-art.js';
-import {makeWalkPads} from './namsan-walk.js';
+import {makeWalkPads,placeOf} from './namsan-walk.js';
 import {createNamsanInteract,planNightBenches,encodeLocks,decodeLocks,lockCode} from './namsan-interact.js';
 import {NS_LOCKS,NS_BENCH} from './namsan-content.js';
 import {buildBus,placeOnLane,seatInBus} from './namsan-bus-art.js';
@@ -133,6 +133,11 @@ const lockSpot0=ia.userData.spots.find(x=>x.action==='lock');
 const nsBenches=planNightBenches(G,{want:lockSpot0?directionToBearing(lockSpot0.x-G.plaza.x,lockSpot0.z-G.plaza.z):350,avoid:[{x:NAMSAN.tower.x,z:NAMSAN.tower.z,r:15},...ia.userData.spots.map(s=>({x:s.x,z:s.z,r:s.action==='lock'?7:4})),...ns.furniture.userData.items.map(i=>({x:i.x,z:i.z,r:3})),...(ns.lamps?.userData.spots??[]).map(l=>({x:l.x,z:l.z,r:1.6}))],
  busClear:(x,z)=>!G.bus||(G.bus.cycle.nearest(x,z).distance>2.8&&G.bus.nearest(x,z).distance>G.bus.points[0].width/2+2.5)}).map((b,i)=>{
  const o=bench();o.name=`정상 야경 벤치 ${i+1}`;const y=G.ground(b.x,b.z)+.02;o.position.set(b.x,y,b.z);o.rotation.y=b.yaw;toon.toonify(o,{kind:'prop'});o.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});scene.add(o);o.updateMatrixWorld(true);return {...b,y,obj:o};});
+// 휴대폰 밤 바닥 가로 줄무늬(11-20 월드기획 전달): 휴대폰 절반 해상도 화면 외곽선이 넓고 평평한 광장 바닥·길을 비스듬히 볼 때 줄로 그렸다(크리스마스 눈 바닥과 같은 원인).
+// 그 바닥만 외곽선에서 뺀다(알파 0.5 표시 = 풀밭과 같은 방법, christmas/props.js noEdgeMaterial). PC는 그대로
+if(mobile){const done=new Map();ns.root.traverse(o=>{if(!o.isMesh||!/광장 바닥|마사토 길|버스 길 안내선|차로 아스팔트|차로 흰 선|차로 가운데 노란 선|차로 연석 윗면|버스 칸 테/.test(o.name))return;const m=o.material;
+ if(!done.has(m)){const c=m.clone(),prev=m.onBeforeCompile,key=m.customProgramCacheKey?.bind(m);c.onBeforeCompile=function(sh,r){prev?.call(this,sh,r);sh.fragmentShader=sh.fragmentShader.replace('#include <opaque_fragment>','#include <opaque_fragment>\n gl_FragColor.a=min(gl_FragColor.a,.5);');};
+  c.customProgramCacheKey=()=>`${key?.()??''}|ns-no-edge`;c.userData={...m.userData,noEdge:true};done.set(m,c);}o.material=done.get(m);});}
 loading.done('nature');loading.done('facilities');
 await landscape.streamFar();await landscape.streamWater();
 let lowerRoads=()=>{};
@@ -193,22 +198,48 @@ const big=document.createElement('button');big.type='button';big.className='ns-b
 const runBtn=document.createElement('button');runBtn.type='button';runBtn.className='ns-run';runBtn.setAttribute('aria-label','달리기(누르고 있는 동안)');runBtn.innerHTML='<span aria-hidden="true">»</span><span>달리기</span>';
 const binoBtn=document.createElement('button');binoBtn.type='button';binoBtn.className='ns-run ns-bino';binoBtn.setAttribute('aria-label','쌍안경 (B)');binoBtn.innerHTML=`<span aria-hidden="true">${icon('h-binoculars',{size:'m',fallback:'🔭'})}</span><span>쌍안경</span>`;
 document.body.append(big,runBtn,binoBtn);binoBtn.addEventListener('click',()=>{command('binoculars');binoBtn.blur();});
-big.addEventListener('click',()=>command('auto'));
+// 큰 빨간 단추(11-20 월드디자인 확인 심각 1): 관악산 도장처럼 가까운 할 일이 있으면 그 행동(마시기·담그기·올리기·읽기·걸기·앉기·타기)으로 바뀐다.
+// 나머지 줄과 「자동 걷기」는 단추 위 할 일 카드(공통 틀 todo 자리)에. 앉은 동안 = 일어나기, 버스 안 = 건너뛰기(카드 없음).
+const NS_BIG=[[/^약수/,'h-spring','마시기'],[/^손 담그기/,'h-hand-water','담그기'],[/^돌 올리기/,'h-stone-tower','올리기'],[/^이정표/,'h-sign','읽기'],[/^정상석/,'㊞','인증'],
+ [/^스탬프 ✓/,'✓','찍음'],[/^스탬프 찍기/,'㊞','찍기'],[/자물쇠/,'c-lock','걸기'],[/^벤치/,'c-sit','앉기'],[/^순환버스/,'c-enter','타기'],[/바로 가기/,'c-right','바로 가기'],[/자세히$/,'c-detail','자세히']];
+const bigIc=(ic)=>/^[a-z]-/.test(ic)?icon(ic,{size:'l',fallback:'•'}):`<b class="ns-big-glyph">${ic}</b>`;
+const ctx=document.createElement('div');ctx.className='ns-ctx';ctx.hidden=true;document.body.append(ctx);
+let bigCmd='auto',bigSig='',ctxSig='';
+function bigView(){
+ if(ride)return {ic:'c-right',label:'건너뛰기',cmd:'bus-skip',key:'R'};
+ if(seat)return {ic:'c-stand-up',label:'일어나기',cmd:'sit',key:'C'};
+ const act=ix?.action;if(act)return {ic:'c-wait',label:{drink:'마시는 중',dip:'담그는 중',cairn:'올리는 중'}[act.id]??'하는 중',cmd:null,busy:act.t/act.total};
+ const rows=gs.gadget==='none'&&lockCard.hidden?ix?.view?.rows:null;
+ if(rows?.length){const r=rows[0],hit=NS_BIG.find(([re])=>re.test(r.label));
+  if(r.state==='lock')return {ic:'c-wait',label:'기다려요',cmd:'interact',key:'F',rows};
+  return {ic:hit?.[1]??'c-tap',label:hit?.[2]??'하기',cmd:'interact',key:'F',rows};}
+ return st.auto?{ic:'c-stop',label:'멈추기',cmd:'auto',key:'R'}:{ic:'h-walk',label:st.done?'둘러보기':'걷기',cmd:'auto',key:'R'};
+}
+const keyTxt=k=>mobile?'':`<kbd>${k}</kbd>`;
+function paintActions(){
+ const v=bigView();bigCmd=v.cmd;document.body.classList.toggle('ns-riding',!!ride);
+ const sig=`${v.ic}|${v.label}|${v.cmd}|${v.busy!=null}`;
+ if(sig!==bigSig){bigSig=sig;big.innerHTML=`<span class="ns-big-ic">${bigIc(v.ic)}</span><span>${v.label}</span>`;big.setAttribute('aria-label',`${v.label}${v.key&&!mobile?` (${v.key})`:''}`);big.classList.toggle('busy',v.busy!=null);}
+ big.style.setProperty('--p',v.busy!=null?`${Math.round(Math.min(1,v.busy)*100)}%`:'0%');
+ // 할 일 카드: 첫 줄 설명 + 나머지 줄 + 자동 걷기(관악산 상황 꼬리표와 같은 짜임)
+ let c=null;
+ if(v.rows){const r=v.rows[0];c={head:r.label,sub:r.state==='lock'?r.reason:r.sub,alts:v.rows.slice(1).map((x,i)=>({label:x.label,sub:x.state==='lock'?x.reason:x.sub,cmd:`choice-${i+2}`,key:String(i+2)})),auto:true};}
+ else if(seat)c={head:'벤치에 앉아 쉬는 중',sub:'걸으면 일어나요',alts:[{label:seat.pose==='tea'?'차 마시는 중…':'차 마시기',sub:'보온병 차 한 모금',cmd:'tea',key:'T'}],auto:false};
+ const cs=c?JSON.stringify(c)+st.auto:'';
+ if(cs!==ctxSig){ctxSig=cs;ctx.hidden=!c;
+  if(c)ctx.innerHTML=`<b class="ns-ctx-head">${c.head}</b>${c.sub?`<small>${c.sub}</small>`:''}`+c.alts.map(a=>`<button type="button" data-cmd="${a.cmd}"><span>${a.label}${keyTxt(a.key)}</span>${a.sub?`<small>${a.sub}</small>`:''}</button>`).join('')
+   +(c.auto?`<button type="button" data-cmd="auto"><span>${st.auto?'자동 걷기 멈추기':'자동 걷기'}${keyTxt('R')}</span><small>큰 단추가 바뀌어도 여기서 켜고 끌 수 있어요</small></button>`:'');
+  placeUi();}
+}
+ctx.addEventListener('pointerdown',e=>e.stopPropagation());
+ctx.addEventListener('click',e=>{const b=e.target.closest('[data-cmd]');if(b){b.blur();command(b.dataset.cmd);}});
+big.addEventListener('click',()=>{big.blur();if(bigCmd)command(bigCmd);});
 for(const [ev,on] of [['pointerdown',true],['pointerup',false],['pointercancel',false],['pointerleave',false]])runBtn.addEventListener(ev,()=>{runHeld=on;runBtn.classList.toggle('on',on);});
-const paintBig=()=>{document.body.classList.toggle('ns-riding',!!ride);if(ride){big.innerHTML=`<span class="ns-big-ic">${icon('c-right',{size:'l',fallback:'⏭'})}</span><span>건너뛰기</span>`;return;}big.innerHTML=st.auto?`<span class="ns-big-ic">${icon('c-stop',{size:'l',fallback:'■'})}</span><span>멈추기</span>`:`<span class="ns-big-ic">${icon('h-walk',{size:'l',fallback:'🥾'})}</span><span>${st.done?'둘러보기':'걷기'}</span>`;};
-paintBig();
-// 할 일 칩(공통 틀 data-uf=todo): 가까운 상호작용 줄(F·2·3)을 작은 단추 위에 쌓는다(관악산 빨간 도장·꼬리표 자리와 같은 뜻)
-const todoEls=[];let todoSig='';
-function paintTodo(rows){const sig=JSON.stringify(rows??null);if(sig===todoSig)return;todoSig=sig;
- for(const el of todoEls.splice(0))el.remove();
- (rows??[]).forEach((r,i)=>{const b=document.createElement('button');b.type='button';b.className=`ns-todo${r.state==='done'?' done':r.state==='lock'?' lock':''}`;b.dataset.ix=String(i);
-  b.innerHTML=`<kbd>${r.key}</kbd><span><b>${r.label}</b>${r.state==='lock'&&r.reason?`<small>${r.reason}</small>`:r.sub?`<small>${r.sub}</small>`:''}</span>`;b.setAttribute('aria-label',`${r.label} (${r.key})`);
-  b.addEventListener('pointerdown',e=>e.stopPropagation());b.addEventListener('click',()=>{b.blur();command(r.cmd??(i?`choice-${i+1}`:'interact'));});document.body.append(b);todoEls.push(b);});
- placeUi();}
-const placeUi=()=>ufPlace(document.body,{big,small:[runBtn,binoBtn],todo:[...todoEls].reverse()});
-placeUi();
+const paintBig=()=>{bigSig='';paintActions();};
+const placeUi=()=>ufPlace(document.body,{big,small:[runBtn,binoBtn],todo:ctx.hidden?[]:[ctx]});
 const toast=document.createElement('p');toast.className='ns-toast';toast.hidden=true;toast.setAttribute('role','status');document.body.append(toast);
-let toastT=0;const say=html=>{toast.innerHTML=html;toast.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{toast.hidden=true;},3200);};
+const keyless=t=>mobile?String(t).replace(/\s*\([A-Z]\)/g,''):t;
+let toastT=0;const say=html=>{toast.innerHTML=keyless(html);toast.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{toast.hidden=true;},3200);};
 // 정상 도착 카드(관악산 완등 카드와 같은 도장 그림, 남산 이름)
 const summitBox=document.createElement('div');summitBox.className='ns-summit';summitBox.hidden=true;summitBox.setAttribute('role','dialog');summitBox.setAttribute('aria-label','남산 완등');document.body.append(summitBox);
 summitBox.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;summitBox.hidden=true;if(b.dataset.nsAgain){st.done=false;st.stamps=[];st.elapsed=0;st.distance=0;st.ascent=0;shortcut=false;jumpTo(G,st,2);st.best=2;camBase=st.heading;sendJump=true;save();}});
@@ -335,7 +366,7 @@ function frame_(now){
  if(view==='first'){camGoal.set(st.x,smoothY+hiker.eyeHeight-(ix?.drop??0),st.z);lookGoal.copy(camGoal).addScaledVector(fwd,10);lookGoal.y+=Math.tan(THREE.MathUtils.clamp(look.pitch+(hiker.viewPitch??0)+(ix?.pitch??0),-1.3,1.3))*10;camera.position.copy(camGoal);}
  else{const cs=hiker.profile?.cameraScale??1;lookGoal.set(st.x,smoothY+(1.15-(1.6-hiker.eyeHeight)*2/3),st.z);camGoal.copy(lookGoal).addScaledVector(fwd,-look.orbit*cs*Math.cos(look.pitch));camGoal.y+=cs*(1-look.orbit*Math.sin(look.pitch));
   const gy=G.ground(camGoal.x,camGoal.z)+.5;if(camGoal.y<gy)camGoal.y=gy;camera.position.copy(camGoal);}
- if(ride)rideCamera(dtRaw);
+ if(ride)rideCamera(dtRaw);else lockCamera(dtRaw);
  {const co=window.namsan.cameraOverride;if(co){camera.position.fromArray(co.p);lookGoal.fromArray(co.t);}}
  camera.lookAt(lookGoal);cameraReady=true;
  // 쌍안경 배율은 camera.zoom(관악산과 같음, 로그 공간에서 부드럽게)
@@ -345,9 +376,7 @@ function frame_(now){
  if(multi){multi.update(dtRaw,now/1000,view);syncRemoteLocks(now);}
  lighting.render(avatar.position);
  if(now-uiAt>200){uiAt=now;paintHud();gadgetState();}
- paintTodo(ride?[{key:'R',label:'건너뛰기',sub:`${ride.to==='summit'?'정상':'백범광장'}까지 ${mmss(TT.untilStop(ride.k,busClock(),ride.to))}`,state:'ready',cmd:'bus-skip'}]
-  :seat?[{key:'T',label:seat.pose==='tea'?'차 마시는 중…':'차 마시기',sub:'보온병 차 한 모금',state:seat.pose==='tea'?'done':'ready',cmd:'tea'},{key:'C',label:'일어나기',sub:'걸으면 일어나요',state:'ready',cmd:'sit'}]
-  :ix&&gs.gadget==='none'?ix.view?.rows??null:null);
+ paintActions();document.body.classList.toggle('ns-acting',!!ix?.action);
  if(started&&now-saveAt>1000){saveAt=now;save();}
  if(!document.hidden&&dtRaw>0){fpsN++;fpsSum+=dtRaw;}
  if(!loadReady){const ok=stability.sample(dtRaw*1000,false);loading.set('stabilizing',Math.min(.99,stability.fraction));if(ok){loadReady=true;loading.ready();beginHike();}}
@@ -376,9 +405,13 @@ const projectWorld=(x,y,z)=>{_v.set(x,y,z).project(camera);return {x:(_v.x+1)/2*
 const projectDir=(bearing,elevDeg)=>{const b=bearing*Math.PI/180,e=elevDeg*Math.PI/180;return projectWorld(camera.position.x+Math.sin(b)*Math.cos(e)*1000,camera.position.y+Math.sin(e)*1000,camera.position.z-Math.cos(b)*Math.cos(e)*1000);};
 const nsPlayer=()=>{const pl=placeOfMe();return {x:st.x,z:st.z,heading:camBase+look.yaw,elevation:walkHeight(G,st),inSummit:pl.inSummit,busy:!summitBox.hidden||!lockCard.hidden||!!seat||!!ride};};
 const placeOfMe=()=>({inSummit:Math.hypot(st.x-G.plaza.x,st.z-G.plaza.z)<=G.plaza.r});
-ix=createNamsanInteract({spots:ia.userData.spots,onLock:c=>openLockCard(c),onBench:c=>sitBench(c),onBus:c=>busPress(c),busRow:(c,key)=>busRowFor(c,key),items:nsItems,benches:nsBenches,busStops:nsBusStops(),player:nsPlayer,ui:ixUI,sound:quietSound,storage:multiMode?null:localStorage,
+// 알림은 남산 크림 알림 하나로(월드디자인 확인 사소 7·보통 3: 두 모양이 섞이고 겹쳐 앞 글이 가려졌다). 휴대폰은 안내 글의 키 글자 (T)·(B) 등을 뺀다(보통 2)
+const escT=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const nsUI=Object.create(ixUI);nsUI.toast=t=>say(escT(t));
+nsUI.openBoard=m=>ixUI.openBoard(mobile?{...m,pages:m.pages.map(pg=>({...pg,body:(pg.body??[]).map(keyless)}))}:m);
+ix=createNamsanInteract({spots:ia.userData.spots,onLock:c=>openLockCard(c),onBench:c=>sitBench(c),onBus:c=>busPress(c),busRow:(c,key)=>busRowFor(c,key),items:nsItems,benches:nsBenches,busStops:nsBusStops(),player:nsPlayer,ui:nsUI,sound:quietSound,storage:multiMode?null:localStorage,
  stamps:()=>st.stamps,
- addStamp:n=>{if(st.stamps.includes(n))return false;st.stamps.push(n);const t=NAMSAN.stamps.find(x=>x.n===n);say(`<b>${t.glyph}</b>스탬프 ${st.stamps.length} / 4 · ${t.name}`);save();if(frame.isOpen&&frame.tab==='map')paintMap(frame.panel('map'));return true;},
+ addStamp:(n,{quiet=false}={})=>{if(st.stamps.includes(n))return false;st.stamps.push(n);const t=NAMSAN.stamps.find(x=>x.n===n);if(!quiet)say(`<b>${t.glyph}</b>스탬프 ${st.stamps.length} / 4 · ${t.name}`);save();if(frame.isOpen&&frame.tab==='map')paintMap(frame.panel('map'));return true;},
  geo:(lat,lon)=>project(lat,lon),projectDir,projectWorld,cameraInfo:()=>({fov:camera.fov,aspect:camera.aspect,zoom:camera.zoom}),
  weather:()=>({kind:envInfo.kind??'clear',label:envInfo.weatherLabel??''}),gadget:()=>gs.gadget,
  summitCount:()=>{try{return summitOf(loadSummits(localStorage),'gwanak')?.count??0;}catch{return 0;}}});
@@ -390,10 +423,15 @@ paintStones();let lastResult=null;
 // 그림은 월드아트 ia.userData.locks(aim·hang·setFilled). 내 자물쇠는 namsan-interaction:v1 locks에, 함께 걷기는 act x 칸 'lk-…'(서버 그대로).
 const LK=ia.userData.locks,lockSpot=ia.userData.spots.find(x=>x.action==='lock');
 const lockColor=c=>INTERACT_COLORS.locks[c]??INTERACT_COLORS.locks[0];
-if(LK&&ix.progress.locks.length)LK.setFilled(ix.progress.locks.map(l=>({i:l.i,color:lockColor(l.c),heart:!!l.h})));
+if(LK&&ix.progress.locks.length)LK.setFilled(ix.progress.locks.map(l=>({i:l.i,color:lockColor(l.c),heart:!!l.h,mine:true})));   // 내 것은 금색 테두리·옅은 빛(월드아트 11-20)
 function myLockX(){return encodeLocks(ix?.progress.locks??[]);}
 const lockCard=document.createElement('div');lockCard.className='ns-lockcard';lockCard.hidden=true;lockCard.setAttribute('role','dialog');lockCard.setAttribute('aria-label','사랑의 자물쇠');document.body.append(lockCard);
-let lockPick={c:0,h:0,aim:-1};
+let lockPick={c:0,h:0,aim:-1},lockView=null;   // lockView = 카메라를 걸 자리 쪽으로 비키는 동안(카드가 떠 있을 때·건 뒤 2.6초)
+const _lp=new THREE.Vector3(),_lt=new THREE.Vector3();let lockCamK=0;
+// 걸 자리가 몸에 가리지 않는 시점(월드아트 aimView 추천 {p,t})으로 0.5초에 걸쳐 옮겨 간다. 끝나면 원래 카메라로 같은 속도로 돌아온다
+function lockCamera(dt){const on=!!LK&&(!lockCard.hidden&&lockPick.aim>=0||lockView&&performance.now()<lockView.until);lockCamK=THREE.MathUtils.clamp(lockCamK+(on?dt:-dt)/.5,0,1);
+ if(lockCamK<=0||!LK?.aimView)return;const i=on?(lockCard.hidden?lockView.i:lockPick.aim):(lockView?.i??lockPick.aim);if(i==null||i<0)return;const v=LK.aimView(i,st.x,st.z);if(!v)return;
+ const k=lockCamK*lockCamK*(3-2*lockCamK);_lp.fromArray(v.p);_lt.fromArray(v.t);camera.position.lerp(_lp,k);lookGoal.lerp(_lt,k);}
 function aimLock(){if(!LK)return;const i=LK.nearestEmpty(st.x,st.z);lockPick.aim=i;LK.aim(i);}
 function paintLockCard(){const n=ix.progress.locks.length;
  lockCard.innerHTML=`<div class="ns-lock-in"><h3>사랑의 자물쇠</h3><p>색과 모양을 고르고 「걸기」를 누르세요 · 내 자물쇠 ${n} / ${NS_LOCKS.max}</p>
@@ -403,7 +441,7 @@ function paintLockCard(){const n=ix.progress.locks.length;
 function openLockCard(){if(!LK)return;if(ix.progress.locks.length>=NS_LOCKS.max){ixUI.toast(`내 자물쇠 ${NS_LOCKS.max}개를 다 걸었어요`);return;}st.auto=false;paintBig();aimLock();paintLockCard();lockCard.hidden=false;document.body.classList.add('ns-lock-open');}
 function closeLockCard(){lockCard.hidden=true;document.body.classList.remove('ns-lock-open');LK?.aim(-1);lockPick.aim=-1;}
 function hangMine(){const i=LK.nearestEmpty(st.x,st.z);if(i<0){ixUI.toast('빈 자리가 없어요');closeLockCard();return;}
- if(!LK.hang(i,{color:lockColor(lockPick.c),heart:!!lockPick.h}))return;
+ if(!LK.hang(i,{color:lockColor(lockPick.c),heart:!!lockPick.h,mine:true}))return;lockView={i,until:performance.now()+4500};
  ix.progress.locks.push({i,c:lockPick.c,h:lockPick.h,at:Date.now()});ix.persist();closeLockCard();
  ixUI.toast(`자물쇠를 걸었어요 · ${ix.progress.locks.length} / ${NS_LOCKS.max}`,{ms:2800});lockHung++;}
 let lockHung=0;
@@ -431,7 +469,12 @@ const buses=[];if(ns.bus){buses.push(ns.bus.bus);for(let k=1;k<BUS_RULE.buses;k+
 const busClock=()=>Date.now()/1000+(window.namsan.busClockOffset??0);
 const busPrevS=buses.map(()=>null);
 // 정류장(타는 곳): 정류장 표지 자리에서 광장 가운데 쪽으로 2m(걷는 곳)
-function nsBusStops(){return G.bus?['start','summit'].map(stop=>{const sp=G.bus.stops[stop],P=stop==='start'?G.startPlaza:G.plaza,d=Math.hypot(P.x-sp.x,P.z-sp.z)||1;let x=sp.x+(P.x-sp.x)/d*2,z=sp.z+(P.z-sp.z)/d*2;return {stop,x,z,y:G.ground(x,z)};}):[];}
+// 타는 곳: 백범광장은 대기소(폭 4.2m, 표지와 광장 사이) 옆 끝 밖 차로 가장자리(그림 buildBusStop 좌표), 정상은 표지에서 광장 쪽 2m.
+// 대기소 안에 서면 기다리는 동안 3인칭 카메라가 지붕·의자 속에 끼었다(11-20 월드디자인 확인 4)
+function nsBusStops(){return G.bus?['start','summit'].map(stop=>{const sp=G.bus.stops[stop],P=stop==='start'?G.startPlaza:G.plaza,d=Math.hypot(P.x-sp.x,P.z-sp.z)||1;let x=sp.x+(P.x-sp.x)/d*2,z=sp.z+(P.z-sp.z)/d*2,face=null;
+ if(stop==='start'&&Number.isFinite(sp.heading)){const h=sp.heading,tr=(sp.side>0?1:-1),lx=tr*.3,lz=3.6,wx=sp.x+lx*Math.cos(h)+lz*Math.sin(h),wz=sp.z-lx*Math.sin(h)+lz*Math.cos(h);
+  if(placeOf(G,wx,wz).ok){x=wx;z=wz;const fx=tr*Math.cos(h),fz=-tr*Math.sin(h);face=Math.atan2(-fx,-fz);}}
+ return {stop,x,z,y:G.ground(x,z),face};}):[];}
 const busStops=ix.cands.filter(c=>c.action==='bus').map(c=>c.site);
 let boardAt=0,busSig='';
 function busRowFor(c,key){if(!TT)return null;const n=TT.next(c.site.stop,busClock()),to=c.site.stop==='start'?'정상까지':'백범광장까지';
@@ -439,7 +482,8 @@ function busRowFor(c,key){if(!TT)return null;const n=TT.next(c.site.stop,busCloc
  return {key,label:'순환버스 타기',sub:`${to} 약 ${Math.round((c.site.stop==='start'?TT.tUp:TT.tDown)/60)}분 · ${n.wait>0?'다음 버스 '+mmss(n.wait):'지금 서 있어요'}`,state:'ready'};}
 function busPress(c){if(!TT||ride)return;const from=c.site.stop;
  if(wait?.from===from){alight(otherStop(from),true);return;}
- wait={from,at:performance.now()};st.auto=false;paintBig();const n=TT.next(from,busClock());say(n.wait>0?`버스를 기다려요 · 다음 버스 ${mmss(n.wait)}`:'버스에 타요');}
+ wait={from,at:performance.now()};st.auto=false;paintBig();
+ {const sp=G.bus.stops[from],c=busStops.find(b=>b.stop===from),h=c?.face??Math.atan2(-(sp.x-st.x),-(sp.z-st.z));st.heading=h;camBase=h;look.yaw=0;look.pitch=.12;hiker.snapTo(h);}const n=TT.next(from,busClock());say(n.wait>0?`버스를 기다려요 · 다음 버스 ${mmss(n.wait)}`:'버스에 타요');}
 function board(k){const bus=buses[k];if(!bus)return;closeGadget(gs);syncView();ix.reset();
  const seatI=2+(Math.abs([...(multi?.info().id??'me')].reduce((a,ch)=>a*31+ch.charCodeAt(0),7))%12);
  const undo=seatInBus(bus,avatar,seatI);ride={k,to:otherStop(wait.from),undo,seatI,from:wait.from};wait=null;boardAt=performance.now();avatar.visible=true;paintBig();
@@ -452,11 +496,11 @@ function alight(to,skip=false){
  camBase=h;look.yaw=0;avatar.position.set(st.x,walkHeight(G,st),st.z);hiker.snapTo(h);avatar.visible=view==='third';sendJump=true;
  say(to==='summit'?'남산 정상 정류장이에요 · 전망탑 쪽으로 걸어 보세요':'백범광장 정류장이에요');}
 function busFrame(dt,cmd){if(!TT)return;const clock=busClock();
- buses.forEach((b,k)=>{const at=TT.bus(k,clock);placeOnLane(b,G.bus.cycle,at.s);b.userData.setDoors(at.doors);const prev=busPrevS[k];if(prev!=null){let d=at.s-prev;if(d<0)d+=TT.L;if(d<60)b.userData.drive(d);}busPrevS[k]=at.s;});
+ const nk=nightK();buses.forEach((b,k)=>{const at=TT.bus(k,clock);placeOnLane(b,G.bus.cycle,at.s);b.userData.setDoors(at.doors);if(k)b.userData.setNight?.(nk);const prev=busPrevS[k];if(prev!=null){let d=at.s-prev;if(d<0)d+=TT.L;if(d<60)b.userData.drive(d);}busPrevS[k]=at.s;});
  // 정류장 시간표 판(1초마다)
  {const n=TT.next('start',clock),sig=Math.ceil(n.wait);if(String(sig)!==busSig){busSig=String(sig);ns.bus?.stop?.userData.setBoard?.(['다음 버스',n.wait>0?mmss(n.wait):'지금',`정상까지 약 ${Math.round(TT.tUp/60)}분`]);}}
  if(wait){if(cmd.forward||cmd.side){wait=null;say('그만 기다려요');}
-  else{const n=TT.next(wait.from,clock);if(n.wait===0&&n.left>1.5)board(n.k);}}
+  else{const n=TT.next(wait.from,clock);if(n.wait===0&&n.left<=4&&n.left>.8)board(n.k);}}
  if(ride){const b=buses[ride.k];b.updateMatrixWorld(true);const w=avatar.getWorldPosition(new THREE.Vector3());st.x=w.x;st.z=w.z;st.heading=b.rotation.y+Math.PI;
   const at=TT.bus(ride.k,clock);if(at.stop===ride.to&&performance.now()-boardAt>3000)alight(ride.to);}}
 const _bv=new THREE.Vector3();
@@ -464,7 +508,7 @@ function rideCamera(dt){const b=buses[ride.k];const h=b.rotation.y+Math.PI+look.
  if(view==='first'){avatar.getWorldPosition(_bv);camera.position.set(_bv.x,_bv.y+.62,_bv.z);lookGoal.copy(camera.position).addScaledVector(fwd,10);lookGoal.y+=Math.tan(look.pitch)*10;}
  else{ // 3인칭: 내가 앉은 창 쪽 옆 뒤에서(창턱 1.2m 위로 머리·어깨가 보이게, 그림 인계 §4)
   avatar.getWorldPosition(_bv);const side=Math.sign(avatar.position.x||1),hs=b.rotation.y+Math.PI+look.yaw-side*1.1;fwd.set(-Math.sin(hs),0,-Math.cos(hs));
-  lookGoal.set(_bv.x,_bv.y+.45,_bv.z);camera.position.copy(lookGoal).addScaledVector(fwd,-Math.max(6,look.orbit*2.2));camera.position.y+=1.3+look.pitch*-3;
+  lookGoal.set(_bv.x,_bv.y+.45,_bv.z);camera.position.copy(lookGoal).addScaledVector(fwd,-Math.max(4.2,look.orbit*1.6));camera.position.y+=1.0+look.pitch*-3;
   const gy=G.ground(camera.position.x,camera.position.z)+.8;if(camera.position.y<gy)camera.position.y=gy;}
  camera.lookAt(lookGoal);}
 // 다른 사람 몸 높이: 버스 안(내 화면 버스 몸통 안)이면 의자 높이, 야경 벤치 좌판 위면 좌판 높이(앉은 자세가 그 위에 그려짐)
@@ -474,6 +518,7 @@ function remoteLift(x,z){for(const b of buses){_bv.set(x,b.position.y,z);_inv.co
 window.namsan.bus=()=>TT?{wait,ride:ride&&{k:ride.k,to:ride.to,from:ride.from,until:TT.untilStop(ride.k,busClock(),ride.to)},buses:buses.map((b,k)=>({...TT.bus(k,busClock()),x:+b.position.x.toFixed(1),y:+b.position.y.toFixed(1),z:+b.position.z.toFixed(1),yaw:+b.rotation.y.toFixed(3)})),next:{start:TT.next('start',busClock()),summit:TT.next('summit',busClock())},period:TT.T,tUp:TT.tUp,tDown:TT.tDown}:null;
 window.namsan.seat=()=>seat&&{pose:seat.pose,x:seat.x,z:seat.z,y:seat.y,heading:seat.heading,avatarY:avatar.position.y,sitLinear:hiker.interaction?.sitLinear??null};
 window.namsan.locks=()=>({mine:ix.progress.locks.map(l=>({...l})),x:myLockX(),count:LK?.count()??null,remote:[...remoteLocks].map(([id,s])=>({id,codes:[...s]})),remoteHung,cardOpen:!lockCard.hidden,aim:lockPick.aim});
+window.namsan.cam=()=>camera.position.toArray();window.namsan.lockAimView=()=>LK&&lockPick.aim>=0?LK.aimView(lockPick.aim,st.x,st.z):null;   // 점검용
 window.namsan.lockCard=(o={})=>{if(lockCard.hidden)openLockCard();if(o.c!=null)lockPick.c=o.c;if(o.h!=null)lockPick.h=o.h;paintLockCard();if(o.hang)hangMine();return window.namsan.locks();};
 window.namsan.interact=()=>ix;window.namsan.features=NAMSAN_MOUNTAIN.features;
 if(q.has('debug'))Object.assign(window,{__ns:ns,__scene:scene,__land:landscape.group,__camera:camera,__THREE:THREE,__G:G,__avatar:avatar});   // 점검용(?debug)

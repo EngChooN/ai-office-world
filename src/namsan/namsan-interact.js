@@ -102,9 +102,10 @@ export function createNamsanInteract({spots=[],items=[],benches=[],busStops=[],p
  function openRead(c){const pages=signPages(c);if(!pages.length)return;progress.read[c.id]=true;persist();sound.play('tick');ui.openBoard({eyebrow:`이정표 ${c.site.n} · 남산 성곽길`,pages,notice:NS_NOTICE});}
  function stone(){
   const first=progress.certifiedAt==null;if(first){progress.certifiedAt=now();persist();sound.play('stamp');}
-  addStamp(4);
+  // 정상 스탬프를 새로 찍었으면 알림 하나에 같이 쓴다(알림 두 개가 겹쳐 「정상 인증」이 가려지던 것, 11-20 월드디자인 확인 3)
+  const newStamp=addStamp(4,{quiet:true});
   ui.openBoard({eyebrow:'정상석 · 남산',pages:[{...NS_SUMMIT_PAGE,source:NS_SOURCE}],notice:NS_NOTICE});
-  if(first)ui.toast('정상 인증 · 남산 265m',{ms:2600});
+  if(first||newStamp)ui.toast(`${first?'정상 인증 · 남산 265m':'남산 265m'}${newStamp?` · 스탬프 ${stamps().length} / ${NS_STAMPS.length}`:''}`,{ms:2800});
  }
  function stamp(c){const s=NS_STAMPS.find(x=>x.n===c.site.n);if(stamps().includes(c.site.n)){ui.toast('이미 찍은 스탬프예요');return;}if(addStamp(c.site.n))sound.play('stamp');}
  // ── 행동 ──

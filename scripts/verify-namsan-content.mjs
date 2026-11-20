@@ -28,7 +28,7 @@ const view=p=>ev(p,()=>window.namsan.status().interact.view);
 const face=(p,x,z)=>ev(p,([x,z])=>{const s=window.namsan.status();window.namsan.goTo(s.x,s.z,Math.atan2(-(x-s.x),-(z-s.z)));},[x,z]);
 const shot=(p,n)=>p.screenshot({path:`${dir}/${n}.png`});
 // 칩·단추가 화면 안·44px 이상·서로 안 겹치는지
-async function layout(p){return ev(p,()=>{const r=[...document.querySelectorAll('.ns-todo,.ns-big,.ns-run,.ns-lockcard:not([hidden]) button')].filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden').map(e=>{const b=e.getBoundingClientRect();return {c:e.className,l:b.left,t:b.top,r:b.right,b:b.bottom,w:b.width,h:b.height};});
+async function layout(p){return ev(p,()=>{const r=[...document.querySelectorAll('.ns-ctx:not([hidden]),.ns-big,.ns-run,.ns-lockcard:not([hidden]) button')].filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden').map(e=>{const b=e.getBoundingClientRect();return {c:e.className,l:b.left,t:b.top,r:b.right,b:b.bottom,w:b.width,h:b.height};});
  const W=innerWidth,H=innerHeight,inside=r.every(b=>b.l>=-.5&&b.t>=-.5&&b.r<=W+.5&&b.b<=H+.5),small=r.filter(b=>b.h<43.5).map(b=>b.c||'색 단추');
  let overlap=[];for(let i=0;i<r.length;i++)for(let j=i+1;j<r.length;j++){const a=r[i],b=r[j];if(a.l<b.r-1&&b.l<a.r-1&&a.t<b.b-1&&b.t<a.b-1)overlap.push(`${a.c}×${b.c}`);}
  return {n:r.length,inside,small,overlap};});}
@@ -44,6 +44,7 @@ if(PART.includes('pc')){
  const want={'spring-1':'약수 한 모금','dip-1':'손 담그기','dip-2':'손 담그기','cairn-summit':'돌 올리기','locks-summit':'사랑의 자물쇠 걸기'};
  for(const sp of S.spots){await ev(p,sp=>window.namsan.goTo(sp.x,sp.z,sp.face+Math.PI),sp);await sl(700);const v=await view(p);
   check(`pc: ${sp.id} 서 있을 곳에서 「${want[sp.id]}」`,v?.rows?.[0]?.label===want[sp.id],{rows:v?.rows?.map(r=>r.label)});
+  {const bigWant={'spring-1':'마시기','dip-1':'담그기','cairn-summit':'올리기','locks-summit':'걸기'}[sp.id];if(bigWant){const bt=await ev(p,()=>document.querySelector('.ns-big').textContent.trim());check(`pc: ${sp.id} 큰 단추가 「${bigWant}」`,bt===bigWant,{big:bt});}}
   if(['spring-1','dip-1','cairn-summit'].includes(sp.id)){const before=await ev(p,()=>window.namsan.status().interact.progress);await p.keyboard.press('KeyF');await sl(900);await shot(p,`pc-act-${sp.id}`);await sl(3000);
    const after=await ev(p,()=>window.namsan.status().interact);const k={'spring-1':'drinks','dip-1':'dips','cairn-summit':'stones'}[sp.id];
    check(`pc: ${sp.id} 동작이 끝나고 기록`,after.progress[k]===before[k]+1,{[k]:after.progress[k]});}}
@@ -59,6 +60,7 @@ if(PART.includes('pc')){
  await ev(p,it=>{for(const [dx,dz] of [[1.6,0],[-1.6,0],[0,1.6],[0,-1.6],[1.2,1.2],[-1.2,-1.2]])if(window.namsan.goTo(it.x+dx,it.z+dz))return true;return false;},stone);await face(p,stone.x,stone.z);await sl(600);
  let v=await view(p);check('pc: 정상석 「정상석 확인 · 정상 인증」',v?.rows?.[0]?.label==='정상석 확인 · 정상 인증',{rows:v?.rows?.map(r=>r.label)});
  await p.keyboard.press('KeyF');await sl(500);const cert=await ev(p,()=>({c:window.namsan.status().interact.progress.certifiedAt,stamps:window.namsan.status().stamps,title:document.querySelector('.ix-board h2')?.textContent}));
+ const tt=await ev(p,()=>({ns:document.querySelector('.ns-toast').textContent,ix:document.querySelector('.ix-toast')?.hidden===false}));check('pc: 정상석 알림 하나에 정상 인증·스탬프',/정상 인증/.test(tt.ns)&&/스탬프/.test(tt.ns)&&!tt.ix,tt);
  check('pc: 정상석 F → 정상 인증·정상 스탬프·안내판',!!cert.c&&cert.stamps.includes(4)&&/265m/.test(cert.title??''),cert);await shot(p,'pc-summit-stone');await p.keyboard.press('Escape');await sl(300);
  // 쌍안경: 정상에서 관악산 쪽
  await ev(p,()=>window.namsan.jump(1060));const lk=S.spots.find(s=>s.id==='locks-summit');await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,0),lk);
@@ -72,6 +74,7 @@ if(PART.includes('pc')){
  await p.keyboard.press('Escape');await sl(400);check('pc: Esc로 쌍안경 내림',await ev(p,()=>window.namsan.status().gadget==='none'));
  // 자물쇠: 걸기 → 다시 열기
  await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,lk.face+Math.PI),lk);await sl(600);await p.keyboard.press('KeyF');await sl(500);
+ await sl(900);const av=await ev(p,()=>({v:window.namsan.lockAimView(),cam:window.namsan.cam()}));check('pc: 자물쇠 카드 동안 카메라가 걸 자리 보이는 곳(aimView)',av.v&&Math.hypot(av.cam[0]-av.v.p[0],av.cam[1]-av.v.p[1],av.cam[2]-av.v.p[2])<.3,av);
  await p.click('.ns-lock-colors button[data-c="4"]');await p.click('.ns-lock-shape button[data-h="1"]');await shot(p,'pc-lock-card');await p.click('[data-lk="hang"]');await sl(700);await shot(p,'pc-lock-hang');await sl(1600);
  const L1=await ev(p,()=>window.namsan.locks());check('pc: 자물쇠 걸림·저장(파랑 하트)',L1.mine.length===1&&L1.mine[0].c===4&&L1.mine[0].h===1&&L1.count.filled===177,L1);
  await p.reload();await p.waitForFunction(()=>window.namsan?.started,null,{timeout:180000});const L2=await ev(p,()=>window.namsan.locks());
@@ -90,7 +93,7 @@ if(PART.includes('pc')){
  await ev(p,()=>window.namsan.jump(2));const w=(await ev(p,()=>window.namsan.bus())).next.start.wait;await ev(p,w=>{window.namsan.busClockOffset=(window.namsan.busClockOffset??0)+w-4;},w);
  await ev(p,s=>window.namsan.goTo(s.x,s.z,0),stops[0]);await sl(600);v=await view(p);check('pc: 정류장 「순환버스 타기」·다음 버스 시간',v?.rows?.[0]?.label==='순환버스 타기'&&/다음 버스 0:0\d/.test(v.rows[0].sub),{row:v?.rows?.[0]});
  await p.keyboard.press('KeyF');await sl(500);v=await view(p);check('pc: 기다리는 동안 「기다리지 않고 바로 가기」',v?.rows?.[0]?.label==='기다리지 않고 바로 가기',{row:v?.rows?.[0]});
- await sl(5500);let bus=await ev(p,()=>window.namsan.bus());check('pc: 버스가 서면 탐(정상행)',bus.ride?.to==='summit',bus.ride);
+ await sl(13500);let bus=await ev(p,()=>window.namsan.bus());check('pc: 버스가 서면 탐(정상행)',bus.ride?.to==='summit',bus.ride);
  await sl(14000);await shot(p,'pc-bus-ride');const s0=await ev(p,()=>window.namsan.status());check('pc: 타고 가며 내 자리가 버스와 같이 움직임',Math.hypot(s0.x-stops[0].x,s0.z-stops[0].z)>15,{d:+Math.hypot(s0.x-stops[0].x,s0.z-stops[0].z).toFixed(1)});
  bus=await ev(p,()=>window.namsan.bus());await ev(p,u=>{window.namsan.busClockOffset+=u-2;},bus.ride.until);await sl(4500);
  const s1=await ev(p,()=>({st:window.namsan.status(),bus:window.namsan.bus()}));check('pc: 정상 정류장에서 내림',!s1.bus.ride&&Math.hypot(s1.st.x-stops[1].x,s1.st.z-stops[1].z)<1,{x:s1.st.x,z:s1.st.z});await shot(p,'pc-bus-summit');
@@ -105,14 +108,15 @@ if(PART.includes('phone')){
  const p=await open('phone',{viewport:{width:390,height:844},touch:true});const S=await ev(p,()=>window.namsan.spots());
  const sp=S.spots.find(s=>s.id==='spring-1');await ev(p,sp=>window.namsan.goTo(sp.x,sp.z,sp.face+Math.PI),sp);await sl(800);
  let L=await layout(p);check('phone: 할 일 칩·단추 화면 안·44px·안 겹침',L.inside&&!L.small.length&&!L.overlap.length,L);await shot(p,'phone-spring-chip');
- await p.tap('.ns-todo');await sl(4000);check('phone: 칩 누르기로 약수',(await ev(p,()=>window.namsan.status().interact.progress.drinks))===1);
- const lk=S.spots.find(s=>s.id==='locks-summit');await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,lk.face+Math.PI),lk);await sl(700);await p.tap('.ns-todo');await sl(500);
+ await p.tap('.ns-big');await sl(4000);check('phone: 큰 단추 누르기로 약수',(await ev(p,()=>window.namsan.status().interact.progress.drinks))===1);
+ const lk=S.spots.find(s=>s.id==='locks-summit');await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,lk.face+Math.PI),lk);await sl(700);await p.tap('.ns-big');await sl(500);
  L=await layout(p);check('phone: 자물쇠 카드 단추 화면 안·44px·안 겹침',L.inside&&!L.small.length&&!L.overlap.length,L);await shot(p,'phone-lock-card');
  await p.tap('.ns-lock-colors button[data-c="1"]');await p.tap('[data-lk="hang"]');await sl(700);check('phone: 자물쇠 걸기',(await ev(p,()=>window.namsan.locks().mine.length))===1);
- const b0=S.benches[1];await ev(p,b=>window.namsan.goTo(b.x+Math.sin(b.yaw)*.8,b.z+Math.cos(b.yaw)*.8,b.yaw),b0);await sl(700);await p.tap('.ns-todo');await sl(1300);
+ const b0=S.benches[1];await ev(p,b=>window.namsan.goTo(b.x+Math.sin(b.yaw)*.8,b.z+Math.cos(b.yaw)*.8,b.yaw),b0);await sl(700);await p.tap('.ns-big');await sl(1300);
  check('phone: 벤치 앉기',(await ev(p,()=>window.namsan.seat()?.pose))==='sit');L=await layout(p);check('phone: 앉은 동안 칩(차·일어나기) 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await shot(p,'phone-bench');
  
  await ev(p,()=>window.dispatchEvent(new CustomEvent('hiking:command',{detail:{id:'sit'}})));await sl(300);
+ const keys=await ev(p,()=>[...document.querySelectorAll('.ns-ctx kbd,.ns-big kbd,.ns-toast')].map(e=>e.tagName==='KBD'?'kbd':/\([A-Z]\)/.test(e.textContent)?e.textContent:null).filter(Boolean));check('phone: 키보드 글자 안 보임(카드·알림)',!keys.length,{keys});
  await p.tap('.ns-bino');await sl(1200);const close=await ev(p,()=>{const b=document.querySelector('#gadget-ui .chip-close');const r=b?.getBoundingClientRect();return r?{w:r.width,h:r.height,in:r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight,text:b.textContent}:null;});
  check('phone: 쌍안경 「✕ 내리기」 44px·화면 안',close&&close.h>=44&&close.in,close);await shot(p,'phone-bino');
  await p.tap('#gadget-ui .chip-close');await sl(400);check('phone: ✕ 내리기로 내림',(await ev(p,()=>window.namsan.status().gadget))==='none');
@@ -122,7 +126,7 @@ if(PART.includes('phone')){
 if(PART.includes('land')){
  const p=await open('land',{viewport:{width:844,height:390},touch:true});const S=await ev(p,()=>window.namsan.spots());
  const lk=S.spots.find(s=>s.id==='locks-summit');await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,lk.face+Math.PI),lk);await sl(700);
- let L=await layout(p);check('land: 자물쇠 칩 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await p.tap('.ns-todo');await sl(500);
+ let L=await layout(p);check('land: 자물쇠 칩 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await p.tap('.ns-big');await sl(500);
  L=await layout(p);check('land: 자물쇠 카드 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await shot(p,'land-lock-card');
  const sp=S.spots.find(s=>s.id==='cairn-summit');await ev(p,()=>document.querySelector('[data-lk="close"]')?.click());await ev(p,sp=>window.namsan.goTo(sp.x,sp.z,sp.face+Math.PI),sp);await sl(700);
  L=await layout(p);check('land: 돌탑 칩 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await shot(p,'land-cairn');
@@ -139,7 +143,7 @@ if(PART.includes('multi')){
  check('multi: A가 건 자물쇠가 B 화면에 걸림',bl.count.filled===before+1&&bl.remoteHung>=1,{before,after:bl.count.filled,remote:bl.remote});await shot(B,'multi-lock-B');
  const stops=await ev(A,()=>window.namsan.interact().cands.filter(c=>c.action==='bus').map(c=>({x:c.x,z:c.z})));
  const w=(await ev(A,()=>window.namsan.bus())).next.start.wait;for(const q of [A,B])await ev(q,w=>{window.namsan.busClockOffset=w-2;},w);
- await ev(A,s=>window.namsan.goTo(s.x,s.z,0),stops[0]);await ev(B,s=>window.namsan.goTo(s.x+2,s.z+3,0),stops[0]);await sl(700);await A.keyboard.press('KeyF');await sl(6000);
+ await ev(A,s=>window.namsan.goTo(s.x,s.z,0),stops[0]);await ev(B,s=>window.namsan.goTo(s.x+2,s.z+3,0),stops[0]);await sl(700);await A.keyboard.press('KeyF');await sl(14000);
  const ra=await ev(B,()=>window.namsan.multi()?.roster?.[0]?.act);check('multi: 버스 탄 A가 B에게 앉음·버스로 보임',ra?.p==='sit'&&ra?.x==='bus',ra);
  await ctx.close();
 }

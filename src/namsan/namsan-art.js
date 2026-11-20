@@ -291,13 +291,19 @@ export function buildTrailFurniture(G){
  }
  // 정상 표지석 「남산 265m」: 코스 끝에서 광장 쪽 6m, 오는 사람을 봄
  {const e=pts.at(-1),tw=NAMSAN.tower,ox=e.x-tw.x,oz=e.z-tw.z,ol=Math.hypot(ox,oz)||1,R=Math.max(ol+2,TOWER.baseR+8),x=tw.x+ox/ol*R+(-oz/ol)*4.5,z=tw.z+oz/ol*R+(ox/ol)*4.5,y=G.plaza.y+.04,dx=tw.x-x,dz=tw.z-z; // 코스 끝 옆, 탑 반대쪽(화단 밖)에서 탑을 등지고 오는 사람을 봄
-  const stoneG=markerStone(0,.62,.62,.72,.42,5,.3),stone=new THREE.Mesh(stoneG,std('#9c968a',{flatShading:true}));stone.castShadow=true;stone.name='정상 표지석';
+  // 앞(바깥, 한자)과 뒤(광장 쪽, 한글) 두 면을 평평하게 깎아 글자를 새긴다(11-20: 광장 안·옆에서 오면 뒷면만 보여 그냥 바위로 보였음)
+  const stoneG=markerStone(0,.62,.62,.72,.42,5,.3);{const sp=stoneG.attributes.position;for(let i=0;i<sp.count;i++)sp.setZ(i,Math.max(-.3,sp.getZ(i)));stoneG.computeVertexNormals();}
+  const stone=new THREE.Mesh(stoneG,std('#9c968a',{flatShading:true}));stone.castShadow=true;stone.name='정상 표지석';
   const face=canvasMap(256,512,(g,w,h)=>{g.clearRect(0,0,w,h);g.textAlign='center';g.textBaseline='middle';g.font=`bold 150px "Noto Serif CJK KR","AppleMyungjo",serif`;
    for(const [ch,yy] of [['南',120],['山',290]]){g.fillStyle='rgba(240,236,226,.6)';g.fillText(ch,w/2+3,yy+4);g.fillStyle='#2a2925';g.fillText(ch,w/2,yy);}
    g.font=`bold 58px ${FONT}`;g.fillStyle='#2a2925';g.fillText(`${NAMSAN.label.height}m`,w/2,440);},false);
   const plane=new THREE.Mesh(new THREE.PlaneGeometry(.5,1),new THREE.MeshStandardMaterial({map:face,transparent:true,alphaTest:.3,depthWrite:false}));plane.position.set(0,.66,.305);plane.name='정상 표지석 글자';
   const base=new THREE.Mesh(new THREE.CylinderGeometry(1.05,1.15,.3,10),std(NAMSAN_COLORS.stone));base.position.y=.05;base.receiveShadow=true;
-  const holder=new THREE.Group();holder.add(base,stone,plane);stone.position.y=.15;plane.position.y+=.15;holder.position.set(x,y,z);holder.rotation.y=Math.atan2(-dx,-dz);holder.name='정상 표지석 「남산 265m」';group.add(holder);
+  const backFace=canvasMap(256,512,(g,w,h)=>{g.clearRect(0,0,w,h);g.textAlign='center';g.textBaseline='middle';g.font=`bold 120px ${FONT}`;
+   for(const [ch,yy] of [['남',125],['산',275]]){g.fillStyle='rgba(240,236,226,.6)';g.fillText(ch,w/2+3,yy+4);g.fillStyle='#2a2925';g.fillText(ch,w/2,yy);}
+   g.font=`bold 58px ${FONT}`;g.fillStyle='#2a2925';g.fillText(`${NAMSAN.label.height}m`,w/2,425);},false);
+  const back=new THREE.Mesh(plane.geometry,new THREE.MeshStandardMaterial({map:backFace,transparent:true,alphaTest:.3,depthWrite:false}));back.position.set(0,.66,-.305);back.rotation.y=Math.PI;back.name='정상 표지석 뒷면 글자';
+  const holder=new THREE.Group();holder.add(base,stone,plane,back);stone.position.y=.15;plane.position.y+=.15;back.position.y+=.15;holder.position.set(x,y,z);holder.rotation.y=Math.atan2(-dx,-dz);holder.name='정상 표지석 「남산 265m」';group.add(holder);
   items.push({kind:'summit-stone',x,z,heading:holder.rotation.y});}
  // 쉼터: 남서쪽으로 트인 쪽에 돌판 데크(6×3.4m) + 나무 난간 + 벤치 2개(남서를 봄)
  {const m=courseAt(pts,NAMSAN.rest.s),side=G.restSide??((m.nx*-.7+m.nz*.7)>0?1:-1),off=(NAMSAN.pathWidth/2+1.9)*side,c=sideAt(m,off),y=m.y+.02;
