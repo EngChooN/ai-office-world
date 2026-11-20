@@ -93,9 +93,12 @@ out.lengthMismatch=out.files.filter(f=>Math.abs(f.duration-f.expected)>=1.5).map
  check('다이얼 → 잡음 줄고 방송 또렷',seq.every((x,i)=>!i||(x.noise<=seq[i-1].noise&&x.bc>=seq[i-1].bc))&&seq[0].clarity===0&&seq.at(-1).noise===0,{seq});
  await p.waitForFunction(()=>hiking.radio.state.audio?.deckState==='playing',null,{timeout:15000});await sleep(800);
  // 볼륨
- await R(()=>hiking.radio.setVol(.2));await sleep(500);const lvLow=await avgLevel(1500);
- await R(()=>hiking.radio.setVol(.9));await sleep(500);const lvHigh=await avgLevel(1500);
- check('볼륨 노브(0.2 → 0.9 커짐)',lvHigh-lvLow>6,{낮음:lvLow.toFixed(1),높음:lvHigh.toFixed(1)});
+ // 곡은 대목마다 크기가 달라(같은 볼륨 1.5초 평균이 최대 13dB까지 오르내림, 11-20 7단계 측정 artifacts/merge-baseline/step7/radio-probe)
+ // 0.2 1.5초 → 0.9 1.5초를 한 번만 비교하면 곡이 조용해지는 대목에 걸려 실패했다. 0.4초씩 번갈아 6번 재고 차이의 중간값으로 본다(기대 13dB)
+ const diffs=[];let lvLow=0,lvHigh=0;
+ for(let i=0;i<6;i++){await R(()=>hiking.radio.setVol(.2));await sleep(200);const lo=await avgLevel(400);await R(()=>hiking.radio.setVol(.9));await sleep(200);const hi=await avgLevel(400);diffs.push(hi-lo);lvLow+=lo/6;lvHigh+=hi/6;}
+ const diffMed=[...diffs].sort((a,b)=>a-b)[3];
+ check('볼륨 노브(0.2 → 0.9 커짐)',diffMed>6,{낮음:lvLow.toFixed(1),높음:lvHigh.toFixed(1),차이중간:diffMed.toFixed(1),차이:diffs.map(d=>+d.toFixed(1))});
  await R(()=>hiking.radio.setVol(.6));
  // 내리기 뒤 계속
  await p.click('.rd-down');await sleep(800);
@@ -124,7 +127,9 @@ out.lengthMismatch=out.files.filter(f=>Math.abs(f.duration-f.expected)>=1.5).map
  const finite=trace.filter(Number.isFinite),minDb=Math.min(...trace),medDb=finite.sort((a,b)=>a-b)[Math.floor(finite.length/2)];
  out.levels.natureTrace=trace.map(v=>Number.isFinite(v)?+v.toFixed(1):null);
  const switched=before.every((b,i)=>after[i].index!==b.index);
- check('99.1 다음 파일로 끊김 없이 이어짐',switched&&minDb>-50&&minDb>medDb-15,{전:before.map(b=>b.index),후:after.map(a=>a.index),최저dB:minDb.toFixed(1),중간dB:medDb.toFixed(1)});
+ // 끊김 = 소리 없음(−∞ 또는 −80dB 아래). 99.1 소리는 원래 조용한 파일이 있어(중간 −42dB 안팎) 넘어가는 사이 −50dB 근처까지 내려간다(11-20 7단계 측정).
+ // 절대 기준 −50은 그 조용한 파일에 걸려 흔들렸으므로 −65로 두고, 「중간보다 15dB 넘게 꺼지지 않음」은 그대로 본다
+ check('99.1 다음 파일로 끊김 없이 이어짐',switched&&trace.every(Number.isFinite)&&minDb>-65&&minDb>medDb-15,{전:before.map(b=>b.index),후:after.map(a=>a.index),최저dB:minDb.toFixed(1),중간dB:medDb.toFixed(1)});
  await shots3('06-991');
  // 뒷면·소리 출처
  await p.click('.rd-front .rd-flip');await sleep(400);await shots3('07-뒷면');

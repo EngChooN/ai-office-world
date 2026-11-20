@@ -2,6 +2,7 @@
 // 자동 걷기로 SECONDS초 걸으며 2초마다 hiking.memory()(장면 버퍼·텍스처·렌더 타깃 어림)를 기록한다.
 // WebKit: 사파리 엔진에서 동작·컨텍스트 손실 확인. Chromium: CDP로 JS 힙을 함께 잰다(WebKit은 힙 API가 없다).
 // 사용: npm run preview (다른 터미널, 4173) → LABEL=before node scripts/measure-mobile-memory.mjs
+// MOUNTAIN=namsan(7단계, 11-20): 남산 페이지(/hiking/namsan/)를 같은 방법으로 잰다(BASE_URL은 /hiking/까지, 메모리는 namsan.memory() — 관악산과 같은 셈).
 // AT=2410 이면 코스 2,410m(산스장 앞)에서 출발해, 초콜릿을 먹고 역기·거꾸리 동작을 돌리며 잰다(즐길거리 HUD·모형·효과가 가장 많은 곳, 2026-11-06).
 import {webkit,chromium,devices} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
@@ -9,6 +10,7 @@ const base=process.env.BASE_URL??'http://127.0.0.1:4173/',label=process.env.LABE
 mkdirSync(out,{recursive:true});
 const engines=(process.env.ENGINES??'webkit,chromium').split(',');
 const at=process.env.AT?Number(process.env.AT):null;
+const namsan=process.env.MOUNTAIN==='namsan';
 const save=at==null?null:await (async()=>{const {initialState}=await import('../src/movement.js');return JSON.stringify({...initialState({start:'demo'}),s:at,lateral:0,view:'third'});})();
 const result={base,label,seconds,at,engines:{}};
 for(const name of engines){
@@ -21,8 +23,8 @@ for(const name of engines){
  const cdp=name==='chromium'?await context.newCDPSession(page):null;if(cdp)await cdp.send('Performance.enable');
  const heap=async()=>{if(!cdp)return null;const m=(await cdp.send('Performance.getMetrics')).metrics;const g=k=>m.find(x=>x.name===k)?.value??0;return Math.round(g('JSHeapUsedSize')/1048576*10)/10;};
  const t0=Date.now();
- await page.goto(base+(save?'?time=12:00&weather=clear':'?start=entrance&time=12:00&weather=clear'));
- await page.waitForFunction(()=>window.hiking?.started===true,null,{timeout:300000});
+ await page.goto(namsan?base+'namsan/?time=12:00&weather=clear':base+(save?'?time=12:00&weather=clear':'?start=entrance&time=12:00&weather=clear'));
+ await page.waitForFunction(ns=>ns?window.namsan?.started===true:window.hiking?.started===true,namsan,{timeout:300000});
  const startMs=Date.now()-t0;
  await page.evaluate(()=>{const c=document.querySelector('#world');c.addEventListener('webglcontextlost',()=>window.__ctxLost++);if(!window.__mmAt)window.dispatchEvent(new CustomEvent('hiking:command',{detail:{id:'auto'}}));});
  // 산스장 앞: 🍫 먹고 역기(자동 연타)·거꾸리·허리돌리기·철봉을 차례로 돌린다(모형·손 소품·효과·말풍선을 모두 만든다)
@@ -31,7 +33,8 @@ for(const name of engines){
   (async()=>{for(const act of window.__mmActs){C('trail-play',{act,id:gym.id});await new Promise(r=>setTimeout(r,500));while(T.status().active)await new Promise(r=>setTimeout(r,300));}C('auto');})();});
  const rows=[];
  for(let t=0;t<=seconds;t+=2){
-  const m=await page.evaluate(()=>({...window.hiking.memory(),act:window.hiking.trail?.status().acts.active?.name??null,lost:window.__ctxLost,s:window.hiking.snapshot().s,cities:window.hiking.landscape().cityChunks,fps:window.hiking.metrics()?.fps,quality:window.hiking.metrics()?.quality,tris:window.hiking.metrics()?.triangles}));
+  const m=await page.evaluate(ns=>ns?(st=>({...window.namsan.memory(),act:st.interact?.action?.id??null,lost:window.__ctxLost,s:Math.round(st.s),cities:window.namsan.cityDone?'done':'loading',fps:st.metrics?.fps,quality:null,tris:st.metrics?.triangles}))(window.namsan.status())
+  :({...window.hiking.memory(),act:window.hiking.trail?.status().acts.active?.name??null,lost:window.__ctxLost,s:window.hiking.snapshot().s,cities:window.hiking.landscape().cityChunks,fps:window.hiking.metrics()?.fps,quality:window.hiking.metrics()?.quality,tris:window.hiking.metrics()?.triangles}),namsan);
   m.t=t;m.jsHeapMB=await heap()??m.jsHeapMB;rows.push(m);
   console.log(name,`t=${t}s`,`총 ${m.totalMB}MB (지오 ${m.geometryMB} · 인스턴스 ${m.instancedMB} · 텍스처 ${m.textureMB} · 타깃 ${m.renderTargetsMB})`,`힙 ${m.jsHeapMB}MB`,`도시 ${m.cities}`,`dpr ${m.dpr}`,`버퍼 ${m.drawingBuffer}`,`삼각형 ${m.tris}`,`동작 ${m.act}`,`lost ${m.lost}`);
   await page.waitForTimeout(2000);

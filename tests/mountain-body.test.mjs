@@ -63,3 +63,24 @@ test('공통 본체 부품을 두 산이 같이 쓴다(소리·WebGL 끊김 복�
  // 남산 페이지는 남산 서버 줄·남산 방
  assert.match(ns,/installMultiHud\(\{[^}]*servers:NAMSAN_SERVERS/);
 });
+
+test('7단계: 화질·숨김 저장·배율·진행 카드·메모리 어림도 두 산이 공통 본체 부품 하나를 쓴다', ()=>{
+ const main=readFileSync('src/main.js','utf8'),ns=readFileSync('src/namsan/game.js','utf8');
+ for(const src of [main,ns]){
+  for(const f of ['readQualityMode(','bindQualityControls(','installLifecycleSave(','easeCameraZoom(','paintHikeCard(','sceneMemory('])assert.ok(src.includes(f),f);
+  assert.doesNotMatch(src,/'gwanak-quality-mode'/);           // 저장 키는 hiking-body.js 한 곳
+  assert.doesNotMatch(src,/addEventListener\('pagehide'/);     // 숨김 저장도 한 곳
+ }
+});
+
+test('7단계 공통 부품: 화질 주소 값·배율 따라가기·시계 글', async ()=>{
+ const {readQualityMode,easeCameraZoom,hikeClock,QUALITY_SAVE_KEY}=await import('../src/hiking-body.js');
+ assert.equal(QUALITY_SAVE_KEY,'gwanak-quality-mode');
+ assert.equal(readQualityMode('?quality=low'),'0');assert.equal(readQualityMode('?quality=high'),'2');assert.equal(readQualityMode('?quality=auto'),'auto');
+ const cam={zoom:1,n:0,updateProjectionMatrix(){this.n++;}};
+ easeCameraZoom(cam,4,.016);assert.ok(cam.zoom>1&&cam.zoom<4);
+ for(let i=0;i<200;i++)easeCameraZoom(cam,4,.016);assert.equal(cam.zoom,4);
+ const n=cam.n;easeCameraZoom(cam,4,.016);assert.equal(cam.n,n);       // 같으면 다시 계산하지 않음
+ easeCameraZoom(cam,1,.016,{instant:true});assert.equal(cam.zoom,1);
+ assert.equal(hikeClock(3725.4),'01:02:05');
+});
