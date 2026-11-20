@@ -400,8 +400,8 @@ function paintLockCard(){const n=ix.progress.locks.length;
 <div class="ns-lock-colors" role="radiogroup" aria-label="자물쇠 색">${NS_LOCKS.colors.map((name,i)=>`<button type="button" role="radio" aria-checked="${lockPick.c===i}" aria-label="${name}" data-c="${i}" style="--c:${lockColor(i)}"></button>`).join('')}</div>
 <div class="ns-row ns-lock-shape"><button type="button" data-h="0" aria-pressed="${!lockPick.h}">네모</button><button type="button" data-h="1" aria-pressed="${!!lockPick.h}">하트</button></div>
 <div class="ns-row"><button type="button" class="on" data-lk="hang">걸기</button><button type="button" data-lk="close">닫기</button></div><small>${NS_LOCKS.notice}</small></div>`;}
-function openLockCard(){if(!LK)return;if(ix.progress.locks.length>=NS_LOCKS.max){ixUI.toast(`내 자물쇠 ${NS_LOCKS.max}개를 다 걸었어요`);return;}st.auto=false;paintBig();aimLock();paintLockCard();lockCard.hidden=false;}
-function closeLockCard(){lockCard.hidden=true;LK?.aim(-1);lockPick.aim=-1;}
+function openLockCard(){if(!LK)return;if(ix.progress.locks.length>=NS_LOCKS.max){ixUI.toast(`내 자물쇠 ${NS_LOCKS.max}개를 다 걸었어요`);return;}st.auto=false;paintBig();aimLock();paintLockCard();lockCard.hidden=false;document.body.classList.add('ns-lock-open');}
+function closeLockCard(){lockCard.hidden=true;document.body.classList.remove('ns-lock-open');LK?.aim(-1);lockPick.aim=-1;}
 function hangMine(){const i=LK.nearestEmpty(st.x,st.z);if(i<0){ixUI.toast('빈 자리가 없어요');closeLockCard();return;}
  if(!LK.hang(i,{color:lockColor(lockPick.c),heart:!!lockPick.h}))return;
  ix.progress.locks.push({i,c:lockPick.c,h:lockPick.h,at:Date.now()});ix.persist();closeLockCard();
