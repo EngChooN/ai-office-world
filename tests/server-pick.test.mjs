@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {readFileSync,mkdtempSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {SERVERS,SERVER_MAX,findServer,serverRoomName} from '../src/multi-protocol.js';
+import {SERVERS,SERVER_MAX,findServer,serverRoomName,mountainServers} from '../src/multi-protocol.js';
 import {healthUrl,serverPickMode,pickRows,pickTotals,rowLabel,createServerPick,cleanPickName,NAME_KEY,REFRESH_MS,RETRY_MS,RETRY_TIMEOUT_MS,FETCH_TIMEOUT_MS,FAIL_LIMIT,afterFail,PICK_LABELS} from '../src/server-pick.js';
 import {startServer} from '../server/multi-server.mjs';
 
@@ -18,7 +18,8 @@ const HEALTH=(h=3,s=1,max=30)=>({ok:true,total:h+s,servers:{hiking:[{id:'1',name
 const okFetch=body=>{const calls=[];const f=async(url)=>{calls.push(url);const b=typeof body==='function'?body():body;return {ok:true,status:200,json:async()=>b};};f.calls=calls;return f;};
 
 test('서버 목록 표: 체험마다 3서버(11-13), 정원 30, 서버 쪽 방 이름은 기존 규칙(끝 -1 뗌)',()=>{
- assert.deepEqual(SERVERS.hiking,[{id:'1',name:'관악산 1서버',room:'관악산-1'},{id:'2',name:'관악산 2서버',room:'관악산-2'},{id:'3',name:'관악산 3서버',room:'관악산-3'}]);
+ assert.deepEqual(SERVERS.hiking,[{id:'1',name:'관악산 1서버',room:'관악산-1',mountain:'gwanak'},{id:'2',name:'관악산 2서버',room:'관악산-2',mountain:'gwanak'},{id:'3',name:'관악산 3서버',room:'관악산-3',mountain:'gwanak'},{id:'n1',name:'남산 1서버',room:'남산-1',mountain:'namsan'},{id:'n2',name:'남산 2서버',room:'남산-2',mountain:'namsan'},{id:'n3',name:'남산 3서버',room:'남산-3',mountain:'namsan'}]); // 산마다 서버 3개(11-21)
+ assert.deepEqual(mountainServers('namsan').hiking.map(s=>s.id),['n1','n2','n3']);assert.deepEqual(mountainServers('gwanak').hiking.map(s=>s.id),['1','2','3']);assert.equal(findServer('hiking','남산-2')?.id,'n2');assert.equal(serverRoomName('남산-1'),'남산');
  assert.deepEqual(SERVERS.smoking,[{id:'1',name:'옥상 1서버',room:'옥상-1'},{id:'2',name:'옥상 2서버',room:'옥상-2'},{id:'3',name:'옥상 3서버',room:'옥상-3'}]);
  assert.equal(SERVER_MAX,30);assert.ok(Object.isFrozen(SERVERS.hiking));
  assert.equal(serverRoomName('관악산-1'),'관악산');assert.equal(serverRoomName('관악산-2'),'관악산-2');
@@ -41,7 +42,7 @@ test('창을 띄울지: 옛 주소 ?multi=는 건너뛰고 바로 1서버, 점�
  assert.equal(serverPickMode('?serverpick=off',false),'skip');assert.equal(serverPickMode('?server=off',false),'show');
 });
 test('서버 줄: n / 30명, 꽉 차면 full, 인원을 모르면 null',()=>{
- assert.deepEqual(pickRows('hiking',HEALTH(3)),[{id:'1',name:'관악산 1서버',room:'관악산-1',count:3,max:30,full:false},{id:'2',name:'관악산 2서버',room:'관악산-2',count:0,max:30,full:false},{id:'3',name:'관악산 3서버',room:'관악산-3',count:0,max:30,full:false}]);
+ assert.deepEqual(pickRows('hiking',HEALTH(3),mountainServers('gwanak')),[{id:'1',name:'관악산 1서버',room:'관악산-1',count:3,max:30,full:false},{id:'2',name:'관악산 2서버',room:'관악산-2',count:0,max:30,full:false},{id:'3',name:'관악산 3서버',room:'관악산-3',count:0,max:30,full:false}]);
  assert.equal(pickRows('hiking',HEALTH(30))[0].full,true);assert.equal(pickRows('hiking',HEALTH(2,0,2))[0].full,true,'정원은 서버가 준 max');
  assert.equal(pickRows('hiking',null)[0].count,null);assert.equal(pickRows('hiking',{servers:{hiking:[]}})[0].count,0,'서버가 줄을 안 주면 0명');
  assert.deepEqual(rowLabel(pickRows('hiking',HEALTH(3))[0]),{n:'3 / 30명',tag:'',state:'open'});

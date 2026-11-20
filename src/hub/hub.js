@@ -55,6 +55,7 @@ export function serverListHTML(e,view,picked){
 export function enterHTML(e,view,picked,base='/'){
  if(isNext(e))return `<button type="button" class="hb-go" data-fb="idea">${iconText('c-fb-idea','가 보고 싶은 곳 알려 주기',{size:'m'})}</button>`;
  const href=esc(experienceHref(e,base)),L=PICK_LABELS[e.id]??PICK_LABELS.hiking,id=esc(e.id);
+ if(e.id==='hiking')return `<a class="hb-go" href="${href}" data-enter="pick" data-exp="${id}">${iconText('c-enter','산 고르러 가기',{size:'m',after:true})}</a>`; // 등산: 산 고르기 → 그 산의 서버 고르기(11-21)
  const solo=(main=false)=>`<a class="${main?'hb-go':'hb-solo'}" href="${href}" data-enter="solo" data-exp="${id}">${iconText('c-person',main?`${L.solo}로 들어가기`:L.solo,{size:main?'m':'s'})}</a>`;
  if(view.state==='off')return solo(true);
  if(view.state==='checking')return `<a class="hb-go" href="${href}" data-enter="pick" data-exp="${id}">${iconText('c-enter','들어가서 서버 고르기',{size:'m',after:true})}</a>${solo()}`;
@@ -92,6 +93,7 @@ export function mountHub(doc=document,{base=import.meta.env.BASE_URL,storage=glo
  function panelHTML(e,{more=false}={}){
   const v=viewOf(e),next=isNext(e),p=pickedOf(e);
   const srv=next?`<p class="hb-soon">${icon('c-lock',{size:'s'})}아직 문을 열지 않았어요. 체험이 늘면 이 자리에 생겨요</p>`
+   :e.id==='hiking'?`<p class="hb-soon">${icon('c-exp-hiking',{size:'s'})}산을 고른 뒤, 그 산의 서버(관악산 1·2·3 · 남산 1·2·3)를 골라요${v.state==='on'?` · 지금 <b>${v.here}명</b> 접속 중`:''}</p>`
    :`<div class="hb-p-h"><span>함께할 서버</span>${v.state==='on'?`<span class="hb-st">${icon('c-people',{size:'xs'})}<b>${v.here}</b>/${v.cap}명</span>`:''}</div><ul class="hb-srvs" data-live="srvs">${serverListHTML(e,v,p)}</ul>`;
   return `<div class="hb-p-art">${ART[e.art]??''}${next?'':dongdong({outfit:e.outfit})}</div>
 <span class="hb-p-place">${icon(e.icon,{size:'s'})}${esc(e.place)}</span><h2 class="hb-p-title" id="hb-p-title">${esc(e.title)}</h2><p class="hb-p-desc">${esc(e.desc)}</p>

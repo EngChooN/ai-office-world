@@ -6,26 +6,14 @@
 //  - 진행: 코스에서 가장 멀리 간 거리(s), 스탬프 4곳(가까이 지나가면 찍힘), 정상 광장에 들어서면 완등.
 import {speedFor} from '../route.js';
 import {courseAt,NAMSAN} from './namsan-data.js';
+import {mountainServers} from '../multi-protocol.js';
 
 export const NAMSAN_SAVE_KEY='namsan-hike:v1';
 export const NAMSAN_ENTRY_KEY='aoworld:namsan-entry';   // 산 고르기(관악산 페이지) → 남산 페이지로 넘기는 입장 선택(허브·지난 선택)
-// 함께 걷기: 등산과 같은 함께 걷기 서버에 붙고(서버 코드·서버 목록 SERVERS는 그대로), 방만 남산 방(hiking:남산)으로 나눈다.
+// 함께 걷기: 등산과 같은 함께 걷기 서버에 붙고, 산마다 서버 3개(11-21): 남산 서버 n1·n2·n3 = 방 남산-1·2·3(SERVERS 표, 서버 /health에 같이 나옴).
 // 같은 게임 좌표라 관악산 방에 섞이면 높이가 엉뚱해진다(받는 쪽이 자기 지형으로 높이를 구함).
-// 남산 방은 서버 목록 밖 방이라 서버의 옛 규칙을 따른다: 20명이 차면 서버가 저절로 남산-2 방으로 넘긴다(그래서 줄은 하나).
-// 서버 /health는 목록 밖 방 인원을 따로 주지 않으므로 인원 = 등산 전체 접속 − 관악산 서버 방 인원(namsanCount).
-export const NAMSAN_SERVERS=Object.freeze({hiking:Object.freeze([Object.freeze({id:'1',name:'남산 서버',room:'남산-1'})])});
+export const NAMSAN_SERVERS=mountainServers('namsan');
 export const namsanRoom=()=>NAMSAN_SERVERS.hiking[0].room;
-/** /health → 남산 방 인원(등산 체험 전체 − 관악산 서버 방). 모르면 null */
-export function namsanCount(health){
- const all=health?.experiences?.hiking?.clients,rows=health?.servers?.hiking;
- if(!Number.isFinite(all)||!Array.isArray(rows))return null;
- return Math.max(0,all-rows.reduce((n,r)=>n+(Number.isFinite(r?.count)?r.count:0),0));
-}
-/** 서버 고르기 창에 줄 /health: 등산 줄을 남산 줄 하나로 바꾼다(인원 = namsanCount) */
-export function namsanHealth(health){
- if(!health?.servers)return health;const n=namsanCount(health);
- return {...health,servers:{...health.servers,hiking:n===null?undefined:[{id:'1',name:'남산 서버',count:n}]}};
-}
 export const isNamsanRoom=room=>/^남산(-\d{1,3})?$/.test(String(room??''));
 
 export const WALK=Object.freeze({

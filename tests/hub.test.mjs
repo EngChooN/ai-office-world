@@ -18,9 +18,10 @@ test('링크는 BASE_PATH 기준 /hiking/·/smoking/',()=>{
  assert.equal(experienceHref(s,'/ai-office-world'),'/ai-office-world/smoking/');
 });
 test('들어가기 링크는 체험 주소(BASE_PATH 기준)이고, 기록 도장 함수는 기록이 있을 때만 글을 준다',()=>{
- const [h]=EXPERIENCES;
+ const [h,s]=EXPERIENCES;
  const off=hubServerView('hiking',{net:'off'});
- assert.match(enterHTML(h,off,null,'/ai-office-world/'),/href="\/ai-office-world\/hiking\/"[^>]*data-enter="solo"/);
+ assert.match(enterHTML(h,off,null,'/ai-office-world/'),/href="\/ai-office-world\/hiking\/"[^>]*data-enter="pick"/);
+ assert.match(enterHTML(s,hubServerView('smoking',{net:'off'}),null,'/ai-office-world/'),/href="\/ai-office-world\/smoking\/"[^>]*data-enter="solo"/);
  assert.match(statusHTML(off),/혼자 하기만/);
  assert.equal(h.record({getItem:()=>null}),null);
  const store={getItem:()=>JSON.stringify({gwanak:{first:'2026-11-06',count:2,bestSec:7000,last:'2026-11-07'}})};

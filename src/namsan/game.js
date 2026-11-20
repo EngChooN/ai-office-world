@@ -36,7 +36,7 @@ import {recordSummit,summitOf,loadSummits} from '../summit-records.js';
 import {loadNamsanData,createNamsanGround,courseAt,NAMSAN} from './namsan-data.js';
 import {buildNamsan} from './namsan-art.js';
 import {createNightLighting} from '../night-lighting.js';
-import {NAMSAN_ENTRY_KEY,NAMSAN_SERVERS,isNamsanRoom,namsanRoom,namsanHealth,walkHeight,heightAt,remainOf,jumpTo,wrapAngle} from './namsan-walk.js';
+import {NAMSAN_ENTRY_KEY,NAMSAN_SERVERS,isNamsanRoom,namsanRoom,walkHeight,heightAt,remainOf,jumpTo,wrapAngle} from './namsan-walk.js';
 import {createNamsanWalker} from './namsan-walker.js';
 // 통합 5단계(11-20): 남산 상호작용(약수·물확·돌탑·정상석·이정표·스탬프함·쌍안경)·사랑의 자물쇠·순환버스·정상 야경 벤치
 import {buildNamsanInteract,INTERACT_COLORS} from './namsan-interact-art.js';
@@ -86,18 +86,14 @@ loading.set('terrain',.02);
 // ── 입장(세 체험 공통 흐름 그대로): 산 고르기가 넘겨준 선택 → (주소로 바로 왔으면) 이 기기의 지난 선택 → 없으면 공용 입장 창 한 번 ──
 const multiMode=q.has('multi'),pickMode=hikingPickMode();
 let passed=null;try{passed=JSON.parse(sessionStorage.getItem(NAMSAN_ENTRY_KEY)??'null');sessionStorage.removeItem(NAMSAN_ENTRY_KEY);}catch{}
-// 관악산 서버 1·2·3 중 무엇을 골랐든 남산은 남산 서버 하나(줄 id '1')로 들어간다. 혼자 하기는 그대로
-const entryChoice=(c=>c?.server?{...c,server:'1'}:c)(pickMode==='legacy'?null:(passed??entryChoiceNow()));
+// 산 고르기 뒤에는 늘 이 산의 서버 창(남산 1·2·3서버)을 연다(11-21 대표 지시) — 허브·지난 선택·산 고르기에서 넘어온 서버 선택은 쓰지 않는다. 혼자 하기 선택만 이어 준다
+const entryChoice=pickMode==='legacy'?null:(passed?.solo?{solo:true}:null);
 let wantStart=false,ready=false,beginHike=()=>{};
 const requestStart=()=>{wantStart=true;beginHike();};
 let pendingJoin=null;   // 화면이 준비되기 전에 고른 서버
 let joinMulti=async()=>{};
-// 서버 인원: /health의 등산 줄(관악산 방)을 남산 줄 하나로 바꿔 보여 준다(namsan-walk.js namsanHealth)
-const fetchNamsan=(...a)=>fetch(...a).then(async r=>{if(!r.ok)return r;const j=namsanHealth(await r.json());return new Response(JSON.stringify(j),{status:200,headers:{'content-type':'application/json'}});});
-// 남산에서 고른 서버는 '지난 선택'(체험별 저장값)에 쓰지 않는다 — 관악산 입장 때 남산 줄 id가 관악산 1서버로 읽히지 않게. 이름 저장은 그대로
-const entryStore={getItem:k=>{try{return localStorage.getItem(k);}catch{return null;}},setItem:(k,v)=>{if(k===ENTRY_KEY)return;try{localStorage.setItem(k,v);}catch{}},removeItem:k=>{if(k===ENTRY_KEY)return;try{localStorage.removeItem(k);}catch{}}};
 let pick=null;
-const namsanPick=()=>pick??=createServerPick({experience:'hiking',servers:NAMSAN_SERVERS,serverUrl:hikingServerUrl(),serverOff:currentChoice().source==='file-off',fetchImpl:fetchNamsan,storage:entryStore,
+const namsanPick=()=>pick??=createServerPick({experience:'hiking',servers:NAMSAN_SERVERS,serverUrl:hikingServerUrl(),serverOff:currentChoice().source==='file-off',
  onJoin(d){pendingJoin={room:d.room,name:d.name};joinMulti(pendingJoin);requestStart();},
  onSolo({left}){if(left)leaveMulti();requestStart();}});
 serverReady.then(()=>{

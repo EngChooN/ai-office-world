@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createNamsanGround,courseAt,NAMSAN} from '../src/namsan/namsan-data.js';
 import {TOWER} from '../src/namsan/namsan-art.js';
-import {WALK,createWalkState,stepWalk,walkHeight,walkable,placeOf,jumpTo,saveData,NAMSAN_SERVERS,namsanRoom,isNamsanRoom,namsanCount,namsanHealth} from '../src/namsan/namsan-walk.js';
+import {WALK,createWalkState,stepWalk,walkHeight,walkable,placeOf,jumpTo,saveData,NAMSAN_SERVERS,namsanRoom,isNamsanRoom} from '../src/namsan/namsan-walk.js';
 import {MOUNTAINS,mountainById} from '../src/mountains.js';
 import {findServer,SERVERS} from '../src/multi-protocol.js';
 import {statusView,roomLabel} from '../src/multi-entry-ui.js';
@@ -62,21 +62,16 @@ test('산 고르기: 남산 카드 값(설계서 §8)과 페이지, 관악산은
 });
 
 test('함께 걷기: 남산 방은 관악산 서버 방과 따로, 서버 목록(SERVERS)은 그대로', ()=>{
- assert.equal(NAMSAN_SERVERS.hiking.length,1);assert.equal(namsanRoom(),'남산-1');
- assert.equal(findServer('hiking',namsanRoom()),null,'관악산 서버 줄에 걸리지 않음');
- assert.equal(SERVERS.hiking.length,3);assert.ok(SERVERS.hiking.every(s=>s.room.startsWith('관악산')));
+ assert.equal(NAMSAN_SERVERS.hiking.length,3);assert.equal(namsanRoom(),'남산-1');
+ assert.equal(findServer('hiking',namsanRoom())?.mountain,'namsan','남산 방은 남산 서버 줄(관악산 줄과 따로)');assert.ok(!SERVERS.hiking.some(s=>s.mountain==='gwanak'&&isNamsanRoom(s.room)));
+ assert.equal(SERVERS.hiking.length,6);assert.equal(SERVERS.hiking.filter(s=>s.room.startsWith('관악산')).length,3);assert.equal(SERVERS.hiking.filter(s=>s.room.startsWith('남산')).length,3);
  assert.ok(isNamsanRoom('남산')&&isNamsanRoom('남산-1')&&isNamsanRoom('남산-2'));assert.ok(!isNamsanRoom('관악산-1'));
  // 상태 칩: 남산 줄을 넘기면 '남산 서버'로 연결됨, 안 넘기면(관악산 화면) 예전처럼 '다른 방'
  assert.equal(statusView({state:'online',room:'남산',count:2,transport:'server'},NAMSAN_SERVERS).text,'연결됨 · 2명');
- assert.equal(roomLabel('남산',NAMSAN_SERVERS),'남산 서버');
- assert.equal(statusView({state:'online',room:'남산',count:2,transport:'server'}).text,'다른 방 · 2명');
+ assert.equal(roomLabel('남산',NAMSAN_SERVERS),'남산 1서버');
+ assert.equal(statusView({state:'online',room:'남산',count:2,transport:'server'}).text,'연결됨 · 2명','남산 서버도 표에 있어 관악산 화면에서도 연결됨');assert.equal(statusView({state:'online',room:'우리끼리',count:2,transport:'server'}).text,'다른 방 · 2명');
 });
 
-test('서버 인원: 남산 = 등산 전체 접속 − 관악산 서버 방', ()=>{
- const h={experiences:{hiking:{clients:9}},servers:{hiking:[{id:'1',count:4},{id:'2',count:2},{id:'3',count:0}],smoking:[{id:'1',count:3}]}};
- assert.equal(namsanCount(h),3);assert.equal(namsanCount({servers:{}}),null);
- const n=namsanHealth(h);assert.deepEqual(n.servers.hiking,[{id:'1',name:'남산 서버',count:3}]);assert.deepEqual(n.servers.smoking,h.servers.smoking);
-});
 
 test('날씨 출처(Open-Meteo CC BY 4.0)가 화면 출처 줄과 도움말에 있다(이용 조건, 11-19 · 6단계부터 관악산과 같은 화면 조각)', ()=>{
  const html=readPage('hiking/namsan/index.html');

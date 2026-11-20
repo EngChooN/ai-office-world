@@ -93,9 +93,9 @@ test('세 체험은 허브 선택(없으면 지난 선택)이 있으면 서버 �
 
 // ── 서버 상태
 test('서버 상태: 확인 중 · 켜짐(인원·합계·정원) · 꺼짐(꺼짐·주소 없음·/health 실패)', ()=>{
- const c=hubServerView('hiking',{net:'checking'});assert.equal(c.state,'checking');assert.equal(c.best,null);assert.deepEqual(c.rows.map(r=>r.count),[null,null,null]);
+ const c=hubServerView('hiking',{net:'checking'});assert.equal(c.state,'checking');assert.equal(c.best,null);assert.deepEqual(c.rows.map(r=>r.count),[null,null,null,null,null,null]);
  const on=hubServerView('hiking',{net:'ok',health:health()});
- assert.equal(on.state,'on');assert.equal(on.here,45);assert.equal(on.cap,90);assert.deepEqual(on.rows.map(r=>r.full),[false,true,false]);
+ assert.equal(on.state,'on');assert.equal(on.here,45);assert.equal(on.cap,180);assert.deepEqual(on.rows.map(r=>r.full),[false,true,false,false,false,false]); // 등산 서버 6개(관악산 3 + 남산 3)
  assert.equal(hubServerView('christmas',{net:'ok',health:health()}).cap,60);
  for(const net of ['off','none','error'])assert.equal(hubServerView('smoking',{net,health:null}).state,'off',net);
  assert.equal(hubServerView('smoking',{net:'ok',health:{}}).state,'off');
@@ -138,17 +138,19 @@ test('허브 시간대: ?hubtime → 설정 → 해 높이', ()=>{
  assert.equal(pickHubTime({forced:'x',setting:'x',elevation:30}),'day');
 });
 test('들어가기 단추: 켜짐 = 고른 서버로·혼자, 확인 중 = 들어가서 고르기, 꺼짐 = 혼자만, 모두 꽉 참 = 안내 + 혼자', ()=>{
- const [h,,x]=EXPERIENCES;
+ const [h,s,x]=EXPERIENCES;
  const on=hubServerView('hiking',{net:'ok',health:health()});
- const a=enterHTML(h,on,'3','/');
- assert.match(a,/data-enter="server" data-server="3"/);assert.match(a,/3서버로 들어가기/);assert.match(a,/data-enter="solo"/);assert.match(a,/혼자 걷기/);
- assert.doesNotMatch(enterHTML(h,on,'2','/'),/data-server="2"/); // 꽉 찬 2서버로는 들어가기 단추가 생기지 않음
- assert.match(enterHTML(h,hubServerView('hiking',{net:'checking'}),null,'/'),/data-enter="pick"[^]*들어가서 서버 고르기/);
+ // 등산은 서버를 허브에서 고르지 않는다: 산 고르기 → 그 산의 서버 고르기(11-21)
+ for(const v of [on,hubServerView('hiking',{net:'checking'}),hubServerView('hiking',{net:'off'})]){const a=enterHTML(h,v,'3','/');assert.match(a,/data-enter="pick"[^]*산 고르러 가기/);assert.doesNotMatch(a,/data-enter="server"|data-enter="solo"/);}
+ const son=hubServerView('smoking',{net:'ok',health:health()});
+ const a=enterHTML(s,son,'3','/');
+ assert.match(a,/data-enter="server" data-server="3"/);assert.match(a,/3서버로 들어가기/);assert.match(a,/data-enter="solo"/);assert.match(a,/혼자 피우기/);
+ assert.match(enterHTML(s,hubServerView('smoking',{net:'checking'}),null,'/'),/data-enter="pick"[^]*들어가서 서버 고르기/);
  const off=enterHTML(x,hubServerView('christmas',{net:'off'}),null,'/');
  assert.match(off,/혼자 둘러보기로 들어가기/);assert.doesNotMatch(off,/data-enter="server"/);
  assert.match(enterHTML(NEXT_SLOT,on,null,'/'),/data-fb="idea"/);
  const list=serverListHTML(h,on,'1');
- assert.equal((list.match(/data-srv=/g)??[]).length,3);assert.match(list,/data-srv="2" disabled/);assert.match(list,/aria-pressed="true"/);
+ assert.equal((list.match(/data-srv=/g)??[]).length,6);assert.match(list,/data-srv="2" disabled/);assert.match(list,/aria-pressed="true"/);
  assert.match(serverListHTML(h,hubServerView('hiking',{net:'off'}),null),/서버가 쉬고 있어요/);
  assert.match(statusHTML(on),/45명/);assert.match(statusHTML(hubServerView('smoking',{net:'ok',health:health()})),/첫 번째로 들어가 보세요/);
  assert.match(statusHTML(hubServerView('hiking',{net:'checking'})),/인원 확인 중/);

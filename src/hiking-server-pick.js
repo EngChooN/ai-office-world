@@ -8,6 +8,7 @@ import {multiServerUrl} from './multi-transport.js';
 import {currentChoice} from './server-link.js';
 import {START_EVENT} from './loading.js';
 import {takeEntryChoice,enterWith} from './entry.js';
+import {mountainServers} from './multi-protocol.js';
 
 let pick=null;
 const startHike=()=>{if(window.__hikingStartRequested)return;window.__hikingStartRequested=true;window.dispatchEvent(new CustomEvent(START_EVENT));};
@@ -23,7 +24,7 @@ export const entryChoiceNow=()=>entryChoice;
 export const hubPicked=entryDecided;
 export function hikingServerPick(){
  if(pick)return pick;
- pick=createServerPick({experience:'hiking',serverUrl:hikingServerUrl(),serverOff:currentChoice().source==='file-off',
+ pick=createServerPick({experience:'hiking',servers:mountainServers('gwanak'),serverUrl:hikingServerUrl(),serverOff:currentChoice().source==='file-off',
   onJoin(d){const detail={room:d.room,name:d.name,server:d.server};window.__hikingMultiJoin=detail;window.dispatchEvent(new CustomEvent('hiking:multi-join',{detail}));startHike();},
   onSolo({left}){if(left)window.dispatchEvent(new CustomEvent('hiking:multi-leave'));startHike();}});
  return pick;

@@ -30,6 +30,7 @@ export function forgetEntry(exp,storage){const all=readAll(storage);delete all[e
 /** 이번 입장에 쓸 선택: 허브에서 고른 것 → 지난 선택 → null. from = 'hub'|'saved'. 허브 값은 꺼내면 지워진다. */
 export function takeEntryChoice(exp,{mode='show',session,storage,now=Date.now()}={}){
  if(mode==='legacy')return null;
+ if(exp==='hiking')return null; // 등산은 산 고르기 → 그 산의 서버 고르기를 늘 거친다(11-21 대표 지시). 허브·지난 선택으로 건너뛰지 않는다
  const hub=takeHubPick(exp,session,now);if(hub)return {...hub,from:'hub'};
  const last=mode==='show'?lastEntry(exp,storage):null; // 점검 브라우저('skip')는 지난 선택을 쓰지 않는다(늘 같은 상태로 시험)
  return last?{...last,from:'saved'}:null;

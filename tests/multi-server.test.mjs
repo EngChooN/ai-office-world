@@ -226,14 +226,14 @@ test('서버 고르기: /health에 서버별 인원·정원과 total, 정원 2(M
  try{
   let h=await health();
   const rows=(n,c1=0)=>['1','2','3'].map(id=>({id,name:`${n} ${id}서버`,count:id==='1'?c1:0,max:2}));
-  assert.deepEqual(h.servers,{hiking:rows('관악산'),smoking:rows('옥상'),christmas:rows('눈마을 광장').map(r=>({...r,max:30}))});assert.equal(h.total,0);
+  assert.deepEqual(h.servers,{hiking:[...rows('관악산'),...[1,2,3].map(i=>({id:`n${i}`,name:`남산 ${i}서버`,count:0,max:2}))],smoking:rows('옥상'),christmas:rows('눈마을 광장').map(r=>({...r,max:30}))});assert.equal(h.total,0);
   const a=await client(url,{room:'관악산-1',name:'하나',exp:'hiking'}),b=await client(url,{room:'관악산-1',name:'둘',exp:'hiking'});
   assert.equal(a.welcome.server,'1');assert.equal(b.welcome.room,'관악산');
   const c=await client(url,{room:'관악산-1',name:'셋',exp:'hiking'});
   assert.deepEqual(c.full,{t:'full',reason:'full'});await until(()=>c.closed);
   const d=await client(url,{room:'옥상-1',name:'흡연',exp:'smoking'});assert.equal(d.welcome.server,'1');
   h=await health();
-  assert.deepEqual(h.servers.hiking,rows('관악산',2));assert.equal(h.servers.smoking[0].count,1);assert.equal(h.total,3);
+  assert.deepEqual(h.servers.hiking.slice(0,3),rows('관악산',2));assert.equal(h.servers.hiking.length,6);assert.equal(h.servers.smoking[0].count,1);assert.equal(h.total,3);
   assert.equal(h.rooms,2,'-2 방이 생기지 않음');
   // 전송 계층으로 붙어도 full 상태가 된다(창이 '방금 꽉 찼어요'를 띄우는 신호)
   const seen=[];const tr=createWebSocketTransport(url,{experience:'hiking',room:'관악산-1',name:'넷'});tr.onstatus(st=>seen.push(st));

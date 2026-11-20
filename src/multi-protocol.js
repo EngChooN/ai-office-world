@@ -283,10 +283,13 @@ export const SERVER_MAX=30;
 export const EXPERIENCE_MAX=Object.freeze({christmas:30});
 export const serverMax=(experience,base=SERVER_MAX)=>EXPERIENCE_MAX[experience]??base;
 export const SERVERS=Object.freeze({
- hiking:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`관악산 ${id}서버`,room:`관악산-${id}`}))),
+ // 등산(11-21 대표 지시): 산마다 서버 3개. 관악산 id '1'·'2'·'3'(옛 값 그대로), 남산 id 'n1'·'n2'·'n3'. 산 고르기 뒤에 그 산의 서버만 보여 준다(mountainServers)
+ hiking:Object.freeze([...['1','2','3'].map(id=>Object.freeze({id,name:`관악산 ${id}서버`,room:`관악산-${id}`,mountain:'gwanak'})),...['1','2','3'].map(n=>Object.freeze({id:`n${n}`,name:`남산 ${n}서버`,room:`남산-${n}`,mountain:'namsan'}))]),
  smoking:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`옥상 ${id}서버`,room:`옥상-${id}`}))),
  christmas:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`눈마을 광장 ${id}서버`,room:`눈마을-${id}`})))
 });
+/** 산 하나의 서버 줄만 담은 표({hiking:[…]}). 서버 고르기 창(createServerPick servers)에 넘긴다 */
+export const mountainServers=mountain=>Object.freeze({...SERVERS,hiking:Object.freeze(SERVERS.hiking.filter(s=>s.mountain===mountain))});
 export const serverRoomName=room=>String(room).replace(/-1$/,'');
 // 방 이름(이미 정리된 것) → 그 방을 맡는 서버 줄. 정확히 같은 줄이 먼저, 없으면 끝 번호를 뗀 이름으로 찾는다(목록에 없는 번호 ?multi=관악산-7 → 1서버). 없으면 null.
 export function findServer(experience,room,servers=SERVERS){
