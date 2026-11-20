@@ -1,0 +1,42 @@
+[
+ {
+  "name": "plaza-start",
+  "code": 0,
+  "sec": 406
+ },
+ {
+  "name": "full-autowalk",
+  "code": 0,
+  "sec": 1016
+ },
+ {
+  "name": "auto-view",
+  "code": 0,
+  "sec": 53
+ },
+ {
+  "name": "entrance-integration",
+  "code": 0,
+  "sec": 216
+ },
+ {
+  "name": "start-choice",
+  "code": 0,
+  "sec": 43
+ },
+ {
+  "name": "ui-frame",
+  "code": 0,
+  "sec": 170
+ },
+ {
+  "name": "no-realistic",
+  "code": 0,
+  "sec": 125
+ },
+ {
+  "name": "namsan-game",
+  "code": 0,
+  "sec": 152
+ }
+]

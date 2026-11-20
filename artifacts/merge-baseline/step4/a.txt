@@ -1,0 +1,17 @@
+build exit=0
+plaza-start 0 406s
+full-autowalk 0 1016s
+auto-view 0 53s
+entrance-integration 0 216s
+start-choice 0 43s
+ui-frame 0 170s
+no-realistic 0 125s
+namsan-game 0 152s
+gadgets 0 39s
+mobile-gadgets 0 36s
+mobile-fb-photo 0 30s
+trail-dropin 0 42s
+trail-sound 0 355s
+exhaustion 0 46s
+arms-app 0 25s
+ALLDONE
