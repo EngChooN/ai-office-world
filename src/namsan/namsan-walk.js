@@ -40,6 +40,23 @@ export const WALK=Object.freeze({
 });
 const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
 const halfWidth=p=>(p?.stairs?NAMSAN.stairWidth:NAMSAN.pathWidth)/2-WALK.body;
+// 디딤 자리(통합 5단계, 11-20): 길·광장 밖에 있는 상호작용 그림(물확 디딤돌·광장 밖 돌탑)까지 걸어갈 수 있게 G.walkPads에 짧은 띠를 더한다.
+// 띠 = 선분 a→b 둘레 반지름 r(m). game.js가 그림 자리(namsan-interact-art spots)로 makeWalkPads를 불러 넣는다. 없으면 예전과 같다.
+const segDist=(x,z,p)=>{const dx=p.bx-p.ax,dz=p.bz-p.az,t=Math.max(0,Math.min(1,((x-p.ax)*dx+(z-p.az)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-p.ax-dx*t,z-p.az-dz*t);};
+export const inPad=(G,x,z)=>!!G.walkPads?.some(p=>segDist(x,z,p)<=p.r);
+/**
+ * 상호작용 자리(서 있을 곳) → 걷는 곳에서 그 자리까지 이어 주는 띠 목록. 이미 걷는 곳이면 띠 없음.
+ * 길 가까이(8m 안)면 가장 가까운 코스 점에서, 아니면 가까운 광장 가장자리 안쪽에서 잇는다.
+ */
+export function makeWalkPads(G,spots,{r=.75}={}){
+ const pads=[];
+ for(const s of spots){if(!Number.isFinite(s?.x)||placeOf(G,s.x,s.z).ok)continue;
+  const hit=G.nearest(s.x,s.z);let a;
+  if(hit.distance<8){const k=courseAt(G.points,hit.s);a={x:k.x,z:k.z};}
+  else{const P=[G.plaza,G.startPlaza].map(P=>({P,d:Math.hypot(s.x-P.x,s.z-P.z)-P.r})).sort((u,v)=>u.d-v.d)[0].P,d=Math.hypot(s.x-P.x,s.z-P.z)||1,R=P.r-WALK.plazaEdge-.5;a={x:P.x+(s.x-P.x)/d*R,z:P.z+(s.z-P.z)/d*R};}
+  pads.push({id:s.id,ax:a.x,az:a.z,bx:s.x,bz:s.z,r});}
+ return pads;
+}
 
 /** 걷는 곳 판정에 쓰는 자리 정보: 코스 최근접점·광장 거리 */
 export function placeOf(G,x,z){
@@ -47,8 +64,8 @@ export function placeOf(G,x,z){
  const P=G.plaza,S=G.startPlaza,tw=NAMSAN.tower;
  const inSummit=Math.hypot(x-P.x,z-P.z)<=P.r-WALK.plazaEdge&&Math.hypot(x-tw.x,z-tw.z)>=WALK.towerR;
  const inStart=Math.hypot(x-S.x,z-S.z)<=S.r-WALK.plazaEdge;
- const onCourse=hit.distance<=halfWidth(p);
- return {hit,stairs:!!p?.stairs,onCourse,inSummit,inStart,ok:onCourse||inSummit||inStart};
+ const onCourse=hit.distance<=halfWidth(p),pad=!onCourse&&!inSummit&&!inStart&&inPad(G,x,z);
+ return {hit,stairs:!!p?.stairs,onCourse,inSummit,inStart,pad,ok:onCourse||inSummit||inStart||pad};
 }
 export const walkable=(G,x,z)=>placeOf(G,x,z).ok;
 /** 발 디딤 높이: 코스 노면 위면 코스 높이(계단 윗면), 아니면 화면 지형 */
@@ -67,6 +84,7 @@ export function projectLocal(G,x,z,s0,win=6){
 /** 내 몸 높이: 코스 위면 이어서 따라온 s의 코스 높이(계단 윗면), 광장이면 화면 지형 */
 export function walkHeight(G,st){
  const pl=placeOf(G,st.x,st.z);
+ if(pl.pad)return heightAt(G,st.x,st.z);   // 디딤 자리: 길 가까이면 노면 높이, 아니면 땅
  if(pl.inSummit||pl.inStart){const g=G.ground(st.x,st.z);return pl.onCourse?Math.max(g,courseAt(G.points,st.s).y-.02):g;}
  return courseAt(G.points,st.s).y;
 }

@@ -45,3 +45,19 @@ body.touch #joystick:not(.on):not(.used)::after{content:'손가락 댄 자리에
 /* 함께 걷기 인사·목록 판(multi-client .multi-panel)은 관악산처럼 평소 접어 두고 ☰ 설정에서 연다. 인사는 이름표 옆 👋 칩 */
 body.ns-page:not(.ns-multi-open) .multi-panel{display:none}
 body.ns-page .multi-panel{top:calc(env(safe-area-inset-top) + 64px)}
+/* 통합 5단계(11-20): 할 일 칩(가까운 상호작용 줄 F·2·3) — 자리·크기는 ui-frame [data-uf=todo] */
+.ns-todo{display:flex;align-items:center;cursor:pointer;font:700 13px/1.15 -apple-system,"Apple SD Gothic Neo",sans-serif;text-align:left}
+.ns-todo kbd{flex:none;min-width:20px;height:20px;padding:0 4px;border-radius:6px;background:#3a2b22;color:#fff;font:800 11px/20px inherit;text-align:center}
+.ns-todo span{display:flex;flex-direction:column;min-width:0}.ns-todo b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ns-todo small{font-size:10.5px;font-weight:600;color:#7a6650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root.uf .ns-todo.done{border-color:#b3a58c!important;opacity:.92}
+:root.uf .ns-todo.lock{border-color:#c9b9a0!important;opacity:.8}
+body.touch .ns-todo kbd{display:none}
+/* 쌍안경을 든 동안: 걷기·달리기 단추와 할 일 칩을 숨기고 쌍안경 화면(gadget-ui)만 */
+body.gadget-on .ns-big,body.gadget-on .ns-run:not(.ns-bino),body.gadget-on .ns-todo,body.gadget-on #joystick{display:none!important}
+:root.uf .ns-bino.on,body.gadget-on .ns-bino{background:#ffd36b!important}
+/* 상호작용·쌍안경 화면(관악산 interaction-ui·gadget-ui)이 쓰는 길이 단위 --u(관악산 style.css 첫 두 줄과 같음) */
+:root{--u:max(.6px,min(.0520833vw,.0925926vh))}
+@media(max-width:700px),(max-height:540px) and (orientation:landscape){:root{--u:1px}}
+/* 알림은 위 알약 줄 아래(관악산 수첩 HUD와 같은 자리) */
+.ix-toast{top:calc(env(safe-area-inset-top) + 64px)!important}

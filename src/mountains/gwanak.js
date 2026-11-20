@@ -33,6 +33,9 @@ export const GWANAK=Object.freeze({
  checkpoints,
  stampCount:STAMPS.length,
  routePointCount:route.length,
+ // 기능 스위치(통합 5단계, 11-20): 남산 정의 NAMSAN_FEATURES와 같은 이름. 지금은 표시만(관악산 본체 동작은 그대로), 6단계에 본체가 읽는다.
+ features:Object.freeze({stamps:true,boards:true,summitStone:true,binoculars:true,phone:true,spring:true,dip:true,cairn:true,stretch:true,
+  sit:'ground',tea:true,trailFun:true,animals:true,radio:true,stamina:true,loveLocks:false,bus:false,nightBench:false,multi:true,chat:true,pair:true}),
  // 화면 글(통합 3단계, 11-20). 공통 화면 틀 src/frame/hiking-body.html의 data-mt 자리를 src/mountain-text.js가 이 값으로 채운다.
  // 관악산 값은 틀에 적힌 글과 한 글자도 다르지 않다(자리만 옮기기). 남산 정의(5단계)는 같은 키를 남산 글로 채운다.
  text:Object.freeze({
