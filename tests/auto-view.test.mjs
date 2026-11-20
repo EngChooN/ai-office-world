@@ -65,6 +65,6 @@ test('자동 걷기 전 구간(광장→코스 끝): 카메라·몸 프레임당
 test('main.js가 자동 걷기 시점·몸 방향에 auto-view를 쓴다',()=>{
  const src=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
  assert.match(src,/absorbUserYaw\(autoView,look/);
- assert.match(src,/look\.yaw=stepAutoView\(autoView,\{target:state\.zone==='route'\?pathHeading\(state\.s,sample\)/);
+ assert.match(src,/look\.yaw=stepAutoView\(autoView,\{target:W\.zone\(state\)==='route'\?pathHeading\(state\.s,sample\)/);
  assert.match(src,/autoView\.active\?autoView\.heading:movementHeading/);
 });
