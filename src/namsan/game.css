@@ -73,3 +73,5 @@ body.gadget-on .ns-big,body.gadget-on .ns-run:not(.ns-bino),body.gadget-on .ns-t
 .ns-lock-in .ns-row button{min-height:44px;padding:0 18px;border-radius:12px;border:2px solid #3a2b22;background:#fff8ea;color:#3a2b22;font:800 14px/1 inherit;cursor:pointer}
 .ns-lock-in .ns-row button.on,.ns-lock-in .ns-lock-shape button[aria-pressed=true]{background:#b0442f;color:#fff;border-color:#b0442f}
 @media (max-height:500px) and (orientation:landscape){.ns-lockcard{left:auto;right:calc(env(safe-area-inset-right) + 12px);transform:none;bottom:8px}.ns-lock-colors{grid-template-columns:repeat(5,40px);gap:4px}.ns-lock-colors button{width:40px;height:40px}.ns-lock-in{padding:8px 10px}.ns-lock-in small{display:none}}
+/* 버스 타는 동안: 달리기·쌍안경·할 일 칩(건너뛰기 칩만 남김)·조이스틱 숨김 */
+body.ns-riding .ns-run,body.ns-riding #joystick{display:none!important}
