@@ -61,3 +61,15 @@ body.gadget-on .ns-big,body.gadget-on .ns-run:not(.ns-bino),body.gadget-on .ns-t
 @media(max-width:700px),(max-height:540px) and (orientation:landscape){:root{--u:1px}}
 /* 알림은 위 알약 줄 아래(관악산 수첩 HUD와 같은 자리) */
 .ix-toast{top:calc(env(safe-area-inset-top) + 64px)!important}
+/* 사랑의 자물쇠 고르기 카드(11-20): 색 10가지·네모/하트·걸기. 화면 아래 가운데(휴대폰 손가락 크기 44px) */
+.ns-lockcard{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 16px);transform:translateX(-50%);z-index:65;width:min(380px,calc(100vw - 24px));font-family:-apple-system,"Apple SD Gothic Neo",sans-serif}
+.ns-lockcard[hidden]{display:none}
+.ns-lock-in{padding:14px 14px 10px;border-radius:16px;background:#fbf3df;color:#3a2b22;box-shadow:0 10px 30px #0006;text-align:center}
+.ns-lock-in h3{margin:0 0 4px;font-size:17px}.ns-lock-in p{margin:0 0 8px;font-size:13px}.ns-lock-in small{display:block;margin-top:8px;font-size:11px;color:#7a6650}
+.ns-lock-colors{display:grid;grid-template-columns:repeat(5,44px);gap:8px;justify-content:center;margin-bottom:8px}
+.ns-lock-colors button{width:44px;height:44px;border-radius:50%;border:3px solid #fff;background:var(--c);box-shadow:0 1px 4px #0004;cursor:pointer}
+.ns-lock-colors button[aria-checked=true]{outline:3px solid #b0442f;outline-offset:1px}
+.ns-lock-in .ns-row{display:flex;gap:8px;justify-content:center;margin-top:6px}
+.ns-lock-in .ns-row button{min-height:44px;padding:0 18px;border-radius:12px;border:2px solid #3a2b22;background:#fff8ea;color:#3a2b22;font:800 14px/1 inherit;cursor:pointer}
+.ns-lock-in .ns-row button.on,.ns-lock-in .ns-lock-shape button[aria-pressed=true]{background:#b0442f;color:#fff;border-color:#b0442f}
+@media (max-height:500px) and (orientation:landscape){.ns-lockcard{left:auto;right:calc(env(safe-area-inset-right) + 12px);transform:none;bottom:8px}.ns-lock-colors{grid-template-columns:repeat(5,40px);gap:4px}.ns-lock-colors button{width:40px;height:40px}.ns-lock-in{padding:8px 10px}.ns-lock-in small{display:none}}

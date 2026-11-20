@@ -40,9 +40,10 @@ import {createNightLighting} from '../night-lighting.js';
 import {NAMSAN_ENTRY_KEY,NAMSAN_SERVERS,isNamsanRoom,namsanRoom,namsanHealth,walkHeight,heightAt,remainOf,jumpTo,wrapAngle} from './namsan-walk.js';
 import {createNamsanWalker} from './namsan-walker.js';
 // 통합 5단계(11-20): 남산 상호작용(약수·물확·돌탑·정상석·이정표·스탬프함·쌍안경)·사랑의 자물쇠·순환버스·정상 야경 벤치
-import {buildNamsanInteract} from './namsan-interact-art.js';
+import {buildNamsanInteract,INTERACT_COLORS} from './namsan-interact-art.js';
 import {makeWalkPads} from './namsan-walk.js';
-import {createNamsanInteract,planNightBenches} from './namsan-interact.js';
+import {createNamsanInteract,planNightBenches,encodeLocks,decodeLocks,lockCode} from './namsan-interact.js';
+import {NS_LOCKS} from './namsan-content.js';
 import {bench} from '../toon/trail-props.js';
 import {looseStone} from '../../assets/realistic/interaction-props.js';
 import {NAMSAN_MOUNTAIN} from '../mountains/namsan.js';
@@ -233,7 +234,7 @@ function command(id,value){
  if(id==='auto'){if(st.done){say('정상이에요 · 조이스틱으로 광장을 둘러보세요');return;}st.auto=!st.auto;paintBig();}
  else if(id==='view'){gs.view=gs.view==='third'?'first':'third';syncView();}
  else if(id==='face-forward')faceForward(look);
- else if(id==='escape'){if(gs.gadget!=='none'){closeGadget(gs);syncView();gadgetState();}else if(ix?.handle('panel-close'));else if(!summitBox.hidden)summitBox.hidden=true;else frame.close();}
+ else if(id==='escape'){if(!lockCard.hidden)closeLockCard();else if(gs.gadget!=='none'){closeGadget(gs);syncView();gadgetState();}else if(ix?.handle('panel-close'));else if(!summitBox.hidden)summitBox.hidden=true;else frame.close();}
  else if(id==='map-toggle')frame.toggle('map');
  else if(id==='interact'||id==='emote-menu')multi?.greetKey?.();
  else if(id==='labels-toggle'){if(!multi){say('이름표는 함께 걷기 중에 보여요');return;}const on=!multi.tagsOn;multi.setTags(on);say(on?'이름표 켜짐':'이름표 꺼짐');}   // N·함께 걷기 판 「이름표」(관악산 interaction-controller와 같은 문구)   // F·X = 앞사람에게 인사(관악산과 같은 키)
@@ -256,7 +257,7 @@ const multiLocal={nudge:()=>false,here:()=>null,sample:null,minS:0,maxS:0,
  position:()=>N.position(st),
  setPosition:pos=>N.setPeerPosition(st,pos),
  speed:()=>speed,sit:()=>false,run:()=>!!st.running,gadget:()=>'none',selfie:()=>false,busy:()=>false,place:()=>null,
- act:()=>({pose:'stand',gadget:gs.gadget,selfie:false,trail:null,action:ix?.action?{id:ix.action.id}:null}),shown:()=>null,propFor:()=>null};
+ act:()=>({pose:'stand',gadget:gs.gadget,selfie:false,trail:null,action:ix?.action?{id:ix.action.id}:myLockX()?{id:myLockX()}:null}),shown:()=>null,propFor:()=>null};
 joinMulti=({room=null,name=null}={})=>{multiBusy=multiBusy.then(async()=>{
  if(!window.namsan.ready)return;   // 화면 준비 뒤 pendingJoin으로 다시 부른다
  if(multi&&room===multi.room)return;if(multi)leaveMultiNow();
@@ -287,7 +288,7 @@ function frame_(now){
  requestAnimationFrame(frame_);
  const dtRaw=Math.min(.1,(now-last)/1000);last=now;const started=window.namsan.started,dt=started?dtRaw:0;
  const cmd=started?input.read():{forward:0,side:0,run:false,turn:0};
- if(multi?.frozen||!summitBox.hidden)Object.assign(cmd,{forward:0,side:0,run:false,turn:0});
+ if(multi?.frozen||!summitBox.hidden||!lockCard.hidden)Object.assign(cmd,{forward:0,side:0,run:false,turn:0});
  if(gs.gadget!=='none')Object.assign(cmd,{forward:0,side:0,run:false});   // 쌍안경을 든 동안은 제자리에서 둘러보기
  updateLook(look,dtRaw,cmd.turn);
  const direct=!!(cmd.forward||cmd.side);
@@ -326,7 +327,7 @@ function frame_(now){
  {const target=viewZoom(gs),next=Math.exp(Math.log(camera.zoom)+(Math.log(target)-Math.log(camera.zoom))*(1-Math.exp(-dtRaw*14))),z=Math.abs(next-target)<1e-3?target:next;if(z!==camera.zoom){camera.zoom=z;camera.updateProjectionMatrix();}}
  landscape.update(camera,quality);ns.update(now/1000,nightK());ia.userData.update(now/1000,nightK(),camera);
  night.update(dtRaw,{camera,avatar,view,selfie:false,zone:'route',s:st.s,hiker});
- if(multi)multi.update(dtRaw,now/1000,view);
+ if(multi){multi.update(dtRaw,now/1000,view);syncRemoteLocks(now);}
  lighting.render(avatar.position);
  if(now-uiAt>200){uiAt=now;paintHud();gadgetState();}
  paintTodo(ix&&gs.gadget==='none'?ix.view?.rows??null:null);
@@ -356,9 +357,9 @@ let envInfo={};window.addEventListener('hiking:environment',e=>{envInfo=e.detail
 const _v=new THREE.Vector3();
 const projectWorld=(x,y,z)=>{_v.set(x,y,z).project(camera);return {x:(_v.x+1)/2*innerWidth,y:(1-_v.y)/2*innerHeight,visible:_v.z<1&&Math.abs(_v.x)<1.1&&Math.abs(_v.y)<1.1};};
 const projectDir=(bearing,elevDeg)=>{const b=bearing*Math.PI/180,e=elevDeg*Math.PI/180;return projectWorld(camera.position.x+Math.sin(b)*Math.cos(e)*1000,camera.position.y+Math.sin(e)*1000,camera.position.z-Math.cos(b)*Math.cos(e)*1000);};
-const nsPlayer=()=>{const pl=placeOfMe();return {x:st.x,z:st.z,heading:camBase+look.yaw,elevation:walkHeight(G,st),inSummit:pl.inSummit,busy:!summitBox.hidden};};
+const nsPlayer=()=>{const pl=placeOfMe();return {x:st.x,z:st.z,heading:camBase+look.yaw,elevation:walkHeight(G,st),inSummit:pl.inSummit,busy:!summitBox.hidden||!lockCard.hidden};};
 const placeOfMe=()=>({inSummit:Math.hypot(st.x-G.plaza.x,st.z-G.plaza.z)<=G.plaza.r});
-ix=createNamsanInteract({spots:ia.userData.spots.filter(s=>s.action!=='lock'),items:nsItems,benches:[],busStops:[],player:nsPlayer,ui:ixUI,sound:quietSound,storage:multiMode?null:localStorage,
+ix=createNamsanInteract({spots:ia.userData.spots,onLock:c=>openLockCard(c),items:nsItems,benches:[],busStops:[],player:nsPlayer,ui:ixUI,sound:quietSound,storage:multiMode?null:localStorage,
  stamps:()=>st.stamps,
  addStamp:n=>{if(st.stamps.includes(n))return false;st.stamps.push(n);const t=NAMSAN.stamps.find(x=>x.n===n);say(`<b>${t.glyph}</b>스탬프 ${st.stamps.length} / 4 · ${t.name}`);save();if(frame.isOpen&&frame.tab==='map')paintMap(frame.panel('map'));return true;},
  geo:(lat,lon)=>project(lat,lon),projectDir,projectWorld,cameraInfo:()=>({fov:camera.fov,aspect:camera.aspect,zoom:camera.zoom}),
@@ -368,6 +369,39 @@ ix=createNamsanInteract({spots:ia.userData.spots.filter(s=>s.action!=='lock'),it
 const cairnTop=ia.userData.spots.find(x=>x.id==='cairn-summit')?.top,myStones=new THREE.Group();myStones.name='내가 올린 돌';scene.add(myStones);
 function paintStones(){const n=Math.min(6,ix.progress.stones);if(!cairnTop)return;while(myStones.children.length<n){const k=myStones.children.length,m=looseStone(11+k*7);toon.toonify(m,{kind:'prop'});m.position.set(cairnTop[0]+Math.sin(k*2.4)*.03,cairnTop[1]+.02+k*.055,cairnTop[2]+Math.cos(k*2.4)*.03);m.rotation.y=k*1.3;myStones.add(m);}}
 paintStones();let lastResult=null;
+// ── 사랑의 자물쇠(대표 결정 11-20: 이 기기에 저장 + 같은 방 사람에게 공유, 글 없음, 서버에 오래 남기지 않음) ──
+// 그림은 월드아트 ia.userData.locks(aim·hang·setFilled). 내 자물쇠는 namsan-interaction:v1 locks에, 함께 걷기는 act x 칸 'lk-…'(서버 그대로).
+const LK=ia.userData.locks,lockSpot=ia.userData.spots.find(x=>x.action==='lock');
+const lockColor=c=>INTERACT_COLORS.locks[c]??INTERACT_COLORS.locks[0];
+if(LK&&ix.progress.locks.length)LK.setFilled(ix.progress.locks.map(l=>({i:l.i,color:lockColor(l.c),heart:!!l.h})));
+function myLockX(){return encodeLocks(ix?.progress.locks??[]);}
+const lockCard=document.createElement('div');lockCard.className='ns-lockcard';lockCard.hidden=true;lockCard.setAttribute('role','dialog');lockCard.setAttribute('aria-label','사랑의 자물쇠');document.body.append(lockCard);
+let lockPick={c:0,h:0,aim:-1};
+function aimLock(){if(!LK)return;const i=LK.nearestEmpty(st.x,st.z);lockPick.aim=i;LK.aim(i);}
+function paintLockCard(){const n=ix.progress.locks.length;
+ lockCard.innerHTML=`<div class="ns-lock-in"><h3>사랑의 자물쇠</h3><p>색과 모양을 고르고 「걸기」를 누르세요 · 내 자물쇠 ${n} / ${NS_LOCKS.max}</p>
+<div class="ns-lock-colors" role="radiogroup" aria-label="자물쇠 색">${NS_LOCKS.colors.map((name,i)=>`<button type="button" role="radio" aria-checked="${lockPick.c===i}" aria-label="${name}" data-c="${i}" style="--c:${lockColor(i)}"></button>`).join('')}</div>
+<div class="ns-row ns-lock-shape"><button type="button" data-h="0" aria-pressed="${!lockPick.h}">네모</button><button type="button" data-h="1" aria-pressed="${!!lockPick.h}">하트</button></div>
+<div class="ns-row"><button type="button" class="on" data-lk="hang">걸기</button><button type="button" data-lk="close">닫기</button></div><small>${NS_LOCKS.notice}</small></div>`;}
+function openLockCard(){if(!LK)return;if(ix.progress.locks.length>=NS_LOCKS.max){ixUI.toast(`내 자물쇠 ${NS_LOCKS.max}개를 다 걸었어요`);return;}st.auto=false;paintBig();aimLock();paintLockCard();lockCard.hidden=false;}
+function closeLockCard(){lockCard.hidden=true;LK?.aim(-1);lockPick.aim=-1;}
+function hangMine(){const i=LK.nearestEmpty(st.x,st.z);if(i<0){ixUI.toast('빈 자리가 없어요');closeLockCard();return;}
+ if(!LK.hang(i,{color:lockColor(lockPick.c),heart:!!lockPick.h}))return;
+ ix.progress.locks.push({i,c:lockPick.c,h:lockPick.h,at:Date.now()});ix.persist();closeLockCard();
+ ixUI.toast(`자물쇠를 걸었어요 · ${ix.progress.locks.length} / ${NS_LOCKS.max}`,{ms:2800});lockHung++;}
+let lockHung=0;
+lockCard.addEventListener('pointerdown',e=>e.stopPropagation());
+lockCard.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.c){lockPick.c=+b.dataset.c;paintLockCard();}else if(b.dataset.h){lockPick.h=+b.dataset.h;paintLockCard();}else if(b.dataset.lk==='hang')hangMine();else if(b.dataset.lk==='close')closeLockCard();});
+// 같은 방 사람 자물쇠: 0.5초마다 사람 목록의 act x를 읽어 처음 보는 자물쇠를 건다(가까우면 거는 모습, 멀면 바로 칠함). 내 화면 같은 자리가 차 있으면 그 옆 빈 자리
+const remoteLocks=new Map();let remoteLockAt=0,remoteHung=0;
+function syncRemoteLocks(now){if(!LK||!multi||now-remoteLockAt<500)return;remoteLockAt=now;
+ for(const r of multi.info().roster??[]){const list=decodeLocks(r.act?.x);if(!list.length)continue;let seen=remoteLocks.get(r.id);const first=!seen;if(!seen)remoteLocks.set(r.id,seen=new Set());
+  for(const l of list){const code=lockCode(l);if(seen.has(code))continue;seen.add(code);
+   const slot=LK.slots()[l.i],free=slot&&!slot.filled?l.i:(slot?LK.nearestEmpty(slot.at[0],slot.at[2]):-1);if(free<0)continue;
+   const near=Number.isFinite(r.x)&&lockSpot&&Math.hypot(r.x-lockSpot.x,r.z-lockSpot.z)<30;
+   if(near&&!first)LK.hang(free,{color:lockColor(l.c),heart:!!l.h});else LK.setFilled([{i:free,color:lockColor(l.c),heart:!!l.h}]);remoteHung++;}}}
+window.namsan.locks=()=>({mine:ix.progress.locks.map(l=>({...l})),x:myLockX(),count:LK?.count()??null,remote:[...remoteLocks].map(([id,s])=>({id,codes:[...s]})),remoteHung,cardOpen:!lockCard.hidden,aim:lockPick.aim});
+window.namsan.lockCard=(o={})=>{if(lockCard.hidden)openLockCard();if(o.c!=null)lockPick.c=o.c;if(o.h!=null)lockPick.h=o.h;paintLockCard();if(o.hang)hangMine();return window.namsan.locks();};
 window.namsan.interact=()=>ix;window.namsan.features=NAMSAN_MOUNTAIN.features;
 if(q.has('debug'))Object.assign(window,{__ns:ns,__scene:scene,__land:landscape.group,__camera:camera,__THREE:THREE,__G:G,__avatar:avatar});   // 점검용(?debug)
 
