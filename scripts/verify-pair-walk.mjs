@@ -70,8 +70,15 @@ try{
  await waitFor(A,()=>[...document.querySelectorAll('.multi-tag[data-kind=name]')].some(t=>t.style.display!=='none'&&t.textContent.includes('바위다람쥐')&&(r=>r.top>0&&r.bottom<innerHeight)(t.getBoundingClientRect())),null,15000).catch(async e=>{log('이름표 진단',await A.evaluate(()=>({roster:hiking.multi().roster,tags:[...document.querySelectorAll('.multi-tag')].map(t=>({kind:t.dataset.kind,display:t.style.display,text:t.textContent,tr:t.style.transform})),me:hiking.position(),pair:hiking.multi().pair})));log('B 자리',await pos(B));throw e;});
  const tagBox=await A.evaluate(()=>{const t=[...document.querySelectorAll('.multi-tag[data-kind=name]')].find(t=>t.style.display!=='none'&&t.textContent.includes('바위다람쥐'));const r=t.querySelector('.multi-tag-name').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2,w:r.width,h:r.height};});
  await A.mouse.click(tagBox.x,tagBox.y);
+ // 11-18 인사 칩(greet-chip.js) 뒤로: 칩 대상(4m 안·5.5m까지 유지)의 이름표를 누르면 머리 위 「인사 · 같이 등산하기 · ✕」 카드가 뜬다.
+ await waitFor(A,()=>{const c=document.querySelector('.gr-card');return c&&!c.hidden&&c.textContent.includes('바위다람쥐')&&c.querySelector('.gr-pair')?.textContent.includes('같이 등산하기');});
+ check('이름표를 누르면 인사·같이 등산하기 카드',true);
+ await shots3(A,'01-인사카드');
+ await A.evaluate(()=>document.querySelector('.gr-card:not([hidden]) .gr-x')?.click());   // 5초 무입력이면 저절로 접힘
+ // 고르기 카드는 칩 대상이 아닌 사람(5.5m 밖)의 이름표를 누를 때 뜬다. 오르막에서는 그 거리 이름표가 화면 밖이라 같은 신호(hiking:pair-pick)로 연다.
+ await fire(A,'hiking:pair-pick',{id:idB,name:'바위다람쥐'});
  await waitFor(A,()=>!document.querySelector('.pw-pick').hidden);
- check('이름표를 누르면 고르기 카드',await A.evaluate(()=>document.querySelector('.pw-pick').textContent.includes('바위다람쥐')&&document.querySelector('.pw-pick .pw-yes').textContent.includes('같이 등산하기')),{tagBox});
+ check('먼 사람 이름표 = 고르기 카드',await A.evaluate(()=>document.querySelector('.pw-pick').textContent.includes('바위다람쥐')&&document.querySelector('.pw-pick .pw-yes').textContent.includes('같이 등산하기')),{tagBox});
  await shots3(A,'01-고르기카드');
  await A.click('.pw-pick .pw-no');
  await A.click('.pw-btn');await waitFor(A,()=>!document.querySelector('.pw-sheet').hidden&&document.querySelector('.pw-list').textContent.includes('바위다람쥐'));

@@ -43,6 +43,11 @@ test('펼친 카드는 3m 밖·걷기 시작·✕이면 접힘, 누르면 5초�
  assert.equal(tap.step({now:.1,people:[P(2.9)]}).mode,'open');tap.step({now:4,people:[P(2.9)]});tap.touch();
  assert.equal(tap.step({now:8.9,people:[P(2.9)]}).mode,'open','누르면 5초 다시');assert.equal(tap.step({now:9.1,people:[P(2.9)]}).mode,'chip');
  const moving=createGreetModel();moving.step({now:0,people:[P(2)],meMoving:true});assert.equal(moving.tap(true),false,'걷는 중 누르면 인사만, 안 펼침');
+ // 11-20 결함: 3~5.5m에서 누르면 펼치자마자 다음 프레임에 「3m 밖」으로 접혔다 → 펼친 거리 + 0.5m까지는 그대로
+ const mid=createGreetModel();mid.step({now:0,people:[P(3.8)]});mid.step({now:.05,people:[P(4.5)]});assert.equal(mid.tap(false),true);   // 4m 안에서 칩이 뜬 뒤 5.5m까지 유지
+ assert.equal(mid.step({now:.1,people:[P(4.5)]}).mode,'open','4.5m에서 눌러 펼치면 그대로');
+ assert.equal(mid.step({now:.2,people:[P(4.9)]}).mode,'open','조금 멀어져도(0.5m 안) 그대로');
+ assert.equal(mid.step({now:.3,people:[P(5.1)]}).mode,'chip','펼친 거리보다 0.5m 넘게 멀어지면 접힘');
 });
 test('동행 상대: 칩 없음, 둘 다 멈춘 뒤 2초 지나야 보임',()=>{
  const m=createGreetModel(),p=o=>[P(1.5,{partner:true,...o})];

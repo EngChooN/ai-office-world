@@ -11,7 +11,7 @@ export const GREET=Object.freeze({show:4,cone:70*Math.PI/180,hide:5.5,openNear:2
 
 // 매 프레임 step({now(초), people:[{id,name,d,ang,partner,moving}], meMoving, busy}) → {mode:'none'|'chip'|'dim'|'open', id, name, d}
 export function createGreetModel(rules=GREET){
- let target=null,open=false,armed=true,lastInput=0,stillSince=null,pairStillSince=null,now=0,last={mode:'none'};
+ let target=null,open=false,armed=true,lastInput=0,stillSince=null,pairStillSince=null,now=0,last={mode:'none'},openD=0;
  const reset=()=>{target=null;open=false;armed=true;stillSince=null;pairStillSince=null;};
  function step({now:t=0,people=[],meMoving=false,busy=false}={}){
   now=t;
@@ -27,14 +27,15 @@ export function createGreetModel(rules=GREET){
    pairStillSince??=t;if(t-pairStillSince<rules.partnerStill)return last={mode:'none',id:cur.id};
   }else pairStillSince=null;
   if(meMoving||cur.d>rules.openNear)armed=true;
-  if(open&&(meMoving||cur.d>rules.closeFar||t-lastInput>=rules.closeIdle)){open=false;armed=false;}
-  if(!open&&armed&&!meMoving&&cur.d<=rules.openNear){stillSince??=t;if(t-stillSince>=rules.openStill){open=true;lastInput=t;stillSince=null;}}
+  // 멀어지면 접힘: 3m 밖, 단 3m 밖에서 눌러 펼친 카드는 펼친 거리보다 0.5m 더 멀어질 때(11-20: 3~5.5m 칩·이름표를 누르면 펼치자마자 접혀 아무 일도 안 일어나던 결함)
+  if(open&&(meMoving||cur.d>Math.max(rules.closeFar,openD+rules.switchMargin)||t-lastInput>=rules.closeIdle)){open=false;armed=false;}
+  if(!open&&armed&&!meMoving&&cur.d<=rules.openNear){stillSince??=t;if(t-stillSince>=rules.openStill){open=true;openD=cur.d;lastInput=t;stillSince=null;}}
   else stillSince=null;
   return last={mode:open?'open':meMoving?'dim':'chip',id:cur.id,name:cur.name,d:cur.d,partner:!!cur.partner};
  }
  return {step,
   // 칩·이름표 누름: 걷는 중이면 펼치지 않는다(인사는 부른 쪽이 따로 한다)
-  tap(meMoving=false){if(!target||meMoving||last.mode==='none')return false;open=true;lastInput=now;return true;},
+  tap(meMoving=false){if(!target||meMoving||last.mode==='none')return false;open=true;openD=last.d??0;lastInput=now;return true;},
   touch(){if(open)lastInput=now;},
   close(){open=false;armed=false;},
   get target(){return target;},get open(){return open;},get last(){return last;},get lastInput(){return lastInput;}};
