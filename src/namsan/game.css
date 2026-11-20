@@ -1,66 +1,5 @@
-/* 남산 게임 화면(월드개발 11-19). 위 알약·시점 칩·☰·💬·큰 단추는 공통 틀(ui-frame.css·hiking-frame.css)을 그대로 쓰고, 여기는 남산 화면에만 있는 것 */
-html,body{margin:0;height:100%;overflow:hidden;background:#173f36}
-#world{position:fixed;inset:0;width:100%;height:100dvh;touch-action:none;display:block}
-/* 조이스틱(hud-v2.css와 같은 모양, 관악산 HUD 전체를 불러오지 않으려고 이 몇 줄만) */
-#joystick{display:none}
-body.touch #joystick{display:grid;place-items:center;position:fixed;left:var(--sx,calc(150px + env(safe-area-inset-left)));top:var(--sy,calc(100dvh - 130px));width:112px;height:112px;margin:-56px 0 0 -56px;border:2px dashed #ffffffbf;border-radius:50%;background:#ffffff14;box-shadow:0 0 0 1px #0002;z-index:5;pointer-events:none;opacity:0;transition:opacity .12s}
-body.touch #joystick span{display:block;width:46px;height:46px;border-radius:50%;background:#ffffff8c;box-shadow:0 2px 6px #0003}
-body.touch #joystick.on{opacity:1}
-body.touch #joystick:not(.on):not(.used){opacity:.45}
-body.touch #joystick:not(.on):not(.used)::after{content:'손가락 댄 자리에 생겨요';position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);width:max-content;max-width:180px;text-align:center;font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px #000c}
-#look-zone{display:none}
-.ns-source{left:calc(env(safe-area-inset-left) + 8px);bottom:calc(env(safe-area-inset-bottom) + 4px);font:600 10px/1.3 -apple-system,"Apple SD Gothic Neo",sans-serif;color:#fffc;text-shadow:0 1px 2px #0009;pointer-events:none;max-width:calc(100vw - 130px);white-space:normal}
-/* 로딩 */
-/* 큰 단추(걷기·멈추기) — 위치·크기는 ui-frame [data-uf=big] */
-.ns-big{display:flex;border:0;cursor:pointer}
-.ns-big .ns-big-ic{font-size:24px;line-height:1}
-.ns-run{display:flex;border:0;cursor:pointer;background:var(--uf-cream,#fbf3df);color:var(--uf-ink,#3a2b22)}
-:root.uf .ns-run[data-uf^=s]{width:var(--uf-small,52px)!important;height:var(--uf-small,52px)!important;box-shadow:var(--uf-shadow)!important}
-.ns-run.on{background:#ffd36b!important}
-/* 알림(스탬프·안내) */
-.ns-toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 74px);transform:translateX(-50%);z-index:60;max-width:calc(100vw - 32px);padding:10px 16px;border-radius:14px;background:#fbf3df;color:#3a2b22;box-shadow:0 4px 14px #0004;font:800 14px/1.35 -apple-system,"Apple SD Gothic Neo",sans-serif;text-align:center;pointer-events:none;transition:opacity .3s}
-.ns-toast[hidden]{display:block;opacity:0}
-.ns-toast b{color:#b0442f;margin-right:6px}
-/* 정상 도착 카드 */
-.ns-summit{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:#0006;font-family:-apple-system,"Apple SD Gothic Neo",sans-serif}
-.ns-summit[hidden]{display:none}
-.ns-summit-card{width:min(380px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:20px 18px 16px;border-radius:16px;background:#fbf3df;color:#3a2b22;box-shadow:0 10px 30px #0006;text-align:center}
-.ns-summit-card h2{margin:6px 0 6px;font-size:19px}.ns-summit-card p{margin:4px 0;font-size:13.5px;line-height:1.5}
-.ns-summit-card .ns-seal{display:flex;justify-content:center}
-.ns-summit-card .ns-row{display:flex;gap:8px;justify-content:center;margin-top:12px}
-.ns-summit-card button,.ns-panel button{min-height:44px;padding:0 16px;border-radius:12px;border:2px solid #3a2b22;background:#fff8ea;color:#3a2b22;font:800 14px/1 inherit;cursor:pointer}
-.ns-summit-card button.on{background:#b0442f;color:#fff;border-color:#b0442f}
-/* ☰ 메뉴 탭 안 */
-.ns-panel{padding:6px 2px 10px;font:600 13.5px/1.5 -apple-system,"Apple SD Gothic Neo",sans-serif;color:#3a2b22}
-.ns-panel h4{margin:6px 0 6px;font-size:14px}
-.ns-panel .ns-grid{display:flex;flex-wrap:wrap;gap:8px}
-.ns-panel small{display:block;color:#7a6650;font-weight:600}
-.ns-panel .ns-dev{margin-top:10px;padding:8px;border:1.5px dashed #b39b78;border-radius:10px}
-.ns-panel .ns-dev button{min-height:40px;padding:0 10px;font-size:12.5px}
-.ns-map svg{width:100%;max-width:340px;height:auto;display:block;margin:0 auto;background:#e9f0dc;border-radius:12px}
-.ns-stamps{display:flex;gap:6px;justify-content:center;margin:8px 0 2px}
-.ns-stamps span{display:grid;place-items:center;width:46px;height:46px;border-radius:50%;border:2px dashed #b39b78;color:#b39b78;font:900 20px/1 serif}
-.ns-stamps span.on{border:2px solid #b0442f;color:#b0442f;background:#fff2ea}
-.ns-credits{margin-top:10px;font-size:11.5px;line-height:1.5;color:#6b5a48}
-/* 함께 걷기 인사·목록 판(multi-client .multi-panel)은 관악산처럼 평소 접어 두고 ☰ 설정에서 연다. 인사는 이름표 옆 👋 칩 */
-body.ns-page:not(.ns-multi-open) .multi-panel{display:none}
-body.ns-page .multi-panel{top:calc(env(safe-area-inset-top) + 64px)}
-/* 통합 5단계(11-20): 할 일 칩(가까운 상호작용 줄 F·2·3) — 자리·크기는 ui-frame [data-uf=todo] */
-.ns-todo{display:flex;align-items:center;cursor:pointer;font:700 13px/1.15 -apple-system,"Apple SD Gothic Neo",sans-serif;text-align:left}
-.ns-todo kbd{flex:none;min-width:20px;height:20px;padding:0 4px;border-radius:6px;background:#3a2b22;color:#fff;font:800 11px/20px inherit;text-align:center}
-.ns-todo span{display:flex;flex-direction:column;min-width:0}.ns-todo b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ns-todo small{font-size:10.5px;font-weight:600;color:#7a6650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-:root.uf .ns-todo.done{border-color:#b3a58c!important;opacity:.92}
-:root.uf .ns-todo.lock{border-color:#c9b9a0!important;opacity:.8}
-body.touch .ns-todo kbd{display:none}
-/* 쌍안경을 든 동안: 걷기·달리기 단추와 할 일 칩을 숨기고 쌍안경 화면(gadget-ui)만 */
-body.gadget-on .ns-big,body.gadget-on .ns-run:not(.ns-bino),body.gadget-on .ns-todo,body.gadget-on #joystick{display:none!important}
-:root.uf .ns-bino.on,body.gadget-on .ns-bino{background:#ffd36b!important}
-/* 상호작용·쌍안경 화면(관악산 interaction-ui·gadget-ui)이 쓰는 길이 단위 --u(관악산 style.css 첫 두 줄과 같음) */
-:root{--u:max(.6px,min(.0520833vw,.0925926vh))}
-@media(max-width:700px),(max-height:540px) and (orientation:landscape){:root{--u:1px}}
-/* 알림은 위 알약 줄 아래(관악산 수첩 HUD와 같은 자리) */
-.ix-toast{top:calc(env(safe-area-inset-top) + 64px)!important}
+/* 남산 게임 화면(월드개발 11-19). 한 게임 통합 6단계(11-20)부터 화면 틀·수첩 HUD·조이스틱·알림은 관악산과 같은 공통 스타일(style.css·hud-notebook.css·hiking-frame.css 등)을 쓰고,
+   여기는 남산에만 있는 것(사랑의 자물쇠 카드, 버스·자물쇠 카드 동안 숨기기)만 둔다. */
 /* 사랑의 자물쇠 고르기 카드(11-20): 색 10가지·네모/하트·걸기. 화면 아래 가운데(휴대폰 손가락 크기 44px) */
 .ns-lockcard{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 16px);transform:translateX(-50%);z-index:65;width:min(380px,calc(100vw - 24px));font-family:-apple-system,"Apple SD Gothic Neo",sans-serif}
 .ns-lockcard[hidden]{display:none}
@@ -73,21 +12,13 @@ body.gadget-on .ns-big,body.gadget-on .ns-run:not(.ns-bino),body.gadget-on .ns-t
 .ns-lock-in .ns-row button{min-height:44px;padding:0 18px;border-radius:12px;border:2px solid #3a2b22;background:#fff8ea;color:#3a2b22;font:800 14px/1 inherit;cursor:pointer}
 .ns-lock-in .ns-row button.on,.ns-lock-in .ns-lock-shape button[aria-pressed=true]{background:#b0442f;color:#fff;border-color:#b0442f}
 @media (max-height:500px) and (orientation:landscape){.ns-lockcard{left:auto;right:calc(env(safe-area-inset-right) + 12px);transform:none;bottom:8px}.ns-lock-colors{gap:4px}.ns-lock-in{padding:8px 10px}.ns-lock-in h3{font-size:15px}.ns-lock-in p{margin-bottom:4px}.ns-lock-in .ns-row{margin-top:4px}.ns-lock-in small{display:none}}
-/* 버스 타는 동안: 달리기·쌍안경·할 일 칩(건너뛰기 칩만 남김)·조이스틱 숨김 */
-body.ns-riding .ns-run,body.ns-riding #joystick{display:none!important}
-/* 자물쇠 카드가 떠 있는 동안: 아래 단추·칩·조이스틱을 숨겨 카드와 겹치지 않게(휴대폰 세로·가로) */
-body.ns-lock-open .ns-big,body.ns-lock-open .ns-run,body.ns-lock-open .ns-todo,body.ns-lock-open #joystick{display:none!important}
-/* 11-20 월드디자인 확인 반영: 큰 단추가 행동으로 바뀜(관악산 도장과 같은 뜻) + 위 할 일 카드(공통 틀 todo 자리) */
-.ns-big .ns-big-glyph{font:900 26px/1 serif}
-.ns-big.busy{background:conic-gradient(#e08a5a var(--p,0%),#b0442f 0)!important;cursor:default}
-.ns-ctx{display:flex;flex-direction:column;align-items:stretch;gap:2px;font-family:-apple-system,"Apple SD Gothic Neo",sans-serif;text-align:left}
-.ns-ctx[hidden]{display:none!important}
-:root.uf .ns-ctx[data-uf=todo]{height:auto!important;min-height:0!important;width:min(250px,calc(100vw - 150px))!important;max-width:min(250px,calc(100vw - 150px))!important;flex-direction:column!important;align-items:stretch!important;padding:8px 10px!important;border-radius:14px!important;border:0!important;background:#fbf3df!important;gap:2px!important}
-.ns-ctx-head{font-size:14px;color:#3a2b22}.ns-ctx>small{font-size:11.5px;color:#7a6650;margin-bottom:2px}
-.ns-ctx button{display:flex;flex-direction:column;align-items:flex-start;min-height:44px;justify-content:center;padding:4px 6px;border:0;border-top:1.5px dashed #d8c7a6;background:none;color:#3a2b22;font:700 13px/1.2 inherit;cursor:pointer;text-align:left}
-.ns-ctx button small{font-size:11px;font-weight:600;color:#7a6650}
-.ns-ctx kbd{margin-left:6px;padding:0 4px;border-radius:5px;background:#3a2b22;color:#fff;font:800 10px/16px inherit}
+.ns-lock-in small{font-size:12.5px}
+/* 버스 타는 동안: 작은 단추·상황 꼬리표·조이스틱 숨김(큰 도장 = 건너뛰기만 남김) */
+body.ns-riding .nb-chip,body.ns-riding .nb-ctx,body.ns-riding #joystick{display:none!important}
+/* 자물쇠 카드가 떠 있는 동안: 아래 도장·작은 단추·꼬리표·조이스틱을 숨겨 카드와 겹치지 않게(휴대폰 세로·가로) */
+body.ns-lock-open #auto,body.ns-lock-open .nb-chip,body.ns-lock-open .nb-ctx,body.ns-lock-open #joystick{display:none!important}
 body.touch .ix-board kbd,body.touch .ix-board .key{display:none!important}
 body.ns-acting #joystick::after{display:none!important}
-.ns-lock-in small{font-size:12.5px}
-@media (max-height:500px) and (orientation:landscape){:root.uf .ns-ctx[data-uf=todo]{width:min(230px,40vw)!important;max-width:min(230px,40vw)!important}.ns-ctx button{min-height:44px;padding:2px 6px}}
+
+/* 시점 칩(「1인칭 보기·3인칭 보기」) 손가락 크기 44px(6단계 작은 고침, 11-20) — 공통 틀(hiking-frame.css)은 40px라 남산 페이지에서만 키운다(관악산 그대로) */
+.ns-page .hk-topl #view{height:44px;min-height:44px;padding:0 13px 0 10px}

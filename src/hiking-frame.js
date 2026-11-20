@@ -7,14 +7,15 @@
 // hud-notebook.js(시트 열고 닫기)·main.js(지도 그리기)와는 이 모듈이 돌려주는 frame과 'uf:*' 이벤트로 만난다.
 import {createUiFrame,ufPlace} from './ui-frame.js';
 
-export function installHikingFrame({doc=document,win=window}={}){
+// 산마다 다른 값(한 게임 통합 6단계, 기본값 = 관악산 그대로): goal = 알약 「…까지」 앞말, barMode = 알약 막대(stamina 스테미너|progress 진행), features = 산 정의 기능 스위치(book이 false면 수첩 탭 없음)
+export function installHikingFrame({doc=document,win=window,goal='연주대까지',barMode='stamina',features={}}={}){
  const app=doc.getElementById('app');if(!app||!app.querySelector('.nb-tabs'))return null;
  import('./hiking-frame.css').catch(()=>{});
  const $=s=>doc.querySelector(s);
  const frame=createUiFrame({doc,win,exp:'hiking',
   tabs:[
    {id:'map',label:'지도',ic:'h-map',render:p=>{const b=$('#map .nb-map-body');if(b){b.classList.add('uf-moved','hk-map-body');p.appendChild(b);}}},
-   {id:'book',label:'수첩',ic:'c-notebook',onOpen:()=>{if(!bookOpen())send('stamps-toggle');},onClose:()=>{if(bookOpen())send('stamps-toggle');}},
+   ...(features.book===false?[]:[{id:'book',label:'수첩',ic:'c-notebook',onOpen:()=>{if(!bookOpen())send('stamps-toggle');},onClose:()=>{if(bookOpen())send('stamps-toggle');}}]),
    {id:'backpack',label:'배낭',ic:'h-backpack'},
    {id:'rest',label:'쉬기',ic:'h-rest'},
    {id:'settings',label:'설정',ic:'c-settings'},
@@ -31,7 +32,7 @@ export function installHikingFrame({doc=document,win=window}={}){
  const bookOpen=()=>{const b=$('.ix-book');return !!b&&!b.hidden;};
  const placeBook=()=>{const b=$('.ix-book'),host=frame.panel('book');if(!b||!host||b.parentElement===host)return false;b.classList.add('uf-moved');host.appendChild(b);
   new MutationObserver(()=>{if(bookOpen()&&!(frame.isOpen&&frame.tab==='book'))frame.open('book');else if(!bookOpen()&&frame.isOpen&&frame.tab==='book')frame.close();}).observe(b,{attributes:true,attributeFilter:['hidden']});return true;};
- if(!placeBook()){const t=setInterval(()=>{if(placeBook())clearInterval(t);},500);}
+ if(features.book!==false&&!placeBook()){const t=setInterval(()=>{if(placeBook())clearInterval(t);},500);}
  // ── 위 왼쪽: 진행 알약 + 시점 칩 + (함께 걷기 칩·👥)
  const top=doc.createElement('div');top.className='hk-topl';
  const pill=doc.createElement('button');pill.type='button';pill.className='hk-pill';pill.setAttribute('aria-expanded','false');pill.setAttribute('aria-label','등반 정보 펼치기');
@@ -52,10 +53,10 @@ export function installHikingFrame({doc=document,win=window}={}){
  const txt=pill.querySelector('.hk-pill-t'),bar=pill.querySelector('.hk-pill-bar>i');
  win.addEventListener('hiking:state',e=>{
   const s=e.detail||{},alt=$('#altitude')?.textContent?.trim(),rem=$('#remaining')?.textContent?.trim();
-  const where=s.zone==='plaza'||s.plaza?'출발 전':s.zone==='summit'?'정상':rem&&rem!=='—'?`연주대까지 ${rem}`:'산길';
+  const where=s.zone==='plaza'||s.plaza?'출발 전':s.zone==='summit'?'정상':rem&&rem!=='—'?`${goal} ${rem}`:'산길';
   const t=`${where}${alt&&alt!=='—'?` · 고도 ${alt}`:''}`;if(txt.textContent!==t)txt.textContent=t;
-  const st=Math.max(0,Math.min(100,Number(s.stamina??100)));const w=`${st.toFixed(0)}%`;if(bar.style.width!==w)bar.style.width=w;
-  bar.dataset.level=st<25?'low':st<55?'mid':'full';
+  const st=barMode==='progress'?Math.max(0,Math.min(100,Number(s.courseDistance)/Number(s.courseLength)*100||0)):Math.max(0,Math.min(100,Number(s.stamina??100)));const w=`${st.toFixed(0)}%`;if(bar.style.width!==w)bar.style.width=w;
+  bar.dataset.level=barMode==='progress'?'full':st<25?'low':st<55?'mid':'full';
  });
  // ── 행동 원·할 일 칩
  const auto=$('#auto'),run=$('#run'),bino=$('#binoculars'),phone=$('#phone');

@@ -29,9 +29,16 @@ const STAMP_RULES=[
  [/돌 올리기/,'🪨','올리기',()=>'돌탑'],
  [/^인사/,'👋','인사',(l,r)=>r.sub||'함께 걷기'],
  [/자세히$/,'🔎','자세히',l=>l.replace(/\s*자세히$/,'')],
+ // 남산 줄(한 게임 통합 6단계). 관악산 줄과 겹치는 낱말이 없다
+ [/^정상석/,'㊞','인증',()=>'정상석'],
+ [/자물쇠/,'🔒','걸기',()=>'사랑의 자물쇠'],
+ [/^벤치/,'🪑','앉기',()=>'야경 벤치'],
+ [/^순환버스/,'🚌','타기',()=>'순환버스'],
+ [/바로 가기$/,'⏭','바로 가기',()=>'순환버스'],
+ [/^건너뛰기/,'⏭','건너뛰기',()=>'순환버스'],
 ];
 // 도장 글자 → 제작 아이콘 이름(아이콘-규칙-v1 §7). ㊞·✓은 도장 글자라 그대로 글자로 그린다.
-export const STAMP_IC=Object.freeze({'🪧':'h-sign','🏅':'h-medal','💧':'h-spring','🖐':'h-hand-water','🪨':'h-stone-tower','👋':'c-wave','🔎':'c-detail','☝':'c-tap','⏳':'c-wait','🧘':'h-breathe','🧍':'c-stand-up','✋':'h-stop','▶':'h-walk'});
+export const STAMP_IC=Object.freeze({'🪧':'h-sign','🏅':'h-medal','💧':'h-spring','🖐':'h-hand-water','🪨':'h-stone-tower','👋':'c-wave','🔎':'c-detail','☝':'c-tap','⏳':'c-wait','🧘':'h-breathe','🧍':'c-stand-up','✋':'h-stop','▶':'h-walk','🔒':'c-lock','🪑':'c-sit','🚌':'c-enter','⏭':'c-right'});
 export const stampIcon=(ic,size='l')=>STAMP_IC[ic]?icon(STAMP_IC[ic],{size,fallback:ic}):esc(ic);
 // 정적 화면(hiking/index.html)의 아이콘 자리 <x data-icon="이름" data-icon-size="m"> 채우기
 export function fillIcons(root){for(const el of root?.querySelectorAll?.('[data-icon]')??[])if(!el.firstElementChild)el.innerHTML=icon(el.dataset.icon,{size:el.dataset.iconSize||'m'});}
@@ -68,7 +75,8 @@ export function qualityModeFromText(text=''){
  return /높음/.test(text)?'high':/균형/.test(text)?'balanced':/낮음/.test(text)?'low':'auto';
 }
 
-export function installNotebookHud(doc=document,win=window){
+// ticks = 진행 막대 눈금(0~1 자리, 한 게임 통합 6단계: 산마다. 기본 = 관악산 체크포인트)
+export function installNotebookHud(doc=document,win=window,{ticks:tickList=null}={}){
  const app=doc.getElementById('app');if(!app||!app.querySelector('.nb-tabs'))return null;
  fillIcons(app);
  const root=doc.documentElement,body=doc.body,$=s=>app.querySelector(s),all=s=>[...doc.querySelectorAll(s)];
@@ -89,7 +97,7 @@ export function installNotebookHud(doc=document,win=window){
  win.addEventListener('hiking:environment',e=>setTime(timeOfDay(e.detail?.sunElevation)));
  // ── 진행 막대 체크포인트 눈금 ──
  const ticks=$('.nb-ticks');
- if(ticks)ticks.innerHTML=checkpointTicks().map(t=>`<u data-cp="${esc(t.id)}" style="left:${(t.at*100).toFixed(2)}%"></u>`).join('');
+ if(ticks)ticks.innerHTML=(tickList??checkpointTicks()).map(t=>`<u data-cp="${esc(t.id)}" style="left:${(t.at*100).toFixed(2)}%"></u>`).join('');
  // ── 탭과 종이 시트 ──
  let openSheet=null;
  // 11-18 공통 틀(src/hiking-frame.js, win.hikingFrame): 시트는 ☰ 메뉴 탭 안. 시트를 열면 그 탭이 열리고, 닫으면 메뉴가 닫힌다

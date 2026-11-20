@@ -49,12 +49,15 @@ test('방 이름 칸이 없고 👋 버튼·상태 칩은 서버 고르기 창�
  assert.match(ui,/d\.state==='full'\)\{emit\('hiking:multi-leave'\);openPick\('full'\)/);
 });
 test('이벤트 이름·모양이 main.js와 multi-client.js의 약속과 같다', () => {
- const ui=read('../src/multi-entry-ui.js'),main=read('../src/main.js'),client=read('../src/multi-client.js');
+ const ui=read('../src/multi-entry-ui.js'),main=read('../src/main.js')+read('../src/hiking-body.js'),   // 함께 걷기 HUD 불러오기는 공통 본체 부품(통합 6단계)
+ client=read('../src/multi-client.js');
  for(const name of ['hiking:multi-join','hiking:multi-leave'])assert.ok(ui.includes(`'${name}'`)&&main.includes(`'${name}'`),name);
  assert.ok(ui.includes("'hiking:multi-status'")&&client.includes("'hiking:multi-status'"));
  assert.match(main,/installMultiEntry\?\.\(/);
  const pick=read('../src/hiking-server-pick.js');assert.ok(pick.includes("'hiking:multi-join'")&&pick.includes("'hiking:multi-leave'"));
- assert.match(main,/installMultiEntry\?\.\(\{serverUrl:multiServer,serverPick:hikingServerPick\(\)\}\)/);
+ // 6단계: main.js가 공통 부품 installMultiHud에 서버 주소·관악산 서버 고르기 창을 넘기고, 부품이 installMultiEntry를 부른다
+ assert.match(main,/installMultiHud\(\{serverUrl:multiServer,serverPick:\(\)=>hikingServerPick\(\)/);
+ assert.match(main,/installMultiEntry\?\.\(\{serverUrl,serverPick:serverPick\(\),servers\}\)/);
  assert.match(main,/window\.__hikingMultiJoin/);   // main.js가 듣기 전에 고른 참가도 처리
  assert.match(client,/detail=\{state:netState,room,count:[^}]*transport:/);
 });

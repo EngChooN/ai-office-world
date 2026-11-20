@@ -1,5 +1,7 @@
 // 남산 게임 연결 점검(월드개발 11-19): 걷기 규칙(namsan-walk.js)·산 목록·함께 걷기 방 나누기·서버 인원 계산.
 // 화면 점검은 scripts/verify-namsan-game.mjs(산 고르기 → 남산, PC·휴대폰 오르기, 두 사람).
+import {readPage} from '../scripts/html-include.mjs';
+import {NAMSAN_TEXT} from '../src/mountains/namsan-page.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -76,10 +78,12 @@ test('서버 인원: 남산 = 등산 전체 접속 − 관악산 서버 방', ()
  const n=namsanHealth(h);assert.deepEqual(n.servers.hiking,[{id:'1',name:'남산 서버',count:3}]);assert.deepEqual(n.servers.smoking,h.servers.smoking);
 });
 
-test('날씨 출처(Open-Meteo CC BY 4.0)가 화면 출처 줄과 설정 탭에 있다(이용 조건, 11-19)', ()=>{
- const html=readFileSync('hiking/namsan/index.html','utf8'),game=readFileSync('src/namsan/game.js','utf8');
- assert.match(html.match(/<div id="source-line"[^>]*>([^<]*)</)[1],/Open-Meteo\.com \(CC BY 4\.0\)/);
- assert.match(game,/href="https:\/\/open-meteo\.com\/"/);assert.match(game,/creativecommons\.org\/licenses\/by\/4\.0/);
+test('날씨 출처(Open-Meteo CC BY 4.0)가 화면 출처 줄과 도움말에 있다(이용 조건, 11-19 · 6단계부터 관악산과 같은 화면 조각)', ()=>{
+ const html=readPage('hiking/namsan/index.html');
+ assert.match(html,/<html[^>]*data-mountain="namsan"/);
+ assert.match(html.match(/<div id="source-line"[^>]*>(.*?)<\/div>/)[1],/Open-Meteo\.com \(CC BY 4\.0\)/);
+ assert.match(html,/href="https:\/\/open-meteo\.com\/"/);assert.match(html,/creativecommons\.org\/licenses\/by\/4\.0/);
+ assert.match(NAMSAN_TEXT.terrainCredit,/Copernicus WorldDEM-30/);assert.match(NAMSAN_TEXT.terrainCredit,/OpenStreetMap/);
 });
 
 test('함께 걷기 판 「이름표」(N)가 남산 command에서 처리된다', ()=>{

@@ -89,7 +89,7 @@ if(PART.includes('pc')){
  check('PC 정상 도착: 완등 카드',s1.summitOpen&&s1.done,{s:s1.s,stamps:s1.stamps});
  check('정상 스탬프(塔) 찍힘',s1.stamps.includes(4),{stamps:s1.stamps});
  await sleep(800);await shot(p,'B-pc-summit-card');
- await p.click('[data-ns-close]');await sleep(300);
+ await p.evaluate(()=>document.getElementById('summit')?.close());await sleep(300);
  await p.keyboard.down('KeyA');await sleep(1500);await p.keyboard.up('KeyA');
  const s2=await status(p);check('정상 광장 자유 이동',Math.hypot(s2.x-s1.x,s2.z-s1.z)>.8,{});
  await p.evaluate(()=>{window.namsan.cameraOverride=null;});await shot(p,'B-pc-summit');
@@ -112,7 +112,7 @@ if(PART.includes('phone')){
   await sleep(2200);await shot(p,`C-phone-${tag}-joystick`);
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   const s1=await status(p);check(`휴대폰 ${tag} 조이스틱으로 걷기`,Math.hypot(s1.x-s0.x,s1.z-s0.z)>1,{moved:Math.hypot(s1.x-s0.x,s1.z-s0.z).toFixed(2)});
-  const big=await p.$('.ns-big');const bb=await big.boundingBox();
+  const big=await p.$('#auto');const bb=await big.boundingBox();
   check(`휴대폰 ${tag} 큰 단추 손가락 크기·화면 안`,bb&&bb.width>=44&&bb.x+bb.width<=w&&bb.y+bb.height<=h,bb);
   await p.evaluate(()=>window.namsan.jump(840));
   await p.touchscreen.tap(bb.x+bb.width/2,bb.y+bb.height/2);await sleep(2500);
@@ -121,7 +121,7 @@ if(PART.includes('phone')){
   if(tag==='portrait'){
    await p.evaluate(()=>window.namsan.jump(1035));const s3=await autoUntil(p,s=>s.summitOpen,60000);
    check('휴대폰 정상 도착',s3.summitOpen,{s:s3.s});await sleep(600);await shot(p,'C-phone-portrait-summit-card');
-   await p.click('[data-ns-close]');
+   await p.evaluate(()=>document.getElementById('summit')?.close());
    const m=await perf(p,'phone-portrait-summit');check('휴대폰 성능 기록(도심 포함)',m&&m.fps>0,m);
    await shot(p,'C-phone-portrait-summit');
   }

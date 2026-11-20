@@ -16,3 +16,13 @@ export function applyMountainText(doc,text){
  if(typeof text.pageTitle==='string'&&doc.title!==text.pageTitle){doc.title=text.pageTitle;changed++;}
  return changed;
 }
+
+// 기능 스위치(산 정의 features) → 화면. data-feature="키"인 자리는 그 키가 false면 숨긴다(hidden + data-feature-off).
+// 「땅에 앉기」(groundSit)는 features.sit==='ground'일 때만 켜진다. <html data-mountain>에 산 id를 단다. 관악산은 모두 켜져 바뀌는 자리가 없다.
+export function featureFlags(features={}){return {...features,groundSit:features.sit==='ground'};}
+export function applyMountainFeatures(doc,{id=null,features={}}={}){
+ if(!doc)return 0;if(id)doc.documentElement.dataset.mountain=id;
+ const f=featureFlags(features);let off=0;
+ for(const el of doc.querySelectorAll('[data-feature]')){const on=el.dataset.feature.split(/\s+/).every(k=>f[k]!==false);if(!on){el.hidden=true;el.dataset.featureOff='';off++;}}
+ return off;
+}

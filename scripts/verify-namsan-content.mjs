@@ -1,7 +1,7 @@
 // 남산 5단계 콘텐츠 점검(월드개발 11-20). vite 개발 서버를 이 스크립트가 띄운다(함께 걷기는 브라우저 창끼리 = 서버 없음).
 //  pc    PC 1280×800: 그림 4곳(약수·물확 2·돌탑·자물쇠) 「서 있을 곳」에서 줄·동작, 디딤 띠로 걸어 들어가기, 이정표·정상석·스탬프함 F,
 //        쌍안경 이름표(관악산), 자물쇠 걸기·다시 열어도 그대로, 야경 벤치 앉기·차·일어나기, 버스 기다리기→타기→정상에서 내리기·건너뛰기
-//  phone 휴대폰 세로 390×844(터치): 할 일 칩 누르기로 약수, 자물쇠 카드, 벤치, 쌍안경 ✕ 내리기(44px), 버스 건너뛰기 칩
+//  phone 휴대폰 세로 390×844(터치): 6단계 공통 화면·기능 스위치, 큰 도장 누르기로 약수, 자물쇠 카드, 벤치, 쌍안경 ✕ 내리기(44px)
 //  land  휴대폰 가로 844×390(터치): 자물쇠 카드·할 일 칩이 화면 안·겹침 없음
 //  multi 두 창 같은 방: 자물쇠가 상대 화면에 걸림, 버스 탄 사람이 act p:sit·x:bus로 보임
 //   node scripts/verify-namsan-content.mjs → artifacts/namsan-step5/(사진·report.json). 실패가 있으면 종료 코드 1. PART=pc,phone 처럼 일부만.
@@ -28,7 +28,7 @@ const view=p=>ev(p,()=>window.namsan.status().interact.view);
 const face=(p,x,z)=>ev(p,([x,z])=>{const s=window.namsan.status();window.namsan.goTo(s.x,s.z,Math.atan2(-(x-s.x),-(z-s.z)));},[x,z]);
 const shot=(p,n)=>p.screenshot({path:`${dir}/${n}.png`});
 // 칩·단추가 화면 안·44px 이상·서로 안 겹치는지
-async function layout(p){return ev(p,()=>{const r=[...document.querySelectorAll('.ns-ctx:not([hidden]),.ns-big,.ns-run,.ns-lockcard:not([hidden]) button')].filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden').map(e=>{const b=e.getBoundingClientRect();return {c:e.className,l:b.left,t:b.top,r:b.right,b:b.bottom,w:b.width,h:b.height};});
+async function layout(p){return ev(p,()=>{const r=[...document.querySelectorAll('.nb-ctx:not([hidden]),#auto,.nb-chip,.ns-lockcard:not([hidden]) button')].filter(e=>e.getClientRects().length&&getComputedStyle(e).visibility!=='hidden').map(e=>{const b=e.getBoundingClientRect();return {c:e.id||e.className,l:b.left,t:b.top,r:b.right,b:b.bottom,w:b.width,h:b.height};});
  const W=innerWidth,H=innerHeight,inside=r.every(b=>b.l>=-.5&&b.t>=-.5&&b.r<=W+.5&&b.b<=H+.5),small=r.filter(b=>b.h<43.5).map(b=>b.c||'색 단추');
  let overlap=[];for(let i=0;i<r.length;i++)for(let j=i+1;j<r.length;j++){const a=r[i],b=r[j];if(a.l<b.r-1&&b.l<a.r-1&&a.t<b.b-1&&b.t<a.b-1)overlap.push(`${a.c}×${b.c}`);}
  return {n:r.length,inside,small,overlap};});}
@@ -44,7 +44,7 @@ if(PART.includes('pc')){
  const want={'spring-1':'약수 한 모금','dip-1':'손 담그기','dip-2':'손 담그기','cairn-summit':'돌 올리기','locks-summit':'사랑의 자물쇠 걸기'};
  for(const sp of S.spots){await ev(p,sp=>window.namsan.goTo(sp.x,sp.z,sp.face+Math.PI),sp);await sl(700);const v=await view(p);
   check(`pc: ${sp.id} 서 있을 곳에서 「${want[sp.id]}」`,v?.rows?.[0]?.label===want[sp.id],{rows:v?.rows?.map(r=>r.label)});
-  {const bigWant={'spring-1':'마시기','dip-1':'담그기','cairn-summit':'올리기','locks-summit':'걸기'}[sp.id];if(bigWant){const bt=await ev(p,()=>document.querySelector('.ns-big').textContent.trim());check(`pc: ${sp.id} 큰 단추가 「${bigWant}」`,bt===bigWant,{big:bt});}}
+  {const bigWant={'spring-1':'마시기','dip-1':'담그기','cairn-summit':'올리기','locks-summit':'걸기'}[sp.id];if(bigWant){const bt=await ev(p,()=>document.querySelector('#auto span')?.textContent.trim());check(`pc: ${sp.id} 큰 단추가 「${bigWant}」`,bt===bigWant,{big:bt});}}
   if(['spring-1','dip-1','cairn-summit'].includes(sp.id)){const before=await ev(p,()=>window.namsan.status().interact.progress);await p.keyboard.press('KeyF');await sl(900);await shot(p,`pc-act-${sp.id}`);await sl(3000);
    const after=await ev(p,()=>window.namsan.status().interact);const k={'spring-1':'drinks','dip-1':'dips','cairn-summit':'stones'}[sp.id];
    check(`pc: ${sp.id} 동작이 끝나고 기록`,after.progress[k]===before[k]+1,{[k]:after.progress[k]});}}
@@ -60,7 +60,7 @@ if(PART.includes('pc')){
  await ev(p,it=>{for(const [dx,dz] of [[1.6,0],[-1.6,0],[0,1.6],[0,-1.6],[1.2,1.2],[-1.2,-1.2]])if(window.namsan.goTo(it.x+dx,it.z+dz))return true;return false;},stone);await face(p,stone.x,stone.z);await sl(600);
  let v=await view(p);check('pc: 정상석 「정상석 확인 · 정상 인증」',v?.rows?.[0]?.label==='정상석 확인 · 정상 인증',{rows:v?.rows?.map(r=>r.label)});
  await p.keyboard.press('KeyF');await sl(500);const cert=await ev(p,()=>({c:window.namsan.status().interact.progress.certifiedAt,stamps:window.namsan.status().stamps,title:document.querySelector('.ix-board h2')?.textContent}));
- const tt=await ev(p,()=>({ns:document.querySelector('.ns-toast').textContent,ix:document.querySelector('.ix-toast')?.hidden===false}));check('pc: 정상석 알림 하나에 정상 인증·스탬프',/정상 인증/.test(tt.ns)&&/스탬프/.test(tt.ns)&&!tt.ix,tt);
+ const tt=await ev(p,()=>({ix:document.querySelector('.ix-toast')?.textContent??'',shown:document.querySelector('.ix-toast')?.hidden===false,n:document.querySelectorAll('.ix-toast:not([hidden]),.ns-toast:not([hidden])').length}));check('pc: 정상석 알림 하나에 정상 인증·스탬프',/정상 인증/.test(tt.ix)&&/스탬프/.test(tt.ix)&&tt.shown&&tt.n===1,tt);
  check('pc: 정상석 F → 정상 인증·정상 스탬프·안내판',!!cert.c&&cert.stamps.includes(4)&&/265m/.test(cert.title??''),cert);await shot(p,'pc-summit-stone');await p.keyboard.press('Escape');await sl(300);
  // 쌍안경: 정상에서 관악산 쪽
  await ev(p,()=>window.namsan.jump(1060));const lk=S.spots.find(s=>s.id==='locks-summit');await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,0),lk);
@@ -87,7 +87,7 @@ if(PART.includes('pc')){
  await p.keyboard.press('KeyT');await sl(800);seat=await ev(p,()=>window.namsan.seat());check('pc: 차 마시기',seat?.pose==='tea',seat);await sl(3000);
  seat=await ev(p,()=>window.namsan.seat());check('pc: 차 다 마시면 다시 앉음',seat?.pose==='sit',seat);
  await p.keyboard.down('KeyS');await sl(300);await p.keyboard.up('KeyS');seat=await ev(p,()=>window.namsan.seat());check('pc: 걸으면 일어남',seat===null);
- await ev(p,()=>{if(window.namsan.status().summitOpen)document.querySelector('[data-ns-close]')?.click();});await sl(300);
+ await ev(p,()=>{if(window.namsan.status().summitOpen)document.getElementById('summit')?.close();});await sl(300);
  // 버스: 백범광장 → 정상
  const stops=await ev(p,()=>window.namsan.interact().cands.filter(c=>c.action==='bus').map(c=>({x:c.x,z:c.z,stop:c.site.stop})));
  await ev(p,()=>window.namsan.jump(2));const w=(await ev(p,()=>window.namsan.bus())).next.start.wait;await ev(p,w=>{window.namsan.busClockOffset=(window.namsan.busClockOffset??0)+w-4;},w);
@@ -106,18 +106,25 @@ if(PART.includes('pc')){
 
 if(PART.includes('phone')){
  const p=await open('phone',{viewport:{width:390,height:844},touch:true});const S=await ev(p,()=>window.namsan.spots());
+ // 6단계: 관악산과 같은 화면 조각·수첩 HUD, 기능 스위치로 남산에 없는 자리는 숨김
+ const ui=await ev(p,()=>{const vis=sel=>{const e=document.querySelector(sel);return !!e&&!!e.getClientRects().length&&getComputedStyle(e).display!=='none';};const v=document.querySelector('#view').getBoundingClientRect();
+  return {mountain:document.documentElement.dataset.mountain,title:document.title,pill:document.querySelector('.hk-pill-t')?.textContent,view:vis('#view')&&!!document.querySelector('.hk-topl #view'),viewH:v.height,auto:vis('#auto'),menu:vis('.uf-menu-btn'),
+   phone:vis('#phone'),sit:vis('#sit'),stamina:vis('.nb-stam'),stretchOff:document.querySelector('#stretch')?.hasAttribute('data-feature-off'),seal:document.querySelector('[data-mt=sealName]')?.textContent};});
+ check('phone: 공통 화면(진행 알약 「정상까지」·시점 칩·도장·☰)',ui.mountain==='namsan'&&/^정상까지/.test(ui.pill??'')&&ui.view&&ui.auto&&ui.menu,ui);
+ check('phone: 기능 스위치로 숨김(휴대폰 카메라·땅에 앉기·스테미너·스트레칭), 정상 도장 글 = 남산',!ui.phone&&!ui.sit&&!ui.stamina&&ui.stretchOff&&ui.seal==='남산',ui);
  const sp=S.spots.find(s=>s.id==='spring-1');await ev(p,sp=>window.namsan.goTo(sp.x,sp.z,sp.face+Math.PI),sp);await sl(800);
  let L=await layout(p);check('phone: 할 일 칩·단추 화면 안·44px·안 겹침',L.inside&&!L.small.length&&!L.overlap.length,L);await shot(p,'phone-spring-chip');
- await p.tap('.ns-big');await sl(4000);check('phone: 큰 단추 누르기로 약수',(await ev(p,()=>window.namsan.status().interact.progress.drinks))===1);
- const lk=S.spots.find(s=>s.id==='locks-summit');await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,lk.face+Math.PI),lk);await sl(700);await p.tap('.ns-big');await sl(500);
+ await p.tap('#auto');await sl(4000);check('phone: 큰 단추 누르기로 약수',(await ev(p,()=>window.namsan.status().interact.progress.drinks))===1);
+ const lk=S.spots.find(s=>s.id==='locks-summit');await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,lk.face+Math.PI),lk);await sl(700);await p.tap('#auto');await sl(500);
  L=await layout(p);check('phone: 자물쇠 카드 단추 화면 안·44px·안 겹침',L.inside&&!L.small.length&&!L.overlap.length,L);await shot(p,'phone-lock-card');
  await p.tap('.ns-lock-colors button[data-c="1"]');await p.tap('[data-lk="hang"]');await sl(700);check('phone: 자물쇠 걸기',(await ev(p,()=>window.namsan.locks().mine.length))===1);
- const b0=S.benches[1];await ev(p,b=>window.namsan.goTo(b.x+Math.sin(b.yaw)*.8,b.z+Math.cos(b.yaw)*.8,b.yaw),b0);await sl(700);await p.tap('.ns-big');await sl(1300);
- check('phone: 벤치 앉기',(await ev(p,()=>window.namsan.seat()?.pose))==='sit');L=await layout(p);check('phone: 앉은 동안 칩(차·일어나기) 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await shot(p,'phone-bench');
+ const b0=S.benches[1];await ev(p,b=>window.namsan.goTo(b.x+Math.sin(b.yaw)*.8,b.z+Math.cos(b.yaw)*.8,b.yaw),b0);await sl(700);await p.tap('#auto');await sl(1300);
+ check('phone: 벤치 앉기',(await ev(p,()=>window.namsan.seat()?.pose))==='sit');
+ L=await layout(p);check('phone: 앉은 동안 칩(차·일어나기) 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await shot(p,'phone-bench');
  
  await ev(p,()=>window.dispatchEvent(new CustomEvent('hiking:command',{detail:{id:'sit'}})));await sl(300);
- const keys=await ev(p,()=>[...document.querySelectorAll('.ns-ctx kbd,.ns-big kbd,.ns-toast')].map(e=>e.tagName==='KBD'?'kbd':/\([A-Z]\)/.test(e.textContent)?e.textContent:null).filter(Boolean));check('phone: 키보드 글자 안 보임(카드·알림)',!keys.length,{keys});
- await p.tap('.ns-bino');await sl(1200);const close=await ev(p,()=>{const b=document.querySelector('#gadget-ui .chip-close');const r=b?.getBoundingClientRect();return r?{w:r.width,h:r.height,in:r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight,text:b.textContent}:null;});
+ const keys=await ev(p,()=>[...document.querySelectorAll('.nb-ctx kbd,#auto kbd,.ix-toast,.hk-topl kbd')].filter(e=>e.getClientRects().length&&getComputedStyle(e).display!=='none').map(e=>e.tagName==='KBD'?'kbd':/\([A-Z]\)/.test(e.textContent)?e.textContent:null).filter(Boolean));check('phone: 키보드 글자 안 보임(카드·알림)',!keys.length,{keys});
+ await p.tap('#binoculars');await sl(1200);const close=await ev(p,()=>{const b=document.querySelector('#gadget-ui .chip-close');const r=b?.getBoundingClientRect();return r?{w:r.width,h:r.height,in:r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight,text:b.textContent}:null;});
  check('phone: 쌍안경 「✕ 내리기」 44px·화면 안',close&&close.h>=44&&close.in,close);await shot(p,'phone-bino');
  await p.tap('#gadget-ui .chip-close');await sl(400);check('phone: ✕ 내리기로 내림',(await ev(p,()=>window.namsan.status().gadget))==='none');
  await p.context().close();
@@ -126,7 +133,7 @@ if(PART.includes('phone')){
 if(PART.includes('land')){
  const p=await open('land',{viewport:{width:844,height:390},touch:true});const S=await ev(p,()=>window.namsan.spots());
  const lk=S.spots.find(s=>s.id==='locks-summit');await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,lk.face+Math.PI),lk);await sl(700);
- let L=await layout(p);check('land: 자물쇠 칩 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await p.tap('.ns-big');await sl(500);
+ let L=await layout(p);check('land: 자물쇠 칩 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await p.tap('#auto');await sl(500);
  L=await layout(p);check('land: 자물쇠 카드 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await shot(p,'land-lock-card');
  const sp=S.spots.find(s=>s.id==='cairn-summit');await ev(p,()=>document.querySelector('[data-lk="close"]')?.click());await ev(p,sp=>window.namsan.goTo(sp.x,sp.z,sp.face+Math.PI),sp);await sl(700);
  L=await layout(p);check('land: 돌탑 칩 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await shot(p,'land-cairn');

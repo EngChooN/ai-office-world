@@ -33,9 +33,10 @@ export const GWANAK=Object.freeze({
  checkpoints,
  stampCount:STAMPS.length,
  routePointCount:route.length,
- // 기능 스위치(통합 5단계, 11-20): 남산 정의 NAMSAN_FEATURES와 같은 이름. 지금은 표시만(관악산 본체 동작은 그대로), 6단계에 본체가 읽는다.
+ // 기능 스위치(통합 5단계, 11-20): 남산 정의 NAMSAN_FEATURES와 같은 이름. 6단계부터 화면 조각의 data-feature 자리를 이것으로 숨긴다(관악산은 모두 켜져 그대로).
  features:Object.freeze({stamps:true,boards:true,summitStone:true,binoculars:true,phone:true,spring:true,dip:true,cairn:true,stretch:true,
-  sit:'ground',tea:true,trailFun:true,animals:true,radio:true,stamina:true,loveLocks:false,bus:false,nightBench:false,multi:true,chat:true,pair:true}),
+  sit:'ground',tea:true,trailFun:true,animals:true,radio:true,stamina:true,
+  book:true,summitCard:true,ambient:true,loveLocks:false,bus:false,nightBench:false,multi:true,chat:true,pair:true}),
  // 화면 글(통합 3단계, 11-20). 공통 화면 틀 src/frame/hiking-body.html의 data-mt 자리를 src/mountain-text.js가 이 값으로 채운다.
  // 관악산 값은 틀에 적힌 글과 한 글자도 다르지 않다(자리만 옮기기). 남산 정의(5단계)는 같은 키를 남산 글로 채운다.
  text:Object.freeze({
@@ -57,6 +58,7 @@ export const GWANAK=Object.freeze({
   summitNote:'DSM 지형 체험 기록입니다.',
   footstepNote:'발소리는 가공한 임시음입니다. 실제 관악산 계단 녹음·귀 검수는 대기 중입니다.',
   motionNote:'계단·바위 오르기와 둘러보기는 Quaternius 동작을 해당 상황에 맞춰 재생합니다. 실제 관악산 등산객 동작 검수는 대기 중입니다.',
+  restNote:'앉으면 스테미너가 빨리 차올라요',   // 쉬기 탭 안내(6단계에 남산 글을 넣으려고 자리 표시, 글은 틀과 같음)
   terrainCredit:'지형: Copernicus DEM 30m 표면 높이 보간 · 서울 건물 연결 — produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. 재질·하늘: Poly Haven (CC0). 건물·물: © OpenStreetMap contributors (ODbL). 건물 높이 미상은 9m 가정, 랜드마크 형상은 근사입니다.',
   // 환경음 출처(설정 「소리 출처」 칸, main.js가 붙임)
   ambientCredits:'환경음은 실제 관악산 녹음이 아닌 CC0 임시음입니다. 구간·거리·고도·음량은 추정이며 현장·귀 검수 전입니다. 물·숲 바람·능선 바람·새: Thimras (Park Ambiences), 까마귀: fvcalderan (Crow)·zeroisnotnull (Crow Caw), 정상 웅성임: StarNinjas (Crowd Shouting/Speaking Ambience), 먼 도시: IgnasD (High Traffic Road Sounds). 목탁: 산디자인 자체 합성 임시음. 모노 32kHz 변환·크로스페이드·음량 정규화.',

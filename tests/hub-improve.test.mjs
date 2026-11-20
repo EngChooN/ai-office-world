@@ -46,7 +46,8 @@ test('흡연장·크리스마스 크기 배수: 기본 0.7 = 예전 크기(1배)
  assert.equal(volumeGain(.7),1);assert.equal(volumeGain(0),0);assert.ok(Math.abs(volumeGain(1)-1/.7)<1e-9);assert.equal(volumeGain('x'),1);
 });
 test('세 체험이 공용 설정을 읽고 바꿀 때 같이 쓴다', ()=>{
- const h=read('src/main.js'),l=read('src/lounge/main.js'),x=read('src/christmas/main.js');
+ const h=read('src/main.js')+read('src/hiking-body.js'),   // 등산 소리 설정은 공통 본체 부품(통합 6단계)
+ l=read('src/lounge/main.js'),x=read('src/christmas/main.js');
  assert.match(h,/sharedSound\.has\)soundEnabled=sharedSound\.sound/);assert.match(h,/saveShared\(\{sound:enabled\}\)/);assert.match(h,/saveShared\(\{volume:audio\.volume\}\)/);
  assert.match(l,/profile\.muted=!sharedSound\.sound/);assert.match(l,/saveShared\(\{sound:!p\.muted\}\)/);
  assert.match(x,/profile\.carol=sharedSound\.music/);assert.match(x,/saveShared\(\{sound:profile\.sound\}\)/);assert.match(x,/saveShared\(\{music:profile\.carol\}\)/);

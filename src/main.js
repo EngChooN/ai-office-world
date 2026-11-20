@@ -7,7 +7,7 @@ import {mountRestUI} from './rest-ui.js';
 import {installHudToggle} from './hud-toggle.js';
 import {installGadgetUI,viewfinderCrop} from './gadget-ui.js';
 // 관악산 전용 코스·위치 모델·정상·광장은 산 정의 한 파일에서 읽는다(통합 2단계, 자리만 옮기기)
-import {applyMountainText} from './mountain-text.js';
+import {applyMountainText,applyMountainFeatures} from './mountain-text.js';
 import {GWANAK,route,sample,MATERIALS,isStairs,checkpoints,DEMO_START,durationBetween,geographicToLocal,floorHeight as routeFloorHeight,
  ROUTE_END,SUMMIT_CENTER,insidePlaza,fromGate,walker as W} from './mountains/gwanak.js';
 // 위치 모델(구역·코스 s·옆 거리)은 걷기 부품 W로만 읽고 바꾼다(통합 4단계, 약속 src/walker.js). 관악산 부품 = movement.js를 감싼 것.
@@ -28,10 +28,7 @@ import {createAutoView,startAutoView,stopAutoView,absorbUserYaw,stepAutoView,pat
 import {setupRendering,retractCamera} from './rendering.js';
 import {loadLandscape} from '../assets/realistic/load-landscape.js';
 import {loadOptionalModels} from './realistic-models.js';
-import {FootstepAudio,SOUND_SAVE_KEY} from './footstep-audio.js';
-import {AmbientAudio} from './ambient-audio.js';
-import {VOLUME_SAVE_KEY} from './ambient-config.js';
-import {loadShared,saveShared} from './shared-settings.js';
+import {createHikingSound,installContextRecovery,installMultiHud} from './hiking-body.js';
 import {mountInteractionUI,drawPhotoFrame} from './interaction-ui.js';
 import {createInteraction} from './interaction-controller.js';
 import {createTrailWorld} from './trail-world.js';
@@ -76,30 +73,16 @@ loading.set('terrain',0);
 const multiMode=new URLSearchParams(location.search).has('multi');
 function save(){if(multiMode)return;try{localStorage.setItem(W.saveKey,W.serialize(state.gadgetPrevView?{...state,view:state.gadgetPrevView}:state)); // 기구로 강제한 1인칭은 저장하지 않는다
 storageOK=true;}catch{storageOK=false;$('resume-note').textContent='저장 공간을 사용할 수 없습니다. 이 세션의 진행만 유지됩니다.';}}
-let soundEnabled=true;try{soundEnabled=localStorage.getItem(SOUND_SAVE_KEY)!=='false';}catch{}
-// 세 체험 공용 소리 설정(11-17, shared-settings.js): 저장된 적이 있으면 그 값을 따른다(허브 설정 창·흡연장·크리스마스에서 바꾼 값)
-const sharedSound=loadShared();if(sharedSound.has)soundEnabled=sharedSound.sound;
-const audioDebug=new URLSearchParams(location.search).has('audioDebug');
-function updateAudioUI(){const a=audio.snapshot();$('sound-toggle').setAttribute('aria-pressed',String(a.enabled));$('sound-toggle').querySelector('span').textContent=a.enabled?'소리 켜짐':'소리 꺼짐';for(const el of document.querySelectorAll('[data-sound-ic]'))el.innerHTML=icon('c-sound',{size:el.dataset.iconSize||'m',off:!a.enabled});$('sound-toggle').title=a.errors.length?'일부 소리 재생 오류 · 조작 안내의 소리 출처 참고':a.context==='입력 대기'?'클릭하거나 키를 누르면 소리를 시작합니다':a.decoded<a.total?'발소리 준비 중':'발소리 켜기/끄기';if(audioDebug){$('sound-debug').hidden=false;$('sound-debug').textContent='발소리 확인 · '+a.context+' · '+a.decoded+'/'+a.total+'개\n'+a.logs.slice(-8).map(r=>`${r.step}걸음 ${r.material} #${String(r.variant).padStart(2,'0')} ${r.pan<0?'왼':'오른'}\n  ${r.eventElapsed.toFixed(3)}s · ${r.rate.toFixed(3)}배 · ${r.variationDb.toFixed(2)}dB`).join('\n');}}
-const audio=new FootstepAudio({base:`${import.meta.env.BASE_URL}sounds/`,enabled:soundEnabled,onChange:updateAudioUI}); // 카툰은 가벼운 '톡톡' 소리를 두 걸음에 한 번
-let userVolume=.7;try{const stored=localStorage.getItem(VOLUME_SAVE_KEY);if(stored!==null&&Number.isFinite(Number(stored)))userVolume=Math.max(0,Math.min(1,Number(stored)));}catch{}
-if(sharedSound.has)userVolume=sharedSound.volume;
-audio.setVolume(userVolume);
-const ambient=new AmbientAudio({base:`${import.meta.env.BASE_URL}sounds/ambient/`,enabled:soundEnabled,volume:userVolume});
+// 소리(발소리·환경음·켜기/끄기·음량·라디오 ×0.7)는 공통 본체 부품(통합 6단계, src/hiking-body.js — 이 자리에 있던 코드를 그대로 옮김)
+const {audio,ambient,unlockSound,setRadio}=createHikingSound({view:()=>state.view});
 // 산마다 다른 화면 글(통합 3단계): 공통 틀의 data-mt 자리를 산 정의 글로. 관악산은 틀의 글과 같다
-applyMountainText(document,GWANAK.text);
+applyMountainText(document,GWANAK.text);applyMountainFeatures(document,GWANAK);   // 기능 스위치(통합 6단계): 관악산은 모두 켜져 숨는 자리 없음
 const ambientCredits=document.createElement('p');ambientCredits.textContent=GWANAK.text.ambientCredits;
 const sourceLink=document.createElement('a');sourceLink.href=`${import.meta.env.BASE_URL}${GWANAK.text.ambientSourcePath}`;sourceLink.textContent=GWANAK.text.ambientSourceLabel;sourceLink.target='_blank';sourceLink.rel='noopener';document.querySelector('.sound-credits').append(ambientCredits,sourceLink);
-// 라디오가 켜져 있으면 환경음을 ×0.7(아래 hiking:radio). 소리 이벤트보다 먼저 선언해 둔다
-let radioOn=false;const ambientVolume=()=>audio.volume*(radioOn?.7:1);
-const unlockSound=()=>{void audio.unlock();if(audio.context)ambient.attach(audio.context,audio.master);};window.addEventListener('pointerdown',unlockSound,{capture:true,passive:true});window.addEventListener('keydown',unlockSound,{capture:true});
-window.addEventListener('hiking:sound',e=>{const {enabled,volume}=e.detail||{};if(typeof enabled==='boolean'){audio.setEnabled(enabled);ambient.setEnabled(enabled);if(enabled)unlockSound();try{localStorage.setItem(SOUND_SAVE_KEY,String(enabled));}catch{}saveShared({sound:enabled});}if(Number.isFinite(volume)){audio.setVolume(volume);ambient.setVolume(ambientVolume());try{localStorage.setItem(VOLUME_SAVE_KEY,String(audio.volume));}catch{}saveShared({volume:audio.volume});}});
 const QUALITY_SAVE_KEY='gwanak-quality-mode';let qualityMode=(()=>{const q=new URLSearchParams(location.search).get('quality');const m={auto:'auto',high:'2',balanced:'1',low:'0'}[q];if(m)return m;try{return localStorage.getItem(QUALITY_SAVE_KEY)||'auto';}catch{return'auto';}})();function setQualityMode(mode){qualityMode=mode;try{localStorage.setItem(QUALITY_SAVE_KEY,qualityMode);}catch{}$('quality').textContent=`화질 ${{auto:'자동','2':'높음','1':'균형','0':'낮음'}[qualityMode]}`;try{quality=qualityMode==='auto'?(mobile?0:2):Number(qualityMode);goodWindows=0;resize();updateUI();}catch{}}
 $('quality').onclick=()=>{const order=['auto','2','1','0'];setQualityMode(order[(order.indexOf(qualityMode)+1)%order.length]);$('quality').blur();};
 // 설정 탭의 화질 분절 단추(등산 수첩 HUD)는 모드를 바로 고른다.
 window.addEventListener('hiking:quality',e=>{const m={auto:'auto',high:'2',balanced:'1',low:'0'}[e.detail?.mode];if(m)setQualityMode(m);});
-$('sound-toggle').onclick=()=>{window.dispatchEvent(new CustomEvent('hiking:sound',{detail:{enabled:!audio.enabled}}));$('sound-toggle').blur();};
-window.addEventListener('hiking:step',e=>ambient.onStep(audio.play(e.detail,{view:state.view,})));updateAudioUI();
 const inspectionFov=Number(new URLSearchParams(location.search).get('fov'));const inspectionMode=[55,70].includes(inspectionFov);const scene=new THREE.Scene();const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.08,30000);let renderer;
 try{renderer=new THREE.WebGLRenderer({canvas:$('world'),antialias:true,powerPreference:'high-performance'});}catch{$('resume-note').textContent='3D를 실행할 수 없습니다. WebGL을 지원하는 브라우저에서 열어 주세요.';failLoading(new Error('WebGL을 사용할 수 없습니다'));throw new Error('WebGL unavailable');}
 // 실패를 로딩 오류 신호로 바꾸고 그대로 다시 던진다.
@@ -210,11 +193,8 @@ $('lock').onclick=()=>{try{const p=$('world').requestPointerLock();p?.catch(()=>
 window.addEventListener('hiking:command',e=>{if(['sit','tea','auto','view','binoculars','phone','gadget-off','zoom-in','zoom-out','phone-zoom','selfie','shutter','chocolate',...INTERACTION_COMMANDS].includes(e.detail?.id))command(e.detail.id,e.detail.value);});
 for(const id of ['sit','tea'])$(id)?.addEventListener('click',()=>command(id));
 const lifecycleSave=()=>{suspend();if(document.pointerLockElement)document.exitPointerLock();};document.addEventListener('visibilitychange',()=>{if(document.hidden)lifecycleSave();});window.addEventListener('blur',lifecycleSave);window.addEventListener('pagehide',lifecycleSave);document.addEventListener('freeze',lifecycleSave);// WebGL 컨텍스트 손실(휴대폰 메모리 압박·백그라운드 전환): 그리기를 멈추고 복구를 기다린다. three는 restored 때 버퍼·텍스처·셰이더를 다시 올린다.
-// 6초 안에 복구되지 않으면 저장 지점에서 한 번 새로 연다(1분 안에 또 잃으면 새로 열지 않고 안내만 남긴다).
-let contextLost=false,contextTimer=0;
-$('world').addEventListener('webglcontextlost',e=>{e.preventDefault();contextLost=true;suspend();const note=$('resume-note');note.style.opacity='1';note.textContent='3D 화면을 다시 준비하는 중입니다…';window.dispatchEvent(new CustomEvent('hiking:context',{detail:{lost:true}}));
- clearTimeout(contextTimer);contextTimer=setTimeout(()=>{if(!contextLost)return;let recent=0;try{recent=Number(sessionStorage.getItem('gwanak-context-reload'))||0;sessionStorage.setItem('gwanak-context-reload',String(Date.now()));}catch{}if(Date.now()-recent>60000){save();location.reload();}else note.textContent='3D 연결이 끊겼습니다. 새로고침하면 저장 지점에서 이어집니다.';},6000);});
-$('world').addEventListener('webglcontextrestored',()=>{contextLost=false;clearTimeout(contextTimer);try{resize();}catch{}$('resume-note').textContent='3D 화면을 다시 이었습니다.';hideResumeNote();window.dispatchEvent(new CustomEvent('hiking:context',{detail:{lost:false}}));});
+// WebGL 끊김 복구는 공통 본체 부품(통합 6단계, src/hiking-body.js — 이 자리 코드를 그대로 옮김). ctxRecovery.lost = 지금 끊겨 있는지
+const ctxRecovery=installContextRecovery({canvas:$('world'),note:$('resume-note'),suspend:()=>suspend(),save:()=>save(),resize:()=>resize(),restored:()=>hideResumeNote()});
 const pad=n=>String(n).padStart(2,'0');const time=s=>`${pad(Math.floor(s/3600))}:${pad(Math.floor(s/60)%60)}:${pad(Math.floor(s)%60)}`;
 const minX=Math.min(...route.points.map(p=>p.x)),maxX=Math.max(...route.points.map(p=>p.x)),minZ=Math.min(...route.points.map(p=>p.z)),maxZ=Math.max(...route.points.map(p=>p.z));
 const mapScale=Math.min(250/(maxX-minX),250/(maxZ-minZ)),mapX=p=>160+(p.x-(minX+maxX)/2)*mapScale,mapY=p=>150+(p.z-(minZ+maxZ)/2)*mapScale;$('map-path').setAttribute('d',route.points.map((p,i)=>`${i?'L':'M'}${mapX(p)} ${mapY(p)}`).join(' '));
@@ -298,7 +278,7 @@ function frame(now,background=false){
  if(multi)frameMetrics.stage('multi',()=>multi.update(dt,now/1000));
  trail?.afterCamera(); // 말풍선·상호작용 칩은 이번 프레임 카메라로 자리를 잡는다
  if(background)return finishBackgroundFrame(now); // 숨은 탭에서는 그리지 않고 진행·저장·완등만 처리한다
- if(!contextLost)frameMetrics.stage('render',()=>lighting.render(avatar.position));
+ if(!ctxRecovery.lost)frameMetrics.stage('render',()=>lighting.render(avatar.position));
  if(photoRequested){photoRequested=false;takePhoto();}
  if(shotCallback){const cb=shotCallback;shotCallback=null;try{const img=new Image();img.onload=()=>cb(img);img.onerror=()=>cb(null);img.src=renderer.domElement.toDataURL('image/jpeg',.9);}catch{cb(null);}}
  frameMetrics.frame(frameSeconds*1000,{drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,textures:renderer.info.memory.textures,breakdown:lighting.status.breakdown});
@@ -326,7 +306,7 @@ function finishBackgroundFrame(now){
 // 탭을 숨기면 브라우저가 requestAnimationFrame을 멈춘다. 자동 걷기 중이면 숨은 동안에도 0.1초씩 몸을 옮기고(그리기 생략) 멀티 위치도 보낸다.
 // 숨은 탭의 일반 타이머는 1초~1분 간격으로 늦춰지므로 워커 타이머를 먼저 쓰고, 실제로 흐른 시간만큼 나눠 따라잡는다(한 번에 최대 60초).
 {const STEP=100,CATCHUP=60000;
- const tick=()=>{if(!document.hidden||!started||!state.auto||contextLost)return;const now=performance.now();let gap=now-last;if(gap<STEP)return;if(gap>CATCHUP){last=now-CATCHUP;gap=CATCHUP;}
+ const tick=()=>{if(!document.hidden||!started||!state.auto||ctxRecovery.lost)return;const now=performance.now();let gap=now-last;if(gap<STEP)return;if(gap>CATCHUP){last=now-CATCHUP;gap=CATCHUP;}
   while(gap>=STEP&&state.auto&&document.hidden){frame(last+STEP,true);gap-=STEP;}};
  let worker=null;try{const url=URL.createObjectURL(new Blob(['setInterval(()=>postMessage(0),250)'],{type:'text/javascript'}));worker=new Worker(url);URL.revokeObjectURL(url);worker.onmessage=tick;worker.onerror=()=>{worker?.terminate();worker=null;setInterval(tick,250);};}catch{worker=null;}
  if(!worker)setInterval(tick,250);
@@ -405,15 +385,13 @@ window.hiking.multi=()=>null;window.hiking.multiServer=multiServer;
 if(multiMode)await joinMulti();
 else if(window.__hikingMultiJoin){const d=window.__hikingMultiJoin;window.dispatchEvent(new CustomEvent('hiking:multi-join',{detail:d}));}
 // 함께 걷기 HUD(산디자인 src/multi-entry-ui.js: 버튼·방 이름·닉네임·상태 표시). 파일이 생기면 자동으로 불러온다(없으면 빈 목록).
-for(const load of Object.values(import.meta.glob('./multi-entry-ui.js')))load().then(m=>{document.body.dataset.multiEntry='1';m.installMultiEntry?.({serverUrl:multiServer,serverPick:hikingServerPick()});multi?.statusNow();}).catch(err=>console.warn('함께 걷기 HUD를 불러오지 못했습니다',err));
+installMultiHud({serverUrl:multiServer,serverPick:()=>hikingServerPick(),frame:()=>window.hikingFrame,statusNow:()=>multi?.statusNow()});
 // 등산 채팅 HUD(산디자인 src/hiking-chat-ui.js: 💬 버튼·채팅 창·머리 위 말풍선). 서버 연결은 multi-client.js가 hiking:chat* 이벤트로 맡는다.
 // ?multi로 이미 참가했으면 상태를 한 번 더 보내 준다(HUD가 늦게 붙어 '연결됨'을 놓치면 💬가 안 보였음).
-for(const load of Object.values(import.meta.glob('./hiking-chat-ui.js')))load().then(m=>{m.installHikingChat?.({frame:window.hikingFrame});multi?.statusNow();}).catch(err=>console.warn('등산 채팅 HUD를 불러오지 못했습니다',err));
 // 같이 등산하기 HUD(src/pair-ui.js: 👥 함께 있는 사람·제안 카드·동행 칩). multi-client.js와 hiking:pair-* 이벤트로만 주고받는다.
-for(const load of Object.values(import.meta.glob('./pair-ui.js')))load().then(m=>{m.installPairUI?.();multi?.statusNow();}).catch(err=>console.warn('같이 등산하기 HUD를 불러오지 못했습니다',err));
 // 관악산 FM 라디오(src/radio-ui.js: 📻 태그·휴대용 라디오·소리 출처 창). 발소리와 같은 AudioContext·마스터를 거쳐 '소리 꺼짐'·음량을 따른다.
 // 켜져 있으면 바람 같은 환경음을 조금(×0.7) 줄인다. 소리 파일은 같은 출처 assets/radio/만(외부 접속 없음).
-window.addEventListener('hiking:radio',e=>{radioOn=!!e.detail?.on;ambient.setVolume(ambientVolume());});
+window.addEventListener('hiking:radio',e=>setRadio(e.detail?.on));
 for(const load of Object.values(import.meta.glob('./radio-ui.js')))load().then(m=>{window.hiking.radio=m.installRadio?.({context:()=>audio.context,destination:()=>audio.master,enabled:()=>audio.enabled,unlock:unlockSound})??null;}).catch(err=>console.warn('라디오를 불러오지 못했습니다',err));
 // 상호작용(안내판·스탬프·산길 행동·쌍안경 이름표). 소품 자리는 풍경이 정한 landscape.interactionProps.sites를 그대로 쓴다.
 let envInfo={};window.addEventListener('hiking:environment',e=>{envInfo=e.detail||{};});

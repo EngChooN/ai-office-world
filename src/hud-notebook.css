@@ -368,3 +368,6 @@ body.nb-multi:not(.nb-multi-open) .multi-panel{display:none}
 /* 출처 줄을 설정 시트 안으로 옮겼을 때(11-16): 구석 고정을 풀고 시트 글자로 보여 준다 */
 .source-line.in-sheet{position:static;display:block;margin:2px 0 0;padding:0;background:none;color:var(--ink2);font-size:11px;line-height:1.6;white-space:normal;max-width:none}
 .source-line.in-sheet a{text-decoration:underline}
+
+/* 기능 스위치(한 게임 통합 6단계, src/hiking-body.js applyMountainFeatures): 그 산에 없는 기능 자리는 어디로 옮겨져 있든 숨긴다. 관악산은 해당 없음 */
+[data-feature-off]{display:none!important}
