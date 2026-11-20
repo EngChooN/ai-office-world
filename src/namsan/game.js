@@ -37,7 +37,8 @@ import {sealSVG} from '../free-settings-ui.js';
 import {loadNamsanData,createNamsanGround,courseAt,NAMSAN} from './namsan-data.js';
 import {buildNamsan} from './namsan-art.js';
 import {createNightLighting} from '../night-lighting.js';
-import {NAMSAN_SAVE_KEY,NAMSAN_ENTRY_KEY,NAMSAN_SERVERS,isNamsanRoom,namsanRoom,namsanHealth,createWalkState,saveData,stepWalk,walkHeight,heightAt,remainOf,jumpTo,wrapAngle,placeOf,walkable} from './namsan-walk.js';
+import {NAMSAN_ENTRY_KEY,NAMSAN_SERVERS,isNamsanRoom,namsanRoom,namsanHealth,walkHeight,heightAt,remainOf,jumpTo,wrapAngle} from './namsan-walk.js';
+import {createNamsanWalker} from './namsan-walker.js';
 
 const q=new URLSearchParams(location.search),BASE=import.meta.env.BASE_URL,$=s=>document.querySelector(s);
 document.documentElement.dataset.icExp='hiking';
@@ -128,11 +129,12 @@ const hiker=await loadToonHiker(hikerUrl);const avatar=hiker.scene;toon.toonify(
 avatar.traverse(o=>{if(o.isMesh){o.castShadow=!o.userData.outline;o.receiveShadow=!o.userData.noReceiveShadow;}});scene.add(avatar);loading.done('hikers');
 
 // ── 상태(이어 오르기: 이 기기에 저장, 함께 걷기 ?multi 주소는 저장 안 함) ──
-let saved=null;try{saved=JSON.parse(localStorage.getItem(NAMSAN_SAVE_KEY)??'null');}catch{}
-const st=createWalkState(G,q.get('start')==='summit'?null:saved);
-if(q.get('start')==='summit')jumpTo(G,st,G.points.at(-1).s-20);
+// 걷기는 남산 걷기 부품 N으로(통합 4단계, 약속 src/walker.js). 걷기 규칙 namsan-walk.js는 그대로.
+const N=createNamsanWalker(G);
+let saved=null;try{saved=localStorage.getItem(N.saveKey);}catch{}
+const st=q.get('start')==='summit'?N.initialState({start:'summit'}):N.restore(saved);
 let shortcut=q.get('start')==='summit';
-const save=()=>{if(multiMode)return;try{localStorage.setItem(NAMSAN_SAVE_KEY,JSON.stringify(saveData(st)));}catch{}};
+const save=()=>{if(multiMode)return;try{localStorage.setItem(N.saveKey,N.serialize(st));}catch{}};
 const look=createLook(),camFollow=createHeightFollow();let view='third',camBase=st.heading,speed=0,walkPhase=0,moving=false,runHeld=false;
 
 // ── 화질(관악산과 같은 규칙: 휴대폰 '낮음' 시작, 자동 조절) ──
@@ -200,8 +202,8 @@ const multiServer=()=>hikingServerUrl();
 const multiStatus=detail=>window.dispatchEvent(new CustomEvent('hiking:multi-status',{detail}));
 const multiLocal={nudge:()=>false,here:()=>null,sample:null,minS:0,maxS:0,
  walk:()=>({auto:!!st.auto,moving,steering:false,base:speed}),
- position:()=>({zone:'plaza',x:st.x,y:walkHeight(G,st),z:st.z,heading:st.heading}),
- setPosition:pos=>{if(!Number.isFinite(pos?.x)||!walkable(G,pos.x,pos.z))return false;st.x=pos.x;st.z=pos.z;if(Number.isFinite(pos.heading))st.heading=pos.heading;st.auto=false;const p=placeOf(G,st.x,st.z);if(p.hit.distance<4)st.s=p.hit.s;return true;},
+ position:()=>N.position(st),
+ setPosition:pos=>N.setPeerPosition(st,pos),
  speed:()=>speed,sit:()=>false,run:()=>!!st.running,gadget:()=>'none',selfie:()=>false,busy:()=>false,place:()=>null,
  act:()=>({pose:'stand',gadget:'none',selfie:false,trail:null,action:null}),shown:()=>null,propFor:()=>null};
 joinMulti=({room=null,name=null}={})=>{multiBusy=multiBusy.then(async()=>{
@@ -239,7 +241,7 @@ function frame_(now){
  const direct=!!(cmd.forward||cmd.side);
  // 직접 걷기는 카메라가 보는 쪽 기준(관악산 광장과 같음), 자동 걷기는 카메라가 걷는 방향을 천천히 따라 돈다
  if(direct){st.heading=wrapAngle(camBase+look.yaw);camBase=st.heading;look.yaw=0;}
- const r=stepWalk(G,st,{forward:cmd.forward,side:cmd.side,yaw:st.heading,run:cmd.run||runHeld,auto:st.auto},dt);
+ const r=N.walk(st,{forward:cmd.forward,side:cmd.side,yaw:st.heading,run:cmd.run||runHeld,auto:st.auto},dt);
  speed=r.speed;moving=r.moved>1e-5;stairsNow=r.stairs;
  if(!direct&&st.auto){const d=wrapAngle(st.heading-camBase);camBase=wrapAngle(camBase+d*Math.min(1,dtRaw*2.2));}
  if(started){st.elapsed+=dtRaw;}
