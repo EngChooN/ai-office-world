@@ -1,0 +1,1838 @@
+[
+ {
+  "name": "c-enter",
+  "group": "common",
+  "file": "icons/common/c-enter.svg",
+  "symbol": "ic-c-enter",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-left",
+  "group": "common",
+  "file": "icons/common/c-left.svg",
+  "symbol": "ic-c-left",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-right",
+  "group": "common",
+  "file": "icons/common/c-right.svg",
+  "symbol": "ic-c-right",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-undo",
+  "group": "common",
+  "file": "icons/common/c-undo.svg",
+  "symbol": "ic-c-undo",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-leave",
+  "group": "common",
+  "file": "icons/common/c-leave.svg",
+  "symbol": "ic-c-leave",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-stand-up",
+  "group": "common",
+  "file": "icons/common/c-stand-up.svg",
+  "symbol": "ic-c-stand-up",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-sit",
+  "group": "common",
+  "file": "icons/common/c-sit.svg",
+  "symbol": "ic-c-sit",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-tap",
+  "group": "common",
+  "file": "icons/common/c-tap.svg",
+  "symbol": "ic-c-tap",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-detail",
+  "group": "common",
+  "file": "icons/common/c-detail.svg",
+  "symbol": "ic-c-detail",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-link-out",
+  "group": "common",
+  "file": "icons/common/c-link-out.svg",
+  "symbol": "ic-c-link-out",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-close",
+  "group": "common",
+  "file": "icons/common/c-close.svg",
+  "symbol": "ic-c-close",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-back",
+  "group": "common",
+  "file": "icons/common/c-back.svg",
+  "symbol": "ic-c-back",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-more",
+  "group": "common",
+  "file": "icons/common/c-more.svg",
+  "symbol": "ic-c-more",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-check",
+  "group": "common",
+  "file": "icons/common/c-check.svg",
+  "symbol": "ic-c-check",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-settings",
+  "group": "common",
+  "file": "icons/common/c-settings.svg",
+  "symbol": "ic-c-settings",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-help",
+  "group": "common",
+  "file": "icons/common/c-help.svg",
+  "symbol": "ic-c-help",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-hide-ui",
+  "group": "common",
+  "file": "icons/common/c-hide-ui.svg",
+  "symbol": "ic-c-hide-ui",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-hide-ui-off",
+  "group": "common",
+  "file": "icons/common/c-hide-ui-off.svg",
+  "symbol": "ic-c-hide-ui-off",
+  "off": true,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-mouse-lock",
+  "group": "common",
+  "file": "icons/common/c-mouse-lock.svg",
+  "symbol": "ic-c-mouse-lock",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-lock",
+  "group": "common",
+  "file": "icons/common/c-lock.svg",
+  "symbol": "ic-c-lock",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-dev",
+  "group": "common",
+  "file": "icons/common/c-dev.svg",
+  "symbol": "ic-c-dev",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-edit",
+  "group": "common",
+  "file": "icons/common/c-edit.svg",
+  "symbol": "ic-c-edit",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-feedback",
+  "group": "common",
+  "file": "icons/common/c-feedback.svg",
+  "symbol": "ic-c-feedback",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-donate",
+  "group": "common",
+  "file": "icons/common/c-donate.svg",
+  "symbol": "ic-c-donate",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-notebook",
+  "group": "common",
+  "file": "icons/common/c-notebook.svg",
+  "symbol": "ic-c-notebook",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-wait",
+  "group": "common",
+  "file": "icons/common/c-wait.svg",
+  "symbol": "ic-c-wait",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-sound",
+  "group": "common",
+  "file": "icons/common/c-sound.svg",
+  "symbol": "ic-c-sound",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-sound-off",
+  "group": "common",
+  "file": "icons/common/c-sound-off.svg",
+  "symbol": "ic-c-sound-off",
+  "off": true,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-music",
+  "group": "common",
+  "file": "icons/common/c-music.svg",
+  "symbol": "ic-c-music",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-music-off",
+  "group": "common",
+  "file": "icons/common/c-music-off.svg",
+  "symbol": "ic-c-music-off",
+  "off": true,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-chat",
+  "group": "common",
+  "file": "icons/common/c-chat.svg",
+  "symbol": "ic-c-chat",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-people",
+  "group": "common",
+  "file": "icons/common/c-people.svg",
+  "symbol": "ic-c-people",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-person",
+  "group": "common",
+  "file": "icons/common/c-person.svg",
+  "symbol": "ic-c-person",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-multi-join",
+  "group": "common",
+  "file": "icons/common/c-multi-join.svg",
+  "symbol": "ic-c-multi-join",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-wave",
+  "group": "common",
+  "file": "icons/common/c-wave.svg",
+  "symbol": "ic-c-wave",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-mute-person",
+  "group": "common",
+  "file": "icons/common/c-mute-person.svg",
+  "symbol": "ic-c-mute-person",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-report",
+  "group": "common",
+  "file": "icons/common/c-report.svg",
+  "symbol": "ic-c-report",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-net-connecting",
+  "group": "common",
+  "file": "icons/common/c-net-connecting.svg",
+  "symbol": "ic-c-net-connecting",
+  "off": false,
+  "spin": true,
+  "color": false
+ },
+ {
+  "name": "c-net-ok",
+  "group": "common",
+  "file": "icons/common/c-net-ok.svg",
+  "symbol": "ic-c-net-ok",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-net-other",
+  "group": "common",
+  "file": "icons/common/c-net-other.svg",
+  "symbol": "ic-c-net-other",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-net-retry",
+  "group": "common",
+  "file": "icons/common/c-net-retry.svg",
+  "symbol": "ic-c-net-retry",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-net-lost",
+  "group": "common",
+  "file": "icons/common/c-net-lost.svg",
+  "symbol": "ic-c-net-lost",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-net-full",
+  "group": "common",
+  "file": "icons/common/c-net-full.svg",
+  "symbol": "ic-c-net-full",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-net-local",
+  "group": "common",
+  "file": "icons/common/c-net-local.svg",
+  "symbol": "ic-c-net-local",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-server-off",
+  "group": "common",
+  "file": "icons/common/c-server-off.svg",
+  "symbol": "ic-c-server-off",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-server-list",
+  "group": "common",
+  "file": "icons/common/c-server-list.svg",
+  "symbol": "ic-c-server-list",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-fb-bug",
+  "group": "common",
+  "file": "icons/common/c-fb-bug.svg",
+  "symbol": "ic-c-fb-bug",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-fb-idea",
+  "group": "common",
+  "file": "icons/common/c-fb-idea.svg",
+  "symbol": "ic-c-fb-idea",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-attach",
+  "group": "common",
+  "file": "icons/common/c-attach.svg",
+  "symbol": "ic-c-attach",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-upload",
+  "group": "common",
+  "file": "icons/common/c-upload.svg",
+  "symbol": "ic-c-upload",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-copy",
+  "group": "common",
+  "file": "icons/common/c-copy.svg",
+  "symbol": "ic-c-copy",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-wx-clear",
+  "group": "common",
+  "file": "icons/common/c-wx-clear.svg",
+  "symbol": "ic-c-wx-clear",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-wx-clear-night",
+  "group": "common",
+  "file": "icons/common/c-wx-clear-night.svg",
+  "symbol": "ic-c-wx-clear-night",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-wx-partly",
+  "group": "common",
+  "file": "icons/common/c-wx-partly.svg",
+  "symbol": "ic-c-wx-partly",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-wx-cloud",
+  "group": "common",
+  "file": "icons/common/c-wx-cloud.svg",
+  "symbol": "ic-c-wx-cloud",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-wx-rain",
+  "group": "common",
+  "file": "icons/common/c-wx-rain.svg",
+  "symbol": "ic-c-wx-rain",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-wx-snow",
+  "group": "common",
+  "file": "icons/common/c-wx-snow.svg",
+  "symbol": "ic-c-wx-snow",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-wx-fog",
+  "group": "common",
+  "file": "icons/common/c-wx-fog.svg",
+  "symbol": "ic-c-wx-fog",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-time-day",
+  "group": "common",
+  "file": "icons/common/c-time-day.svg",
+  "symbol": "ic-c-time-day",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-time-dusk",
+  "group": "common",
+  "file": "icons/common/c-time-dusk.svg",
+  "symbol": "ic-c-time-dusk",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-time-night",
+  "group": "common",
+  "file": "icons/common/c-time-night.svg",
+  "symbol": "ic-c-time-night",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-season-spring",
+  "group": "common",
+  "file": "icons/common/c-season-spring.svg",
+  "symbol": "ic-c-season-spring",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-season-summer",
+  "group": "common",
+  "file": "icons/common/c-season-summer.svg",
+  "symbol": "ic-c-season-summer",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-season-autumn",
+  "group": "common",
+  "file": "icons/common/c-season-autumn.svg",
+  "symbol": "ic-c-season-autumn",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-season-winter",
+  "group": "common",
+  "file": "icons/common/c-season-winter.svg",
+  "symbol": "ic-c-season-winter",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-exp-hiking",
+  "group": "common",
+  "file": "icons/common/c-exp-hiking.svg",
+  "symbol": "ic-c-exp-hiking",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-exp-smoking",
+  "group": "common",
+  "file": "icons/common/c-exp-smoking.svg",
+  "symbol": "ic-c-exp-smoking",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "c-exp-christmas",
+  "group": "common",
+  "file": "icons/common/c-exp-christmas.svg",
+  "symbol": "ic-c-exp-christmas",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-tree",
+  "group": "christmas",
+  "file": "icons/christmas/x-tree.svg",
+  "symbol": "ic-x-tree",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-cards-all",
+  "group": "christmas",
+  "file": "icons/christmas/x-cards-all.svg",
+  "symbol": "ic-x-cards-all",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-star",
+  "group": "christmas",
+  "file": "icons/christmas/x-star.svg",
+  "symbol": "ic-x-star",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-sparkle",
+  "group": "christmas",
+  "file": "icons/christmas/x-sparkle.svg",
+  "symbol": "ic-x-sparkle",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-gift",
+  "group": "christmas",
+  "file": "icons/christmas/x-gift.svg",
+  "symbol": "ic-x-gift",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-mailbox",
+  "group": "christmas",
+  "file": "icons/christmas/x-mailbox.svg",
+  "symbol": "ic-x-mailbox",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-cocoa",
+  "group": "christmas",
+  "file": "icons/christmas/x-cocoa.svg",
+  "symbol": "ic-x-cocoa",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-outfit",
+  "group": "christmas",
+  "file": "icons/christmas/x-outfit.svg",
+  "symbol": "ic-x-outfit",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-outfit-santa",
+  "group": "christmas",
+  "file": "icons/christmas/x-outfit-santa.svg",
+  "symbol": "ic-x-outfit-santa",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-outfit-knit",
+  "group": "christmas",
+  "file": "icons/christmas/x-outfit-knit.svg",
+  "symbol": "ic-x-outfit-knit",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-outfit-elf",
+  "group": "christmas",
+  "file": "icons/christmas/x-outfit-elf.svg",
+  "symbol": "ic-x-outfit-elf",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-hat-auto",
+  "group": "christmas",
+  "file": "icons/christmas/x-hat-auto.svg",
+  "symbol": "ic-x-hat-auto",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-hat-santa",
+  "group": "christmas",
+  "file": "icons/christmas/x-hat-santa.svg",
+  "symbol": "ic-x-hat-santa",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-hat-reindeer",
+  "group": "christmas",
+  "file": "icons/christmas/x-hat-reindeer.svg",
+  "symbol": "ic-x-hat-reindeer",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-hat-cap",
+  "group": "christmas",
+  "file": "icons/christmas/x-hat-cap.svg",
+  "symbol": "ic-x-hat-cap",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-hat-elf",
+  "group": "christmas",
+  "file": "icons/christmas/x-hat-elf.svg",
+  "symbol": "ic-x-hat-elf",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-hat-none",
+  "group": "christmas",
+  "file": "icons/christmas/x-hat-none.svg",
+  "symbol": "ic-x-hat-none",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-scarf",
+  "group": "christmas",
+  "file": "icons/christmas/x-scarf.svg",
+  "symbol": "ic-x-scarf",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-orn-red",
+  "group": "christmas",
+  "file": "icons/christmas/x-orn-red.svg",
+  "symbol": "ic-x-orn-red",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-orn-yellow",
+  "group": "christmas",
+  "file": "icons/christmas/x-orn-yellow.svg",
+  "symbol": "ic-x-orn-yellow",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-orn-blue",
+  "group": "christmas",
+  "file": "icons/christmas/x-orn-blue.svg",
+  "symbol": "ic-x-orn-blue",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-orn-white",
+  "group": "christmas",
+  "file": "icons/christmas/x-orn-white.svg",
+  "symbol": "ic-x-orn-white",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-orn-candy",
+  "group": "christmas",
+  "file": "icons/christmas/x-orn-candy.svg",
+  "symbol": "ic-x-orn-candy",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-orn-bell",
+  "group": "christmas",
+  "file": "icons/christmas/x-orn-bell.svg",
+  "symbol": "ic-x-orn-bell",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-orn-snow",
+  "group": "christmas",
+  "file": "icons/christmas/x-orn-snow.svg",
+  "symbol": "ic-x-orn-snow",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-orn-gift",
+  "group": "christmas",
+  "file": "icons/christmas/x-orn-gift.svg",
+  "symbol": "ic-x-orn-gift",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-campfire",
+  "group": "christmas",
+  "file": "icons/christmas/x-campfire.svg",
+  "symbol": "ic-x-campfire",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-warm-hands",
+  "group": "christmas",
+  "file": "icons/christmas/x-warm-hands.svg",
+  "symbol": "ic-x-warm-hands",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-cheer",
+  "group": "christmas",
+  "file": "icons/christmas/x-cheer.svg",
+  "symbol": "ic-x-cheer",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-sled",
+  "group": "christmas",
+  "file": "icons/christmas/x-sled.svg",
+  "symbol": "ic-x-sled",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-sled-pair",
+  "group": "christmas",
+  "file": "icons/christmas/x-sled-pair.svg",
+  "symbol": "ic-x-sled-pair",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-uphill",
+  "group": "christmas",
+  "file": "icons/christmas/x-uphill.svg",
+  "symbol": "ic-x-uphill",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-snowball",
+  "group": "christmas",
+  "file": "icons/christmas/x-snowball.svg",
+  "symbol": "ic-x-snowball",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-scoop",
+  "group": "christmas",
+  "file": "icons/christmas/x-scoop.svg",
+  "symbol": "ic-x-scoop",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-snowman",
+  "group": "christmas",
+  "file": "icons/christmas/x-snowman.svg",
+  "symbol": "ic-x-snowman",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-roll",
+  "group": "christmas",
+  "file": "icons/christmas/x-roll.svg",
+  "symbol": "ic-x-roll",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-stack",
+  "group": "christmas",
+  "file": "icons/christmas/x-stack.svg",
+  "symbol": "ic-x-stack",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-decorate",
+  "group": "christmas",
+  "file": "icons/christmas/x-decorate.svg",
+  "symbol": "ic-x-decorate",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-drift",
+  "group": "christmas",
+  "file": "icons/christmas/x-drift.svg",
+  "symbol": "ic-x-drift",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-brake",
+  "group": "christmas",
+  "file": "icons/christmas/x-brake.svg",
+  "symbol": "ic-x-brake",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-boost",
+  "group": "christmas",
+  "file": "icons/christmas/x-boost.svg",
+  "symbol": "ic-x-boost",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-crouch",
+  "group": "christmas",
+  "file": "icons/christmas/x-crouch.svg",
+  "symbol": "ic-x-crouch",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-crown",
+  "group": "christmas",
+  "file": "icons/christmas/x-crown.svg",
+  "symbol": "ic-x-crown",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-target",
+  "group": "christmas",
+  "file": "icons/christmas/x-target.svg",
+  "symbol": "ic-x-target",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-race",
+  "group": "christmas",
+  "file": "icons/christmas/x-race.svg",
+  "symbol": "ic-x-race",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-trophy",
+  "group": "christmas",
+  "file": "icons/christmas/x-trophy.svg",
+  "symbol": "ic-x-trophy",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-run",
+  "group": "christmas",
+  "file": "icons/christmas/x-run.svg",
+  "symbol": "ic-x-run",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-map",
+  "group": "christmas",
+  "file": "icons/christmas/x-map.svg",
+  "symbol": "ic-x-map",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-carousel",
+  "group": "christmas",
+  "file": "icons/christmas/x-carousel.svg",
+  "symbol": "ic-x-carousel",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-skate",
+  "group": "christmas",
+  "file": "icons/christmas/x-skate.svg",
+  "symbol": "ic-x-skate",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-reindeer",
+  "group": "christmas",
+  "file": "icons/christmas/x-reindeer.svg",
+  "symbol": "ic-x-reindeer",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-takeoff",
+  "group": "christmas",
+  "file": "icons/christmas/x-takeoff.svg",
+  "symbol": "ic-x-takeoff",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-land",
+  "group": "christmas",
+  "file": "icons/christmas/x-land.svg",
+  "symbol": "ic-x-land",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-fly-up",
+  "group": "christmas",
+  "file": "icons/christmas/x-fly-up.svg",
+  "symbol": "ic-x-fly-up",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-fly-down",
+  "group": "christmas",
+  "file": "icons/christmas/x-fly-down.svg",
+  "symbol": "ic-x-fly-down",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-gondola",
+  "group": "christmas",
+  "file": "icons/christmas/x-gondola.svg",
+  "symbol": "ic-x-gondola",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-downhill",
+  "group": "christmas",
+  "file": "icons/christmas/x-downhill.svg",
+  "symbol": "ic-x-downhill",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-skip",
+  "group": "christmas",
+  "file": "icons/christmas/x-skip.svg",
+  "symbol": "ic-x-skip",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-new-course",
+  "group": "christmas",
+  "file": "icons/christmas/x-new-course.svg",
+  "symbol": "ic-x-new-course",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-throw-cancel",
+  "group": "christmas",
+  "file": "icons/christmas/x-throw-cancel.svg",
+  "symbol": "ic-x-throw-cancel",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-part-eyes",
+  "group": "christmas",
+  "file": "icons/christmas/x-part-eyes.svg",
+  "symbol": "ic-x-part-eyes",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-part-nose",
+  "group": "christmas",
+  "file": "icons/christmas/x-part-nose.svg",
+  "symbol": "ic-x-part-nose",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-part-mouth",
+  "group": "christmas",
+  "file": "icons/christmas/x-part-mouth.svg",
+  "symbol": "ic-x-part-mouth",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "x-part-arm",
+  "group": "christmas",
+  "file": "icons/christmas/x-part-arm.svg",
+  "symbol": "ic-x-part-arm",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "x-part-hat",
+  "group": "christmas",
+  "file": "icons/christmas/x-part-hat.svg",
+  "symbol": "ic-x-part-hat",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "h-summit",
+  "group": "hiking",
+  "file": "icons/hiking/h-summit.svg",
+  "symbol": "ic-h-summit",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-free-settings",
+  "group": "hiking",
+  "file": "icons/hiking/h-free-settings.svg",
+  "symbol": "ic-h-free-settings",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-start-here",
+  "group": "hiking",
+  "file": "icons/hiking/h-start-here.svg",
+  "symbol": "ic-h-start-here",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-clear-record",
+  "group": "hiking",
+  "file": "icons/hiking/h-clear-record.svg",
+  "symbol": "ic-h-clear-record",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-walk",
+  "group": "hiking",
+  "file": "icons/hiking/h-walk.svg",
+  "symbol": "ic-h-walk",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-stop",
+  "group": "hiking",
+  "file": "icons/hiking/h-stop.svg",
+  "symbol": "ic-h-stop",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-view",
+  "group": "hiking",
+  "file": "icons/hiking/h-view.svg",
+  "symbol": "ic-h-view",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-map",
+  "group": "hiking",
+  "file": "icons/hiking/h-map.svg",
+  "symbol": "ic-h-map",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-backpack",
+  "group": "hiking",
+  "file": "icons/hiking/h-backpack.svg",
+  "symbol": "ic-h-backpack",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-rest",
+  "group": "hiking",
+  "file": "icons/hiking/h-rest.svg",
+  "symbol": "ic-h-rest",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-binoculars",
+  "group": "hiking",
+  "file": "icons/hiking/h-binoculars.svg",
+  "symbol": "ic-h-binoculars",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-phone-cam",
+  "group": "hiking",
+  "file": "icons/hiking/h-phone-cam.svg",
+  "symbol": "ic-h-phone-cam",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-tea",
+  "group": "hiking",
+  "file": "icons/hiking/h-tea.svg",
+  "symbol": "ic-h-tea",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-city-labels",
+  "group": "hiking",
+  "file": "icons/hiking/h-city-labels.svg",
+  "symbol": "ic-h-city-labels",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-headlamp",
+  "group": "hiking",
+  "file": "icons/hiking/h-headlamp.svg",
+  "symbol": "ic-h-headlamp",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "h-name-tag",
+  "group": "hiking",
+  "file": "icons/hiking/h-name-tag.svg",
+  "symbol": "ic-h-name-tag",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-face-forward",
+  "group": "hiking",
+  "file": "icons/hiking/h-face-forward.svg",
+  "symbol": "ic-h-face-forward",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "h-section-jump",
+  "group": "hiking",
+  "file": "icons/hiking/h-section-jump.svg",
+  "symbol": "ic-h-section-jump",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-stretch",
+  "group": "hiking",
+  "file": "icons/hiking/h-stretch.svg",
+  "symbol": "ic-h-stretch",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-breathe",
+  "group": "hiking",
+  "file": "icons/hiking/h-breathe.svg",
+  "symbol": "ic-h-breathe",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-radio",
+  "group": "hiking",
+  "file": "icons/hiking/h-radio.svg",
+  "symbol": "ic-h-radio",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-sign",
+  "group": "hiking",
+  "file": "icons/hiking/h-sign.svg",
+  "symbol": "ic-h-sign",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-medal",
+  "group": "hiking",
+  "file": "icons/hiking/h-medal.svg",
+  "symbol": "ic-h-medal",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "h-spring",
+  "group": "hiking",
+  "file": "icons/hiking/h-spring.svg",
+  "symbol": "ic-h-spring",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "h-hand-water",
+  "group": "hiking",
+  "file": "icons/hiking/h-hand-water.svg",
+  "symbol": "ic-h-hand-water",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "h-stone-tower",
+  "group": "hiking",
+  "file": "icons/hiking/h-stone-tower.svg",
+  "symbol": "ic-h-stone-tower",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-bow",
+  "group": "hiking",
+  "file": "icons/hiking/h-bow.svg",
+  "symbol": "ic-h-bow",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-selfie",
+  "group": "hiking",
+  "file": "icons/hiking/h-selfie.svg",
+  "symbol": "ic-h-selfie",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-pair",
+  "group": "hiking",
+  "file": "icons/hiking/h-pair.svg",
+  "symbol": "ic-h-pair",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-gym-flex",
+  "group": "hiking",
+  "file": "icons/hiking/h-gym-flex.svg",
+  "symbol": "ic-h-gym-flex",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-gym-barbell",
+  "group": "hiking",
+  "file": "icons/hiking/h-gym-barbell.svg",
+  "symbol": "ic-h-gym-barbell",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-gym-inversion",
+  "group": "hiking",
+  "file": "icons/hiking/h-gym-inversion.svg",
+  "symbol": "ic-h-gym-inversion",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-gym-twist",
+  "group": "hiking",
+  "file": "icons/hiking/h-gym-twist.svg",
+  "symbol": "ic-h-gym-twist",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-gym-bar",
+  "group": "hiking",
+  "file": "icons/hiking/h-gym-bar.svg",
+  "symbol": "ic-h-gym-bar",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-airgun",
+  "group": "hiking",
+  "file": "icons/hiking/h-airgun.svg",
+  "symbol": "ic-h-airgun",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-clean-shoe",
+  "group": "hiking",
+  "file": "icons/hiking/h-clean-shoe.svg",
+  "symbol": "ic-h-clean-shoe",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-cat",
+  "group": "hiking",
+  "file": "icons/hiking/h-cat.svg",
+  "symbol": "ic-h-cat",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "h-choco",
+  "group": "hiking",
+  "file": "icons/hiking/h-choco.svg",
+  "symbol": "ic-h-choco",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "h-boost",
+  "group": "hiking",
+  "file": "icons/hiking/h-boost.svg",
+  "symbol": "ic-h-boost",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "h-cramp",
+  "group": "hiking",
+  "file": "icons/hiking/h-cramp.svg",
+  "symbol": "ic-h-cramp",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-cigarette",
+  "group": "smoking",
+  "file": "icons/smoking/s-cigarette.svg",
+  "symbol": "ic-s-cigarette",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-lighter",
+  "group": "smoking",
+  "file": "icons/smoking/s-lighter.svg",
+  "symbol": "ic-s-lighter",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-inhale",
+  "group": "smoking",
+  "file": "icons/smoking/s-inhale.svg",
+  "symbol": "ic-s-inhale",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-puff-light",
+  "group": "smoking",
+  "file": "icons/smoking/s-puff-light.svg",
+  "symbol": "ic-s-puff-light",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-puff-sweet",
+  "group": "smoking",
+  "file": "icons/smoking/s-puff-sweet.svg",
+  "symbol": "ic-s-puff-sweet",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-puff-strong",
+  "group": "smoking",
+  "file": "icons/smoking/s-puff-strong.svg",
+  "symbol": "ic-s-puff-strong",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-puff-cough",
+  "group": "smoking",
+  "file": "icons/smoking/s-puff-cough.svg",
+  "symbol": "ic-s-puff-cough",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-receive",
+  "group": "smoking",
+  "file": "icons/smoking/s-receive.svg",
+  "symbol": "ic-s-receive",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-offer",
+  "group": "smoking",
+  "file": "icons/smoking/s-offer.svg",
+  "symbol": "ic-s-offer",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-bin",
+  "group": "smoking",
+  "file": "icons/smoking/s-bin.svg",
+  "symbol": "ic-s-bin",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-trick",
+  "group": "smoking",
+  "file": "icons/smoking/s-trick.svg",
+  "symbol": "ic-s-trick",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-ash-tap",
+  "group": "smoking",
+  "file": "icons/smoking/s-ash-tap.svg",
+  "symbol": "ic-s-ash-tap",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-trick-ring",
+  "group": "smoking",
+  "file": "icons/smoking/s-trick-ring.svg",
+  "symbol": "ic-s-trick-ring",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-trick-nose",
+  "group": "smoking",
+  "file": "icons/smoking/s-trick-nose.svg",
+  "symbol": "ic-s-trick-nose",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-trick-french",
+  "group": "smoking",
+  "file": "icons/smoking/s-trick-french.svg",
+  "symbol": "ic-s-trick-french",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-ashtray",
+  "group": "smoking",
+  "file": "icons/smoking/s-ashtray.svg",
+  "symbol": "ic-s-ashtray",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-manner-stamp",
+  "group": "smoking",
+  "file": "icons/smoking/s-manner-stamp.svg",
+  "symbol": "ic-s-manner-stamp",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-quitting",
+  "group": "smoking",
+  "file": "icons/smoking/s-quitting.svg",
+  "symbol": "ic-s-quitting",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-nonsmoker",
+  "group": "smoking",
+  "file": "icons/smoking/s-nonsmoker.svg",
+  "symbol": "ic-s-nonsmoker",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "s-scene",
+  "group": "smoking",
+  "file": "icons/smoking/s-scene.svg",
+  "symbol": "ic-s-scene",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-scene-morning",
+  "group": "smoking",
+  "file": "icons/smoking/s-scene-morning.svg",
+  "symbol": "ic-s-scene-morning",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-scene-lunch",
+  "group": "smoking",
+  "file": "icons/smoking/s-scene-lunch.svg",
+  "symbol": "ic-s-scene-lunch",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-scene-evening",
+  "group": "smoking",
+  "file": "icons/smoking/s-scene-evening.svg",
+  "symbol": "ic-s-scene-evening",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-scene-dinner",
+  "group": "smoking",
+  "file": "icons/smoking/s-scene-dinner.svg",
+  "symbol": "ic-s-scene-dinner",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "s-mild",
+  "group": "smoking",
+  "file": "icons/smoking/s-mild.svg",
+  "symbol": "ic-s-mild",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-strong",
+  "group": "smoking",
+  "file": "icons/smoking/s-strong.svg",
+  "symbol": "ic-s-strong",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "s-menthol",
+  "group": "smoking",
+  "file": "icons/smoking/s-menthol.svg",
+  "symbol": "ic-s-menthol",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "s-cigar",
+  "group": "smoking",
+  "file": "icons/smoking/s-cigar.svg",
+  "symbol": "ic-s-cigar",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "s-can-coffee",
+  "group": "smoking",
+  "file": "icons/smoking/s-can-coffee.svg",
+  "symbol": "ic-s-can-coffee",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-vending",
+  "group": "smoking",
+  "file": "icons/smoking/s-vending.svg",
+  "symbol": "ic-s-vending",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "s-lean-rail",
+  "group": "smoking",
+  "file": "icons/smoking/s-lean-rail.svg",
+  "symbol": "ic-s-lean-rail",
+  "off": false,
+  "spin": false,
+  "color": false
+ }
+]
