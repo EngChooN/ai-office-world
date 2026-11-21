@@ -366,7 +366,7 @@ function multiLocal(){
   // 함께 걷기 행동 상태(11-10, src/multi-act.js): 자세·기구·셀카·지금 동작(즐길거리 hiker-acts 또는 스트레칭 같은 산길 행동)
   act:()=>({pose:state.pose,gadget:state.gadget??'none',selfie:selfieActive(state),trail:trail?.acts.active?{name:trail.acts.active.name,state:trail.acts.active.state,reps:trail.acts.active.reps??0}:null,action:interaction?.action??null}),
   // 즐길거리에 들른 동안 몸이 실제로 있는 자리(trail-world override). 평소엔 null → 위치 그대로
-  shown:()=>{const tp=trail?.override();if(!tp)return null;return {...playerPosition(state,walkingGround),x:tp.position[0],z:tp.position[2],heading:tp.heading};},
+  shown:()=>{const tp=trail?.override();if(!tp)return null;return {...W.position(state,walkingGround),x:tp.position[0],z:tp.position[2],heading:tp.heading};},
   // 원격 동작의 소품(내 화면에 만들어진 것): 상대가 서 있는 자리와 맞는 소품 행렬·물체
   propFor:(act,x,z)=>trail?.propFor?.(act,x,z)??null};
 }
