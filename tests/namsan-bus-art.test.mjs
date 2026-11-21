@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {createNamsanGround,courseAt,NAMSAN,BUS_ROAD} from '../src/namsan/namsan-data.js';
+import {createNamsanGround,courseAt,NAMSAN,BUS_ROAD,openWallsForBus} from '../src/namsan/namsan-data.js';
 import {BUS,buildBus,placeOnLane} from '../src/namsan/namsan-bus-art.js';
 
 const B='assets/shared/namsan/',meta=JSON.parse(fs.readFileSync(B+'namsan-meta.json'));
@@ -58,4 +58,18 @@ test('밤 불빛(11-20): 툰 변환으로 재질을 갈아 끼워도 앞등·뒷
  assert.ok(get('tail').material.emissiveIntensity>1.4,'뒷등');
  assert.ok(get('버스 유리').material.emissiveIntensity>.4,'창 불빛');
  for(const n of ['버스 앞등 번짐','버스 뒷등 번짐','버스 앞 빛 웅덩이']){const m=get(n);assert.ok(m.visible&&m.material.opacity>.2,n);assert.equal(m.material.blending,2,`${n} 더하기 섞기`);}
+});
+
+// 11-21 대표 지적: 코너에서 시점이 뚝뚝 끊김 · 차로가 성곽을 뚫고 지나감
+test('코너에서 버스 방향이 한 번에 튀지 않음: 0.1m 가는 동안 방향 변화 1.5° 이하(전에는 한 번에 25°)',()=>{
+ const o={position:{set(){}},rotation:{set(){},order:'',x:0,y:0}};let prev=null,max=0;
+ for(let s=0;s<C.length;s+=.1){placeOnLane(o,C,s);const y=o.rotation.y;if(prev!=null)max=Math.max(max,Math.abs(Math.atan2(Math.sin(y-prev),Math.cos(y-prev))));prev=y;}
+ assert.ok(max*57.3<1.5,`0.1m당 최대 ${(max*57.3).toFixed(2)}°`);
+});
+test('성곽은 차로(버스 두 차선)에서 비켜 있음: 성곽 중심선과 버스 길 거리 > 차로 반폭+성곽 반폭',()=>{
+ const walls=openWallsForBus(G,data.walls),seg=[];for(const w of walls)for(let i=0;i<w.points.length-1;i++)seg.push([w.points[i],w.points[i+1]]);
+ const d=(x,z,a,b)=>{const dx=b.x-a.x,dz=b.z-a.z,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz||1)));return Math.hypot(x-(a.x+dx*t),z-(a.z+dz*t));};
+ let m=1e9;for(const p of C.points)for(const [a,b] of seg)m=Math.min(m,d(p.x,p.z,a,b));
+ assert.ok(m>BUS.width/2+1.1+.5,`가장 가까운 거리 ${m.toFixed(2)}m`);
+ assert.ok(walls.length>=data.walls.length,'성곽이 사라지지 않고 토막만 남음');
 });

@@ -33,7 +33,7 @@ import {hikingServerUrl,hikingPickMode,entryChoiceNow} from '../hiking-server-pi
 import {currentChoice} from '../server-link.js';
 import {enterWith,ENTRY_KEY} from '../entry.js';
 import {recordSummit,summitOf,loadSummits} from '../summit-records.js';
-import {loadNamsanData,createNamsanGround,courseAt,NAMSAN} from './namsan-data.js';
+import {loadNamsanData,createNamsanGround,openWallsForBus,courseAt,NAMSAN} from './namsan-data.js';
 import {buildNamsan} from './namsan-art.js';
 import {createNightLighting} from '../night-lighting.js';
 import {NAMSAN_ENTRY_KEY,NAMSAN_SERVERS,isNamsanRoom,namsanRoom,walkHeight,heightAt,remainOf,jumpTo,wrapAngle} from './namsan-walk.js';
@@ -119,12 +119,13 @@ const hideIds=new Set((await (await fetch(`${BASE}assets/shared/namsan/city-hide
 // 서울 배경만(관악산 산은 안 만듦, 통합 1단계)
 const landscape=await loadLandscape({base:`${BASE}assets/realistic/generated/`,chunkBase:`${BASE}assets/shared/chunks/`,maxContactMapSize:renderer.capabilities.maxTextureSize,materialFactory:toon.materialFactory,toon:{toonify:toon.toonify,patchFoliage:toon.patchFoliage,styleCity:toon.styleCity,natureParts:toon.natureParts},mountain:false});
 for(const child of landscape.group.children)if(!['SeoulCity2km','SeoulFar','HanRiverAndWater'].includes(child.name))toon.toonify(child,{kind:'prop'});
-scene.add(landscape.group); // 관악산 풀밭(toon.attachLandscape)은 관악산 길을 따르므로 붙이지 않는다(그림 인계 §3-3)
+scene.add(landscape.group); // 관악산 풀밭(toon.attachLandscape)은 관악산 길을 따르므로 붙이지 않는다. 남산 풀밭은 buildNamsan이 toon.attachGround로 깐다(11-21)
 const lighting=setupRendering(renderer,scene,camera,mobile,{toon});
 if(free.weather)lighting.environment?.weather?.setOverride(free.weather);
 loading.set('terrain',.6);
 const data=await loadNamsanData(`${BASE}assets/shared/namsan/`);
 const G=createNamsanGround(data);
+data.walls=openWallsForBus(G,data.walls);   // 차로가 지나는 성곽 자리는 비움(11-21)
 loading.done('terrain');loading.set('nature',.2);
 // 휴대폰: 길에서 먼 나무를 덜 심고(200m 안은 그대로) 지형 칸을 크게 묶어 그리기 횟수를 줄인다(11-19 측정: 숲이 휴대폰 삼각형의 약 70%, 지형 칸 500~700번)
 const MOBILE_KEEP=d=>d<60?1:d<200?.7:d<400?.35:d<800?.15:.08;
@@ -380,7 +381,7 @@ function frame_(now){
  {const co=window.namsan.cameraOverride;if(co){camera.position.fromArray(co.p);lookGoal.fromArray(co.t);}}
  camera.lookAt(lookGoal);cameraReady=true;
   easeCameraZoom(camera,viewZoom(gs),dtRaw);   // 쌍안경 배율(공통 본체 부품, 관악산과 같음)
- landscape.update(camera,quality);ns.update(now/1000,nightK());ia.userData.update(now/1000,nightK(),camera);
+ landscape.update(camera,quality);ns.update(now/1000,nightK(),camera,quality);ia.userData.update(now/1000,nightK(),camera);
  night.update(dtRaw,{camera,avatar,view,selfie:selfieActive(gs),zone:'route',s:st.s,hiker});
  if(multi){multi.update(dtRaw,now/1000,view);syncRemoteLocks(now);}
  if(!ctxRecovery.lost)lighting.render(avatar.position);
@@ -532,10 +533,12 @@ function busFrame(dt,cmd){if(!TT)return;const clock=busClock();
  if(ride){const b=buses[ride.k];b.updateMatrixWorld(true);const w=avatar.getWorldPosition(new THREE.Vector3());st.x=w.x;st.z=w.z;st.heading=b.rotation.y+Math.PI;
   const at=TT.bus(ride.k,clock);if(at.stop===ride.to&&performance.now()-boardAt>3000)alight(ride.to);}}
 const _bv=new THREE.Vector3();
-function rideCamera(dt){const b=buses[ride.k];const h=b.rotation.y+Math.PI+look.yaw;fwd.set(-Math.sin(h),0,-Math.cos(h));
+// 코너에서 시점이 뚝 꺾이지 않게 버스 방향을 천천히 따라간다(11-21). 탄 직후엔 버스 방향에서 시작
+function rideYawEase(dt,target){if(ride.yaw==null)ride.yaw=target;let d=target-ride.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));ride.yaw+=d*(1-Math.exp(-dt/.35));return ride.yaw;}
+function rideCamera(dt){const b=buses[ride.k];const by=rideYawEase(dt,b.rotation.y),h=by+Math.PI+look.yaw;fwd.set(-Math.sin(h),0,-Math.cos(h));
  if(view==='first'){avatar.getWorldPosition(_bv);camera.position.set(_bv.x,_bv.y+.62,_bv.z);lookGoal.copy(camera.position).addScaledVector(fwd,10);lookGoal.y+=Math.tan(look.pitch)*10;}
  else{ // 3인칭: 내가 앉은 창 쪽 옆 뒤에서(창턱 1.2m 위로 머리·어깨가 보이게, 그림 인계 §4)
-  avatar.getWorldPosition(_bv);const side=Math.sign(avatar.position.x||1),hs=b.rotation.y+Math.PI+look.yaw-side*1.1;fwd.set(-Math.sin(hs),0,-Math.cos(hs));
+  avatar.getWorldPosition(_bv);const side=Math.sign(avatar.position.x||1),hs=by+Math.PI+look.yaw-side*1.1;fwd.set(-Math.sin(hs),0,-Math.cos(hs));
   lookGoal.set(_bv.x,_bv.y+.45,_bv.z);camera.position.copy(lookGoal).addScaledVector(fwd,-Math.max(4.2,look.orbit*1.6));camera.position.y+=1.0+look.pitch*-3;
   const gy=G.ground(camera.position.x,camera.position.z)+.8;if(camera.position.y<gy)camera.position.y=gy;}
  camera.lookAt(lookGoal);}

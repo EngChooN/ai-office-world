@@ -157,7 +157,8 @@ export function buildBus({name='남산 순환버스'}={}){
 export function placeOnLane(obj,lane,s,{reverse=false}={}){
  const half=BUS.wheelBase/2,Lc=lane.points.at(-1).s,wrap=x=>lane.closed?((x%Lc)+Lc)%Lc:x,a=courseAt(lane.points,wrap(s-half)),b=courseAt(lane.points,wrap(s+half)),m=courseAt(lane.points,wrap(s));
  const dir=reverse?-1:1;obj.position.set(m.x,(a.y+b.y)/2,m.z);obj.rotation.set(0,0,0);obj.rotation.order='YXZ';
- obj.rotation.y=Math.atan2(m.tx*dir,m.tz*dir);obj.rotation.x=-Math.atan2((b.y-a.y)*dir,BUS.wheelBase);
+ // 방향은 앞뒤 5m 사이 현(chord)으로: 2m 토막마다 꺾이는 선 방향을 그대로 쓰면 코너에서 뚝뚝 돈다(11-21)
+ obj.rotation.y=(()=>{const f=courseAt(lane.points,wrap(s+5)),r=courseAt(lane.points,wrap(s-5)),dx=f.x-r.x,dz=f.z-r.z;return Math.hypot(dx,dz)>.5?Math.atan2(dx*dir,dz*dir):Math.atan2(m.tx*dir,m.tz*dir);})();obj.rotation.x=-Math.atan2((b.y-a.y)*dir,BUS.wheelBase);
  return obj;
 }
 

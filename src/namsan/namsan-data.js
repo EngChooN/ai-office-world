@@ -104,6 +104,22 @@ export function createBusLane(G,road){
  return {points:P,length:end,nearest:near,ground0:base,...busCycle(G,P,near)};
 }
 
+// ── 차로가 지나는 성곽 자리 비우기(11-21): 성곽은 코스 쪽으로만 밀려 있어 차로를 그대로 막았다. 차로 반폭+성곽 반폭+여유 안의 성곽 점을 빼고 성곽을 토막 낸다(성문처럼 뚫린 자리) ──
+export const WALL_GATE=Object.freeze({sample:1.5,margin:1.6});
+export function openWallsForBus(G,walls,{thick=2.2}={}){
+ if(!G.bus)return walls;
+ const open=BUS_ROAD.width/2+thick/2+WALL_GATE.margin,blocked=p=>G.bus.nearest(p.x,p.z).distance<open||G.bus.cycle.nearest(p.x,p.z).distance<open-BUS_CYCLE.lane+.6;
+ const out=[];
+ for(const w of walls){
+  const P=[];for(let i=0;i<w.points.length-1;i++){const a=w.points[i],b=w.points[i+1],L=Math.hypot(b.x-a.x,b.z-a.z),n=Math.max(1,Math.ceil(L/WALL_GATE.sample));for(let k=0;k<n;k++)P.push({...a,x:a.x+(b.x-a.x)*k/n,z:a.z+(b.z-a.z)*k/n,ground:a.ground+(b.ground-a.ground)*k/n});}
+  P.push({...w.points.at(-1)});
+  if(!P.some(blocked)){out.push(w);continue;}
+  let run=[],part=0;const flush=()=>{if(run.length>=2)out.push({...w,id:`${w.id}-${part++}`,points:run});run=[];};
+  for(const p of P){if(blocked(p))flush();else run.push(p);}flush();
+ }
+ return out;
+}
+
 // ── 버스가 실제로 도는 길(cycle): 백범광장 고리 → 오르는 차선 → 정상 광장 고리 → 내려오는 차선 → (처음으로). 한 줄로 이어진 닫힌 길 ──
 // 차선은 차로 가운데에서 진행 방향 오른쪽 1.6m(우측 통행). 두 광장에서는 가장자리 안쪽 고리를 시계 반대(x→z) 방향으로 돌아
 // 버스 오른쪽(문 쪽)이 늘 광장 가운데를 본다 — 정류장·하차 지점은 이 고리 위, 문 앞이 걷는 광장.

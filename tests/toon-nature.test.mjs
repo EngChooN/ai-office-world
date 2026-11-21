@@ -80,3 +80,13 @@ test('낮 화면: 외곽선 0(패스 꺼짐), 지형은 부드러운 3단 음영
  const t=createToonMaterials({gradientMap:createGradientMap()}).materialFactory.terrain();
  assert.deepEqual(t.gradientMap.userData.levels,TOON.terrainGradient);
 });
+
+test('먼 단계(LOD2) 활엽수: 줄기 꼭대기가 수관 덩어리 밑보다 높다(몸통과 잎이 떨어져 떠 보이지 않음, 11-21)', ()=>{
+ const n=nature();
+ for(const id of ['tree_small_02','island_tree_01'])for(const lod of [0,1,2]){
+  const g=n.natureParts(`/x/${id}-lod${lod}.glb`)[0].geometry,P=g.attributes.position,K=g.attributes.toonPart;
+  let trunkTop=-Infinity,crownBottom=Infinity;
+  for(let i=0;i<P.count;i++){const k=K.getX(i),y=P.getY(i);if(k===0)trunkTop=Math.max(trunkTop,y);else if(k===1||k===6)crownBottom=Math.min(crownBottom,y);}
+  assert.ok(trunkTop>crownBottom+.3,`${id} lod${lod}: 줄기 끝 ${trunkTop.toFixed(2)}m, 수관 밑 ${crownBottom.toFixed(2)}m`);
+ }
+});

@@ -10,6 +10,8 @@ import {bench} from '../toon/trail-props.js';
 import {NAMSAN,courseAt} from './namsan-data.js';
 import {buildNamsanBus} from './namsan-bus-art.js';
 import {buildNamsanLamps} from './namsan-lamps-art.js';
+import {planNamsanInteract,INTERACT} from './namsan-interact-art.js';
+import {createNearTrees} from '../../assets/realistic/near-trees.js';
 
 export const NAMSAN_COLORS=Object.freeze({
  wall:'#fffaf0',wallCap:'#bdb39d',stairTop:[.68,.67,.63],stairSide:[.55,.54,.50],curb:[.62,.60,.55],
@@ -53,7 +55,7 @@ export function buildNamsanTerrain(G,material,{tile=100,mobile=false}={}){
  const cityGround=std('#bdb6a8');cityGround.name='남산 시가지 바닥';
  const {x0,z0,x1,z1}=G.bounds,pts=G.points;
  const courseDist=(x,z)=>{let d=1e9;for(let i=0;i<pts.length;i+=3)d=Math.min(d,Math.hypot(pts[i].x-x,pts[i].z-z));return d;};
- let tris=0;
+ let tris=0;const cells=new Map(); // 칸마다 격자 수(surface가 그려진 삼각형 높이를 그대로 다시 구한다)
  for(let tz=z0;tz<z1-1;tz+=tile)for(let tx=x0;tx<x1-1;tx+=tile){
   // 칸 크기를 키우면(월드개발 11-19 휴대폰 그리기 횟수 줄이기, tile>100) 칸 가운데 대신 칸에서 가장 가까운 거리로 촘촘함을 정한다(길 옆 칸이 거칠어지지 않게)
   const sx=Math.min(tile,x1-tx),sz=Math.min(tile,z1-tz),near=(px,pz)=>tile>100?Math.hypot(Math.max(tx-px,0,px-tx-sx),Math.max(tz-pz,0,pz-tz-sz)):Math.hypot(tx+sx/2-px,tz+sz/2-pz);
@@ -61,6 +63,7 @@ export function buildNamsanTerrain(G,material,{tile=100,mobile=false}={}){
   // 순환버스 차로 60m 안도 2m(차로 둘레 깎은 땅이 굵은 칸 사이로 차로 위에 솟지 않게)
   const bd=G.bus?(()=>{let d=1e9;const bp=G.bus.points;for(let i=0;i<bp.length;i+=4)d=Math.min(d,Math.hypot(Math.max(tx-bp[i].x,0,bp[i].x-tx-sx),Math.max(tz-bp[i].z,0,bp[i].z-tz-sz)));return d;})():1e9;
   const step=(cd<130||plazaD<120||bd<20?2:cd<600?4:8)*(mobile?2:1),nx=Math.max(1,Math.round(sx/step)),nz=Math.max(1,Math.round(sz/step));
+  cells.set(`${Math.round((tx-x0)/tile)},${Math.round((tz-z0)/tile)}`,{tx,tz,dx:sx/nx,dz:sz/nz,nx,nz});
   const pos=[],nor=[],uv=[],idx=[],e=.8;
   const push=(x,z,y)=>{const hx=G.ground(x+e,z)-G.ground(x-e,z),hz=G.ground(x,z+e)-G.ground(x,z-e),l=Math.hypot(hx,2*e,hz);pos.push(x,y,z);nor.push(-hx/l,2*e/l,-hz/l);uv.push(x/60,z/60);};
   for(let j=0;j<=nz;j++)for(let i=0;i<=nx;i++){const x=tx+sx*i/nx,z=tz+sz*j/nz;push(x,z,G.ground(x,z));}
@@ -79,7 +82,12 @@ export function buildNamsanTerrain(G,material,{tile=100,mobile=false}={}){
   g.addGroup(0,parkCount,0);g.addGroup(parkCount,city.length,1);const skirt=idx.length-parkCount-city.length;if(skirt)g.addGroup(parkCount+city.length,skirt,0);
   const m=new THREE.Mesh(g,[material,cityGround]);m.receiveShadow=true;m.name=`남산 지형 ${tx},${tz} (${step}m)`;m.userData.step=step;group.add(m);tris+=idx.length/3;
  }
- group.userData.triangles=tris;return group;
+ // surface(x,z): 화면에 그려진 지형 면의 높이(칸 격자 삼각형 a,c,b / b,c,d를 그대로 보간). 풀 다발이 굵은 칸 위로 뜨거나 묻히지 않게 쓴다.
+ const surface=(x,z)=>{const c=cells.get(`${Math.floor((x-x0)/tile)},${Math.floor((z-z0)/tile)}`);if(!c)return G.ground(x,z);
+  const fi=(x-c.tx)/c.dx,fj=(z-c.tz)/c.dz,i=Math.max(0,Math.min(c.nx-1,Math.floor(fi))),j=Math.max(0,Math.min(c.nz-1,Math.floor(fj))),u=fi-i,v=fj-j;
+  const X=k=>c.tx+c.dx*k,Z=k=>c.tz+c.dz*k,a=G.ground(X(i),Z(j)),b=G.ground(X(i+1),Z(j)),cc=G.ground(X(i),Z(j+1)),d=G.ground(X(i+1),Z(j+1));
+  return u+v<=1?a+(b-a)*u+(cc-a)*v:d+(cc-d)*(1-u)+(b-d)*(1-v);};
+ group.userData.triangles=tris;group.userData.surface=surface;return group;
 }
 
 // ── 2. 코스 노면(계단 아닌 곳): 폭 2.6m 마사토 길 + 양옆 낮은 경계석 ──
@@ -331,23 +339,136 @@ export function buildPlazaProps(G){
 // ── 9. 숲: forest.json 배치를 관악산 카툰 나무(toon.natureParts, 같은 id) InstancedMesh로. 코스 120m 안은 LOD1, 그 밖은 LOD2 ──
 // mobile: 가까운 LOD1은 60m 안만, 코스에서 200m 밖 나무는 절반만(휴대폰 메모리·그리기 상한, device-profile 기준은 월드개발이 정함)
 // keep(d) = 길에서 d m 떨어진 나무를 남길 몫(0~1, 월드개발 11-19 휴대폰 성능). 없으면 예전 규칙(휴대폰은 200m 밖 절반).
-export function buildForest(G,forest,natureParts,{nearDist=120,maxTrees=Infinity,mobile=false,keep=null}={}){
+export function buildForest(G,forest,natureParts,{nearDist=120,maxTrees=Infinity,mobile=false,keep=null,height=G.ground}={}){
  if(mobile)nearDist=Math.min(nearDist,60);
  const group=new THREE.Group();group.name='남산 숲';
  const buckets=new Map();let n=0;
  const busClear=G.bus?G.bus.points[0].width/2+2.5:0; // 순환버스 차로 위·연석 옆 2.5m 안에는 나무를 심지 않는다
- for(const [id,x,z,scale,yaw] of forest.trees){if(n++>=maxTrees)break;if(busClear&&G.bus.nearest(x,z).distance<busClear)continue;const hit=G.nearest(x,z);if(keep){const f=keep(hit.distance);if(f<1&&(((Math.sin(x*12.9898+z*78.233)*43758.5453)%1+1)%1)>=f)continue;}else if(mobile&&hit.distance>200&&((x*7.3+z*3.1)|0)%2)continue;const lod=hit.distance<nearDist?1:2,k=`${id}:${lod}:${Math.floor(x/400)},${Math.floor(z/400)}`; /* 400m 칸으로 나눠 화면 밖 칸은 안 그림 */if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push([x,z,scale,yaw]);}
- const m=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3(),p=new THREE.Vector3(),up=new THREE.Vector3(0,1,0);let tris=0;
+ for(const [id,x,z,scale,yaw] of forest.trees){if(n++>=maxTrees)break;if(busClear&&G.bus.nearest(x,z).distance<busClear)continue;const hit=G.nearest(x,z);if(keep){const f=keep(hit.distance);if(f<1&&(((Math.sin(x*12.9898+z*78.233)*43758.5453)%1+1)%1)>=f)continue;}else if(mobile&&hit.distance>200&&((x*7.3+z*3.1)|0)%2)continue;const lod=hit.distance<nearDist?1:2,k=`${id}:${lod}:${Math.floor(x/400)},${Math.floor(z/400)}`; /* 400m 칸으로 나눠 화면 밖 칸은 안 그림 */if(!buckets.has(k))buckets.set(k,[]);
+  // 키는 관악산과 같은 표로 섞는다(treeStretch, 11-21). 자료의 크기(scale)는 그대로 곱해 그루마다 조금씩 다르게.
+  const st=treeStretch(id,x,z,hit.distance-NAMSAN.pathWidth/2-.6)?.map(v=>v*scale)??[scale,scale,scale];buckets.get(k).push([x,z,st,yaw,hit.distance]);}
+ const m=new THREE.Matrix4(),q=new THREE.Quaternion(),s=new THREE.Vector3(),p=new THREE.Vector3(),up=new THREE.Vector3(0,1,0),pool=[];let tris=0;
  for(const [k,list] of buckets){const [id,lod,cellKey]=k.split(':'),parts=natureParts(`${id}-lod${lod}.glb`);if(!parts)continue;
-  for(const part of parts){const im=new THREE.InstancedMesh(part.geometry,part.material,list.length);im.name=`남산 숲 ${id} LOD${lod} ${cellKey}`;
-   list.forEach(([x,z,sc,yaw],i)=>{p.set(x,G.ground(x,z)-.15,z);q.setFromAxisAngle(up,yaw);s.setScalar(sc);im.setMatrixAt(i,m.compose(p,q,s));});
-   im.instanceMatrix.needsUpdate=true;im.castShadow=lod==='1';im.receiveShadow=true;im.computeBoundingSphere();group.add(im);tris+=part.geometry.index?part.geometry.index.count/3*list.length:part.geometry.attributes.position.count/3*list.length;}}
- group.userData={trees:Math.min(n,forest.trees.length),triangles:tris};return group;
+  const meshes=[],white=new THREE.Color(1,1,1);
+  for(const part of parts){const im=new THREE.InstancedMesh(part.geometry,part.material,list.length);im.name=`남산 숲 ${id} LOD${lod} ${cellKey}`;meshes.push(im);
+   // 인스턴스 색(흰색)을 주어야 카툰 잎 셰이더가 그루마다 명도·색조를 달리 칠한다(관악산 나무와 같음, toon/nature.js NATURE_COLOR_VERTEX).
+   list.forEach(([x,z,st,yaw],i)=>{p.set(x,height(x,z)-.15,z);q.setFromAxisAngle(up,yaw);s.set(...st);im.setMatrixAt(i,m.compose(p,q,s));im.setColorAt(i,white);});
+   im.instanceMatrix.needsUpdate=true;im.castShadow=lod==='1';im.receiveShadow=true;im.computeBoundingSphere();group.add(im);tris+=part.geometry.index?part.geometry.index.count/3*list.length:part.geometry.attributes.position.count/3*list.length;}
+  // 가까운 나무 입체 바꾸기(near-trees.js)에 넘길 묶음: 같은 순서의 월드 행렬
+  // 길에서 50m 안 나무만(입체 반경 40m, 카메라는 늘 길 위). 빈 칸 배열이라 순서(인스턴스 번호)는 그대로, forEach가 빈 칸을 건너뛴다.
+  const world=new Array(list.length);list.forEach(([x,z,st,yaw,d],i)=>{if(d<50)world[i]=new THREE.Matrix4().compose(new THREE.Vector3(x,height(x,z)-.15,z),new THREE.Quaternion().setFromAxisAngle(up,yaw),new THREE.Vector3(...st));});
+  if(world.some(Boolean))pool.push({id,meshes,world});}
+ group.userData={trees:Math.min(n,forest.trees.length),triangles:tris,pool};return group;
+}
+
+// ── 9-2. 나무 키 섞기(11-21): 관악산 forest-structure.js와 같은 표. 작은 나무 20%(4~7m)·중간 52%(8~13m)·큰 나무 28%(16~22m),
+// 길에 가까우면(여유 7m 안) 10m까지만, 수관 폭은 길까지 여유를 넘지 않게. 같은 자리는 늘 같은 키(좌표 난수).
+const TREE_MODEL={tree_small_02:[8.97477,4.98],island_tree_01:[9.94073,6.72],pine_tree_01:[11.93123,3.27],pine_sapling_medium:[4.92499,1.51]};
+const noise3=(x,z,salt)=>{const n=Math.sin(x*12.9898+z*78.233+salt)*43758.5453;return n-Math.floor(n);};
+export function treeStretch(id,x,z,clearance){
+ const model=TREE_MODEL[id];if(!model)return null;
+ const r=noise3(x,z,3),v=noise3(x,z,11);let height=r<.2?4+v*3:r<.72?8+v*5:16+v*6;
+ if(clearance<7)height=Math.min(height,10);
+ const scale=height/model[0],width=Math.min(scale*(.82+v*.16),Math.max(.2,clearance)/model[1]);
+ return [width,scale,width];
+}
+
+// ── 9-3. 길가 숲 띠(11-21): 관악산 forest-layers.js와 같은 규칙으로 길 30m 안을 채운다(남산 숲이 관악산보다 5~10배 성겼음).
+// 2m 칸마다: 교목은 길 가장자리 4.5m 밖에서 20%(13% 넘는 몫은 dense = 화질 낮음에서 숨김), 덤불(1~3m)은 1.4m 밖에서 55%.
+// 실제 숲 칸(forestK, 토지피복)만 심고, 시가지·광장·성곽·버스 차로·시설 자리(blocked)와 전망탑 65m 안은 비운다.
+export function planTrailForest(G,{blocked=()=>false,corridor=30,seed=61103}={}){
+ let s=seed;const random=()=>((s=(Math.imul(s,1664525)+1013904223)>>>0)/4294967296);
+ const P=G.points,xs=P.map(p=>p.x),zs=P.map(p=>p.z),tw=NAMSAN.tower,trees=[],shrubs=[];
+ const busClear=G.bus?G.bus.points[0].width/2+2.5:0;
+ for(let z=Math.min(...zs)-corridor;z<Math.max(...zs)+corridor;z+=2)for(let x=Math.min(...xs)-corridor;x<Math.max(...xs)+corridor;x+=2){
+  const px=x+random()*1.9,pz=z+random()*1.9,h=G.nearest(px,pz),half=(P[h.index]?.width??NAMSAN.pathWidth)/2;
+  const treeRoll=random(),broad=random()<.75,pick=random(),yaw=random()*6.283,shrubRoll=random(),sr=[random(),random(),random(),random()];
+  if(h.distance>corridor||h.distance<half+.65||!G.park(px,pz)||G.forestK(px,pz)<.5)continue;
+  if(h.distance>half+4.5&&treeRoll<.2&&Math.hypot(px-tw.x,pz-tw.z)>=65&&!(busClear&&G.bus.nearest(px,pz).distance<busClear)&&!blocked(px,pz,1.2)){
+   const id=broad?(pick<.55?'tree_small_02':'island_tree_01'):(pick<.75?'pine_tree_01':'pine_sapling_medium');
+   trees.push({id,x:px,z:pz,yaw,stretch:treeStretch(id,px,pz,h.distance-half-.6),dense:treeRoll>=.13});
+  }
+  if(h.distance>half+1.4&&shrubRoll<.55){
+   const edge=Math.min(1,(h.distance-half-1.4)/4),sh={x:px+sr[0]*.6-.3,z:pz+sr[1]*.6-.3,yaw:sr[2]*6.283,scale:(.8+sr[3]*.95)*(.55+.45*edge),roll:noise3(px,pz,5)};
+   if(!blocked(sh.x,sh.z,.8*sh.scale))shrubs.push(sh);
+  }
+ }
+ return {trees,shrubs};
+}
+
+// 길가 숲 띠 그리기. 교목은 64m 칸 THREE.LOD(가까이 LOD1, farDist 밖 LOD2), dense는 칸마다 뒤로 모아 화질 낮음에서 개수만 줄인다.
+// 덤불은 24m 칸 InstancedMesh, 관악산처럼 화질별 거리 [22,34,48]m 안에서 [30,65,100]%만 그린다. update(camera,quality)를 매 프레임.
+export function buildTrailForest(plan,toon,{height,mobile=false}={}){
+ const group=new THREE.Group();group.name='남산 길가 숲';
+ const m=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),p=new THREE.Vector3(),up=new THREE.Vector3(0,1,0),white=new THREE.Color(1,1,1);
+ const farDist=mobile?36:72,chunks=new Map(),lods=[];let tris=0;
+ for(const t of plan.trees){const k=`${t.id}:${Math.floor(t.x/64)},${Math.floor(t.z/64)}`;if(!chunks.has(k))chunks.set(k,[]);chunks.get(k).push(t);}
+ for(const [k,list0] of chunks){
+  const id=k.split(':')[0],list=[...list0.filter(t=>!t.dense),...list0.filter(t=>t.dense)],denseFrom=list.findIndex(t=>t.dense);
+  const cx=list.reduce((a,t)=>a+t.x,0)/list.length,cz=list.reduce((a,t)=>a+t.z,0)/list.length,lod=new THREE.LOD();lod.name=`남산 길가 숲 ${k}`;lod.position.set(cx,0,cz);
+  const world=list.map(t=>{p.set(t.x,height(t.x,t.z)-.15,t.z);q.setFromAxisAngle(up,t.yaw);sc.set(...t.stretch);return new THREE.Matrix4().compose(p,q,sc);});
+  for(const [lv,dist] of [[1,0],[2,farDist]]){const parts=toon.natureParts(`${id}-lod${lv}.glb`);if(!parts)continue;const holder=new THREE.Group();
+   for(const part of parts){const im=new THREE.InstancedMesh(part.geometry,part.material,list.length);
+    world.forEach((w,i)=>{m.copy(w);m.elements[12]-=cx;m.elements[14]-=cz;im.setMatrixAt(i,m);im.setColorAt(i,white);});
+    im.instanceMatrix.needsUpdate=true;im.castShadow=lv===1;im.receiveShadow=true;im.computeBoundingSphere();holder.add(im);
+    if(lv===2)tris+=(part.geometry.index?part.geometry.index.count:part.geometry.attributes.position.count)/3*list.length;}
+   lod.addLevel(holder,dist,dist?4:0);}
+  lod.userData={id,world,denseFrom:denseFrom<0?list.length:denseFrom,count:list.length};group.add(lod);lods.push(lod);
+ }
+ // 덤불층: 관악산 숲 덤불과 같은 카툰 덤불(toon.nature.geometries.shrub·foliage 재질). 칸 안 순서는 섞어 화질 낮음에서도 고르게.
+ const shrubItems=[],shrubGeo=toon.nature?.geometries?.shrub,shrubMat=toon.nature?.materials?.foliage;
+ if(shrubGeo&&shrubMat){const cells=new Map();
+  for(const sh of plan.shrubs){const k=`${Math.floor(sh.x/24)},${Math.floor(sh.z/24)}`;if(!cells.has(k))cells.set(k,[]);cells.get(k).push(sh);}
+  for(const list of cells.values()){list.sort((a,b)=>a.roll-b.roll);const im=new THREE.InstancedMesh(shrubGeo,shrubMat,list.length);im.name='남산 덤불';
+   list.forEach((sh,i)=>{p.set(sh.x,height(sh.x,sh.z)-.02,sh.z);q.setFromAxisAngle(up,sh.yaw);sc.set(sh.scale*(.85+sh.roll*.3),sh.scale*(.8+((sh.roll*7)%1)*.6),sh.scale*(.85+((sh.roll*3)%1)*.3));im.setMatrixAt(i,m.compose(p,q,sc));im.setColorAt(i,white);});
+   im.instanceMatrix.needsUpdate=true;im.receiveShadow=true;im.computeBoundingBox();im.computeBoundingSphere();im.boundingBox.expandByScalar(1.5);im.boundingSphere.radius+=1.5;
+   group.add(im);shrubItems.push({mesh:im,box:im.boundingBox.clone(),count:list.length});}}
+ let lastQ=-1;
+ group.userData={trees:plan.trees.length,shrubs:plan.shrubs.length,lods,triangles:tris,
+  update(camera,quality=2){
+   if(quality!==lastQ){lastQ=quality;for(const lod of lods){const n=quality===0?lod.userData.denseFrom:lod.userData.count;for(const l of lod.levels)for(const im of l.object.children)im.count=n;}}
+   let visible=0;const far=[22,34,48][quality],keep=[.3,.65,1][quality];
+   for(const it of shrubItems){it.mesh.visible=it.box.distanceToPoint(camera.position)<far;it.mesh.count=Math.ceil(it.count*keep);if(it.mesh.visible)visible+=it.mesh.count;}
+   group.userData.visibleShrubs=visible;
+  }};
+ return group;
+}
+
+// ── 10. 풀밭(11-21): 관악산과 같은 카툰 풀밭(toon/grass-field.js, 카메라 둘레·같은 밀도·휴대폰은 화질 '낮음' 반경)을 남산 땅에 깐다 ──
+// 높이는 그려진 지형 면(terrain.userData.surface), 막힘은 코스 노면·경계석·돌계단·두 광장·성곽·버스 차로·시가지·시설·상호작용 소품 자리.
+export function namsanGrassGround(G,{surface=G.ground,walls=[],items=[],sites=[]}={}){
+ const pathClear=NAMSAN.pathWidth/2+.2,stairClear=NAMSAN.stairWidth/2+.35,wallClear=WALL.thick/2+.55;
+ // 성곽 가운데 선 점(1.5m 간격)을 8m 칸에 나눠 둔다
+ const CELL=8,wallCells=new Map();
+ for(const w of walls){const line=wallLine(G,w);if(!line)continue;for(const p of line.P){const k=`${Math.floor(p.x/CELL)},${Math.floor(p.z/CELL)}`;if(!wallCells.has(k))wallCells.set(k,[]);wallCells.get(k).push(p.x,p.z);}}
+ const nearWall=(x,z,r)=>{const cx=Math.floor(x/CELL),cz=Math.floor(z/CELL);for(let j=-1;j<=1;j++)for(let i=-1;i<=1;i++){const a=wallCells.get(`${cx+i},${cz+j}`);if(!a)continue;for(let k=0;k<a.length;k+=2)if((a[k]-x)**2+(a[k+1]-z)**2<r*r)return true;}return false;};
+ const ITEM_R={sign:.9,stamp:.9,'summit-stone':1.6,rest:3.6};
+ const spots=[...items.filter(i=>i.x!=null).map(i=>({x:i.x,z:i.z,r:ITEM_R[i.kind]??1})),...sites];
+ const busHalf=G.bus?G.bus.points[0].width/2+.6:0;
+ function blocked(x,z,reach=0){
+  if(!G.park(x,z))return true; // 시가지 바닥
+  for(const P of [G.plaza,G.startPlaza])if(Math.hypot(x-P.x,z-P.z)<P.r+.6+reach)return true;
+  const hit=G.nearest(x,z),stairs=G.points[hit.index]?.stairs||G.points[hit.index+1]?.stairs;
+  if(hit.distance<(stairs?stairClear:pathClear)+reach*.5)return true;
+  if(busHalf&&G.bus.nearest(x,z).distance<busHalf+reach)return true;
+  if(wallCells.size&&nearWall(x,z,wallClear+reach))return true;
+  for(const s of spots)if(Math.hypot(x-s.x,z-s.z)<s.r+reach)return true;
+  return false;
+ }
+ return {height:surface,blocked,heightMax:Infinity};
+}
+// 상호작용 소품(약수터·물확·실개천·돌탑 무리) 자리: game.js가 붙이는 buildNamsanInteract와 같은 계획을 다시 구해 풀을 비운다
+function interactSites(G,{walls,lamps,lanterns,items}){
+ const {spring,basins,cairn}=planNamsanInteract(G,{walls,lamps,lanterns,items}),out=[];
+ if(spring)out.push({x:spring.x,z:spring.z,r:1.7});
+ for(const b of basins){out.push({x:b.x,z:b.z,r:INTERACT.basin.r+.35});for(const p of b.runnel??[])out.push({x:p.x,z:p.z,r:.35});}
+ if(cairn)out.push({x:cairn.x,z:cairn.z,r:3.4});
+ return out;
 }
 
 // ── 한 번에 조립: 붙이는 쪽 예시(미리보기 preview.js도 이 함수를 쓴다) ──
 // terrainTile·forestKeep: 붙이는 쪽 성능 조절(월드개발 11-19, 휴대폰). 기본은 예전 그대로.
-export function buildNamsan({G,data,toon,forest=true,mobile=false,terrainTile=100,forestKeep=null,forestNear=undefined}){
+export function buildNamsan({G,data,toon,forest=true,grass=true,mobile=false,terrainTile=100,forestKeep=null,forestNear=undefined}){
  const root=new THREE.Group();root.name='남산';
  const terrain=buildNamsanTerrain(G,toon.materialFactory.terrain(),{mobile,tile:terrainTile});toon.toonify(terrain,{kind:'prop'});
  const path=buildCoursePath(G),stairs=buildStoneStairs(G),wall=buildFortressWall(G,data.walls);
@@ -365,7 +486,19 @@ export function buildNamsan({G,data,toon,forest=true,mobile=false,terrainTile=10
  const lamps=buildNamsanLamps(G,{walls:data.walls,lanterns:lanterns.userData.spots,items:furniture.userData.items});toon.toonify(lamps.userData.body,{kind:'prop'});root.add(lamps);
  // 순환버스(월드아트 11-19): 차로·정류장·하차 지점·버스 한 대. 움직임은 월드개발(ns.bus.bus를 placeOnLane으로 옮김)
  const bus=G.bus?buildNamsanBus(G):null;if(bus){toon.toonify(bus.root,{kind:'prop',keepMaps:true});root.add(bus.root);}
- let trees=null;if(forest&&data.forest&&toon.natureParts){trees=buildForest(G,data.forest,toon.natureParts,{mobile,keep:forestKeep,...(forestNear?{nearDist:forestNear}:{})});root.add(trees);}
- const update=(t,night)=>{tower.userData.update(t,night);lanterns.userData.update(night);plazaProps.userData.update(night);lamps.userData.update(night);bus?.update(t,night);};
- return {root,terrain,path,stairs,wall,tower,plaza,start,lanterns,furniture,plazaProps,lamps,trees,bus,update};
+ // 풀밭: 관악산과 같은 toon 풀밭(카메라 둘레). 매 프레임 갱신은 toon.pipeline.update가 한다.
+ let grassField=null;if(grass&&toon.attachGround){const lampSpots=lamps.userData.spots??[],items=furniture.userData.items;
+  grassField=toon.attachGround(namsanGrassGround(G,{surface:terrain.userData.surface,walls:data.walls,items,sites:interactSites(G,{walls:data.walls,lamps:lampSpots,lanterns:lanterns.userData.spots,items})}));}
+ // 숲(11-21 관악산 수준으로): 자료 숲(forest.json) + 길가 숲 띠·덤불층(planTrailForest) + 가까운 나무만 입체 모양(관악산 near-trees.js, 화질별 개수·반경 같음)
+ let trees=null,trail=null,near=null;const surface=terrain.userData.surface??G.ground;
+ if(forest&&data.forest&&toon.natureParts){trees=buildForest(G,data.forest,toon.natureParts,{mobile,keep:forestKeep,height:surface,...(forestNear?{nearDist:forestNear}:{})});root.add(trees);
+  const items=furniture.userData.items??[],blocked=namsanGrassGround(G,{walls:data.walls,items,sites:interactSites(G,{walls:data.walls,lamps:lamps.userData.spots??[],lanterns:lanterns.userData.spots,items})}).blocked;
+  trail=buildTrailForest(planTrailForest(G,{blocked}),toon,{height:surface,mobile});root.add(trail);
+  near=createNearTrees({loadParts:async url=>toon.natureParts(url)});near.group.name='남산 가까운 나무';root.add(near.group);
+  for(const b of trees.userData.pool)near.register({levels:[{object:{children:b.meshes}}]},{id:b.id,url:`${b.id}-lod0.glb`,matrices:b.world,tints:b.world.map(()=>0xffffff)}); // 빈 칸은 map도 빈 칸
+  for(const lod of trail.userData.lods)near.register(lod,{id:lod.userData.id,url:`${lod.userData.id}-lod0.glb`,matrices:lod.userData.world,tints:lod.userData.world.map(()=>0xffffff),dense:lod.userData.world.map((_,i)=>i>=lod.userData.denseFrom)});}
+ // camera·quality(0~2)를 주면 길가 숲 덤불 거리·가까운 나무 입체 바꾸기를 갱신한다(game.js)
+ const update=(t,night,camera=null,quality=2)=>{tower.userData.update(t,night);lanterns.userData.update(night);plazaProps.userData.update(night);lamps.userData.update(night);bus?.update(t,night);
+  if(camera){trail?.userData.update(camera,quality);near?.update(camera,quality);}};
+ return {root,terrain,path,stairs,wall,tower,plaza,start,lanterns,furniture,plazaProps,lamps,trees,trail,near,bus,grass:grassField,update};
 }

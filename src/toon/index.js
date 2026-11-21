@@ -54,6 +54,12 @@ export async function createToonStyle({renderer,scene,camera,mobile=false}={}){
   grassField=createGrassField({landscape,geometry:nature.geometries.grass.field,farGeometry:nature.geometries.grass.fieldFar,material:nature.materials.grassField,scene});status.grassField=grassField.status;
   return grassField;
  }
+ // 다른 산(남산 등, 11-21): 관악산 지형 없이 높이·막힘 판정만 받아 같은 풀밭을 깐다. ground = grass-field.js의 ground 옵션.
+ function attachGround(ground){
+  if(grassField||!ground?.height||!scene)return grassField;
+  grassField=createGrassField({ground,geometry:nature.geometries.grass.field,farGeometry:nature.geometries.grass.fieldFar,material:nature.materials.grassField,scene});status.grassField=grassField.status;
+  return grassField;
+ }
  let sky=null,lastTime=globalThis.performance?.now?.()??0,lastWater=lastTime;const sun=new THREE.Vector3(0,1,0);
  const status={style:'toon',gradient:[...TOON.gradient],materials:materials.status,nature:nature.status,water:water.status,city:city.status,pipeline:pipeline?.status??null,sky:{created:false},phase:null};
 
@@ -99,6 +105,7 @@ export async function createToonStyle({renderer,scene,camera,mobile=false}={}){
   toonify,
   natureParts:nature.natureParts,
   attachLandscape,
+  attachGround,
   nature,
   patchFoliage:materials.patchFoliage,
   createSky,updateSky,

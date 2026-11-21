@@ -11,7 +11,7 @@ import {loadLandscape} from '../../assets/realistic/load-landscape.js';
 import {setTimeOverride} from '../daytime.js';
 import {presetClock} from '../free-settings.js';
 import {loadToonHiker} from '../toon/link-hiker.js';
-import {loadNamsanData,createNamsanGround,courseAt,NAMSAN} from './namsan-data.js';
+import {loadNamsanData,createNamsanGround,openWallsForBus,courseAt,NAMSAN} from './namsan-data.js';
 import {buildNamsan,TOWER} from './namsan-art.js';
 import {placeOnLane,seatInBus,BUS} from './namsan-bus-art.js';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
@@ -36,6 +36,7 @@ const lighting=setupRendering(renderer,scene,camera,mobile,{toon});
 // 남산
 const data=await loadNamsanData(`${BASE}assets/shared/namsan/`,{forest:q.get('forest')!=='0'});
 const G=createNamsanGround(data);
+data.walls=openWallsForBus(G,data.walls);
 const ns=buildNamsan({G,data,toon,forest:q.get('forest')!=='0',mobile});scene.add(ns.root);
 // 원경: 관악산 원경 땅(160m 격자)이 남산 판을 뚫지 않게 남산 판 안쪽만 내린다. 관악산 쪽 「남산·N서울타워」 원경 모형은 남산에서는 숨긴다(게임 속 전망탑으로 대신).
 await landscape.streamFar();await landscape.streamWater();

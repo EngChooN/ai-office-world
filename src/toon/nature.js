@@ -167,7 +167,8 @@ function broadleaf(spec,lod,palette){
  const forkY=H*.3,lean=new THREE.Vector3(spec.lean*W*.08,0,0),crownC=new THREE.Vector3(lean.x,H*.66,0);
  const fork=new THREE.Vector3(lean.x,forkY,0);
  // 줄기: 굵기 ÷ 수관 너비 ≈ 0.12, 밑동 1.6배, 살짝 굽음.
- addLimb(b,{a:new THREE.Vector3(0,0,0),b:fork.clone().add(new THREE.Vector3(0,H*.05,0)),ra:W*.06,rb:W*.045,sides:L.trunkSides,rings:L.rings,color:palette.trunk,swayOf,flare:1.6,bow:new THREE.Vector3(W*.025,0,W*.015)});
+ // 굵은 가지가 없는 먼 단계(LOD2)는 줄기를 수관 덩어리 안(0.6H)까지 올린다. 갈래점에서 끝나면 수관 밑(약 0.42H)과 0.7m 넘게 떠 보인다(남산 휴대폰 30m부터 LOD2, 11-21).
+ addLimb(b,{a:new THREE.Vector3(0,0,0),b:L.branches?fork.clone().add(new THREE.Vector3(0,H*.05,0)):new THREE.Vector3(lean.x,H*.6,0),ra:W*.06,rb:L.branches?W*.045:W*.035,sides:L.trunkSides,rings:L.rings,color:palette.trunk,swayOf,flare:1.6,bow:new THREE.Vector3(W*.025,0,W*.015)});
  const lumps=[{c:new THREE.Vector3(crownC.x+W*.02,H*.84,-W*.02),r:W*.25}];
  const ring1=Math.max(1,Math.ceil((L.lumps-1)*.6)),ring2=Math.max(0,L.lumps-1-ring1);
  for(let i=0;i<ring1;i++){
