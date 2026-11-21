@@ -142,6 +142,7 @@ npm run deploy         # gh-pages 브랜치에 강제 push (대표 지시가 있
 | 한 게임 통합 6단계(11-20, 월드개발) | 남산 페이지 `hiking/namsan/index.html`(`<html data-mountain="namsan">`)도 공통 화면 조각 `src/frame/hiking-body.html`을 끼우고 `src/mountains/page-text.js`(로딩 전 글·기능 자리) → `src/loading-screen.js` → `src/namsan/game.js` 순. 남산 글·기능 스위치 `src/mountains/namsan-page.js`(`NAMSAN_TEXT`·`NAMSAN_FEATURES`, import 없음). 기능 자리 숨기기 `src/mountain-text.js` `applyMountainFeatures`(조각의 `data-feature`, `[data-feature-off]` 숨김 CSS는 hud-notebook.css). 두 산 공통 본체 부품 `src/hiking-body.js`(`createHikingSound`·`installContextRecovery`·`installMultiHud`). 수첩 HUD 산별 옵션 `installHikingFrame({goal,barMode,features})`·`installNotebookHud(doc,win,{ticks})`, 도장 규칙에 남산 줄. 검사 `tests/mountain-body.test.mjs` |
 | 한 게임 통합 7단계(11-20, 월드개발) | 공통 본체 부품 `src/hiking-body.js`에 화질 고르기(`readQualityMode`·`bindQualityControls`)·숨김 저장(`installLifecycleSave`)·배율(`easeCameraZoom`)·진행 카드 칠하기(`paintHikeCard`)·메모리 어림(`sceneMemory`, 남산 `namsan.memory()`) 추가. 휴대폰 메모리 `MOUNTAIN=namsan node scripts/measure-mobile-memory.mjs`, 두 산 함께 걷기 섞임 점검 `scripts/verify-two-mountain-multi.mjs`(서버·창끼리). 라디오 점검은 곡 크기 흔들림에 맞춰 판정 고침 |
 | 진행 알약 짧은 글(11-21, 월드개발) | 화면 폭 ≤ 480px(`PILL_SHORT_MEDIA`)이면 「연주대 n km · n m」, 넘치면 「…」 — `src/hiking-frame.js` `pillText`·`hiking-frame.css` `.hk-pill-t`. 측정·촬영 `scripts/capture-pill.mjs`. 등산 서버는 산마다 3개(`multi-protocol.js` `mountainServers`, 남산 id `n1~n3`, 11-21 대표) |
+| 남산 소리(11-21, 월드개발) | 환경음 산별 설정 `src/ambient-audio.js` `AmbientAudio({config})`(기본 `GWANAK_AMBIENT_CONFIG` = 관악산 그대로, `setMuffle`), 남산 표 `src/namsan/namsan-ambient-config.js`(`NAMSAN_AMBIENT_CONFIG`), 버스 소리 `src/namsan/namsan-bus-sound.js`(`createBusSound`, 파일 없으면 합성 임시음, `BUS_SOUND.files`), 연결 `game.js` `soundFrame`·`namsan.audio()`. 설계 `docs/남산/남산-환경음-구간별-설계-v1.md`, 검사 `tests/namsan-ambient`·`namsan-bus-sound`.test.mjs·`artifacts/namsan-audio-check.mjs` |
 | 기기별 상한 | `src/device-profile.js` (등산·흡연장 공용. 흡연장 사본과 다른 점은 등산 쪽에만 있는 `multiFullCap` 하나였고 흡연장은 이 값을 읽지 않으므로 그대로 씀) |
 
 ## 7. 지금 상태와 다음 일 (2026-11-08)
@@ -161,6 +162,7 @@ npm run deploy         # gh-pages 브랜치에 강제 push (대표 지시가 있
 
 | 날짜 | 결정 | 근거 문서 |
 |---|---|---|
+| 11-21 | 남산 소리 연결(월드기획 지시, 설계 v1 숫자 그대로·대표 미확인): 남산 환경음 켬(관악산 파일 5개 재사용, 물·까마귀·목탁 없음), 순환버스 엔진·정차·문·버스 안 소리. 녹음 파일 받기 전까지 합성 임시음. 관악산 환경음 표·파일은 그대로 | 변경기록-2026-11-21-남산-소리.md |
 | 11-21 | 진행 알약 글(대표 결정): 좁은 세로 화면(폭 ≤ 480px)만 「…까지」·「고도」를 뺀 짧은 글, 그래도 길면 알약 안에서 「…」. PC·가로 그대로, 두 산 같은 공통 틀 | 변경기록-2026-11-21-대표변경-받기-알약글.md |
 | 11-20 | 한 게임 통합 6단계(월드기획 지시): 남산 페이지가 관악산과 같은 화면 조각·수첩 HUD·공통 본체 부품(소리·끊김 복구·함께 걷기 HUD)을 씀, 기능 스위치로 없는 기능 자리 숨김(관악산은 숨는 자리 없음). 남산 발소리·효과음은 관악산 파일 그대로, 환경음은 끔. 5단계 후속 사소 3건은 프론트엔드 정리드 몫 | 변경기록-2026-11-20-한게임-통합-6단계.md |
 | 11-20 | 한 게임 통합 5단계(월드기획 지시, 대표 결정 반영): 남산 산 정의·기능 스위치, 남산용 콘텐츠(약수·물확 2곳 손 담그기·돌탑·정상석 F 정상 인증·이정표 글·스탬프함 F·쌍안경 명소 11곳), 사랑의 자물쇠(이 기기 저장 + 같은 방 공유, 글 없음, 서버 저장 없음), 순환버스 타기, 정상 야경 벤치. 그림 4곳은 디딤 띠로 「서 있을 곳」까지 걸어감. 추천안(대표 미확인): 자물쇠 한 기기 최대 3개, 버스 2대·10m/s·정류장 12초, 버스로 온 정상은 기록 안 함, 야경 벤치 2개는 자물쇠 난간 양옆, 남산 효과음은 아직 없음 | 변경기록-2026-11-20-한게임-통합-5단계.md |

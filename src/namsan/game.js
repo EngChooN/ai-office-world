@@ -61,6 +61,9 @@ import {installHudToggle} from '../hud-toggle.js';
 import {sectionJumpEnabled,mountSectionJump} from '../section-jump.js';
 import {createHikingSound,installContextRecovery,installMultiHud,readQualityMode,saveQualityMode,bindQualityControls,installLifecycleSave,easeCameraZoom,sceneMemory,paintHikeCard,hikeClock} from '../hiking-body.js';
 import {createInteractionSound} from '../interaction-sound.js';
+// 남산 소리(11-21): 구간별 환경음 표(관악산 표 대신)와 순환버스 소리
+import {NAMSAN_AMBIENT_CONFIG} from './namsan-ambient-config.js';
+import {createBusSound} from './namsan-bus-sound.js';
 
 const q=new URLSearchParams(location.search),BASE=import.meta.env.BASE_URL,$=s=>document.querySelector(s);
 document.documentElement.dataset.icExp='hiking';
@@ -199,8 +202,10 @@ const qualityText=()=>`화질 ${['낮음','균형','높음'][quality]} · ${qual
 function setQualityMode(mode){qualityMode=mode;saveQualityMode(qualityMode);quality=qualityMode==='auto'?(mobile?0:2):Number(qualityMode);resize();updateUI();}
 bindQualityControls({mode:()=>qualityMode,set:setQualityMode});   // #quality 단추·설정 탭 화질 단추(공통 본체 부품, 7단계)
 
-// ── 소리(공통 본체 부품: 발소리·켜기/끄기·음량. 남산은 구간별 환경음 표가 없어 환경음은 끔 = features.ambient) ──
-const sound=createHikingSound({view:()=>view,ambient:F.ambient!==false});
+// ── 소리(공통 본체 부품: 발소리·환경음·켜기/끄기·음량). 환경음은 남산 구간 표(namsan-ambient-config.js, 11-21), 매 프레임 soundFrame이 넣는다 ──
+const sound=createHikingSound({view:()=>view,ambient:F.ambient!==false,ambientConfig:NAMSAN_AMBIENT_CONFIG});
+// 소리 출처(공통 조각 「소리 출처」 칸 끝에 남산 환경음·버스 소리 안내)
+if(M.text.ambientCredits){const p=document.createElement('p');p.textContent=M.text.ambientCredits;document.querySelector('.sound-credits')?.append(p);}
 const soundFx=createInteractionSound({context:()=>sound.audio.context,destination:()=>sound.audio.master,enabled:()=>sound.audio.enabled});
 let stepCount=0,stepPhase=0;   // 발소리: 걸음 위상이 한 걸음 넘을 때마다(관악산 'hiking:step'과 같은 모양, 계단 = stairs·길 = 돌길)
 const keyless=t=>mobile?String(t).replace(/\s*\([A-Z]\)/g,''):t;   // 휴대폰은 안내 글의 키 글자 (T)·(B)를 뺀다(11-20 월드디자인 확인 보통 2)
@@ -380,6 +385,7 @@ function frame_(now){
  if(ride)rideCamera(dtRaw);else lockCamera(dtRaw);
  {const co=window.namsan.cameraOverride;if(co){camera.position.fromArray(co.p);lookGoal.fromArray(co.t);}}
  camera.lookAt(lookGoal);cameraReady=true;
+ soundFrame(dtRaw);
   easeCameraZoom(camera,viewZoom(gs),dtRaw);   // 쌍안경 배율(공통 본체 부품, 관악산과 같음)
  landscape.update(camera,quality);ns.update(now/1000,nightK(),camera,quality);ia.userData.update(now/1000,nightK(),camera);
  night.update(dtRaw,{camera,avatar,view,selfie:selfieActive(gs),zone:'route',s:st.s,hiker});
@@ -426,7 +432,7 @@ window.namsan.setAuto=on=>{st.auto=!!on;updateUI();return st.auto;};
 window.namsan.goTo=(x,z,heading=null)=>{const ok=N.setPosition(st,{x,z,heading:heading??st.heading});if(ok){camBase=st.heading;look.yaw=0;look.pitch=0;}return ok;};
 window.namsan.spots=()=>({spots:ia.userData.spots.map(({id,kind,action,x,y,z,face,radius})=>({id,kind,action,x,y,z,face,radius})),items:nsItems.map(({kind,n,x,z,y})=>({kind,n,x,z,y})),benches:nsBenches.map(({x,y,z,yaw})=>({x,y,z,yaw})),pads:G.walkPads});
 window.namsan.multi=()=>multi?.info()??null;
-window.namsan.audio=()=>sound.audio.snapshot();
+window.namsan.audio=()=>({...sound.audio.snapshot(),ambient:sound.ambient?.snapshot()??null,bus:busSound?.snapshot()??null});   // 발소리(관악산 hiking.audio와 같은 값) + 환경음·버스 소리(11-21)
 window.namsan.memory=()=>sceneMemory({scene,renderer,lighting,Vector2:THREE.Vector2});   // 장면 메모리 어림(관악산 hiking.memory()와 같은 셈, 7단계 휴대폰 메모리 측정용)   // 점검용: 발소리 받은 수·버린 이유(관악산 hiking.audio와 같은 값)
 // ── 상호작용 컨트롤러(namsan-interact.js) ──
 let envInfo={};window.addEventListener('hiking:environment',e=>{envInfo=e.detail||{};});
@@ -496,7 +502,18 @@ function standUp(){if(!seat)return;const f=seat.front;seat=null;N.setPosition(st
 const TT=G.bus?createBusTimetable(G.bus.cycle,G.bus.stops):null;
 const buses=[];if(ns.bus){buses.push(ns.bus.bus);for(let k=1;k<BUS_RULE.buses;k++){const b=buildBus();toon.toonify(b,{kind:'prop',keepMaps:true});ns.bus.root.add(b);buses.push(b);}}
 const busClock=()=>Date.now()/1000+(window.namsan.busClockOffset??0);
-const busPrevS=buses.map(()=>null);
+const busPrevS=buses.map(()=>null),busAt=buses.map(()=>null);   // busAt = 이번 프레임 시간표 자리(버스 소리가 읽음)
+// 순환버스 소리(namsan-bus-sound.js): 발소리와 같은 AudioContext·마스터·켜기/끄기
+const busSound=TT?createBusSound({context:()=>sound.audio.context,destination:()=>sound.audio.master,enabled:()=>sound.audio.enabled,mobile,base:`${BASE}sounds/namsan/`}):null;
+// 매 프레임 소리: 환경음(코스 s·정상 광장 거리·밤) + 버스(내 자리·카메라 방향). 버스 안에서는 탄 자리 구간을 그대로 두고 환경음을 먹먹하게
+const _dir=new THREE.Vector3();let ambPlace={s:st.s,y:walkHeight(G,st),place:{}},muffled=false,muffleSkip=false;
+function soundFrame(dt){const started=window.namsan.started;
+ if(!ride){const d=Math.hypot(st.x-G.plaza.x,st.z-G.plaza.z);ambPlace={s:st.s,y:walkHeight(G,st),place:{night:nightK(),summitDist:d<=G.plaza.r?d:null}};}
+ sound.ambient?.update({referenceMetres:ambPlace.s,elevation:ambPlace.y,paused:!started,dt,place:ambPlace.place});
+ if(!!ride!==muffled){muffled=!!ride;sound.ambient?.setMuffle(muffled,muffled?.8:muffleSkip?.3:1);muffleSkip=false;}
+ if(!busSound)return;camera.getWorldDirection(_dir);
+ const P=ride?buses[ride.k].position:st;   // 탄 동안 듣는 자리 = 탄 버스(11-21 검토 1, 순서가 바뀌어도 정류장에 남지 않게)
+ busSound.update({listener:{x:P.x,z:P.z,fx:_dir.x,fz:_dir.z},buses:buses.map((b,k)=>({...busAt[k],x:b.position.x,z:b.position.z})),ride:ride?ride.k:null,dt,paused:!started});}
 // 정류장(타는 곳): 정류장 표지 자리에서 광장 가운데 쪽으로 2m(걷는 곳)
 // 타는 곳: 백범광장은 대기소(폭 4.2m, 표지와 광장 사이) 옆 끝 밖 차로 가장자리(그림 buildBusStop 좌표), 정상은 표지에서 광장 쪽 2m.
 // 대기소 안에 서면 기다리는 동안 3인칭 카메라가 지붕·의자 속에 끼었다(11-20 월드디자인 확인 4)
@@ -518,14 +535,14 @@ function board(k){const bus=buses[k];if(!bus)return;closeGadget(gs);syncView();i
  const undo=seatInBus(bus,avatar,seatI);ride={k,to:otherStop(wait.from),undo,seatI,from:wait.from};wait=null;boardAt=performance.now();avatar.visible=true;updateUI();
  if(ride.to==='summit')shortcut=true;ix.progress.busRides++;ix.persist();nsUI.toast(`순환버스 · ${ride.to==='summit'?'정상':'백범광장'}까지 ${mmss(TT.untilStop(k,busClock(),ride.to))} · 건너뛰기(R)로 바로 내려요`);}
 function alight(to,skip=false){
- if(ride){ride.undo?.();scene.add(avatar);ride=null;updateUI();}
+ if(ride){if(skip){busSound?.skip();muffleSkip=true;}ride.undo?.();scene.add(avatar);ride=null;updateUI();}
  wait=null;const sp=busStops.find(b=>b.stop===to);if(!sp)return;
  const P=to==='start'?G.startPlaza:G.plaza,h=Math.atan2(-(P.x-sp.x),-(P.z-sp.z));N.setPosition(st,{x:sp.x,z:sp.z,heading:h});
  if(to==='summit')shortcut=true;st.s=to==='summit'?Math.max(st.s,G.points.at(-1).s-30):Math.min(st.s,4);
  camBase=h;look.yaw=0;avatar.position.set(st.x,walkHeight(G,st),st.z);hiker.snapTo(h);avatar.visible=view==='third';sendJump=true;
  nsUI.toast(to==='summit'?'남산 정상 정류장이에요 · 전망탑 쪽으로 걸어 보세요':'백범광장 정류장이에요');}
 function busFrame(dt,cmd){if(!TT)return;const clock=busClock();
- const nk=nightK();buses.forEach((b,k)=>{const at=TT.bus(k,clock);placeOnLane(b,G.bus.cycle,at.s);b.userData.setDoors(at.doors);if(k)b.userData.setNight?.(nk);const prev=busPrevS[k];if(prev!=null){let d=at.s-prev;if(d<0)d+=TT.L;if(d<60)b.userData.drive(d);}busPrevS[k]=at.s;});
+ const nk=nightK();buses.forEach((b,k)=>{const at=TT.bus(k,clock);placeOnLane(b,G.bus.cycle,at.s);b.userData.setDoors(at.doors);busAt[k]=at;if(k)b.userData.setNight?.(nk);const prev=busPrevS[k];if(prev!=null){let d=at.s-prev;if(d<0)d+=TT.L;if(d<60)b.userData.drive(d);}busPrevS[k]=at.s;});
  // 정류장 시간표 판(1초마다)
  {const n=TT.next('start',clock),sig=Math.ceil(n.wait);if(String(sig)!==busSig){busSig=String(sig);ns.bus?.stop?.userData.setBoard?.(['다음 버스',n.wait>0?mmss(n.wait):'지금',`정상까지 약 ${Math.round(TT.tUp/60)}분`]);}}
  if(wait){if(cmd.forward||cmd.side){wait=null;nsUI.toast('그만 기다려요');}
@@ -558,7 +575,7 @@ await lighting.prepare?.();loading.done('environment');
 // 첫 프레임 안정(관악산과 같은 규칙: 100ms 안 프레임이 12번 이어지면 준비 완료)
 const stability=createStabilityCounter();let loadReady=false;
 // 저장·WebGL 끊김(공통 본체 부품): 숨김·창 닫기에 저장, 끊기면 6초 기다렸다 저장 지점에서 다시 열기
-const suspend=()=>{if(!window.namsan.started)return;input.clear();save();};
+const suspend=()=>{if(!window.namsan.started)return;sound.audio.stop();sound.ambient?.setPaused(true);busSound?.pause();input.clear();save();};   // 소리도 멈춤(관악산 main.js suspend와 같게): 숨긴 탭은 frame_이 안 돌아 update가 못 끈다. 돌아오면 다음 프레임 update가 다시 켠다
 installLifecycleSave(suspend);
 const resumeNote=$('#resume-note'),hideResumeNote=()=>setTimeout(()=>{resumeNote.style.opacity='0';},3500);
 const ctxRecovery=installContextRecovery({canvas,note:resumeNote,suspend,save,resize,restored:hideResumeNote});

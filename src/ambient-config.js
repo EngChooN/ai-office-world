@@ -15,6 +15,8 @@ export const CROSSFADE_S={jump:1.5,city:12,forest:6,upper:8,summit:6};
 export const DUCK={db:-2,attackS:.01,releaseS:.25,minSumDb:-34};
 export const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 export const dbGain=db=>db===null||db===-Infinity?0:10**(db/20);
+/** 풀어 둔 소리(AudioBuffer)가 차지하는 메모리 MB(32비트 실수 × 채널 × 길이). 메모리 측정용(11-21) */
+export const audioBufferMB=buffers=>{let n=0;for(const b of buffers)if(b)n+=b.length*b.numberOfChannels*4;return Math.round(n/1048576*10)/10;};
 export const powerDb=values=>{const p=values.reduce((s,d)=>s+dbGain(d)**2,0);return p?10*Math.log10(p):-Infinity;};
 export const ambientSectionAt=m=>surfaceAt(m).section;
 export function streamDistance(m){for(let i=1;i<STREAM_DISTANCE_M.length;i++){const [b,y]=STREAM_DISTANCE_M[i],[a,x]=STREAM_DISTANCE_M[i-1];if(m<=b)return x+(y-x)*clamp((m-a)/(b-a));}return 90;}

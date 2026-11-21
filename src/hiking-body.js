@@ -15,8 +15,8 @@ import {VOLUME_SAVE_KEY} from './ambient-config.js';
 import {loadShared,saveShared} from './shared-settings.js';
 import {icon} from './icons/icon.js';
 
-// 소리. ambient:false면 환경음(관악산 구간 표 기준)을 만들지 않는다. view()는 발소리 크기(1·3인칭)에 쓴다.
-export function createHikingSound({view=()=>'third',ambient:withAmbient=true,doc=document,win=window,search=location.search}={}){
+// 소리. ambient:false면 환경음을 만들지 않는다. ambientConfig = 산별 환경음 구간 표(안 주면 관악산 ambient-config.js, 남산은 namsan-ambient-config.js). view()는 발소리 크기(1·3인칭)에 쓴다.
+export function createHikingSound({view=()=>'third',ambient:withAmbient=true,ambientConfig,doc=document,win=window,search=location.search}={}){
  const $=id=>doc.getElementById(id);
  let soundEnabled=true;try{soundEnabled=localStorage.getItem(SOUND_SAVE_KEY)!=='false';}catch{}
  // 세 체험 공용 소리 설정(11-17, shared-settings.js): 저장된 적이 있으면 그 값을 따른다(허브 설정 창·흡연장·크리스마스에서 바꾼 값)
@@ -27,7 +27,7 @@ export function createHikingSound({view=()=>'third',ambient:withAmbient=true,doc
  let userVolume=.7;try{const stored=localStorage.getItem(VOLUME_SAVE_KEY);if(stored!==null&&Number.isFinite(Number(stored)))userVolume=Math.max(0,Math.min(1,Number(stored)));}catch{}
  if(sharedSound.has)userVolume=sharedSound.volume;
  audio.setVolume(userVolume);
- const ambient=withAmbient?new AmbientAudio({base:`${import.meta.env.BASE_URL}sounds/ambient/`,enabled:soundEnabled,volume:userVolume}):null;
+ const ambient=withAmbient?new AmbientAudio({base:`${import.meta.env.BASE_URL}sounds/ambient/`,enabled:soundEnabled,volume:userVolume,config:ambientConfig}):null;
  // 라디오가 켜져 있으면 환경음을 ×0.7(setRadio)
  let radioOn=false;const ambientVolume=()=>audio.volume*(radioOn?.7:1);
  const unlockSound=()=>{void audio.unlock();if(audio.context)ambient?.attach(audio.context,audio.master);};win.addEventListener('pointerdown',unlockSound,{capture:true,passive:true});win.addEventListener('keydown',unlockSound,{capture:true});

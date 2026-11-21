@@ -83,5 +83,5 @@ export class FootstepAudio{
   }
   snapshot(){let peak=0,rms=0;if(this.analyser){const values=new Float32Array(this.analyser.fftSize);this.analyser.getFloatTimeDomainData(values);for(const v of values){peak=Math.max(peak,Math.abs(v));rms+=v*v;}rms=Math.sqrt(rms/values.length);}
     let footstepPeak=0;if(this.footstepAnalyser){const values=new Float32Array(1024);this.footstepAnalyser.getFloatTimeDomainData(values);for(const v of values)footstepPeak=Math.max(footstepPeak,Math.abs(v));}
-    return {enabled:this.enabled,context:this.context?.state||'입력 대기',decoded:this.buffers.size,total:Object.values(SOUND_BANKS).flat().length,active:this.active.size,received:this.received,dropped:{...this.dropped},errors:[...this.errors],peak,rms,footstepPeakDb:footstepPeak>0?20*Math.log10(footstepPeak):-Infinity,logs:this.logs.map(r=>({...r}))};}
+    return {enabled:this.enabled,context:this.context?.state||'입력 대기',decoded:this.buffers.size,bufferMB:Math.round([...this.buffers.values()].reduce((n,b)=>n+b.length*b.numberOfChannels*4,0)/1048576*10)/10,total:Object.values(SOUND_BANKS).flat().length,active:this.active.size,received:this.received,dropped:{...this.dropped},errors:[...this.errors],peak,rms,footstepPeakDb:footstepPeak>0?20*Math.log10(footstepPeak):-Infinity,logs:this.logs.map(r=>({...r}))};}
 }

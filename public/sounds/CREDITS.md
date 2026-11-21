@@ -33,6 +33,19 @@
 - 가공: 필요한 구간만 자르고 모노·44.1kHz로 바꿈, 앞쪽 무음 제거, 끝 페이드, 피크 -3dB. lighter-strike는 작은 불꽃 소리를 가볍게 눌러 키우고 '치-화' 사이 빈 틈을 줄임, can-drop은 낮춘 사본을 깔아 '쿵'을 더함, cig-burn은 낮은 쪽을 깎고 이음매를 크로스페이드함.
 - 담배를 멋있게 들리게 꾸미는 처리(울림·저음 키우기 등)는 하지 않았습니다.
 
+## 남산 순환버스 소리(namsan/) — 2026-11-21 (월드디자인) · **지금은 합성 임시음 사용 중, 녹음 파일은 준비 중**
+
+**지금 실제로 나는 소리:** 버스 엔진·버스 안·브레이크 치익·문 열림·문 닫힘 5가지 모두 `src/namsan/namsan-bus-sound.js`가 게임 안에서 직접 만드는 합성 임시음입니다(아래 녹음 후보가 아님). 외부 자료가 아니라 출처 표기 대상이 없습니다. 게임 콘솔 `namsan.audio().bus.source`가 `'synth'`면 합성음, `'files'`면 아래 녹음 파일, `'mixed'`면 일부만 녹음 파일입니다. 파일이 들어오면 `BUS_SOUND.files`에 이름을 채우면 받은 파일을 먼저 씁니다(못 받은 소리만 합성음).
+
+아래는 녹음 파일 후보입니다. 후보만 정했고 원본을 아직 받지 않았습니다(`public/sounds/namsan/`에 파일 없음). 받으면 `scripts/trim-namsan-bus-sfx.mjs`로 자르고 이 절의 "준비 중"을 지웁니다. 설계 `docs/남산/남산-환경음-구간별-설계-v1.md` §6.
+
+- bus-engine-loop(예정): BigSoundBank "Truck engine" s1145, Joseph SARDIN (CC0). https://bigsoundbank.com/truck-engine-s1145.html
+- bus-brake-hiss·bus-door-open·bus-door-close(예정): BigSoundBank "Bus stop in Japan" s0909, Olivier du Japon (CC0). https://bigsoundbank.com/bus-stop-in-japan-s0909.html
+- bus-inside-loop(예정): BigSoundBank "London bus" s0644, Joseph SARDIN (CC0). https://bigsoundbank.com/london-bus-s0644.html
+- 이용 조건: 세 소리 쪽 모두 "CC0 (public domain): Free and royalty-free"(2026-11-21 확인).
+- 가공(예정): 필요한 구간만 자르고 모노·44.1kHz, 반복 소리는 이음매 크로스페이드·RMS 맞춤, 한 번 소리는 앞뒤 페이드·피크 -3dB. 엔진은 60Hz 아래 깎음, 안 소리는 말소리 띠(2kHz)를 6dB 눌러 사람 말이 덜 또렷하게.
+- 남산 환경음은 새 파일 없이 위 `ambient/`(관악산 파일, CC0)를 다시 씁니다.
+
 ## christmas/carol/ — 온라인 크리스마스 캐럴(2026-11-16, 월드개발)
 
 - 미 공군 군악대 녹음 8곡, 위키미디어 공용에서 받은 원본 그대로(가공 없음). Public domain(PD-USGov-Military). 곡마다 원래 페이지·편곡·연주는 `src/christmas/carols.js`와 `data/자료-출처-이용조건-기록표.md` §16, 게임 안 🎵 창 「소리 출처」.

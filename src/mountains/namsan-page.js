@@ -2,14 +2,15 @@
 //  남산 페이지는 공통 화면 조각(src/frame/hiking-body.html, 관악산 글이 적혀 있음)을 쓰므로, 로딩 화면이 뜨기 전에 src/mountains/page-text.js가 이 글로 바꾼다.
 //  산 정의 src/mountains/namsan.js가 이것을 다시 내보낸다(NAMSAN_MOUNTAIN.text·features).
 // 기능 스위치: 이 산에 있는 기능만 켠다. 관악산 GWANAK.features와 같은 이름(한쪽에만 있는 기능은 false).
-//  관악산 전용(남산에 없는 것): 즐길거리(산스장·초콜릿·동물·헥헥/쥐)·라디오·스트레칭·스테미너·스탬프 수첩 탭·완등 기록 카드·구간별 환경음
+//  관악산 전용(남산에 없는 것): 즐길거리(산스장·초콜릿·동물·헥헥/쥐)·라디오·스트레칭·스테미너·스탬프 수첩 탭·완등 기록 카드
 //  남산 전용: 사랑의 자물쇠·순환버스·정상 야경 벤치
 export const NAMSAN_FEATURES=Object.freeze({
  stamps:true,boards:true,summitStone:true,binoculars:true,phone:true,
  spring:true,dip:true,cairn:true,stretch:false,
  sit:'bench',tea:true,           // 앉기는 정상 벤치에서(땅에 앉기 없음), 앉으면 차 마시기
  trailFun:false,animals:false,radio:false,stamina:false,
- book:false,summitCard:false,ambient:false,   // 6단계: 스탬프 4곳은 지도 탭에, 정상 도착은 공통 정상 창(도장)만
+ book:false,summitCard:false,   // 6단계: 스탬프 4곳은 지도 탭에, 정상 도착은 공통 정상 창(도장)만
+ ambient:true,   // 11-21: 남산 구간별 환경음 표(src/namsan/namsan-ambient-config.js)로 켬. 관악산 계곡 물·까마귀·목탁은 남산 표에 없음
  loveLocks:true,bus:true,nightBench:true,
  multi:true,chat:true,pair:true,
 });
@@ -25,6 +26,7 @@ export const NAMSAN_TEXT=Object.freeze({
  restNote:'정상 야경 벤치에 앉아 쉬고 차를 마셔요',
  sealName:'남산',sealSummit:'남산 정상',sealAltitude:'265 m',
  footstepNote:'발소리는 가공한 임시음입니다(관악산과 같은 소리).',
+ ambientCredits:'환경음은 실제 남산 녹음이 아닌 CC0 임시음으로, 관악산 환경음 파일(숲 바람·트인 바람·새: Thimras (Park Ambiences), 정상 웅성임: StarNinjas (Crowd Shouting/Speaking Ambience), 먼 도시: IgnasD (High Traffic Road Sounds))을 다시 씁니다. 순환버스 엔진·정차·문·버스 안 소리는 녹음 파일을 받기 전까지 게임이 직접 만든 합성 임시음입니다. 구간·거리·음량은 추정이며 귀 검수 전입니다.',
  motionNote:'계단 오르기와 둘러보기는 Quaternius 동작을 상황에 맞춰 재생합니다.',
  terrainCredit:'지형: produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. 길·성곽·건물: © OpenStreetMap contributors (ODbL). 전망탑·광장·소품·이정표 문구는 게임 속 디자인이에요.',
  // 화면 아래 출처 줄: 공통 조각의 날씨 출처 뒤에 붙인다(page-text.js)
