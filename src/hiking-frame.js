@@ -7,6 +7,12 @@
 // hud-notebook.js(시트 열고 닫기)·main.js(지도 그리기)와는 이 모듈이 돌려주는 frame과 'uf:*' 이벤트로 만난다.
 import {createUiFrame,ufPlace} from './ui-frame.js';
 
+// 진행 알약 글(순수 함수, tests/mountain-body.test.mjs). short = 좁은 세로 화면용(「…까지」·「고도」 뺌)
+export const PILL_SHORT_MEDIA='(max-width: 480px)';
+export function pillText({zone,rem,alt,goal='연주대까지',shortGoal=goal.replace(/까지$/,''),short=false}={}){
+ const where=zone==='plaza'?'출발 전':zone==='summit'?'정상':rem&&rem!=='—'?`${short?shortGoal:goal} ${rem}`:'산길';
+ return `${where}${alt&&alt!=='—'?` · ${short?'':'고도 '}${alt}`:''}`;
+}
 // 산마다 다른 값(한 게임 통합 6단계, 기본값 = 관악산 그대로): goal = 알약 「…까지」 앞말, barMode = 알약 막대(stamina 스테미너|progress 진행), features = 산 정의 기능 스위치(book이 false면 수첩 탭 없음)
 export function installHikingFrame({doc=document,win=window,goal='연주대까지',barMode='stamina',features={}}={}){
  const app=doc.getElementById('app');if(!app||!app.querySelector('.nb-tabs'))return null;
@@ -50,11 +56,12 @@ export function installHikingFrame({doc=document,win=window,goal='연주대까�
  const adopt=()=>{for(const s of ['.me-chip','.pw-btn'])for(const el of doc.querySelectorAll(s))if(el.parentElement!==row2){el.classList.add('hk-r2');row2.append(el);}};
  new MutationObserver(adopt).observe(doc.body,{childList:true});adopt();
  // 알약 글: 광장이면 「출발 전」, 걷는 중이면 「연주대까지 n km」 · 고도. 막대 = 스테미너
+ //  좁은 세로 화면(폭 ≤ 480px, 11-21 대표 결정)은 짧게 「연주대 n km · n m」 — 알약 옆 시점 칩 자리가 모자라 글이 알약 밖으로 나가던 것. 더 길면 CSS 말줄임(…)
  const txt=pill.querySelector('.hk-pill-t'),bar=pill.querySelector('.hk-pill-bar>i');
+ const narrow=win.matchMedia?.(PILL_SHORT_MEDIA),shortGoal=goal.replace(/까지$/,'');
  win.addEventListener('hiking:state',e=>{
   const s=e.detail||{},alt=$('#altitude')?.textContent?.trim(),rem=$('#remaining')?.textContent?.trim();
-  const where=s.zone==='plaza'||s.plaza?'출발 전':s.zone==='summit'?'정상':rem&&rem!=='—'?`${goal} ${rem}`:'산길';
-  const t=`${where}${alt&&alt!=='—'?` · 고도 ${alt}`:''}`;if(txt.textContent!==t)txt.textContent=t;
+  const t=pillText({zone:s.plaza?'plaza':s.zone,rem,alt,goal,shortGoal,short:!!narrow?.matches});if(txt.textContent!==t)txt.textContent=t;
   const st=barMode==='progress'?Math.max(0,Math.min(100,Number(s.courseDistance)/Number(s.courseLength)*100||0)):Math.max(0,Math.min(100,Number(s.stamina??100)));const w=`${st.toFixed(0)}%`;if(bar.style.width!==w)bar.style.width=w;
   bar.dataset.level=barMode==='progress'?'full':st<25?'low':st<55?'mid':'full';
  });

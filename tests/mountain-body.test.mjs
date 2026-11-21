@@ -7,6 +7,7 @@ import {applyMountainFeatures,featureFlags} from '../src/mountain-text.js';
 import {GWANAK} from '../src/mountains/gwanak.js';
 import {NAMSAN_MOUNTAIN} from '../src/mountains/namsan.js';
 import {NAMSAN_FEATURES,NAMSAN_TEXT} from '../src/mountains/namsan-page.js';
+import {pillText,PILL_SHORT_MEDIA} from '../src/hiking-frame.js';
 
 // data-feature 자리만 흉내 내는 작은 문서
 function fakeDoc(keys){
@@ -83,4 +84,17 @@ test('7단계 공통 부품: 화질 주소 값·배율 따라가기·시계 글'
  const n=cam.n;easeCameraZoom(cam,4,.016);assert.equal(cam.n,n);       // 같으면 다시 계산하지 않음
  easeCameraZoom(cam,1,.016,{instant:true});assert.equal(cam.zoom,1);
  assert.equal(hikeClock(3725.4),'01:02:05');
+});
+
+test('진행 알약 글: 넓은 화면은 그대로, 좁은 세로 화면(≤480px)은 「…까지」·「고도」를 뺀 짧은 글(11-21 대표 결정)',()=>{
+ assert.equal(PILL_SHORT_MEDIA,'(max-width: 480px)');
+ assert.equal(pillText({rem:'3.4 km',alt:'115 m'}),'연주대까지 3.4 km · 고도 115 m');
+ assert.equal(pillText({rem:'3.4 km',alt:'115 m',short:true}),'연주대 3.4 km · 115 m');
+ assert.equal(pillText({rem:'1.1 km',alt:'106 m',goal:'정상까지'}),'정상까지 1.1 km · 고도 106 m');
+ assert.equal(pillText({rem:'1.1 km',alt:'106 m',goal:'정상까지',short:true}),'정상 1.1 km · 106 m');
+ for(const short of [false,true]){
+  assert.equal(pillText({zone:'plaza',rem:'5.1 km',alt:'80 m',short}),short?'출발 전 · 80 m':'출발 전 · 고도 80 m');
+  assert.equal(pillText({zone:'summit',alt:'632 m',short}),short?'정상 · 632 m':'정상 · 고도 632 m');
+  assert.equal(pillText({rem:'—',alt:'—',short}),'산길');
+ }
 });

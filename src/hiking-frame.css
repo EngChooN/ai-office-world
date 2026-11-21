@@ -15,7 +15,7 @@ body.hk-uf #app .nb-card .nb-fold{display:none}
 .hk-topl>*>*{pointer-events:auto}
 .hk-topl-r2:empty{display:none}
 .hk-pill{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;min-height:44px;min-width:0;padding:0 14px 0 12px;border:0;border-radius:16px;background:var(--uf-cream);color:var(--uf-ink);box-shadow:var(--uf-shadow);font:700 13px/1.15 var(--uf-font);white-space:nowrap;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.hk-pill-t{overflow:hidden;text-overflow:ellipsis;max-width:200px;font-weight:700}
+.hk-pill-t{overflow:hidden;text-overflow:ellipsis;max-width:min(200px,100%);font-weight:700} /* 100% = 알약이 줄어들면 글도 알약 안에서 …로 잘림(11-21, 예전엔 200px 고정이라 알약 밖으로 나감) */
 .hk-pill-bar{display:block;width:150px;max-width:100%;height:5px;border-radius:3px;background:rgba(58,43,34,.15);overflow:hidden}
 .hk-pill-bar>i{display:block;height:100%;width:100%;border-radius:3px;background:#5b9a4f;transition:width .4s}
 .hk-pill-bar>i[data-level=mid]{background:#d39a2e}.hk-pill-bar>i[data-level=low]{background:var(--uf-red)}

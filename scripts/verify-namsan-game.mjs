@@ -2,7 +2,7 @@
 //  A 산 고르기(휴대폰 세로): 남산 카드 글·그림 → 「오르기」 → /hiking/namsan/ 으로 넘어가 출발
 //  B PC 1920×1080: 출발·자동 걷기·키보드 걷기·큰 계단·쉼터·정상 도착(완등 카드·스탬프 4)·도심 다 받은 뒤 성능
 //  C 휴대폰 세로 390×844·가로 844×390(터치): 조이스틱 끌기로 걷기·큰 단추 자동 걷기·정상 도착·성능·메모리
-//  E 공통 입장 흐름: 허브에서 고른 서버 → 산 고르기 → 남산이면 입장 창 없이 남산 방(관악산 지난 선택은 그대로)
+//  E 공통 입장 흐름: 허브에서 고른 서버 → 산 고르기 → 남산 서버 창(남산 1·2·3만, 11-21) → 고른 남산 방
 //  D 함께 걷기 두 사람: 공용 입장 창에 「남산 1서버」 → 고르면 남산 방(hiking:남산), 서로 보임·채팅 왕복, 관악산 방 사람과 섞이지 않음
 //   node scripts/verify-namsan-game.mjs  → artifacts/namsan-game/(사진·report.json). 실패가 있으면 종료 코드 1.
 //   PART=pick,pc,phone,multi 로 일부만. PAGE_URL=http://127.0.0.1:5173 이면 떠 있는 개발 서버를 씀.
@@ -129,7 +129,8 @@ if(PART.includes('phone')){
  }
 }
 
-// ── E 공통 입장 흐름: 허브에서 서버를 골라 등산 → 산 고르기에서 남산 → 입장 창 없이 남산 방으로(실제 사용자처럼 webdriver=false) ──
+// ── E 공통 입장 흐름: 허브에서 서버를 골라 등산 → 산 고르기에서 남산 → 남산 서버 창(남산 1·2·3만) → 고른 남산 방으로(실제 사용자처럼 webdriver=false) ──
+//  11-21 대표 지시: 등산은 산마다 서버 3개, 산 고르기 뒤 그 산의 서버 창을 늘 거친다(허브·지난 선택으로 건너뛰지 않음)
 if(PART.includes('entry')){
  srv??=startServer({PORT:String(multiPort),HOST:'127.0.0.1',DATA_DIR:`${dir}/data`},{quiet:true});await srv.ready;
  const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
@@ -139,10 +140,15 @@ if(PART.includes('entry')){
  await p.evaluate(()=>sessionStorage.setItem('aoworld:hub-pick',JSON.stringify({exp:'hiking',server:'2',at:Date.now()})));  // 허브에서 「관악산 2서버」를 골랐다고 둠(handoff.js 모양)
  await p.goto(`${pageUrl}/hiking/?server=${encodeURIComponent(wsUrl)}&${Q}`);
  await p.waitForSelector('[data-pk-go="namsan"]',{timeout:60000});await p.click('[data-pk-go="namsan"]');
- await p.waitForURL(/\/hiking\/namsan\//);await started(p);
+ await p.waitForURL(/\/hiking\/namsan\//);
+ await p.waitForSelector('.sp-card .sp-row[data-sp-server]:not([disabled])',{state:'visible',timeout:120000});
+ const rows=await p.evaluate(()=>[...document.querySelectorAll('.sp-card .sp-row[data-sp-server]')].map(b=>({id:b.dataset.spServer,name:b.querySelector('.sp-row-name')?.textContent})));
+ check('허브 선택 → 산 고르기 → 남산: 남산 서버 창(남산 1·2·3서버만)',JSON.stringify(rows.map(r=>r.id))==='["n1","n2","n3"]'&&rows.every(r=>/^남산/.test(r.name??'')),rows);
+ await shot(p,'E-entry-namsan-server-pick');
+ await p.click('.sp-card .sp-row[data-sp-server="n2"]');await started(p);
  await p.waitForFunction(()=>window.namsan.multi()?.status==='online'||window.namsan.multi()?.room,null,{timeout:60000}).catch(()=>{});await sleep(1500);
  const info=await p.evaluate(()=>({m:window.namsan.multi(),win:[...document.querySelectorAll('.sp-card')].some(e=>e.offsetParent!==null)}));
- check('허브 선택 → 산 고르기 → 남산: 입장 창 없이 남산 방',/^남산/.test(info.m?.room??'')&&!info.win,{room:info.m?.room,window:info.win});
+ check('남산 2서버 고름 → 남산-2 방(허브의 관악산 2서버 선택은 안 씀), 창 닫힘',info.m?.room==='남산-2'&&!info.win,{room:info.m?.room,window:info.win});
  const last=await p.evaluate(()=>localStorage.getItem('aoworld:entry:v1'));
  check('남산 입장이 관악산 「지난 선택」을 바꾸지 않음',!last||!/"hiking":\{"server":"1"/.test(last),{last});
  await shot(p,'E-entry-hub-to-namsan');await ctx.close();
@@ -156,17 +162,17 @@ if(PART.includes('multi')){
  const A=await open({viewport:{width:1280,height:800},label:'A',url});
  await A.waitForSelector('[data-sp-server]',{timeout:120000});await sleep(1500);
  const rows=await A.$$eval('[data-sp-server]',els=>els.map(e=>e.innerText.replace(/\s+/g,' ')));
- check('입장 창에 남산 서버 한 줄(인원 0명)',rows.length===1&&rows[0].includes('남산 서버')&&/0 \/ 30명/.test(rows[0]),{rows});
+ check('입장 창에 남산 서버 세 줄(남산 1·2·3서버, 인원 0명)',rows.length===3&&rows.every((r,i)=>r.includes(`남산 ${i+1}서버`)&&/0 \/ 30명/.test(r)),{rows});   // 11-21 산마다 서버 3개
  await shot(A,'D-entry-window');
- await A.click('[data-sp-server="1"]');await started(A);
+ await A.click('[data-sp-server="n1"]');await started(A);
  const B=await open({viewport:{width:390,height:844},touch:true,label:'B',url});
- await B.waitForSelector('[data-sp-server]',{timeout:120000});await sleep(800);await B.click('[data-sp-server="1"]');await started(B);
+ await B.waitForSelector('[data-sp-server]',{timeout:120000});await sleep(800);await B.click('[data-sp-server="n1"]');await started(B);
  await A.waitForFunction(()=>window.namsan.multi()?.roster?.length>=1,null,{timeout:60000}).catch(()=>{});
  await B.waitForFunction(()=>window.namsan.multi()?.roster?.length>=1,null,{timeout:60000}).catch(()=>{});
  const ia=await A.evaluate(()=>window.namsan.multi()),ib=await B.evaluate(()=>window.namsan.multi());
  check('두 사람이 남산 방에 들어감',/^남산/.test(ia?.room)&&ia?.room===ib?.room,{a:ia?.room,b:ib?.room});
  check('서로 보임(명단)',ia?.roster?.length===1&&ib?.roster?.length===1,{a:ia?.roster?.length,b:ib?.roster?.length});
- const h=await health();check('서버 방 이름 hiking:남산(서버 코드·목록 그대로)',JSON.stringify(h).includes('"hiking"')&&h.clients>=2,{clients:h.clients,servers:h.servers?.hiking?.map(s=>s.count)});
+ const h=await health();check('서버 인원: 남산 1서버 줄에 2명(11-21 산별 서버)',h.clients>=2&&h.servers?.hiking?.find(s=>s.id==='n1')?.count===2,{clients:h.clients,servers:h.servers?.hiking?.map(s=>`${s.id}:${s.count}`)});
  // B를 A 앞 6m로 옮겨 A 화면에 보이게
  await A.evaluate(()=>window.namsan.jump(60));await B.evaluate(()=>window.namsan.jump(66));await sleep(2500);
  const near=await A.evaluate(()=>{const m=window.namsan.multi(),me=window.namsan.status();const o=m.roster[0];return {d:Math.hypot(o.x-me.x,o.z-me.z)};});

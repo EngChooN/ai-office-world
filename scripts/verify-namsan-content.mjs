@@ -110,8 +110,8 @@ if(PART.includes('phone')){
  const ui=await ev(p,()=>{const vis=sel=>{const e=document.querySelector(sel);return !!e&&!!e.getClientRects().length&&getComputedStyle(e).display!=='none';};const v=document.querySelector('#view').getBoundingClientRect();
   return {mountain:document.documentElement.dataset.mountain,title:document.title,pill:document.querySelector('.hk-pill-t')?.textContent,view:vis('#view')&&!!document.querySelector('.hk-topl #view'),viewH:v.height,auto:vis('#auto'),menu:vis('.uf-menu-btn'),
    phone:vis('#phone'),sit:vis('#sit'),stamina:vis('.nb-stam'),stretchOff:document.querySelector('#stretch')?.hasAttribute('data-feature-off'),seal:document.querySelector('[data-mt=sealName]')?.textContent};});
- check('phone: 공통 화면(진행 알약 「정상까지」·시점 칩·도장·☰)',ui.mountain==='namsan'&&/^정상까지/.test(ui.pill??'')&&ui.view&&ui.auto&&ui.menu,ui);
- check('phone: 기능 스위치로 숨김(휴대폰 카메라·땅에 앉기·스테미너·스트레칭), 정상 도장 글 = 남산',!ui.phone&&!ui.sit&&!ui.stamina&&ui.stretchOff&&ui.seal==='남산',ui);
+ check('phone: 공통 화면(진행 알약 「정상 …」(세로는 짧은 글, 11-21)·시점 칩·도장·☰)',ui.mountain==='namsan'&&/^정상 \d/.test(ui.pill??'')&&ui.view&&ui.auto&&ui.menu,ui);
+ check('phone: 휴대폰 카메라 보임(11-21 추가), 기능 스위치로 숨김(땅에 앉기·스테미너·스트레칭), 정상 도장 글 = 남산',ui.phone&&!ui.sit&&!ui.stamina&&ui.stretchOff&&ui.seal==='남산',ui);
  const sp=S.spots.find(s=>s.id==='spring-1');await ev(p,sp=>window.namsan.goTo(sp.x,sp.z,sp.face+Math.PI),sp);await sl(800);
  let L=await layout(p);check('phone: 할 일 칩·단추 화면 안·44px·안 겹침',L.inside&&!L.small.length&&!L.overlap.length,L);await shot(p,'phone-spring-chip');
  await p.tap('#auto');await sl(4000);check('phone: 큰 단추 누르기로 약수',(await ev(p,()=>window.namsan.status().interact.progress.drinks))===1);

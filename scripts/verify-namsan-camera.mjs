@@ -24,8 +24,9 @@ await p.evaluate(()=>window.dispatchEvent(new CustomEvent('hiking:command',{deta
 await p.screenshot({path:`${dir}/selfie.png`});
 await p.evaluate(()=>window.dispatchEvent(new CustomEvent('hiking:command',{detail:{id:'gadget-off'}})));
 await p.evaluate(()=>window.dispatchEvent(new CustomEvent('hiking:command',{detail:{id:'binoculars'}})));await sl(900);
-const b=await ev(()=>window.namsan.status().interact?.bino);
-check('쌍안경 이름표(출발 지점)',(b?.tape?.length??0)>0||(b?.labels?.length??0)>0,{tape:b?.tape?.length,labels:b?.labels?.length,note:b?.note});
+// status().interact.bino는 화면 안 이름표(labels) 이름만 준다. 출발 지점 방향에 따라 명소가 화면 밖(방위 띠·「n° 오른쪽」 안내)에만 있을 수 있어 화면 요소로 본다
+const b=await ev(()=>({...window.namsan.status().interact?.bino,tapeMarks:document.querySelectorAll('.ix-tape .mk').length,labelEls:document.querySelectorAll('.ix-labels .ix-lm').length,edgeEls:[...document.querySelectorAll('.ix-edges .ix-edge')].map(e=>e.textContent.trim())}));
+check('쌍안경 이름표(출발 지점)',b.tapeMarks>0&&(b.labelEls>0||b.edgeEls.length>0),b);
 await p.screenshot({path:`${dir}/bino.png`});
 check('오류 없음',errs.length===0,errs);
 await browser.close();await vite.close();process.exit(fail?1:0);

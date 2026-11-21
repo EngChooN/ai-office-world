@@ -1,5 +1,5 @@
 // 한 게임 통합 7단계(월드개발 11-20): 관악산·남산 함께 걷기 섞임 시험. vite와 함께 걷기 서버를 이 스크립트가 직접 띄운다(공개 서버에 안 붙음).
-//  ① 같은 서버에 관악산 2명(관악산-1)·남산 2명(남산-1): 명단은 같은 산 사람만, 서버 /health 인원(관악산 줄 2·등산 전체 4 → 남산 2)
+//  ① 같은 서버에 관악산 2명(관악산-1)·남산 2명(남산-1): 명단은 같은 산 사람만, 서버 /health 인원(11-21 산별 서버: 관악산 1서버 줄 2·남산 1서버 줄 2)
 //  ② 채팅: 관악산 말은 관악산 사람만, 남산 말은 남산 사람만 받음
 //  ③ 행동 상태: 남산 사람이 자물쇠를 걸면 남산 상대는 받고(act x 'lk-…'), 관악산 사람 명단에는 그런 값이 없음
 //  ④ 동행 제안을 다른 산 사람 id로 보내면 거절되고, 받은 쪽에는 아무 제안도 안 뜸
@@ -57,9 +57,11 @@ try{
  check('이름이 같아도 각자 자기 산 사람(id로 확인)',g1?.roster?.[0]?.id===g2?.id&&n1?.roster?.[0]?.id===n2?.id&&g2?.id!==n2?.id,{g1sees:g1?.roster?.[0]?.id,g2:g2?.id,n1sees:n1?.roster?.[0]?.id,n2:n2?.id});
  const h1=await health();out.health.four=h1;
  const gwanakRow=(h1.servers?.hiking??[]).find(s=>s.id==='1');
- check('서버 인원: 관악산 1서버 2명·등산 전체 4명(→ 남산 2명)',gwanakRow?.count===2&&h1.experiences?.hiking?.clients===4,{gwanak1:gwanakRow?.count,hikingAll:h1.experiences?.hiking?.clients,rooms:h1.experiences?.hiking?.rooms});
- const nsCount=await N1.evaluate(async h=>{const {namsanCount}=await import('/src/namsan/namsan-walk.js');return namsanCount(h);},h1);
- check('남산 입장 창 인원 = 2',nsCount===2,{nsCount});
+ const namsanRow=(h1.servers?.hiking??[]).find(s=>s.id==='n1');
+ check('서버 인원: 관악산 1서버 2명·남산 1서버 2명·등산 전체 4명',gwanakRow?.count===2&&namsanRow?.count===2&&h1.experiences?.hiking?.clients===4,{rows:(h1.servers?.hiking??[]).map(s=>`${s.id}:${s.count}`),hikingAll:h1.experiences?.hiking?.clients});
+ // 남산 입장 창 줄(남산 1·2·3서버)이 /health 남산 줄을 그대로 읽는지(server-pick pickRows + mountainServers)
+ const nsRows=await N1.evaluate(async h=>{const {pickRows}=await import('/src/server-pick.js');const {mountainServers}=await import('/src/multi-protocol.js');return pickRows('hiking',h,mountainServers('namsan')).map(r=>`${r.name}:${r.count}`);},h1);
+ check('남산 입장 창 줄 = 남산 1서버 2명·2·3서버 0명',JSON.stringify(nsRows)==='["남산 1서버:2","남산 2서버:0","남산 3서버:0"]',{nsRows});
 
  // ── ② 채팅 ──
  await G1.evaluate(()=>window.dispatchEvent(new CustomEvent('hiking:chat-send',{detail:{text:'관악산에서 인사'}})));
@@ -96,7 +98,7 @@ try{
  check('옮긴 사람: 관악산 명단에서 빠짐',(m1?.roster?.length??-1)===0,{g1:names(m1)});
  check('옮긴 사람: 남산 명단에 들어감(남산 셋)',(mn1?.roster?.length??0)===2&&(mg2?.roster?.length??0)===2&&/^남산/.test(mg2?.room),{n1:names(mn1),moved:{room:mg2?.room,roster:names(mg2)}});
  const h2=await health();out.health.moved=h2;
- check('서버 인원: 관악산 1명·등산 전체 4명',(h2.servers?.hiking??[]).find(s=>s.id==='1')?.count===1&&h2.experiences?.hiking?.clients===4,{gwanak1:(h2.servers?.hiking??[]).find(s=>s.id==='1')?.count,all:h2.experiences?.hiking?.clients});
+ check('서버 인원: 관악산 1명·남산 1서버 3명·등산 전체 4명',(h2.servers?.hiking??[]).find(s=>s.id==='1')?.count===1&&(h2.servers?.hiking??[]).find(s=>s.id==='n1')?.count===3&&h2.experiences?.hiking?.clients===4,{rows:(h2.servers?.hiking??[]).map(s=>`${s.id}:${s.count}`),all:h2.experiences?.hiking?.clients});
  // 남산으로 온 사람 위치가 남산 땅 안(관악산 좌표가 남지 않음)
  const pos=await N1.evaluate(id=>{const r=window.namsan.multi().roster.find(r=>r.id===id);const b=window.namsan.status();return r?{x:r.x,z:r.z,meX:b.x,meZ:b.z}:null;},mg2?.id);
  check('옮긴 사람 위치가 남산 코스 근처(1.5km 안)',pos&&Math.hypot(pos.x-pos.meX,pos.z-pos.meZ)<1500,pos);
