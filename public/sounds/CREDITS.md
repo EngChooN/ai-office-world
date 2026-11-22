@@ -49,3 +49,13 @@
 ## christmas/carol/ — 온라인 크리스마스 캐럴(2026-11-16, 월드개발)
 
 - 미 공군 군악대 녹음 8곡, 위키미디어 공용에서 받은 원본 그대로(가공 없음). Public domain(PD-USGov-Military). 곡마다 원래 페이지·편곡·연주는 `src/christmas/carols.js`와 `data/자료-출처-이용조건-기록표.md` §16, 게임 안 🎵 창 「소리 출처」.
+
+## 정상 '잔잔한 소리'(summit-calm) — 2026-11-22 (월드디자인 후보, 대표가 ① 먼 웅성임 선택 · 월드개발 연결)
+
+**게임에서 씀: ① 먼 웅성임만** → `ambient/summit-murmur-loop.flac`(= 미리듣기 `calm-murmur-loop.flac` 같은 바이트), 관악산·남산 정상 환경음 층 `crowd`. 꺼 둔 환호 소리 `ambient/summit-crowd-loop.flac`(StarNinjas, CC0)은 파일만 남기고 연결을 끊었습니다. ②·③은 후보로만 남아 있고 `public/sounds/`에 넣지 않았습니다. 원본 `design/sounds/summit-calm/raw/`, 다듬은 파일 `design/sounds/summit-calm/preview/`(`scripts/make-summit-calm-preview.py`), 들어보기 `docs/소리/정상-잔잔한소리-후보-v1.html`.
+
+- calm-murmur-loop(① 먼 웅성임, **사용 중**): BigSoundBank "Outside Talks #2" s2969, Joseph SARDIN (CC0). https://bigsoundbank.com/outside-talks-2-s2969.html
+- calm-flag-loop(② 깃발 펄럭임): BigSoundBank "Flag in the wind #1" s1632, Joseph SARDIN (CC0). https://bigsoundbank.com/flag-in-the-wind-1-s1632.html
+- calm-chime-loop(③ 풍경·바람종): BigSoundBank "Cluster Chimes" s2687, Pierre SIBANARCO (CC0). https://bigsoundbank.com/cluster-chimes-1-s2687.html
+- 이용 조건: 세 쪽 모두 "CC0 (public domain): Free and royalty-free"(2026-11-22 받음·확인).
+- 가공: 28초 구간만 자름(웅성임 26~54초·깃발 40~68초·종 140~168초), 모노·32kHz(지금 ambient 파일과 같음), 이음매 2초 크로스페이드, RMS -34dB(종 -36dB)·피크 -3dB 이하. 웅성임은 180Hz 아래·700Hz 위를 깎아 말을 알아들을 수 없게 하고 눌러 튀는 소리를 줄임, 깃발은 150Hz 아래·6.5kHz 위 깎음, 종은 450Hz 아래 깎고 큰 '쨍'을 누름.

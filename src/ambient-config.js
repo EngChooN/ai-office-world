@@ -1,10 +1,11 @@
 // 추정(후기 근거, 현장 확인 전). 환경음-구간별-설계.md
 import {surfaceAt} from './route-surfaces.js';
 export const VERIFIED=false, CITY_SUMMIT_ENABLED=false, CICADA_ENABLED=false;
-// 정상 사람들 소리(summit-crowd-loop): 11-22 대표 "환호 소리가 기괴하다" → 관악산·남산 모두 끔. 다른 소리로 바꾸면 다시 켠다
-export const CROWD_ENABLED=false;
+// 정상 사람들 소리(층 이름 crowd): 11-22 대표 "환호 소리가 기괴하다"로 환호(summit-crowd-loop, 파일은 남겨 둠)를 끊고,
+// 같은 날 대표가 고른 ① 먼 웅성임(summit-murmur-loop, BigSoundBank s2969 CC0, 월드디자인 다듬음 RMS −34dB)으로 다시 켬. 관악산·남산 같이 씀
+export const CROWD_ENABLED=true;
 export const VOLUME_SAVE_KEY='gwanak-hiking:ambient-volume:v1';
-export const LAYER_FILES={stream:'stream-loop.flac',forest:'wind-forest-loop.flac',ridge:'wind-ridge-loop.flac',birds:'birds-loop.flac',crowd:'summit-crowd-loop.flac',city:'city-far-loop.flac'};
+export const LAYER_FILES={stream:'stream-loop.flac',forest:'wind-forest-loop.flac',ridge:'wind-ridge-loop.flac',birds:'birds-loop.flac',crowd:'summit-murmur-loop.flac',city:'city-far-loop.flac'};
 export const FILE_RMS_DB={stream:-26,forest:-30,ridge:-24,birds:-34,crowd:-34,city:-36};
 export const SECTION_TARGET_DB={stream:[null,-50,-38,-42,null,null,null,null],forest:[null,-50,-48,-46,-42,-42,-46,null],ridge:[null,null,null,null,null,null,-39,-33],birds:[null,-52,-52,-54,-56,-56,null,null],city:[null,-52,-60,null,null,null,null,CITY_SUMMIT_ENABLED?-52:null],crowd:[null,null,null,null,null,null,-48,-44]};
 export const BUDGET_DB={low:-37,high:-32};

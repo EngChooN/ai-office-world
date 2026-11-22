@@ -27,7 +27,7 @@ export const NAMSAN_TEXT=Object.freeze({
  restNote:'정상 야경 벤치에 앉아 쉬고 차를 마셔요',
  sealName:'남산',sealSummit:'남산 정상',sealAltitude:'265 m',
  footstepNote:'발소리는 가공한 임시음입니다(관악산과 같은 소리).',
- ambientCredits:'환경음은 실제 남산 녹음이 아닌 CC0 임시음으로, 관악산 환경음 파일(숲 바람·트인 바람·새: Thimras (Park Ambiences), 정상 웅성임: StarNinjas (Crowd Shouting/Speaking Ambience), 먼 도시: IgnasD (High Traffic Road Sounds))을 다시 씁니다. 순환버스 엔진·정차·문·버스 안 소리는 녹음 파일을 받기 전까지 게임이 직접 만든 합성 임시음입니다. 구간·거리·음량은 추정이며 귀 검수 전입니다.',
+ ambientCredits:'환경음은 실제 남산 녹음이 아닌 CC0 임시음으로, 관악산 환경음 파일(숲 바람·트인 바람·새: Thimras (Park Ambiences), 정상 웅성임: Joseph SARDIN (BigSoundBank "Outside Talks #2"), 먼 도시: IgnasD (High Traffic Road Sounds))을 다시 씁니다. 순환버스 엔진·정차·문·버스 안 소리는 녹음 파일을 받기 전까지 게임이 직접 만든 합성 임시음입니다. 구간·거리·음량은 추정이며 귀 검수 전입니다.',
  motionNote:'계단 오르기와 둘러보기는 Quaternius 동작을 상황에 맞춰 재생합니다.',
  terrainCredit:'지형: produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. 길·성곽·건물: © OpenStreetMap contributors (ODbL). 전망탑·광장·소품·이정표 문구는 게임 속 디자인이에요.',
  // 화면 아래 출처 줄: 공통 조각의 날씨 출처 뒤에 붙인다(page-text.js)

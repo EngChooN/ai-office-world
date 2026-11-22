@@ -16,11 +16,15 @@ test('0~1067m 1m마다 합계 ≤ 예산, 물소리·까마귀·목탁 층 없�
  assert.ok(!Object.values(LAYER_FILES).some(f=>/stream|crow(?!d)|moktak/.test(f)));
  assert.equal(NAMSAN_AMBIENT_CONFIG.INTERMITTENT.crow,undefined);assert.equal(NAMSAN_AMBIENT_CONFIG.INTERMITTENT.moktak,undefined);
 });
-test('설계표 대표값: 출발 −44, 정상 사람 소리 꺼짐(11-22), 밤 새 끔·도시 +2',()=>{
+test('설계표 대표값: 출발 −44, 정상 먼 웅성임 가운데 −44·가장자리 −48(11-22), 밤 새 끔·도시 +2',()=>{
  setWeatherSound({wind:null,rain:0});
  assert.equal(ambientTargets(0,108).targets.city,-44);
- // 정상 사람들 소리는 11-22 대표 요청으로 끔(CROWD_ENABLED=false) → 정상·광장 어디서도 null
- for(const [s,h,o] of [[1060,267,{summitDist:0}],[1060,267,{summitDist:46}],[1030,267,{}],[900,250,{}],[985,260,{}]])assert.equal(ambientTargets(s,h,o).targets.crowd,null);
+ // 정상 사람들 소리: 11-22 환호를 끊고 대표가 고른 ① 먼 웅성임으로 다시 켬(크기 표는 그대로)
+ assert.equal(LAYER_FILES.crowd,'summit-murmur-loop.flac');
+ assert.equal(ambientTargets(1060,267,{summitDist:0}).targets.crowd,-44);
+ assert.equal(ambientTargets(1060,267,{summitDist:46}).targets.crowd,-48);
+ assert.equal(ambientTargets(1030,267).targets.crowd,-48);   // 구간 6인데 광장 원 밖 = 가장자리 값(11-21 검토 2)
+ assert.equal(ambientTargets(900,250).targets.crowd,null);assert.equal(ambientTargets(1010-25,260).targets.crowd,-53);
  const night=ambientTargets(500,180,{night:1});assert.equal(night.targets.birds,null);assert.equal(night.targets.city,ambientTargets(500,180).targets.city+2);
  assert.equal(crossfadeFor(2,1,false),8);assert.equal(crossfadeFor(3,2,false),6);assert.equal(crossfadeFor(3,2,true),1.5);
 });
@@ -39,4 +43,15 @@ test('남산 설정 AmbientAudio: 남산 파일만 받고, 버스 안 먹먹하�
  a.setMuffle(false);assert.equal(a.muffleGain.gain.value,1);
  const g=new AmbientAudio({context:c,destination:c.createGain()});assert.equal(g.config,GWANAK_AMBIENT_CONFIG);assert.equal(g.muffleGain,undefined);g.setMuffle(true);
  assert.deepEqual(Object.keys(g.snapshot().layers),Object.keys(GWANAK_FILES));
+});
+test('정상 먼 웅성임(11-22 대표 선택): 두 산 같은 파일, 관악산 정상 −44·바로 아래 −54~−48, 환호 파일은 연결만 끊음',async()=>{
+ const {ambientTargets:gwanakTargets,CROWD_ENABLED,FILE_RMS_DB}=await import('../src/ambient-config.js');
+ const {existsSync}=await import('node:fs');
+ setWeatherSound({wind:null,rain:0});
+ assert.equal(CROWD_ENABLED,true);assert.equal(GWANAK_FILES.crowd,'summit-murmur-loop.flac');assert.equal(LAYER_FILES.crowd,GWANAK_FILES.crowd);
+ assert.equal(FILE_RMS_DB.crowd,-34);assert.equal(NAMSAN_AMBIENT_CONFIG.FILE_RMS_DB.crowd,-34);   // 월드디자인 stats.json calm-murmur-loop rmsDb −34.0
+ assert.ok(existsSync(new URL('../public/sounds/ambient/summit-murmur-loop.flac',import.meta.url)));
+ const top=gwanakTargets(5100,629);assert.equal(top.section,7);assert.equal(top.targets.crowd,-44);assert.ok(top.targets.ridge>top.targets.crowd);
+ assert.ok(GWANAK_AMBIENT_CONFIG.preload(7).includes('summit-murmur-loop.flac'));assert.ok(NAMSAN_AMBIENT_CONFIG.preload(6).includes('summit-murmur-loop.flac'));
+ for(const files of [GWANAK_FILES,LAYER_FILES,GWANAK_AMBIENT_CONFIG.preload(7),NAMSAN_AMBIENT_CONFIG.preload(6)])assert.ok(!Object.values(files).includes('summit-crowd-loop.flac'));
 });

@@ -61,7 +61,7 @@ export const GWANAK=Object.freeze({
   restNote:'앉으면 스테미너가 빨리 차올라요',   // 쉬기 탭 안내(6단계에 남산 글을 넣으려고 자리 표시, 글은 틀과 같음)
   terrainCredit:'지형: Copernicus DEM 30m 표면 높이 보간 · 서울 건물 연결 — produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. 재질·하늘: Poly Haven (CC0). 건물·물: © OpenStreetMap contributors (ODbL). 건물 높이 미상은 9m 가정, 랜드마크 형상은 근사입니다.',
   // 환경음 출처(설정 「소리 출처」 칸, main.js가 붙임)
-  ambientCredits:'환경음은 실제 관악산 녹음이 아닌 CC0 임시음입니다. 구간·거리·고도·음량은 추정이며 현장·귀 검수 전입니다. 물·숲 바람·능선 바람·새: Thimras (Park Ambiences), 까마귀: fvcalderan (Crow)·zeroisnotnull (Crow Caw), 정상 웅성임: StarNinjas (Crowd Shouting/Speaking Ambience), 먼 도시: IgnasD (High Traffic Road Sounds). 목탁: 산디자인 자체 합성 임시음. 모노 32kHz 변환·크로스페이드·음량 정규화.',
+  ambientCredits:'환경음은 실제 관악산 녹음이 아닌 CC0 임시음입니다. 구간·거리·고도·음량은 추정이며 현장·귀 검수 전입니다. 물·숲 바람·능선 바람·새: Thimras (Park Ambiences), 까마귀: fvcalderan (Crow)·zeroisnotnull (Crow Caw), 정상 웅성임: Joseph SARDIN (BigSoundBank "Outside Talks #2"), 먼 도시: IgnasD (High Traffic Road Sounds). 목탁: 산디자인 자체 합성 임시음. 모노 32kHz 변환·크로스페이드·음량 정규화.',
   ambientSourcePath:'environment/출처-이용조건.md',
   ambientSourceLabel:'환경음 원본·제작자·작품 URL·CC0 이용 조건 전체 표',
  }),

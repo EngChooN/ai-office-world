@@ -2,7 +2,7 @@
 // 관악산 src/ambient-config.js와 같은 이름을 내보내고 AmbientAudio({config})가 받는다(관악산 파일은 고치지 않음). three 없음, 시험 tests/namsan-ambient.test.mjs.
 // 파일은 관악산 환경음 5개를 다시 씀(public/sounds/ambient/, CC0). 계곡 물·까마귀·목탁은 남산에 없음.
 import {clamp,dbGain,powerDb,WEATHER_SOUND,windShiftDb,DUCK as GWANAK_DUCK,CROWD_ENABLED,INTERMITTENT as GWANAK_INTERMITTENT} from '../ambient-config.js';
-export const LAYER_FILES=Object.freeze({city:'city-far-loop.flac',forest:'wind-forest-loop.flac',ridge:'wind-ridge-loop.flac',birds:'birds-loop.flac',crowd:'summit-crowd-loop.flac'});
+export const LAYER_FILES=Object.freeze({city:'city-far-loop.flac',forest:'wind-forest-loop.flac',ridge:'wind-ridge-loop.flac',birds:'birds-loop.flac',crowd:'summit-murmur-loop.flac'});
 export const FILE_RMS_DB=Object.freeze({city:-36,forest:-30,ridge:-24,birds:-34,crowd:-34});
 // 구간 경계(코스 s, m): 1 출발 광장 0~100 · 2 성곽 옆 100~400 · 3 큰 계단 400~720 · 4 전망 쉼터 720~830 · 5 마지막 계단 830~1010 · 6 정상 광장 1010~
 export const SECTION_STARTS=Object.freeze([0,100,400,720,830,1010]);
