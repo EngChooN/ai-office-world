@@ -554,7 +554,10 @@ function elevatorFrame(dt){const e=tower.elev;if(!e)return;e.t+=dt;const a=eleva
 // 구간 이동 등으로 바로 광장에 돌아갈 때(연출 없이)
 function leaveTowerNow(){const e=tower.elev;tower.elev=null;elevUI.hide();if(tower.inside||e?.dir==='up'&&e.swapped)swapFloor('down');else{ns.tower.visible=true;deckArt.visible=false;}}
 // 망원경: 망원경 뒤에 서서 그 방향을 보고 쌍안경 화면(배율 최대)으로. 내리기는 쌍안경과 같음(✕·B·Esc)
-function useScope(sc){st.x=sc.stand.x;st.z=sc.stand.z;st.heading=sc.stand.heading;camBase=st.heading;look.yaw=0;look.pitch=-.03;hiker.snapTo(st.heading);st.auto=false;
+// 처음 고개 각 = 그 명소 꼭대기와 그 거리 땅(약 30m)의 가운데(휴대폰 세로는 10배 동그라미가 위아래 약 ±1°라 수평으로 두면 하늘만 보였다, 11-22)
+function scopePitch(sc){const lm=NS_LANDMARKS.find(l=>l.id===sc.target),d=Math.max(500,(sc.km??5)*1000),eye=deckPlan.y+(hiker.eyeHeight??.6);
+ return THREE.MathUtils.clamp((Math.atan2((lm?.topAlt??40)-eye,d)+Math.atan2(30-eye,d))/2,-.09,.04);}
+function useScope(sc){st.x=sc.stand.x;st.z=sc.stand.z;st.heading=sc.stand.heading;camBase=st.heading;look.yaw=0;look.pitch=scopePitch(sc);hiker.snapTo(st.heading);st.auto=false;
  setGadget(gs,'binoculars');if(gs.gadget==='binoculars'){for(let i=0;i<8;i++)zoomStep(gs,1);syncView();input.clear?.();nsUI.toast(`망원경 · ${sc.name.replace(/ \(.*\)/,'')} 쪽 · 둘러보면 이름표가 보여요`,{ms:3000});}}
 // 3인칭 카메라가 유리 밖·기둥 속·천장 위로 나가지 않게(11-22 검수 ①: 예전엔 유리 밖 2.6m까지 나가 창가에서 안쪽을 보면 바닥 끝·지상 숲이 보였다)
 // 카메라는 늘 창턱 안쪽(DECK.sill−0.15)·기둥 밖. 뒤가 막히면 동동이 둘레로 최대 100° 돌려 거리가 나는 쪽을 찾고(머리에 붙지 않게),
