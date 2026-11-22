@@ -88,7 +88,7 @@ try{renderer=new THREE.WebGLRenderer({canvas:$('world'),antialias:true,powerPref
 // 실패를 로딩 오류 신호로 바꾸고 그대로 다시 던진다.
 async function guard(promise){try{return await promise;}catch(e){failLoading(e);throw e;}}
 const mobile=matchMedia('(pointer: coarse)').matches||navigator.maxTouchPoints>0;
-const toon=await guard(Promise.resolve().then(()=>createToonStyle({renderer,scene,camera,mobile})));
+const toon=await guard(Promise.resolve().then(()=>createToonStyle({renderer,scene,camera,mobile,softAutumnDistance:true})));
 markLoad('toon');
 // 계절: 서울 날짜(?season=로 바꿀 수 있음). hiking.setSeason(이름|null='날짜대로'), 'hiking:free-settings'·'hiking:set-season' 이벤트로도 바꾼다.
 // 다시 로딩하지 않고 셰이더 값만 바뀐다. 바뀌면 'hiking:season' 이벤트를 보낸다.

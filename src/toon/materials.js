@@ -57,7 +57,7 @@ const worldVarying=(prefix)=>`
  v${prefix}World=(modelMatrix*${prefix}W).xyz;v${prefix}Up=normalize(mat3(modelMatrix)*${prefix}N).y;
 }`;
 
-export function createToonMaterials({gradientMap}){
+export function createToonMaterials({gradientMap,softAutumnDistance=false}){
  const status={converted:0,reused:0,blobs:0,cutoutMeshes:0,skipped:0,foliage:0,localLightCap:installToonLightCap()};
  const toon=(params={})=>new THREE.MeshToonMaterial({gradientMap,...params});
 
@@ -155,7 +155,9 @@ export function createToonMaterials({gradientMap}){
       float rr=sqrt(d1),crown=1.-smoothstep(.34,.6,rr),lit=smoothstep(-.15,.3,dot(-best,normalize(vec2(-.55,-.8)))+.1);
       float fade=1.-smoothstep(.25,.6,max(fwidth(cq).x,fwidth(cq).y));
       // 계절: 수관 덩어리마다 난수로 벚꽃·단풍 색을 고르고, 겨울엔 회갈색 잔가지 안개(src/toon/season.js tsCrown).
-      wood+=lw*tsCrown(tForest*vec3(.86,1.06,.62),ttHash(bid+3.3),h)*mix(.42,mix(.66,.96,lit),crown);woodMask+=lw*fade;
+      vec3 crownColor=tsCrown(tForest*vec3(.86,1.06,.62),ttHash(bid+3.3),h)*mix(.42,mix(.66,.96,lit),crown);
+      ${softAutumnDistance?'float autumnDistance=tsW.z*smoothstep(300.,1000.,dist);float autumnWash=ttFbm(xz/180.+vec2(4.3,8.1));crownColor=mix(crownColor,tForest*vec3(.86,1.06,.62)*mix(.58,.82,autumnWash),autumnDistance);':''}
+      wood+=lw*crownColor;woodMask+=lw*fade;
      }
      green=mix(green,wood,midWood*forest*woodMask);
      green=mix(green,tForest*vec3(.86,1.06,.62)*.66,midWood*forest*(1.-woodMask));
@@ -226,7 +228,7 @@ export function createToonMaterials({gradientMap}){
      reflectedLight.indirectDiffuse*=mix(vec3(1.),vec3(.86,.95,1.12),ttSnow);
      ${rockShadeGLSL('ttRockMask',TOON.nature.rockShadeDirect.toFixed(3))}`);
   };
-  m.customProgramCacheKey=()=>`toon-terrain-v7-season-${vertexColors}-${stableHash}`;
+  m.customProgramCacheKey=()=>`toon-terrain-v8-season-${vertexColors}-${stableHash}-${softAutumnDistance}`;
   terrainMaterials.set(terrainKey,m);return m;
  }
  // 상시 바닥(NearDEM8m)용: 같은 지형 셰이더에 깊이 밀기만 더한다. 정밀 청크와 거의 겹치는 급경사에서 청크가 이기게 한다.

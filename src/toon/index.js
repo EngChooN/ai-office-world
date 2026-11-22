@@ -16,9 +16,9 @@ export {TOON} from './palette.js';
 //  toonify(root,{kind}) → GLB·시설 메시 재질을 MeshToonMaterial로(같은 원본은 캐시, userData.shared=true).
 //  createSky()/updateSky(env,sun,moon) · styleCity({material,nightLights}) · patchFoliage(material)
 //  pipeline.resize(quality,w,h,dpr) / update(env) / render()
-export async function createToonStyle({renderer,scene,camera,mobile=false}={}){
+export async function createToonStyle({renderer,scene,camera,mobile=false,softAutumnDistance=false}={}){
  const gradientMap=createGradientMap();
- const materials=createToonMaterials({gradientMap});
+ const materials=createToonMaterials({gradientMap,softAutumnDistance});
  // 카툰 전용 나무·풀·바위(3단계). natureParts는 load-landscape natureModel이, 하층 식생 교체는 toonify가 쓴다.
  const nature=createToonNature({gradientMap,uniforms:TOON_UNIFORMS});
  // 카툰 계곡 물(4단계): 실사 물 셰이더 재질을 카툰 물·낙수·물보라·암반으로 바꿔 끼운 뒤 나머지를 toonify한다.
