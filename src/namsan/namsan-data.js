@@ -52,8 +52,9 @@ export function createNamsanGround(data){
   for(let i=0;i<W;i++){let a=0;for(let j=-R;j<H+R;j++){const add=j+R<H?tmp[Math.min(H-1,j+R)*W+i]:0,sub=j-R-1>=0?tmp[(j-R-1)*W+i]:0;a+=add-sub;if(j>=0&&j<H)soft[j*W+i]=a/(2*R+1);}}}
  const forestK=(x,z)=>{const u=Math.max(0,Math.min(T.width-1.001,(x-T.x0)/T.spacing)),v=Math.max(0,Math.min(T.height-1.001,(z-T.z0)/T.spacing)),i=Math.floor(u),j=Math.floor(v),fx=u-i,fy=v-j,W=T.width;
   return (soft[j*W+i]*(1-fx)+soft[j*W+i+1]*fx)*(1-fy)+(soft[(j+1)*W+i]*(1-fx)+soft[(j+1)*W+i+1]*fx)*fy;};
- const nearest=indexRoute(pts),start=pts[0],end=pts.at(-1),tw=NAMSAN.tower;
+ const nearest=indexRoute(pts),start=pts[0],end=pts.at(-1),tw=NAMSAN.tower,joins=[...pts.filter(p=>[105.1,360.1,404.9,477.2,493.4,661.6,718.2,941.5].includes(p.s)),...[328.46,446.48,513.74,592.34,594.13,701.74,891.17].map(s=>courseAt(pts,s))];
  // 정상 광장은 전망탑과 코스 끝을 함께 품는다(중심은 둘의 가운데에서 탑 쪽).
+ const deepTurn=courseAt(pts,592.34);
  const plaza={x:tw.x*.6+end.x*.4,z:tw.z*.6+end.z*.4,y:end.y,r:NAMSAN.plazaRadius};
  const startPlaza={x:start.x,z:start.z,y:start.y,r:NAMSAN.startPlazaRadius};
  const flat=(h,x,z,P,edge=18)=>{const d=Math.hypot(x-P.x,z-P.z);if(d>=P.r+edge)return h;const t=Math.max(0,(d-P.r)/edge),k=t*t*(3-2*t);return P.y+(h-P.y)*k;};
@@ -63,6 +64,10 @@ export function createNamsanGround(data){
    // 돌계단 밑은 0.25m 더 낮춘다(단 윗면이 걷는 높이 ±8cm라 뒤쪽 반이 땅에 묻히지 않게)
    if(pts[hit.index]?.stairs&&hit.distance<NAMSAN.stairWidth/2+1.2){const k=1-Math.max(0,(hit.distance-NAMSAN.stairWidth/2-.4)/.8);h-=.25*Math.min(1,k);}}
   h=flat(h,x,z,startPlaza);h=flat(h,x,z,plaza,22);
+  // 계단 이음새에서 2m·4m 지형 격자 보간이 노면 위로 솟지 않도록 완만히 낮춘다.
+  const d=Math.min(...joins.map(p=>Math.hypot(x-p.x,z-p.z)));
+  if(d<8){const t=Math.max(0,Math.min(1,(d-4)/4));const k=1-t*t*(3-2*t);h-=Math.max(0,h-(hit.y-.35))*k;}
+  const turnD=Math.hypot(x-deepTurn.x,z-deepTurn.z);if(turnD<8){const t=Math.max(0,Math.min(1,(turnD-4)/4));h-=.2*(1-t*t*(3-2*t));}
   return h;
  }
  const G={raw,ground,park,forestK,nearest,plaza,startPlaza,points:pts,bounds:{x0:T.x0,z0:T.z0,x1:T.x0+(T.width-1)*T.spacing,z1:T.z0+(T.height-1)*T.spacing}};

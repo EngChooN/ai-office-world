@@ -417,6 +417,8 @@ ankle,toeH,scene:root,animations:gltf.animations,actions,model,mixer,legs,pack,
    // 섞이는 걸음 클립들의 공통 디딤 비율(가중 평균). 한 클립만 재생하면 그 클립의 디딤 비율 그대로다.
    let commonStance=0;{const gs=prof.gaitStance;if(gs){let ws=0;for(const [key,k] of [['Walk','walk'],['Run','run'],['Climb','climb']]){const goal=actions.Run&&name==='Walk'?(key==='Walk'?1-gaitBlend.run:key==='Run'?gaitBlend.run:0):key===name?1:0,w=(weights[key]??0)+(goal-(weights[key]??0))*blend;if(w>0&&gs[k]){ws+=w;commonStance+=w*gs[k];}}commonStance=ws>0?commonStance/ws:gs.walk;}}
    gaitMix.common=commonStance;gaitMix.blending=false;
+   // 점검용: 보정된 위상·공통 디딤 비율과, 그 위상에서 디딤 구간에 있는 발(legs 순서, ground()의 섞기 보정과 같은 식). 동작에는 쓰지 않는다.
+   {const c=MathUtils.euclideanModulo(phase/2+WALK_CONTACT_OFFSET,1);api.gaitPhase={phase,cycle:c,common:commonStance,stance:legs.map((l,k)=>({side:l.side,inStance:(c+k*.5)%1<commonStance,at:commonStance>0?((c+k*.5)%1)/commonStance:0}))};}
    for(const [key,a] of Object.entries(actions)){
     // 뛰기 클립이 있으면 걷기 자리를 걷기·뛰기가 gaitBlend.run 비율로 나눠 갖는다.
     const goal=actions.Run&&name==='Walk'?(key==='Walk'?1-gaitBlend.run:key==='Run'?gaitBlend.run:0):key===name?1:0;

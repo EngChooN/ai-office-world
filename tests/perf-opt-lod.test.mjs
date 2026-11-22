@@ -16,6 +16,18 @@ function field(){
 }
 const tris=g=>g.attributes.position.count/3;
 
+test('별도 지형의 풀 경사 상한은 선택 사항이며 기본값과 금지 구역을 유지한다',()=>{
+ const camera=new THREE.PerspectiveCamera();camera.position.set(0,1,0);
+ const make=(slopeMax,blocked=()=>false)=>{
+  const ground={height:(x)=>x,blocked,...(slopeMax===undefined?{}:{slopeMax})};
+  const f=createGrassField({landscape:{status:{}},geometry:new THREE.BoxGeometry(),material:new THREE.MeshBasicMaterial(),scene:new THREE.Scene(),ground});
+  f.update(camera,0);return f;
+ };
+ const base=make(),raised=make(.55),blocked=make(.55,()=>true);
+ assert.equal(base.status.clumps,0);assert.ok(raised.status.clumps>0);assert.equal(blocked.status.clumps,0);
+ for(const f of [base,raised,blocked])f.dispose();
+});
+
 test('풀밭 먼 쪽 다발은 잎 수만 줄이고 키·퍼짐은 같다',()=>{
  const {n}=field(),near=n.geometries.grass.field,far=n.geometries.grass.fieldFar;
  assert.ok(tris(far)<tris(near)*.6,`${tris(far)} < ${tris(near)}×0.6`);

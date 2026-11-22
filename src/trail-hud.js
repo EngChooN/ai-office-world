@@ -10,13 +10,14 @@ import {icon} from './icons/icon.js';
 
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-export function installTrailHud(doc=document,win=window){
+// snack:false(11-21 남산) = 간식 줄(초콜릿)을 만들지 않는다. 칩·즐길거리 줄은 그대로
+export function installTrailHud(doc=document,win=window,{snack:withSnack=true}={}){
  const app=doc.getElementById('app');if(!app||doc.getElementById('trail-bar'))return null;
  const send=(id,value)=>win.dispatchEvent(new CustomEvent('hiking:command',{detail:{id,value}}));
  // ── 간식 줄(진행 카드 스테미너 밑)
  const card=app.querySelector('.nb-card'),snack=doc.createElement('div');snack.className='nb-snack';
  snack.innerHTML=`<span id="choco-count" class="nb-snack-chip" aria-label="초콜릿 개수">${icon('h-choco',{size:'xs'})}<span class="ic-num">${CHOCO_MAX}/${CHOCO_MAX}</span></span><button id="choco" type="button" class="nb-snack-eat" title="초콜릿 먹기 · 30초 동안 빨라져요">${icon('h-choco',{size:'xs'})}<span>먹기</span></button><span id="choco-boost" class="nb-snack-chip boost" role="status" hidden>${icon('h-boost',{size:'xs'})}<span>빨라짐 0:30</span></span>`;
- (card?.querySelector('.nb-stam')??card)?.after(snack);
+ if(withSnack)(card?.querySelector('.nb-stam')??card)?.after(snack);
  const count=snack.querySelector('#choco-count'),eat=snack.querySelector('#choco'),boostChip=snack.querySelector('#choco-boost');
  const countText=count.querySelector('span'),boostText=boostChip.querySelector('span'),eatText=eat.querySelector('span');
  eat.addEventListener('click',()=>{send('chocolate');eat.blur();});

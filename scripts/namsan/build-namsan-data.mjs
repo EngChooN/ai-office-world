@@ -3,11 +3,33 @@
 // 입력: assets/realistic/raw/N37_E126.tif·N37_E127.tif(Copernicus DSM 30m), raw/namsan-osm.json(OSM Overpass 11-19, 월드리서치가 받은 것)
 // 출력: assets/shared/namsan/terrain.f32(+meta), course.json, walls.json — 실행: node scripts/namsan/build-namsan-data.mjs
 import fs from 'node:fs';
-import {fromArrayBuffer} from '../../assets/realistic/tools/node_modules/geotiff/dist-module/geotiff.js';
+import {classifyNamsanStairs} from '../../src/namsan/namsan-stairs-classify.js';
 import {project,unproject} from '../../assets/realistic/geo.js';
 
 const RAW='assets/realistic/raw/',OUT='assets/shared/namsan/';
 fs.mkdirSync(OUT,{recursive:true});
+// 592m 급한 굽이만 원래 길 선에서 2m 안으로 둥글게 한다. s와 높이는 기존 값의 보간을 유지한다.
+function smooth592(points){
+ const start=points.findIndex(p=>p.s===585.4),end=points.findIndex(p=>p.s===601.9);
+ if(start<0||end<=start||end-start!==4)throw new Error('592m 원본 코스가 달라 자동 보정 중단');
+ const original=points.slice(start,end+1),at=s=>{let i=0;while(i<original.length-2&&original[i+1].s<s)i++;const a=original[i],b=original[i+1],t=(s-a.s)/(b.s-a.s);return {...a,s,x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t,y:a.y+(b.y-a.y)*t};};
+ let p=Array.from({length:34},(_,i)=>at(585.4+16.5*i/33));const baseline=p.map(q=>({...q}));
+ for(let pass=0;pass<60;pass++)p=p.map((q,i)=>i===0||i===p.length-1?q:{...q,x:(p[i-1].x+2*q.x+p[i+1].x)/4,z:(p[i-1].z+2*q.z+p[i+1].z)/4});
+ if(p.some((q,i)=>Math.hypot(q.x-baseline[i].x,q.z-baseline[i].z)>2))throw new Error('592m 원본 이탈 2m 초과');
+ points.splice(start,end-start+1,...p);
+}
+if(process.argv.includes('--smooth-592')){
+ const file=OUT+'course.json',data=JSON.parse(fs.readFileSync(file,'utf8'));smooth592(data.points);fs.writeFileSync(file,JSON.stringify(data));
+ console.log('592m 중심선 보정 완료; 거리·고도 유지');process.exit(0);
+}
+
+// 원본 DSM/OSM 파일이 없는 작업 환경: 기존 코스 좌표·고도를 보존하고 계단 표기만 재계산한다.
+if(process.argv.includes('--course-only')){
+ const file=OUT+'course.json',data=JSON.parse(fs.readFileSync(file,'utf8'));
+ classifyNamsanStairs(data.points);fs.writeFileSync(file,JSON.stringify(data));
+ console.log(`코스 ${data.points.length}점 계단 표기 재계산(기존 좌표·높이 유지)`);process.exit(0);
+}
+const {fromArrayBuffer}=await import('../../assets/realistic/tools/node_modules/geotiff/dist-module/geotiff.js');
 const tiles=[];
 for(const east of [126,127]){
  const b=fs.readFileSync(`${RAW}N37_E${east}.tif`),tiff=await fromArrayBuffer(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength)),image=await tiff.getImage();
@@ -67,6 +89,9 @@ let y=yRaw.map((_,i)=>{const w=[];for(let j=0;j<course.length;j++)if(Math.abs(co
 for(let pass=0;pass<4;pass++)y=y.map((v,i)=>{let a=0,n=0;for(let j=Math.max(0,i-3);j<=Math.min(y.length-1,i+3);j++){a+=y[j];n++;}return a/n;});
 for(let i=1;i<y.length;i++)y[i]=Math.max(y[i],y[i-1]);
 course.forEach((p,i)=>{p.y=+y[i].toFixed(2);p.x=+p.x.toFixed(2);p.z=+p.z.toFixed(2);p.s=+p.s.toFixed(1);});
+smooth592(course);
+// OSM 표시를 보관하고 최종 높이·거리로 실제 오르는 구간만 계단으로 정한다.
+classifyNamsanStairs(course);
 
 // ── 3. 성곽: OSM barrier=city_wall / historic=citywalls 중 남산 둘레 ──
 const box={x0,z0,x1:x0+(width-1)*SP,z1:z0+(height-1)*SP};

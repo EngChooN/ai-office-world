@@ -10,12 +10,12 @@ import {grassGround} from '../../assets/realistic/generated/nature/forest-layers
 // - 바깥 테두리는 셰이더가 다발을 줄여 사라지게 한다(뚝 끊기는 경계 없음). 그 너머는 지형의 평평한 연두 풀밭 면.
 // - 거리 LOD(2026-11-06 최적화 7번): 반경의 near배(높음 13.5m) 안은 17잎 다발, 밖은 잎 8장 다발(farGeometry)로 그린다.
 //   경계 band(m) 구간은 다발마다 고정 해시로 가까운·먼 쪽을 섞어 바꾼다(한 줄로 잎 수가 확 바뀌어 보이지 않게).
-// - ground(남산 등 다른 산, 11-21): {height(x,z),blocked(x,z,reach),heightMax?}를 주면 관악산 길·입구·물 판정 대신 그것을 쓴다(밀도·반경·LOD는 같다).
+// - ground(남산 등 다른 산): {height(x,z),blocked(x,z,reach),heightMax?,slopeMax?}를 주면 해당 지형의 판정과 경사 상한을 쓴다.
 // 실사 모드에서는 만들지 않는다.
 export const GRASS_FIELD={tile:16,step:.62,radius:[14,22,30],capacity:[1400,3800,7200],slopeMax:.24,heightMax:596,pathMargin:.02,reach:.32,near:.45,band:2};
 
 export function createGrassField({landscape,geometry,farGeometry=geometry,material,scene,ground=null}){
- const route=ground?null:landscape.route,nearest=ground?null:indexRoute(route),water=ground?null:waterClearance(route),heightMax=ground?.heightMax??GRASS_FIELD.heightMax;
+ const route=ground?null:landscape.route,nearest=ground?null:indexRoute(route),water=ground?null:waterClearance(route),heightMax=ground?.heightMax??GRASS_FIELD.heightMax,slopeMax=ground?.slopeMax??GRASS_FIELD.slopeMax;
  const sites=()=>[...(landscape.status.sectionScenery?.sites??[]),...(landscape.status.interactionProps?.clearSites??[]),...(landscape.status.trailProps?.clearSites??[]),...(landscape.status.summitFacilities?.sites??[]).map(s=>({x:s.x,z:s.z,supportRadius:s.supportRadius??3}))];
  let mask=null;
  const capacity=GRASS_FIELD.capacity[2];
@@ -42,7 +42,7 @@ export function createGrassField({landscape,geometry,farGeometry=geometry,materi
    if(ground){if(ground.blocked(x,z,GRASS_FIELD.reach))continue;}
    else {const h=nearest(x,z);if(h.distance<h.width/2+GRASS_FIELD.pathMargin)continue;
     if(mask.blocked(x,z,GRASS_FIELD.reach))continue;}
-   if(slopeAt(x,z)>GRASS_FIELD.slopeMax)continue;
+   if(slopeAt(x,z)>slopeMax)continue;
    list.push(x,y-.02,z,yaw,scale);
   }
   const data=new Float32Array(list);tiles.set(key,data);status.tiles=tiles.size;

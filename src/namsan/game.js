@@ -40,7 +40,7 @@ import {NAMSAN_ENTRY_KEY,NAMSAN_SERVERS,isNamsanRoom,namsanRoom,walkHeight,heigh
 import {createNamsanWalker} from './namsan-walker.js';
 // 통합 5단계(11-20): 남산 상호작용(약수·물확·돌탑·정상석·이정표·스탬프함·쌍안경)·사랑의 자물쇠·순환버스·정상 야경 벤치
 import {buildNamsanInteract,INTERACT_COLORS} from './namsan-interact-art.js';
-import {makeWalkPads,placeOf} from './namsan-walk.js';
+import {makeWalkPads,placeOf,stairGait} from './namsan-walk.js';
 import {createNamsanInteract,planNightBenches,encodeLocks,decodeLocks,lockCode} from './namsan-interact.js';
 import {NS_LOCKS,NS_BENCH} from './namsan-content.js';
 import {buildBus,placeOnLane,seatInBus} from './namsan-bus-art.js';
@@ -64,6 +64,13 @@ import {createInteractionSound} from '../interaction-sound.js';
 // 남산 소리(11-21): 구간별 환경음 표(관악산 표 대신)와 순환버스 소리
 import {NAMSAN_AMBIENT_CONFIG} from './namsan-ambient-config.js';
 import {createBusSound} from './namsan-bus-sound.js';
+// 남산 동물(11-21): 관악산 동물(trail-world.js·trail-sound.js·trail-hud.js)을 남산 출현 구역·안전 범위로 그대로 씀(사본 없음)
+import {createTrailWorld} from '../trail-world.js';
+import {createTrailSound} from '../trail-sound.js';
+import {installTrailHud} from '../trail-hud.js';
+import {namsanAnimalZones} from './namsan-animal-zones.js';
+import {createNamsanAnimalLanes,namsanTrailLanes,namsanBushesFrom,NAMSAN_ANIMAL_MIN_OFFSET} from './namsan-animal-lanes.js';
+import {wallLine} from './namsan-art.js';
 
 const q=new URLSearchParams(location.search),BASE=import.meta.env.BASE_URL,$=s=>document.querySelector(s);
 document.documentElement.dataset.icExp='hiking';
@@ -210,6 +217,28 @@ const soundFx=createInteractionSound({context:()=>sound.audio.context,destinatio
 let stepCount=0,stepPhase=0;   // 발소리: 걸음 위상이 한 걸음 넘을 때마다(관악산 'hiking:step'과 같은 모양, 계단 = stairs·길 = 돌길)
 const keyless=t=>mobile?String(t).replace(/\s*\([A-Z]\)/g,''):t;   // 휴대폰은 안내 글의 키 글자 (T)·(B)를 뺀다(11-20 월드디자인 확인 보통 2)
 
+// ── 동물(11-21, 관악산과 같은 4종·반응·말풍선·소리·함께 걷기 놀람 중계). 기능 스위치 F.animals ──
+// 자리: 출현 구역 namsan-animal-zones.js(추천안·대표 미확인) + 실제 그린 성곽·시설 배치로 만든 안전 범위 namsan-animal-lanes.js(길 가장자리 1~5m).
+//  길 위·가장자리 1m 안(길을 가로지르는 걸음)은 금지만 본다(namsanTrailLanes).
+// 높이: 길 가까이는 노면(heightAt), 그 밖은 그려진 지형 면. 다람쥐 나무 타기는 길가 숲 띠(ns.trail) 나무.
+let trail=null;
+if(F.animals!==false){
+ // 덤불(11-22): 출현·땅 위 배회 자리는 그림이 그린 길가 덤불(ns.trail '남산 덤불')과 겹치지 않게(몸이 가려져 말풍선만 보이던 문제).
+ const L=createNamsanAnimalLanes(G,{wallLines:data.walls.map(w=>wallLine(G,w)).filter(Boolean),plan:ia.userData.plan,bushes:namsanBushesFrom(ns.trail)});
+ const surf=ns.terrain?.userData.surface??G.ground,animalHeight=(x,z)=>{const h=G.nearest(x,z);return h.distance<=NAMSAN.stairWidth/2+.4&&Number.isFinite(h.y)?h.y:surf(x,z);};
+ const lanes=namsanTrailLanes(L,END);
+ const trees=[];for(const lod of ns.trail?.userData.lods??[])for(const m of lod.userData.world??[])trees.push({x:m.elements[12],z:m.elements[14]});
+ const treeNear=(x,z,r)=>{let best=null,bd=r;for(const t of trees){const d=Math.hypot(t.x-x,t.z-z);if(d<bd&&!L.inForbid(t.x,t.z)){bd=d;best=t;}}return best;};
+ const measure={length:END,at:u=>{const k=courseAt(G.points,u);return {x:k.x,z:k.z,tx:k.tx,tz:k.tz,width:L.halfWidth(u)*2,m:u};},nearest:(x,z)=>{const h=G.nearest(x,z);return {m:h.s,d:h.distance};}};
+ const trailSound=createTrailSound({context:()=>sound.audio.context,destination:()=>sound.audio.master,enabled:()=>sound.audio.enabled&&!document.hidden,base:`${BASE}sounds/trail/`});
+ trail=createTrailWorld({scene,camera,hiker,toonify:toon.toonify,sound:trailSound,auto:{get:()=>!!st.auto,set:v=>{st.auto=!!v;updateUI();}},
+  env:()=>({season:seasons.season,hour:parseInt(lighting.environment?.info?.timeLabel??envInfo.timeLabel??'',10)}),
+  height:animalHeight,sites:[],zones:namsanAnimalZones(G).map(z=>({...z,minOffset:NAMSAN_ANIMAL_MIN_OFFSET})),measure,halfWidth:L.halfWidth,lanes,treeNear});
+ trail.height=animalHeight;
+ installTrailHud(document,window,{snack:false});   // 고양이 쓰다듬기 칩·들르기(초콜릿 줄 없음)
+ window.namsan.trail=trail;window.namsan.animals=()=>trail.status().animals;window.namsan.spawns=()=>trail.spawns();window.namsan.trailSound=()=>trailSound.snapshot();window.namsan.animalLanes=L;   // 점검용(scripts/namsan/verify-namsan-animals.mjs)
+}
+
 // ── 지도(공통 조각 #route-map: 남은 길 #map-path·걸은 길 #map-walked·나 #map-dot·스탬프 목록 #checkpoints) ──
 const mapP=(()=>{const P=G.points,xs=P.map(p=>p.x),zs=P.map(p=>p.z),x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs),k=Math.min(250/(x1-x0),250/(z1-z0));return p=>({x:160+(p.x-(x0+x1)/2)*k,y:150+(p.z-(z0+z1)/2)*k});})();
 const mapD=pts=>pts.map((p,i)=>{const m=mapP(p);return `${i?'L':'M'}${m.x.toFixed(1)} ${m.y.toFixed(1)}`;}).join(' ');
@@ -246,6 +275,7 @@ function command(id,value){
  // 상호작용(F·1·2·3·안내판 닫기·쪽 넘기기·이름표)이 먼저. 처리했으면 끝. 버스 안에서는 큰 단추(F) = 건너뛰기
  if(ride&&(id==='interact'||id==='bus-skip'||id==='auto')){alight(ride.to,true);return;}
  if(ix&&['interact','choice-1','choice-2','choice-3','panel-close','page-prev','page-next',...(gs.gadget!=='none'?['labels-toggle']:[])].includes(id)&&ix.handle(id))return;
+ if(id==='interact'&&!seat&&gs.gadget==='none'&&trail?.interact())return;   // F = 동물 칩(고양이 쓰다듬기·들르기)을 누른 것과 같게(관악산 칩 단추와 같은 동작)
  if(id==='binoculars'){ixUI.closeBoard();ix?.cancel('쌍안경을 들었어요');setGadget(gs,'binoculars');st.auto=false;syncView();if(gs.gadget!=='none'){input.clear?.();ixUI.toast('쌍안경 · 둘러보면 명소 이름표가 보여요');}return;}
  if(id==='phone'){ixUI.closeBoard();ix?.cancel('휴대폰을 들었어요');setGadget(gs,'phone');st.auto=false;syncView();if(gs.gadget!=='none')input.clear?.();return;}
  if(id==='gadget-off'){if(closeGadget(gs))syncView();return;}
@@ -273,7 +303,7 @@ function command(id,value){
 }
 for(const id of ['auto','view','face-forward','map-toggle','help-toggle','binoculars','phone','sit','tea'])$(`#${id}`)?.addEventListener('click',e=>{command(id);e.currentTarget.blur();});
 $('#stamps')?.addEventListener('click',()=>command('stamps-toggle'));
-const input=bindInput(command,(dx,dy)=>{const k=1/Math.max(1,viewZoom(gs));turnLook(look,dx*k,dy*k);},dz=>{if(gs.gadget!=='none'&&view==='first'){zoomBy(gs,dz);updateUI();return;}if(view==='third')look.orbit=THREE.MathUtils.clamp(look.orbit+dz,2.2,12);},{mode:()=>window.namsan.started?gs.gadget:'none',interact:()=>!!ix?.active()||ixUI.boardOpen||!!multi?.greet?.().target,panel:()=>!!window.hikingFrame?.isOpen||ixUI.boardPages>1});
+const input=bindInput(command,(dx,dy)=>{const k=1/Math.max(1,viewZoom(gs));turnLook(look,dx*k,dy*k);},dz=>{if(gs.gadget!=='none'&&view==='first'){zoomBy(gs,dz);updateUI();return;}if(view==='third')look.orbit=THREE.MathUtils.clamp(look.orbit+dz,2.2,12);},{mode:()=>window.namsan.started?gs.gadget:'none',interact:()=>!!ix?.active()||ixUI.boardOpen||!!multi?.greet?.().target||!!trail?.chipActive(),panel:()=>!!window.hikingFrame?.isOpen||ixUI.boardPages>1});
 // 인사 칩·이름표 카드·수첩 HUD(도장·상황 꼬리표·시트)는 'hiking:command'로 보낸다(관악산 main.js와 같은 길)
 window.addEventListener('hiking:command',e=>command(e.detail?.id,e.detail?.value));
 // 설정 탭 맨 아래 「다른 산 고르기」(남산 페이지만, 11-19 남산 설정 판에 있던 것)
@@ -293,8 +323,10 @@ const multiLocal={nudge:()=>false,here:()=>null,sample:null,minS:0,maxS:0,
  walk:()=>({auto:!!st.auto,moving,steering:false,base:speed}),
  position:()=>N.position(st),
  setPosition:pos=>N.setPeerPosition(st,pos),
- speed:()=>speed,sit:()=>!!seat||!!ride,run:()=>!!st.running,gadget:()=>gs.gadget,selfie:()=>selfieActive(gs),busy:()=>false,place:()=>null,
- act:()=>({pose:ride?'sit':seat?seat.pose:'stand',gadget:gs.gadget,selfie:selfieActive(gs),trail:null,action:ride?{id:'bus'}:ix?.action?{id:ix.action.id}:myLockX()?{id:myLockX()}:null}),shown:()=>null,propFor:()=>null};
+ speed:()=>speed,sit:()=>!!seat||!!ride,run:()=>!!st.running,gadget:()=>gs.gadget,selfie:()=>selfieActive(gs),busy:()=>!!trail?.busy(),place:()=>null,
+ act:()=>({pose:ride?'sit':seat?seat.pose:'stand',gadget:gs.gadget,selfie:selfieActive(gs),trail:trail?.acts.active?{name:trail.acts.active.name,state:trail.acts.active.state,reps:trail.acts.active.reps??0}:null,action:ride?{id:'bus'}:ix?.action?{id:ix.action.id}:myLockX()?{id:myLockX()}:null}),
+ // 고양이에게 걸어간 동안 몸이 실제로 있는 자리(관악산 main.js와 같음)
+ shown:()=>{const tp=trail?.override();return tp?{...N.position(st),x:tp.position[0],z:tp.position[2],heading:tp.heading}:null;},propFor:(act,x,z)=>trail?.propFor?.(act,x,z)??null};
 joinMulti=({room=null,name=null}={})=>{multiBusy=multiBusy.then(async()=>{
  if(!window.namsan.ready)return;   // 화면 준비 뒤 pendingJoin으로 다시 부른다
  if(multi&&room===multi.room)return;if(multi)leaveMultiNow();
@@ -329,7 +361,7 @@ function playShutter(){
 // 화면을 짧게 눌러도 촬영(관악산과 같음)
 {let down=null;$('#world').addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY,t:performance.now()};});$('#world').addEventListener('pointerup',e=>{if(down&&gs.gadget==='phone'&&!document.pointerLockElement&&Math.hypot(e.clientX-down.x,e.clientY-down.y)<6&&performance.now()-down.t<500)command('shutter');down=null;});}
 // ── 매 프레임 ──
-const fwd=new THREE.Vector3(),lookGoal=new THREE.Vector3(),camGoal=new THREE.Vector3();
+const fwd=new THREE.Vector3(),lookGoal=new THREE.Vector3(),camGoal=new THREE.Vector3(),_tw=new THREE.Vector3();
 let prevAuto=st.auto,t0=performance.now(),last=performance.now(),saveAt=0,uiAt=0,first=true,cameraReady=false,stairsNow=false,fpsN=0,fpsSum=0,fpsWin=performance.now(),metrics=null;
 const nightK=()=>lighting.environment?.current?.night??0;
 function frame_(now){
@@ -337,6 +369,7 @@ function frame_(now){
  const dtRaw=Math.min(.1,(now-last)/1000);last=now;const started=window.namsan.started,dt=started?dtRaw:0;
  const cmd=started?input.read():{forward:0,side:0,run:false,turn:0};
  if(multi?.frozen||dialogOpen()||!lockCard.hidden)Object.assign(cmd,{forward:0,side:0,run:false,turn:0});
+ const trailMove=!!(cmd.forward||cmd.side),tp=ride?null:trail?.override()??null;if(tp||trail?.busy())Object.assign(cmd,{forward:0,side:0,run:false,turn:0});   // 고양이에게 들른 동안은 trail-world가 몸을 옮긴다(걷기 입력은 그만두기로 받는다, 관악산과 같음)
  busFrame(dtRaw,cmd);
  if(seat&&(cmd.forward||cmd.side)){standUp();}            // 앉아 있다가 걸으면 일어난다(관악산 앉기와 같음)
  if(ride||seat)Object.assign(cmd,{forward:0,side:0,run:false});
@@ -352,39 +385,44 @@ function frame_(now){
  if(r.stamp){const t=NAMSAN.stamps.find(x=>x.n===r.stamp);ixUI.toast(`${t.glyph} 스탬프 ${st.stamps.length} / ${NAMSAN.stamps.length} · ${t.name}`,{ms:3200});soundFx.play('stamp');drawMap();}
  if(r.summit){showSummit();save();}
  if(st.auto!==prevAuto){prevAuto=st.auto;updateUI();}
- const y=walkHeight(G,st),heading=camBase+look.yaw;
- if(!ride)avatar.position.set(st.x,y,st.z);
+ const y=tp?tp.position[1]:walkHeight(G,st),heading=camBase+look.yaw,px=tp?tp.position[0]:st.x,pz=tp?tp.position[2]:st.z;
+ if(!ride)avatar.position.set(px,y,pz);
  avatar.visible=view==='third'||selfieActive(gs);   // 1인칭은 내 몸을 숨긴다(관악산 main.js와 같음 — 안 숨기면 카메라가 머리 속이라 화면이 까맣게 보임)
  if(first){hiker.snapTo(st.heading);first=false;}
  else if(seat){if(!seat.snapped){hiker.snapTo(seat.heading);seat.snapped=true;}}
+ else if(tp){if(tp.snap)hiker.snapTo(tp.heading);else hiker.turnTo(tp.heading,dtRaw);}
  else if(moving)hiker.turnTo(direct?heading:r.heading,dtRaw);
  const k=courseAt(G.points,st.s),slope=moving?(()=>{const a=courseAt(G.points,st.s-1.5),b=courseAt(G.points,st.s+1.5);return (b.y-a.y)/3*Math.sign(Math.cos(r.heading-k.heading));})():0;
- const gait=gaitFor(slope,stairsNow?'stairs':'paved',slope<0?-1:1),stepLength=gait.stride*strideScaleFor(hiker.strideScale,!!st.running,stairsNow);
- walkPhase+=r.moved/Math.max(.1,stepLength)*(cmd.forward<0?-1:1);
+ // 남산 계단은 넓은 단이라 보폭 = 한 단 폭 쪽(stairGait, 걷는 속도와 같은 셈)
+ const gait=stairsNow?{stride:stairGait(G,st.s,slope,slope<0?-1:1).stride}:gaitFor(slope,'paved',slope<0?-1:1),stepLength=gait.stride*strideScaleFor(hiker.strideScale,!!st.running,stairsNow);
+ walkPhase+=r.moved/Math.max(.1,stepLength)*(cmd.forward<0?-1:1);if(tp)walkPhase=tp.phase;
  // 발소리(관악산과 같은 소리 파일·규칙): 한 걸음마다 'hiking:step'. 계단 = 돌계단 소리, 그 밖 = 돌길(포장)
  if(started&&moving){stepPhase+=r.moved/Math.max(.1,stepLength);while(stepPhase>=1){stepPhase-=1;stepCount++;window.dispatchEvent(new CustomEvent('hiking:step',{detail:{step:stepCount,material:stairsNow?'stairs':'paved',slope:Math.abs(slope),s:st.s,zone:'route',position:[st.x,y,st.z],distance:st.distance,elapsed:st.elapsed}}));}}
- const surface=(x,z)=>heightAt(G,x,z);
+ const surface=tp?trail.height:(x,z)=>heightAt(G,x,z);
  if(ix){ix.update(dtRaw,{moving:direct,started});const res=ix.result;if(res&&res!==lastResult){lastResult=res;if(res.id==='cairn')paintStones();}}
  if(gs.gadget!=='none'&&!direct)hiker.turnTo(heading,dtRaw);   // 쌍안경을 든 동안은 몸이 보는 방향을 따른다(관악산과 같음)
  if(seat){const sp=seat;if(sp.pose==='tea'){sp.teaT+=dtRaw;if(sp.teaT>=3){sp.pose='sit';updateUI();}}avatar.position.set(sp.x,sp.y,sp.z);}
- if(!ride)hiker.update({clip:!moving?'Idle':slope>.15?'Climb':'Walk',distance:walkPhase,stride:1,stepLength,stairs:stairsNow,idleSeconds:now/1000,slope,pose:seat?seat.pose:'stand',teaProgress:seat?.pose==='tea'?Math.min(1,seat.teaT/3):0,running:!!st.running,speed,dt:dtRaw,surfaceHeight:surface,gadget:gs.gadget,selfie:selfieActive(gs),lookYaw:wrapAngle(heading-avatar.rotation.y),lookPitch:look.pitch});
- if(!ride){hiker.ground({moving,phase:walkPhase,surfaceHeight:seat?()=>seat.y:surface,pose:seat?seat.pose:'stand'});
- multi?.afterLocalGround(hiker,null,now/1000);}
+ if(!ride)hiker.update({clip:tp?(tp.moving?'Walk':'Idle'):!moving?'Idle':slope>.15?'Climb':'Walk',distance:walkPhase,stride:1,stepLength,stairs:stairsNow,idleSeconds:now/1000,slope,pose:seat?seat.pose:'stand',teaProgress:seat?.pose==='tea'?Math.min(1,seat.teaT/3):0,running:!!st.running,speed,dt:dtRaw,surfaceHeight:surface,gadget:gs.gadget,selfie:selfieActive(gs),lookYaw:wrapAngle(heading-avatar.rotation.y),lookPitch:look.pitch});
+ if(!ride){hiker.ground({moving:moving||!!tp?.moving,phase:walkPhase,surfaceHeight:seat?()=>seat.y:surface,pose:seat?seat.pose:'stand'});}
+ // 동물(관악산 main.js와 같은 순서: 땅 디딤 뒤 update·afterGround). 버스 안에서는 탄 자리 기준
+ if(trail){const at=ride?avatar.getWorldPosition(_tw).toArray():[px,y,pz],mv=moving||!!tp?.moving;trail.update(dt,{position:at,moving:mv,speed,input:trailMove});trail.afterGround(dt,{moving:mv});}
+ if(!ride)multi?.afterLocalGround(hiker,null,now/1000);
  // 카메라(관악산 main.js와 같은 식): 3인칭은 동동이 뒤·위, 1인칭은 눈높이. 땅 밑으로 들어가지 않게 지형 위 0.5m로 올린다
  const smoothY=followHeight(camFollow,y,cameraReady?dtRaw:0);
  fwd.set(-Math.sin(heading),0,-Math.cos(heading));
- if(view==='first'){camGoal.set(st.x,smoothY+hiker.eyeHeight-(ix?.drop??0),st.z);lookGoal.copy(camGoal).addScaledVector(fwd,10);lookGoal.y+=Math.tan(THREE.MathUtils.clamp(look.pitch+(hiker.viewPitch??0)+(ix?.pitch??0),-1.3,1.3))*10;camera.position.copy(camGoal);}
- else{const cs=hiker.profile?.cameraScale??1;lookGoal.set(st.x,smoothY+(1.15-(1.6-hiker.eyeHeight)*2/3),st.z);
+ if(view==='first'){camGoal.set(px,smoothY+hiker.eyeHeight-(ix?.drop??0),pz);lookGoal.copy(camGoal).addScaledVector(fwd,10);lookGoal.y+=Math.tan(THREE.MathUtils.clamp(look.pitch+(hiker.viewPitch??0)+(ix?.pitch??0),-1.3,1.3))*10;camera.position.copy(camGoal);}
+ else{const cs=hiker.profile?.cameraScale??1;lookGoal.set(px,smoothY+(1.15-(1.6-hiker.eyeHeight)*2/3),pz);
   {const ease=1-Math.exp(-dtRaw*3);actCamK+=((ix?.action&&(ix.action.id==='drink'||ix.action.id==='dip')?1:0)-actCamK)*ease;seatCamK+=((seat&&innerHeight>innerWidth?1:0)-seatCamK)*ease;}
   const ca=heading+ACT_CAM.yaw*actCamK,cf=_camBack.set(-Math.sin(ca),0,-Math.cos(ca));
   lookGoal.addScaledVector(fwd,ACT_CAM.ahead*actCamK);
   camGoal.copy(lookGoal).addScaledVector(cf,-(look.orbit*cs*Math.cos(look.pitch)+SEAT_CAM.back*seatCamK));camGoal.y+=cs*(1-look.orbit*Math.sin(look.pitch))+SEAT_CAM.up*seatCamK;
   lookGoal.addScaledVector(fwd,SEAT_CAM.ahead*seatCamK);lookGoal.y+=SEAT_CAM.lift*seatCamK;
   const gy=G.ground(camGoal.x,camGoal.z)+.5;if(camGoal.y<gy)camGoal.y=gy;camera.position.copy(camGoal);}
- if(selfieActive(gs)){const lens=hiker.phoneCamera?.(true);if(lens?.visible){camera.position.copy(lens.position);lookGoal.copy(lens.position).add(lens.direction);}else{camera.position.fromArray(selfiePosition([st.x,smoothY+hiker.eyeHeight,st.z],heading,look.pitch));lookGoal.set(st.x,smoothY+hiker.eyeHeight-.04,st.z);}}   // 셀카(관악산과 같음): 손에 든 휴대폰 앞면 렌즈
+ if(selfieActive(gs)){const lens=hiker.phoneCamera?.(true);if(lens?.visible){camera.position.copy(lens.position);lookGoal.copy(lens.position).add(lens.direction);}else{camera.position.fromArray(selfiePosition([px,smoothY+hiker.eyeHeight,pz],heading,look.pitch));lookGoal.set(px,smoothY+hiker.eyeHeight-.04,pz);}}   // 셀카(관악산과 같음): 손에 든 휴대폰 앞면 렌즈
  if(ride)rideCamera(dtRaw);else lockCamera(dtRaw);
  {const co=window.namsan.cameraOverride;if(co){camera.position.fromArray(co.p);lookGoal.fromArray(co.t);}}
  camera.lookAt(lookGoal);cameraReady=true;
+ trail?.afterCamera();   // 말풍선·고양이 칩은 이번 프레임 카메라로 자리를 잡는다
  soundFrame(dtRaw);
   easeCameraZoom(camera,viewZoom(gs),dtRaw);   // 쌍안경 배율(공통 본체 부품, 관악산과 같음)
  landscape.update(camera,quality);ns.update(now/1000,nightK(),camera,quality);ia.userData.update(now/1000,nightK(),camera);
@@ -569,7 +607,7 @@ window.namsan.locks=()=>({mine:ix.progress.locks.map(l=>({...l})),x:myLockX(),co
 window.namsan.cam=()=>camera.position.toArray();window.namsan.lockAimView=()=>LK&&lockPick.aim>=0?LK.aimView(lockPick.aim,st.x,st.z):null;   // 점검용
 window.namsan.lockCard=(o={})=>{if(lockCard.hidden)openLockCard();if(o.c!=null)lockPick.c=o.c;if(o.h!=null)lockPick.h=o.h;paintLockCard();if(o.hang)hangMine();return window.namsan.locks();};
 window.namsan.interact=()=>ix;window.namsan.features=NAMSAN_MOUNTAIN.features;
-if(q.has('debug'))Object.assign(window,{__ns:ns,__scene:scene,__land:landscape.group,__camera:camera,__THREE:THREE,__G:G,__avatar:avatar});   // 점검용(?debug)
+if(q.has('debug'))Object.assign(window,{__ns:ns,__scene:scene,__land:landscape.group,__camera:camera,__THREE:THREE,__G:G,__avatar:avatar,__hiker:hiker});   // 점검용(?debug)
 // ── 준비 ──
 await lighting.prepare?.();loading.done('environment');
 // 첫 프레임 안정(관악산과 같은 규칙: 100ms 안 프레임이 12번 이어지면 준비 완료)

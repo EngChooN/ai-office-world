@@ -47,14 +47,14 @@ if(PART.includes('pick')){
  const p=await open({viewport:{width:390,height:844},touch:true,label:'pick',url:`${pageUrl}/hiking/?pick=on&dev=off&${Q}`}); // 개발 버전 끄기 = 사용자와 같은 카드 글·잠김
  await p.waitForSelector('#mountain-pick [data-mountain="namsan"]',{timeout:60000});
  const card=await p.$eval('#mountain-pick [data-mountain="namsan"]',el=>({text:el.innerText.replace(/\s+/g,' '),tower:!!el.querySelector('svg.pk-art'),go:!!el.querySelector('[data-pk-go="namsan"]'),overflow:el.scrollWidth>el.clientWidth+1}));
- for(const t of ['남산','265 m','백범광장 → 남산 정상','1.1 km','30분','4곳','쉬움','남산 정상에서 도장을 받아요','밤 전망 추천'])check(`카드 글: ${t}`,card.text.includes(t),{});
+ for(const t of ['남산','265 m','백범광장 → 남산 정상','1.1 km','17분','4곳','쉬움','남산 정상에서 도장을 받아요','밤 전망 추천'])check(`카드 글: ${t}`,card.text.includes(t),{});
  check('카드 가로 넘침 없음',!card.overflow);
  const gw=await p.$eval('#mountain-pick [data-mountain="gwanak"]',el=>el.innerText.replace(/\s+/g,' '));
  check('관악산 카드 문구 그대로(연주대)',gw.includes('연주대에서 도장을 받아요')&&gw.includes('632 m'),{gw:gw.slice(0,120)});
  check('「다음 산 준비 중」 칸 없어짐',!(await p.$('.pk-soon')));
  await p.$eval('#mountain-pick [data-mountain="namsan"]',el=>el.scrollIntoView({block:'center'}));await sleep(400);await shot(p,'A-pick-phone-namsan-card');
  // 산 고르기 카드는 날씨·시각을 받으면 다시 그려진다 — 그 순간 누르면 클릭이 빠질 수 있어 세 번까지 다시 누른다(관악산 카드도 같음)
- for(let i=0;i<3;i++){await p.click('[data-pk-free="namsan"]');if(await p.waitForFunction(()=>!document.querySelector('.pk-toast')?.hidden,null,{timeout:2000}).then(()=>true,()=>false))break;}
+ for(let i=0;i<3;i++){await p.click('[data-pk-free="namsan"]');if(await p.waitForFunction(()=>{const toast=document.querySelector('.pk-toast');return toast&&!toast.hidden&&toast.textContent.includes('남산 정상에서 완등 도장을 받으면 열려요');},null,{timeout:2000}).then(()=>true,()=>false))break;}
  const lock=await p.$eval('.pk-toast',el=>el.hidden?'':el.textContent).catch(e=>'ERR '+e.message);
  const panel=await p.$eval('.pk-free',el=>el.hidden?'':el.innerText).catch(()=>'');
  check('남산 자유 설정 잠김 알림 = 남산 정상 문구',lock.includes('남산 정상에서 완등 도장을 받으면 열려요')&&!panel,{lock});

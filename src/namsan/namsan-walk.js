@@ -4,7 +4,7 @@
 //  - 높이: 코스 위 = 코스 높이(계단 윗면, 그림 인계 §3), 광장 = 화면 지형 G.ground.
 //  - 자동 걷기: 코스를 따라 정상 쪽으로(몇 m 앞 점을 겨눔). 끝에 닿으면 멈춘다.
 //  - 진행: 코스에서 가장 멀리 간 거리(s), 스탬프 4곳(가까이 지나가면 찍힘), 정상 광장에 들어서면 완등.
-import {speedFor} from '../route.js';
+import {speedFor,STAIR_WALK_CADENCE} from '../route.js';
 import {courseAt,NAMSAN} from './namsan-data.js';
 import {mountainServers} from '../multi-protocol.js';
 
@@ -88,14 +88,32 @@ export function createWalkState(G,saved=null){
 }
 export const saveData=st=>({x:+st.x.toFixed(2),z:+st.z.toFixed(2),heading:+st.heading.toFixed(3),s:+st.s.toFixed(1),best:+st.best.toFixed(1),elapsed:Math.round(st.elapsed),distance:Math.round(st.distance),ascent:Math.round(st.ascent),stamps:st.stamps,done:st.done});
 
-/** 지금 자리에서 걷는 속도(m/s). 관악산과 같은 공식: 계단 0.5m/s, 오르막은 느려짐 */
+// 계단 구간 목록(그림 buildStoneStairs와 같은 셈: 오르는 높이 ÷ 단 높이 = 단 수). tread = 한 단 앞뒤 폭(m)
+export function stairRuns(G){
+ if(G._stairRuns)return G._stairRuns;const P=G.points,runs=[];let cur=null;
+ for(let i=0;i<P.length-1;i++){if(P[i].stairs){if(!cur)runs.push(cur={s0:P[i].s,y0:P[i].y});cur.s1=P[i+1].s;cur.y1=P[i+1].y;}else cur=null;}
+ for(const r of runs){r.steps=Math.max(1,Math.round((r.y1-r.y0)/NAMSAN.riser));r.tread=(r.s1-r.s0)/r.steps;}
+ return G._stairRuns=runs;
+}
+export const stairTread=(G,s)=>stairRuns(G).find(r=>s>=r.s0&&s<=r.s1)?.tread??.3;
+/**
+ * 남산 돌계단 걸음(11-21 대표 지적 「계단에서 너무 느림」): 관악산 돌계단(한 단 0.3m·0.5m/s)을 그대로 쓰면
+ * 남산의 넓고 완만한 단(0.6~1.8m)에서 지나치게 느리다. 같은 걸음 수(초당 STAIR_WALK_CADENCE)로 한 단 폭만큼 나아가되,
+ * 같은 기울기 포장길보다 빠르지 않게. 보폭(애니메이션)도 같은 값. 돌려줌 {speed(m/s), stride(m)}
+ */
+export function stairGait(G,s,slope,dir=1){
+ const paved=speedFor(slope,'paved',dir),floor=speedFor(0,'stairs');
+ const speed=Math.min(paved,Math.max(floor,stairTread(G,s)*STAIR_WALK_CADENCE));
+ return {speed,stride:speed/STAIR_WALK_CADENCE};
+}
+/** 지금 자리에서 걷는 속도(m/s). 길은 관악산과 같은 공식(오르막은 느려짐), 계단은 stairGait. 달리기는 계단에서도 됨(관악산과 같음) */
 export function speedAt(G,st,dirX,dirZ,{run=false,backward=false}={}){
  const pl=placeOf(G,st.x,st.z);let v;
  if(pl.onCourse&&!pl.inSummit&&!pl.inStart){
   const k=courseAt(G.points,pl.hit.s),along=dirX*k.tx+dirZ*k.tz,dir=along<0?-1:1,slope=courseSlope(G,pl.hit.s)*dir;
-  v=speedFor(slope,pl.stairs?'stairs':'paved',dir);
+  v=pl.stairs?stairGait(G,pl.hit.s,slope,dir).speed:speedFor(slope,'paved',dir);
  }else v=speedFor(0,'paved',1);
- return v*(run&&!pl.stairs?WALK.run:1)*(backward?WALK.backward:1);
+ return v*(run?WALK.run:1)*(backward?WALK.backward:1);
 }
 
 /**

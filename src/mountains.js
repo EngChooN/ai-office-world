@@ -9,7 +9,7 @@ const card=({id,name,altitudeM,course,summitName,distanceKm,etaMin,stampCount,di
 export const MOUNTAINS=Object.freeze([
  // 관악산 숫자(예상 시간 97분 등)는 src/mountains/gwanak.js
  Object.freeze({...card(GWANAK),ready:true}),
- // 남산(11-19, 월드디자인 설계 v1 §8 · 대표 결정: 성곽 계단길·265m). 코스 길이 1,067m(assets/shared/namsan/course.json), 걷기 공식 26.6분 → 카드 30분
+ // 남산(11-19, 월드디자인 설계 v1 §8 · 대표 결정: 성곽 계단길·265m). 코스 길이 1,067m(assets/shared/namsan/course.json), 걷기 공식 26.6분 → 카드 30분 → 11-21 남산 계단 속도(넓은 단) 고친 뒤 16.8분 → 카드 17분
  // 숫자는 src/mountains/namsan.js(남산 산 정의, 통합 5단계) — 값은 11-19 카드 그대로
  Object.freeze({...card(NAMSAN_MOUNTAIN),ready:true,page:NAMSAN_MOUNTAIN.page,tag:NAMSAN_MOUNTAIN.tag}),
 ]);

@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createNamsanGround,courseAt,NAMSAN} from '../src/namsan/namsan-data.js';
 import {TOWER} from '../src/namsan/namsan-art.js';
-import {WALK,createWalkState,stepWalk,walkHeight,walkable,placeOf,jumpTo,saveData,NAMSAN_SERVERS,namsanRoom,isNamsanRoom} from '../src/namsan/namsan-walk.js';
+import {WALK,createWalkState,stepWalk,walkHeight,walkable,placeOf,jumpTo,saveData,speedAt,stairRuns,NAMSAN_SERVERS,namsanRoom,isNamsanRoom} from '../src/namsan/namsan-walk.js';
 import {MOUNTAINS,mountainById} from '../src/mountains.js';
 import {findServer,SERVERS} from '../src/multi-protocol.js';
 import {statusView,roomLabel} from '../src/multi-entry-ui.js';
@@ -18,12 +18,12 @@ const buf=readFileSync(dir+meta.terrain.file),land=readFileSync(dir+meta.landcov
 const data={meta,terrain:{...meta.terrain,values:new Float32Array(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength)),land:new Uint8Array(land)},course:JSON.parse(readFileSync(dir+'course.json','utf8')),walls:[],forest:null};
 const G=createNamsanGround(data),END=G.points.at(-1).s;
 
-test('자동 걷기로 출발부터 정상까지 끝까지 오른다(약 30분 · 스탬프 4 · 높이가 튀지 않음)', ()=>{
+test('자동 걷기로 출발부터 정상까지 끝까지 오른다(약 17분 · 스탬프 4 · 높이가 튀지 않음)', ()=>{
  const st=createWalkState(G);st.auto=true;let t=0,prev=walkHeight(G,st),maxJump=0,stuck=0,lastS=st.s;
  while(!st.done&&t<3600){const r=stepWalk(G,st,{auto:true},.1);t+=.1;const y=walkHeight(G,st);maxJump=Math.max(maxJump,Math.abs(y-prev));prev=y;
   assert.ok(walkable(G,st.x,st.z),`${st.s.toFixed(0)}m에서 걷는 곳 밖`);if(st.s<=lastS+1e-4)stuck++;else stuck=0;lastS=st.s;assert.ok(stuck<50,`${st.s.toFixed(0)}m에서 멈춤`);}
  assert.ok(st.done,'정상 도착');
- const min=t/60;assert.ok(min>20&&min<32,`걸린 시간 ${min.toFixed(1)}분(설계 26.6분)`);
+ const min=t/60;assert.ok(min>14&&min<20,`걸린 시간 ${min.toFixed(1)}분(11-21 계단 속도 고친 뒤 16.8분)`);
  assert.deepEqual([...st.stamps].sort(),[1,2,3,4]);
  assert.ok(maxJump<.45,`0.1초 사이 높이 차 최대 ${maxJump.toFixed(2)}m`);
  assert.ok(st.ascent>140&&st.ascent<200,`오른 높이 ${st.ascent.toFixed(0)}m`);
@@ -41,6 +41,13 @@ test('걷는 곳: 길 폭 안·두 광장 안만, 전망탑 받침과 길 밖 �
  assert.ok(walkable(G,st.x,st.z));assert.ok(placeOf(G,st.x,st.z).hit.distance<NAMSAN.stairWidth/2);
 });
 
+test('남산 계단 속도(11-21): 넓은 단이라 관악산 돌계단 0.5m/s보다 빠르고 포장 오르막보다 느리지 않음, 계단에서도 달리기', ()=>{
+ for(const r of stairRuns(G).filter(r=>r.s1-r.s0>20)){const st=createWalkState(G);jumpTo(G,st,(r.s0+r.s1)/2);const k=courseAt(G.points,st.s);
+  const walk=speedAt(G,st,k.tx,k.tz),run=speedAt(G,st,k.tx,k.tz,{run:true});
+  assert.ok(walk>.75&&walk<1.3,`${r.s0.toFixed(0)}m 계단 걷기 ${walk.toFixed(2)}m/s`);
+  assert.ok(Math.abs(run/walk-WALK.run)<1e-9,`${r.s0.toFixed(0)}m 계단 달리기 배율`);}
+});
+
 test('계단 위 높이는 계단 디딤돌 높이(코스 높이)를 따른다', ()=>{
  const st=createWalkState(G);jumpTo(G,st,600);const k=courseAt(G.points,600);
  assert.ok(k.stairs);assert.ok(Math.abs(walkHeight(G,st)-k.y)<.05);
@@ -55,7 +62,7 @@ test('이어 오르기 저장: 저장값으로 같은 자리, 걷는 곳 밖이�
 test('산 고르기: 남산 카드 값(설계서 §8)과 페이지, 관악산은 그대로', ()=>{
  const n=mountainById('namsan'),g=mountainById('gwanak');
  assert.equal(MOUNTAINS.length,2);assert.equal(MOUNTAINS[0].id,'gwanak','관악산이 첫 카드');
- assert.deepEqual({name:n.name,alt:n.altitudeM,km:n.distanceKm,eta:n.etaMin,stamps:n.stamps,diff:n.difficulty,page:n.page,summit:n.summitName},{name:'남산',alt:265,km:1.1,eta:30,stamps:4,diff:'쉬움',page:'namsan/',summit:'남산 정상'});
+ assert.deepEqual({name:n.name,alt:n.altitudeM,km:n.distanceKm,eta:n.etaMin,stamps:n.stamps,diff:n.difficulty,page:n.page,summit:n.summitName},{name:'남산',alt:265,km:1.1,eta:17,stamps:4,diff:'쉬움',page:'namsan/',summit:'남산 정상'});
  assert.equal(n.stamps,NAMSAN.stamps.length);assert.ok(Math.abs(n.distanceKm*1000-END)<60);
  assert.equal(n.art.summit,'tower');assert.equal(n.art.course,'zigzag-left');
  assert.equal(g.page,undefined,'관악산은 지금 페이지');assert.equal(g.summitName,'연주대');assert.equal(g.altitudeM,632);

@@ -1,3 +1,4 @@
+import {STABLE_HASH_GLSL} from '../namsan/namsan-rock-mask.js';
 import * as THREE from 'three';
 import {mergeGeometries,mergeVertices} from 'three/addons/utils/BufferGeometryUtils.js';
 import {patchFoliage as patchRealFoliage,foliageUniforms,foliageKind} from '../../assets/realistic/foliage-shader.js';
@@ -100,13 +101,13 @@ export function createToonMaterials({gradientMap}){
  // ── 지형(3단계): 완만한 사면은 풀밭·숲 덩어리, 급한 사면·고지 암반은 회백색 암벽(가로 층·큰 얼룩), 바위 턱 위엔 풀. ──
  // 경계는 값 잡음(fbm) 덩어리로 끊는다. 사인 띠 무늬는 멀리서 줄·소용돌이로 이어 보여 쓰지 않는다(정상 사면 수정 때 교훈).
  // 먼 곳은 무늬를 평균 톤으로 접고, 풀밭은 멀수록 밝고 푸르게(기준값 §2-7). 먼 산을 푸르게 녹이는 건 index.js의 낮 연무.
- let terrainMaterial,terrainGradient;
- function terrain({vertexColors=false}={}){
-  if(terrainMaterial&&terrainMaterial.vertexColors===vertexColors)return terrainMaterial;
+ const terrainMaterials=new Map();let terrainGradient;
+ function terrain({vertexColors=false,stableHash=false}={}){
+  const terrainKey=`${vertexColors}:${stableHash}`;if(terrainMaterials.has(terrainKey))return terrainMaterials.get(terrainKey);
   // 땅은 부드러운 3단(0.6/0.82/1.0): 해를 등진 사면이 짙은 띠로 끊기지 않게(「야생의 숨결」 풀밭 사면은 명암 차가 작다).
   terrainGradient??=createGradientMap(TOON.terrainGradient);
   const t=TOON.terrain,m=share(toon({color:0xffffff,vertexColors,name:'toon-terrain',gradientMap:terrainGradient}));
-  const c=k=>linear(t[k]),u={tMeadow:{value:c('meadow')},tMeadowFar:{value:c('meadowFar')},tForest:{value:c('forest')},tHigh:{value:c('highForest')},tRock:{value:c('rock')},tRockDark:{value:c('rockDark')},tSoil:{value:c('soil')},tMoss:{value:linear(TOON.nature.moss)},tMossDark:{value:linear(TOON.nature.mossDark)}};
+  const c=k=>linear(t[k]),u=stableHash?terrain({vertexColors}).userData.toonUniforms:{tMeadow:{value:c('meadow')},tMeadowFar:{value:c('meadowFar')},tForest:{value:c('forest')},tHigh:{value:c('highForest')},tRock:{value:c('rock')},tRockDark:{value:c('rockDark')},tSoil:{value:c('soil')},tMoss:{value:linear(TOON.nature.moss)},tMossDark:{value:linear(TOON.nature.mossDark)}};
   m.userData.toonUniforms=u;
   const f=v=>v.toFixed(4);
   m.onBeforeCompile=shader=>{
@@ -117,7 +118,7 @@ export function createToonMaterials({gradientMap}){
     varying vec3 vTtWorld;varying float vTtUp;varying vec3 vTtN;uniform vec3 tMeadow,tMeadowFar,tForest,tHigh,tRock,tRockDark,tSoil,tMoss,tMossDark;
     ${ROCK_CELL_GLSL}${ROCK_BASE_DECL}${BRUSH_GLSL}
     ${WAVE_UNIFORMS_GLSL}\n${WAVE_GLSL}
-    float ttHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+    ${stableHash?STABLE_HASH_GLSL:'float ttHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}'}
     float ttNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(ttHash(i),ttHash(i+vec2(1,0)),f.x),mix(ttHash(i+vec2(0,1)),ttHash(i+vec2(1,1)),f.x),f.y);}
     float ttFbm(vec2 p){return ttNoise(p)*.58+ttNoise(p*2.13+vec2(5.2,1.3))*.28+ttNoise(p*4.71+vec2(1.7,9.2))*.14;}
     // 경계 폭을 화면 미분으로 잡아 계단·깜빡임 없이 두 톤으로 끊는다.
@@ -225,8 +226,8 @@ export function createToonMaterials({gradientMap}){
      reflectedLight.indirectDiffuse*=mix(vec3(1.),vec3(.86,.95,1.12),ttSnow);
      ${rockShadeGLSL('ttRockMask',TOON.nature.rockShadeDirect.toFixed(3))}`);
   };
-  m.customProgramCacheKey=()=>`toon-terrain-v7-season-${vertexColors}`;
-  return terrainMaterial=m;
+  m.customProgramCacheKey=()=>`toon-terrain-v7-season-${vertexColors}-${stableHash}`;
+  terrainMaterials.set(terrainKey,m);return m;
  }
  // 상시 바닥(NearDEM8m)용: 같은 지형 셰이더에 깊이 밀기만 더한다. 정밀 청크와 거의 겹치는 급경사에서 청크가 이기게 한다.
  const underlays=new WeakMap();

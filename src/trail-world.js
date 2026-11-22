@@ -50,13 +50,15 @@ export const OFFER_LABEL=Object.freeze({gym:'산스장 들르기',bench:'벤치�
 export const OFFER_ICON=Object.freeze({gym:'h-gym-barbell',bench:'c-sit',airgun:'h-airgun',cat:'h-cat'}); // 화면 아이콘(아이콘-규칙-v1 §7)
 
 // env() = {season,hour}(출현 가중용, 시간 칸이 바뀔 때만 읽음), now() = 배회 시계(ms, 기본 Date.now — 여러 컴퓨터가 같은 값을 쓰도록 실제 시계).
-export function createTrailWorld({scene,camera,hiker,landscape,toonify,auto,sound=null,env=()=>({}),now=()=>Date.now()}){
- const height=(x,z)=>landscape.surfaceHeight(x,z),info=landscape.status.trailProps??{sites:[],zones:[]};
+// 다른 산(11-21 남산): 관악산 지형(landscape) 대신 height(x,z)·sites(소품 자리, 없으면 [])·zones(출현 구역)·measure(코스 {length,at(u)→{x,z,tx,tz,width},nearest(x,z)→{m,d}})·
+//  halfWidth(u)·lanes(animal-zones.js lanes: 그 산의 허용 폭·금지·최종 판정)·treeNear(x,z,r)를 넘긴다. 안 넘기면 관악산 그대로.
+export function createTrailWorld({scene,camera,hiker,landscape=null,toonify,auto,sound=null,env=()=>({}),now=()=>Date.now(),height:heightOpt=null,sites=null,zones:zonesOpt=null,measure:measureOpt=null,halfWidth:halfWidthOpt=null,lanes=undefined,treeNear=null}){
+ const height=heightOpt??((x,z)=>landscape.surfaceHeight(x,z)),info=landscape?.status?.trailProps??{sites:[],zones:[]};
  const root=new THREE.Group();root.name='즐길거리';root.userData.metricKind='즐길거리';scene.add(root);
  const fxRoot=new THREE.Group();fxRoot.name='즐길거리 효과';scene.add(fxRoot);
  const acts=createHikerActs(hiker,{toonify,world:fxRoot});
  // ── 소품(가까이 있을 때만 모형을 만든다)
- const props=info.sites.map(s=>({...s,obj:null}));
+ const props=(sites??info.sites).map(s=>({...s,obj:null}));
  const frameOf=s=>new THREE.Matrix4().compose(new V3(s.x,s.y,s.z),new THREE.Quaternion().setFromAxisAngle(new V3(0,1,0),s.yaw),new V3(1,1,1));
  // 경사에 놓인 벤치: 다리 네 개 밑을 땅까지 받침돌로 채운다
  const addFootings=s=>{for(const [lx,lz] of [[-.62,.12],[.62,.12],[-.62,-.22],[.62,-.22]]){const w=new V3(lx,0,lz).applyMatrix4(s.obj.matrixWorld),h=s.y-height(w.x,w.z);if(!(h>.015))continue;
@@ -66,17 +68,17 @@ export function createTrailWorld({scene,camera,hiker,landscape,toonify,auto,soun
    if(!s.obj&&d<near){s.obj=makeTrailProp(s.kind,toonify);s.obj.position.set(s.x,s.y,s.z);s.obj.rotation.y=s.yaw;s.obj.name=`${s.id} · 즐길거리(추정 위치)`;s.obj.userData.site=s;root.add(s.obj);s.obj.updateMatrixWorld(true);if(s.kind==='bench')addFootings(s);if(s.kind==='gym')sfx.prepareRadio();}
    else if(s.obj&&d>near+80&&active?.site!==s){root.remove(s.obj);s.obj=null;if(s.kind==='gym')sfx.radio(null);}}}; // 모형을 떼면 라디오도 멈춤
  // ── 동물: 구역 → 이번 시간 칸의 출현 목록(spawns) → 가까운 3마리만 모형. 배회 좌표 (u,v)는 toWorld로 월드 자리가 된다.
- const zones=info.zones??[],zoneById=new Map(zones.map(z=>[z.id,z])),measure=landscape.route?.length?routeMeasure(landscape.route):null;
- const halfWidth=m=>measure?measure.at(m).width/2:1.1;
+ const zones=zonesOpt??info.zones??[],zoneById=new Map(zones.map(z=>[z.id,z])),measure=measureOpt??(landscape?.route?.length?routeMeasure(landscape.route):null);
+ const halfWidth=halfWidthOpt??(m=>measure?measure.at(m).width/2:1.1);
  const toWorld=(zone,u,v,out=new V3())=>{if(zone.frame){const f=zone.frame,c=Math.cos(f.yaw),s=Math.sin(f.yaw);return out.set(f.x+u*c+v*s,0,f.z-u*s+v*c);}const p=measure.at(u);return out.set(p.x-p.tz*v,0,p.z+p.tx*v);};
  // 허용 폭·금지 원 확인(animal-zones.js spotOk)에 쓰는 월드 자리. 표본마다 새 벡터를 만들지 않게 하나를 돌려 쓴다.
  const LW=new V3(),laneWorld=(zone,u,v)=>toWorld(zone,u,v,LW);
  const usable=zones.filter(z=>z.frame||measure);
  let slot=null,spawns=[];
  function refreshSpawns(sec){const sl=slotOf(sec,R.animalSlot);if(sl===slot)return;slot=sl;const e=env()??{};
-  spawns=usable.flatMap(z=>zoneSpawns(z,sl,{season:e.season,hour:e.hour,halfWidth,toWorld:laneWorld,slotSeconds:R.animalSlot,salt:e.salt??''}));
+  spawns=usable.flatMap(z=>zoneSpawns(z,sl,{season:e.season,hour:e.hour,halfWidth,toWorld:laneWorld,slotSeconds:R.animalSlot,salt:e.salt??'',lanes}));
   for(const sp of spawns){const p=toWorld(zoneById.get(sp.zone),sp.u,sp.v);sp.x=p.x;sp.z=p.z;}}
- const plan=(a,sec)=>wanderAt(a.spawn,sec,zoneById.get(a.spawn.zone),halfWidth,laneWorld);
+ const plan=(a,sec)=>wanderAt(a.spawn,sec,zoneById.get(a.spawn.zone),halfWidth,laneWorld,lanes);
  const animals=new Map(),SCALE={squirrel:1.25,cat:1.15,magpie:1.3,hare:1.35}; // 토끼 1.35배 = 몸길이 약 0.5m(멧토끼 크기). 1.15배는 가을 풀에 묻혀 안 보였다
  // c = 출현 목록 한 줄(spawn) 또는 임시 동물(벤치 고양이: x·y·z·state). 출현 동물은 지금 시각의 배회 자리에서 시작한다.
  const makeAnimal=c=>{const g=new THREE.Group();g.name=`${c.id} · 동물`;g.rotation.order='YXZ';
@@ -175,7 +177,7 @@ export function createTrailWorld({scene,camera,hiker,landscape,toonify,auto,soun
   if(w.mode==='climb'||w.mode==='hidden'||w.mode==='fly')a.moved=0;a.pos.copy(T);return w;};
  // 다람쥐 나무 타기: 6m 안 나무 밑동으로 뛰어가 줄기를 타고 올라 사라진다. 나무를 못 찾으면 길 바깥 덤불로 뛰어들어 사라진다.
  const climbTree=(a,w)=>{const z=zoneById.get(a.spawn.zone);
-  if(a.climbLeg!==w.leg){a.climbLeg=w.leg;const from=a.pos.clone(),tr=landscape.treeNear?.(from.x,from.z,6);
+  if(a.climbLeg!==w.leg){a.climbLeg=w.leg;const from=a.pos.clone(),tr=(treeNear??landscape?.treeNear)?.(from.x,from.z,6);
    if(tr){const d=Math.hypot(tr.x-from.x,tr.z-from.z)||1,base=new V3(tr.x+(from.x-tr.x)/d*.32,0,tr.z+(from.z-tr.z)/d*.32);a.climb={from,base,tree:new V3(tr.x,0,tr.z)};}
    else{const out=z.frame?from.clone().add(new V3(Math.sin(a.yaw)*1.5,0,Math.cos(a.yaw)*1.5)):toWorld(z,w.u,w.v+Math.sign(w.v||1)*1.6);a.climb={from,base:out,tree:null};}}
   const c=a.climb,k=w.k,k1=Math.min(1,k/.35);a.pos.lerpVectors(c.from,c.base,k1);
@@ -333,6 +335,11 @@ export function createTrailWorld({scene,camera,hiker,landscape,toonify,auto,soun
     if(d.frameChild&&!child)continue;const sp=acts.spotOf(act,o.matrixWorld),dd=Math.hypot(sp.x-x,sp.z-z);if(dd<.6&&(!best||dd<best.d))best={d:dd,frame:o.matrixWorld.clone(),target:s.obj};}
    return best&&{frame:best.frame,target:best.target};},
   stop:()=>{if(active?.stage==='act')acts.stop();},
+  // F(상호작용 키, 11-21 남산): 지금 칩이 가리키는 것(들르기 4초 또는 옆 버튼 하나)을 누른 것과 같게. 했으면 true. chipActive = F가 이것을 할지
+  chipActive:()=>!!chipTarget&&!active&&!acts.active,
+  interact(){const t=chipTarget;if(!t||active||acts.active)return false;
+   if(offerAt&&offerAt.id===t.id)return play(offerAt.act,offerAt.id,{from:lastPos,auto:true});
+   const b=TRAIL_BUTTONS[t.kind];if(!b)return false;return play(t.act??b[0].act,t.id,{from:lastPos,auto:false});},
   // 검수용: 들르기·동작을 바로 그만둔다(제자리)
   reset(){acts.cancel();if(active?.wasAuto)auto.set(true);active=null;},
   update(dt,{position,moving=false,speed=0,input=false,runner=null}){clock+=dt;lastPos=position;lastMoving=moving;
@@ -385,7 +392,9 @@ export function createTrailWorld({scene,camera,hiker,landscape,toonify,auto,soun
   summon(kind,{ahead=9,offset=3,side=1}={}){if(!measure||!ANIMAL_STYLE[kind])return null;const near=measure.nearest(lastPos[0],lastPos[2]);let zone,u,v;
    // 길에서 10m 넘게 떨어져 있으면(입구 광장 출발) 일주문 기준 구역에서 등산객 둘레(기준 좌표 +z 쪽 ahead m)에 부른다
    if(near.d>10&&(zone=usable.find(z=>z.frame))){const f=zone.frame,c=Math.cos(f.yaw),sn=Math.sin(f.yaw),dx=lastPos[0]-f.x,dz=lastPos[2]-f.z;u=dx*c-dz*sn+side*offset;v=dx*sn+dz*c+ahead;}
-   else{u=Math.min(measure.length-1,near.m+ahead);zone=usable.find(z=>!z.frame&&u>=z.from&&u<z.to);v=side*(halfWidth(u)+Math.min(offset,laneLimit(u,side)));} // 물·절벽 쪽은 허용 폭까지만
+   else{u=Math.min(measure.length-1,near.m+ahead);zone=usable.find(z=>!z.frame&&u>=z.from&&u<z.to);v=side*(halfWidth(u)+Math.min(offset,(lanes?.laneLimit??laneLimit)(u,side)));} // 물·절벽 쪽은 허용 폭까지만
+   // 산별 최종 판정(lanes.allows, 남산 덤불 등)이 있으면 그 판정을 통과하는 가장 가까운 옆 거리로 옮긴다(관악산은 allows가 없어 그대로)
+   if(zone&&!zone.frame&&lanes?.allows&&!lanes.allows(u,v)){const hw=halfWidth(u),lim=s=>lanes.laneLimit(u,s);let best=null;for(let d=0;d<=5&&best==null;d+=.25)for(const s of [side,-side])for(const o of [offset+d,offset-d])if(best==null&&o>=1&&o<=lim(s)&&lanes.allows(u,s*(hw+o)))best=s*(hw+o);if(best!=null)v=best;}
    if(!zone)return null;const sec=now()/1000,sp={id:`summon-${kind}-${Math.round(u)}`,kind,zone:zone.id,slot,t0:sec,u,v,home:{u,v},seed:Math.round(Math.abs(u)*97)};const p=toWorld(zone,sp.u,sp.v);sp.x=p.x;sp.z=p.z;
    const onBody=new Set(['hat','ride','climb','to-head','bench','to-bench','petted']);for(const [id,a] of animals)if(!a.temp&&!onBody.has(a.state)){root.remove(a.g);animals.delete(id);if(a.spawn)goneUntil.set(id,clock+600);}spawns=spawns.filter(x=>!x.id.startsWith('summon-'));spawns.push(sp);goneUntil.delete(sp.id);return sp.id;},
   catToBench(){const s=props.find(p=>p.kind==='bench'&&p.obj&&acts.active?.id===p.id);if(!s)return false;catToBench(s.obj.matrixWorld.clone());return true;},

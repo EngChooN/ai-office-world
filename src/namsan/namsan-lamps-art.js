@@ -25,7 +25,7 @@ export const LAMP_COLORS=Object.freeze({pole:'#4b5d53',trim:'#33413a',plinth:'#a
 // ── 자리 정하기(three 그림 없음, 점검에서도 씀) ──
 // spots(real:false면 실제 광원을 붙이지 않음): [{x,y,z, yaw, kind:'path'|'stairs'|'plaza'|'rest'|'stop', twin, s?, boost, pool, lx,ly,lz, px,pz(빛 웅덩이 가운데)}]
 // washes: [{x,z, nx,nz(벽 면이 코스를 보는 방향), tx,tz, bot, top}]
-export function planNamsanLamps(G,{walls=[],lanterns=[],items=[]}={}){
+export function planNamsanLamps(G,{walls=[],lanterns=[],items=[],surface=G.ground}={}){
  const pts=G.points,end=pts.at(-1).s,spots=[],washes=[];
  const lines=walls.map(w=>wallLine(G,w)).filter(Boolean);
  const wallSamples=lines.flatMap(l=>l.P);
@@ -48,7 +48,7 @@ export function planNamsanLamps(G,{walls=[],lanterns=[],items=[]}={}){
    side=>{const x=m.x+m.nx*LAMPS.side*side,z=m.z+m.nz*LAMPS.side*side;return {side,x,z,wall:nearWall(x,z)};}).sort((a,b)=>b.wall-a.wall);
    for(const c of cand){
     if(c.wall<WALL_IN||G.nearest(c.x,c.z).distance<LAMPS.side-.25||inPlaza(c.x,c.z,1.5)||onBus(c.x,c.z)||!clearOf(c.x,c.z))continue;
-    const y=G.ground(c.x,c.z),px=m.x+m.nx*.5*c.side,pz=m.z+m.nz*.5*c.side;
+    const y=surface(c.x,c.z),px=m.x+m.nx*.5*c.side,pz=m.z+m.nz*.5*c.side;
     add({x:c.x,y,z:c.z,yaw:Math.atan2(m.tx,m.tz),kind:m.stairs?'stairs':'path',s:+ss.toFixed(1),side:c.side,px,pz});placed=true;break;}
    if(placed)break;
   }
@@ -133,8 +133,8 @@ function surfaceY(G,x,z){
  return g+.08;
 }
 
-export function buildNamsanLamps(G,{walls=[],lanterns=[],items=[]}={}){
- const {spots,washes}=planNamsanLamps(G,{walls,lanterns,items});
+export function buildNamsanLamps(G,{walls=[],lanterns=[],items=[],surface=G.ground}={}){
+ const {spots,washes}=planNamsanLamps(G,{walls,lanterns,items,surface});
  const group=new THREE.Group();group.name='남산 가로등';const body=new THREE.Group();body.name='가로등 몸';group.add(body); // 붙이는 쪽은 body만 toonify
  const single=lampParts(),twin=lampParts({twin:true,plaza:true});
  const post=[],glass=[],m=new THREE.Matrix4(),q=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0),one=new THREE.Vector3(1,1,1),p=new THREE.Vector3();

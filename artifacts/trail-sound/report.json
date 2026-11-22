@@ -99,7 +99,7 @@
     "what": "켜짐: meow 파일 재생",
     "pass": true,
     "info": {
-     "n": 3
+     "n": 4
     }
    },
    {
@@ -141,7 +141,7 @@
     "what": "켜짐: caw 파일 재생",
     "pass": true,
     "info": {
-     "n": 2
+     "n": 1
     }
    },
    {
@@ -162,7 +162,7 @@
     "what": "켜짐: munch 파일 재생",
     "pass": true,
     "info": {
-     "n": 2
+     "n": 4
     }
    },
    {
@@ -182,8 +182,8 @@
     "pass": true,
     "info": {
      "munch": [
-      2,
-      2
+      3,
+      3
      ],
      "rustle": 1
     }
@@ -239,12 +239,12 @@
      ],
      "ctx": "running",
      "played": [
-      4,
-      4
+      5,
+      5
      ],
      "buffer": [
-      8,
-      8
+      9,
+      9
      ]
     }
    },
@@ -266,43 +266,43 @@
    "radio": 0,
    "loaded": [
     "squeak",
-    "caw",
-    "zap",
-    "pant",
-    "whoo",
-    "thump",
-    "airgun",
-    "rustle",
     "meow",
-    "scream",
-    "munch",
+    "caw",
     "crunch",
-    "roll"
+    "airgun",
+    "zap",
+    "whoo",
+    "munch",
+    "thump",
+    "pant",
+    "roll",
+    "rustle",
+    "scream"
    ],
-   "played": 26,
+   "played": 29,
    "muted": 0,
    "locked": 1,
    "late": 0,
    "errors": [],
    "byName": {
     "crunch": 1,
-    "caw": 2,
+    "meow": 4,
     "airgun": 1,
-    "meow": 3,
     "pant": 2,
     "scream": 1,
     "zap": 6,
     "roll": 2,
     "squeak": 2,
+    "caw": 1,
+    "munch": 4,
+    "thump": 2,
     "radio": 1,
     "whoo": 1,
-    "munch": 2,
-    "thump": 1,
     "rustle": 1
    }
   },
   "watch": {
-   "buffer": 57,
+   "buffer": 60,
    "osc": 3,
    "trailFetch": [
     "airgun-hiss.wav",

@@ -23,7 +23,7 @@ const mem=()=>{const m=new Map();return {getItem:k=>m.get(k)??null,setItem:(k,v)
 
 test('산 정의: 남산 카드 값은 11-19 카드 그대로, 저장 키 이름 그대로, 기능 스위치 이름이 관악산과 같다', ()=>{
  const card=MOUNTAINS.find(m=>m.id==='namsan');
- assert.deepEqual({...card},{id:'namsan',name:'남산',altitudeM:265,course:'백범광장 → 남산 정상 · 성곽 계단길',summitName:'남산 정상',distanceKm:1.1,etaMin:30,stamps:4,difficulty:'쉬움',ready:true,page:'namsan/',tag:'밤 전망 추천',art:{ridge:[.06,.14,.27,.42,.56,.5,.42,.35,.29,.23],peak:.44,summit:'tower',course:'zigzag-left'}});
+ assert.deepEqual({...card},{id:'namsan',name:'남산',altitudeM:265,course:'백범광장 → 남산 정상 · 성곽 계단길',summitName:'남산 정상',distanceKm:1.1,etaMin:17,stamps:4,difficulty:'쉬움',ready:true,page:'namsan/',tag:'밤 전망 추천',art:{ridge:[.06,.14,.27,.42,.56,.5,.42,.35,.29,.23],peak:.44,summit:'tower',course:'zigzag-left'}});
  assert.equal(NAMSAN_MOUNTAIN.saveKey,'namsan-hike:v1');assert.equal(NAMSAN_MOUNTAIN.progressKey,'namsan-interaction:v1');assert.equal(NAMSAN_MOUNTAIN.summitId,'namsan');
  assert.deepEqual(Object.keys(NAMSAN_FEATURES).sort(),Object.keys(GWANAK.features).sort());
  for(const k of ['spring','dip','cairn','summitStone','stamps','boards','binoculars','loveLocks','bus','nightBench'])assert.ok(NAMSAN_FEATURES[k],k);

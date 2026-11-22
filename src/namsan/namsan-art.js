@@ -1,3 +1,4 @@
+import {namsanRockValue,namsanLedgeGreen,NAMSAN_ROCK_CLEAR} from './namsan-rock-mask.js';
 // 남산 그림(월드아트, 11-19): 지형 판·코스 노면·돌계단·한양도성 성곽·게임 속 「남산 전망탑」·정상/출발 광장·이정표·스탬프함·쉼터·등불·숲.
 // 모두 MeshStandard(일부 꼭짓점 색·절차 캔버스 무늬)로 만들고, 붙이는 쪽이 toon.toonify(group,{kind:'prop'})로 카툰 재질로 바꾼다(관악산 시설과 같은 길).
 // 지형 판만 toon.materialFactory.terrain()을 받는다. 높이는 namsan-data.js createNamsanGround의 ground(x,z)를 쓴다.
@@ -8,6 +9,7 @@ import {trailSignModel,stampBoxModel} from '../../assets/realistic/interaction-p
 import {markerStone} from '../../assets/realistic/summit-facilities.js';
 import {bench} from '../toon/trail-props.js';
 import {NAMSAN,courseAt} from './namsan-data.js';
+import {namsanStairSteps} from './namsan-stair-steps.js';
 import {buildNamsanBus} from './namsan-bus-art.js';
 import {buildNamsanLamps} from './namsan-lamps-art.js';
 import {planNamsanInteract,INTERACT} from './namsan-interact-art.js';
@@ -87,6 +89,11 @@ export function buildNamsanTerrain(G,material,{tile=100,mobile=false}={}){
   const fi=(x-c.tx)/c.dx,fj=(z-c.tz)/c.dz,i=Math.max(0,Math.min(c.nx-1,Math.floor(fi))),j=Math.max(0,Math.min(c.nz-1,Math.floor(fj))),u=fi-i,v=fj-j;
   const X=k=>c.tx+c.dx*k,Z=k=>c.tz+c.dz*k,a=G.ground(X(i),Z(j)),b=G.ground(X(i+1),Z(j)),cc=G.ground(X(i),Z(j+1)),d=G.ground(X(i+1),Z(j+1));
   return u+v<=1?a+(b-a)*u+(cc-a)*v:d+(cc-d)*(1-u)+(b-d)*(1-v);};
+ // 셰이더는 실제 면의 기울기가 아니라 각 꼭짓점 법선의 y를 보간해 색을 정한다.
+ surface.slope=(x,z)=>{const c=cells.get(`${Math.floor((x-x0)/tile)},${Math.floor((z-z0)/tile)}`);if(!c)return 0;
+  const fi=(x-c.tx)/c.dx,fj=(z-c.tz)/c.dz,i=Math.max(0,Math.min(c.nx-1,Math.floor(fi))),j=Math.max(0,Math.min(c.nz-1,Math.floor(fj))),u=fi-i,v=fj-j,e=.8;
+  const up=(a,b)=>{const px=c.tx+c.dx*a,pz=c.tz+c.dz*b,dx=G.ground(px+e,pz)-G.ground(px-e,pz),dz=G.ground(px,pz+e)-G.ground(px,pz-e);return 2*e/Math.hypot(dx,2*e,dz);};
+  const a=up(i,j),b=up(i+1,j),cc=up(i,j+1),d=up(i+1,j+1);return 1-(u+v<=1?a+(b-a)*u+(cc-a)*v:d+(cc-d)*(1-u)+(b-d)*(1-v));};
  group.userData.triangles=tris;group.userData.surface=surface;return group;
 }
 
@@ -101,13 +108,44 @@ export function buildCoursePath(G){
  const runs=[];for(const run of courseRuns(pts,false)){let cur=null;for(const i of run){if(onPlaza(pts[i])){cur=null;continue;}if(!cur)runs.push(cur=[]);cur.push(i);}}
  for(const run of runs.filter(r=>r.length>1)){
   const F=frames(pts,run),pos=[],idx=[],col=[];
-  F.forEach(({p,nx,nz},k)=>{for(const s of [-1,1]){pos.push(p.x+nx*W/2*s,p.y+.05,p.z+nz*W/2*s);const c=new THREE.Color(NAMSAN_COLORS.path).multiplyScalar(.96+.06*Math.sin(k*1.7+s));col.push(c.r,c.g,c.b);}
+  // 경계 단의 방향·폭·윗면을 길의 끝에 그대로 이어 붙인다.
+  for(const [k,atStart] of [[0,true],[F.length-1,false]]){
+   const i=run[k],stairIndex=atStart?i-1:i;
+   if(stairIndex<0||stairIndex>=pts.length-1||!pts[stairIndex].stairs)continue;
+   let lo=stairIndex,hi=stairIndex+1;while(lo>0&&pts[lo-1].stairs)lo--;while(hi<pts.length-1&&pts[hi].stairs)hi++;
+   const a=pts[lo],b=pts[hi],n=Math.max(1,Math.round((b.y-a.y)/NAMSAN.riser));
+   const plan=namsanStairSteps(pts,{s0:a.s,s1:b.s,y0:a.y,y1:b.y,steps:n}),step=atStart?plan.at(-1):plan[0];
+   // 계단 상자의 끝 안쪽까지 1cm 겹쳐, 코스 곡률·반올림 때문에 작은 틈이 남지 않게 한다.
+   // 이미 화면 확인한 477m의 끝점은 보존한다.
+   const m=step.mid,sign=atStart?1:-1,overlap=Math.max(0,step.depth/2-.01);
+   const p=pts[i].s===477.2?F[k].p:{...F[k].p,x:m.x+sign*m.tx*overlap,z:m.z+sign*m.tz*overlap};
+   F[k]={...F[k],p,nx:m.nx,nz:m.nz,width:NAMSAN.stairWidth,y:step.top+.02};
+  }
+  F.forEach(({p,nx,nz,width=W,y=p.y+.05},k)=>{for(const s of [-1,1]){pos.push(p.x+nx*width/2*s,y,p.z+nz*width/2*s);const c=new THREE.Color(NAMSAN_COLORS.path).multiplyScalar(.96+.06*Math.sin(k*1.7+s));col.push(c.r,c.g,c.b);}
    if(k){const a=(k-1)*2;idx.push(a,a+1,a+2,a+1,a+3,a+2);}});
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();surf.push(g);
   // 경계석: 0.18m 폭·노면 위 0.1m, 아래는 땅에 0.25m 묻힘
   for(let k=1;k<F.length;k++)for(const s of [-1,1]){const A=F[k-1],B=F[k],ax=A.p.x+A.nx*(W/2+.09)*s,az=A.p.z+A.nz*(W/2+.09)*s,bx=B.p.x+B.nx*(W/2+.09)*s,bz=B.p.z+B.nz*(W/2+.09)*s;
-   const L=Math.hypot(bx-ax,bz-az);if(L<.05)continue;const top=Math.max(A.p.y,B.p.y)+.15,bot=Math.min(G.ground(ax,az),G.ground(bx,bz),A.p.y,B.p.y)-.25;
-   const box=new THREE.BoxGeometry(.18,top-bot,L+.02);box.rotateX(Math.atan2(B.p.y-A.p.y,L)*0);box.rotateY(Math.atan2(bx-ax,bz-az));box.translate((ax+bx)/2,(top+bot)/2,(az+bz)/2);curb.push(box);}
+   const L=Math.hypot(bx-ax,bz-az);if(L<.05)continue;const nx=-(bz-az)/L*.09,nz=(bx-ax)/L*.09;
+   const ta=A.p.y+.15,tb=B.p.y+.15,ba=Math.min(G.ground(ax,az),A.p.y)-.25,bb=Math.min(G.ground(bx,bz),B.p.y)-.25;
+   // 윗면은 길 경사를 따라간다. 구간의 높은 쪽 높이로 통째로 상자를 만들면 낮은 쪽이 높은 벽이 된다.
+   const box=new THREE.BufferGeometry();box.setAttribute('position',new THREE.Float32BufferAttribute([
+    ax-nx,ba,az-nz,ax+nx,ba,az+nz,ax-nx,ta,az-nz,ax+nx,ta,az+nz,
+    bx-nx,bb,bz-nz,bx+nx,bb,bz+nz,bx-nx,tb,bz-nz,bx+nx,tb,bz+nz],3));
+   box.setIndex([0,2,1,1,2,3,4,5,6,5,7,6,0,4,2,2,4,6,1,3,5,3,7,5,2,6,3,3,6,7,0,1,4,1,5,4]);box.computeVertexNormals();curb.push(box);}
+ }
+ // 급한 굽이와 노면 경계는 양쪽 띠가 닿지 않는 쐐기 모양 빈틈이 생긴다.
+ // 길 높이를 따라가는 작은 원형 이음면으로 채운다. 계단 첫 단보다 낮게 두어 단을 가리지 않는다.
+ for(let i=1;i<pts.length-1;i++){
+  const a=pts[i-1],p=pts[i],b=pts[i+1],ax=p.x-a.x,az=p.z-a.z,bx=b.x-p.x,bz=b.z-p.z,L1=Math.hypot(ax,az),L2=Math.hypot(bx,bz);
+  const transition=!!a.stairs!==!!p.stairs,sharp=L1>0&&L2>0&&(ax*bx+az*bz)/(L1*L2)<.6;
+  if(transition||(!sharp||p.stairs)||onPlaza(p))continue;
+  const pathX=transition?(a.stairs?bx:-ax):0,pathZ=transition?(a.stairs?bz:-az):0;
+  const r=W/2+.06,pos=[p.x,p.y+.06,p.z],col=[],idx=[],color=new THREE.Color(NAMSAN_COLORS.path);
+  col.push(color.r,color.g,color.b);const count=24;
+  for(let j=0;j<=count;j++){const t=2*Math.PI*j/count,x=p.x+Math.cos(t)*r,z=p.z+Math.sin(t)*r,h=G.nearest(x,z).y;
+   pos.push(x,h+.06,z);col.push(color.r,color.g,color.b);if(j){const mid=2*Math.PI*(j-.5)/count;if(!transition||Math.cos(mid)*pathX+Math.sin(mid)*pathZ>=0)idx.push(0,j+1,j);}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();surf.push(g);
  }
  const surfMesh=new THREE.Mesh(mergeGeometries(surf),vstd());surfMesh.name='코스 마사토 길';surfMesh.receiveShadow=true;group.add(surfMesh);
  const curbMesh=new THREE.Mesh(mergeGeometries(curb),std(NAMSAN_COLORS.pathEdge));curbMesh.name='코스 경계석';curbMesh.receiveShadow=curbMesh.castShadow=true;group.add(curbMesh);
@@ -117,28 +155,68 @@ export function buildCoursePath(G){
 
 // ── 3. 돌계단: 계단 구간마다 오르는 높이를 단(목표 0.16m)으로 나눈다. 단 윗면은 그 단 가운데의 길 높이(걷는 높이와 ±단 높이/2 안).
 // 단마다 아래를 땅 밑 0.3m까지 채우고 양옆 돌 측벽을 세운다(떠 있는 계단 금지 — 관악산 규칙). 단 수는 게임 속 수(실제 계단 수와 비교 안 함).
+// 굽이에서 맞닿는 두 단의 끝 폭을 잇는다. 낮은 단보다 5mm 낮아 단을 덮지 않는다.
+export function stairTurnJoin(a,b,width){
+ const turn=Math.atan2(Math.sin(b.mid.heading-a.mid.heading),Math.cos(b.mid.heading-a.mid.heading));
+ if(Math.abs(turn)<.001)return null;
+ const edge=(step,dir,side)=>{const m=step.mid,d=step.depth/2+.03,w=width/2+.32;return {x:m.x+m.tx*d*dir+m.nx*w*side,z:m.z+m.tz*d*dir+m.nz*w*side};};
+ const points=[edge(a,1,-1),edge(a,1,1),edge(b,-1,-1),edge(b,-1,1)].sort((p,q)=>p.x-q.x||p.z-q.z);
+ const cross=(o,p,q)=>(p.x-o.x)*(q.z-o.z)-(p.z-o.z)*(q.x-o.x);
+ const half=arr=>{const out=[];for(const p of arr){while(out.length>=2&&cross(out.at(-2),out.at(-1),p)<=0)out.pop();out.push(p);}return out;};
+ const lo=half(points),hi=half([...points].reverse());lo.pop();hi.pop();return {polygon:[...lo,...hi],top:Math.min(a.top,b.top)+.015};
+}
+
+// 급한 머리핀에서는 서로 다른 높이의 계단 띠가 같은 땅을 차지한다.
+// 각 단을 가까운 단 중심 사이의 경계에서 잘라 하나의 단만 차지하게 한다.
+export const hairpinStep=s=>s.mid && (s.sA+s.sB)/2>=585 && (s.sA+s.sB)/2<=602;
+function clippedHairpinTread(step,plan,width,bottom,top){
+ const m=step.mid,d=(step.depth+.06)/2,w=width/2;
+ let p=[[-w,-d],[w,-d],[w,d],[-w,d]].map(([u,v])=>({x:m.x+m.nx*u+m.tx*v,z:m.z+m.nz*u+m.tz*v}));
+ for(const other of plan){if(other===step)continue;const q=other.mid,dx=q.x-m.x,dz=q.z-m.z;if(dx*dx+dz*dz>36||dx*dx+dz*dz<1e-10)continue;
+  const limit=(q.x*q.x+q.z*q.z-m.x*m.x-m.z*m.z)/2,inside=v=>v.x*dx+v.z*dz-limit;
+  const next=[];for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length],fa=inside(a),fb=inside(b);if(fa<=0)next.push(a);if((fa<0&&fb>0)||(fa>0&&fb<0)){const t=fa/(fa-fb);next.push({x:a.x+(b.x-a.x)*t,z:a.z+(b.z-a.z)*t});}}p=next;if(p.length<3)return null;
+ }
+ const pos=[],idx=[];for(const v of p)pos.push(v.x,top,v.z);for(const v of p)pos.push(v.x,bottom,v.z);
+ // 좌우 방향에 따라 윗면이 위를 향하도록 정렬한다.
+ let area=0;for(let i=0;i<p.length;i++){const a=p[i],b=p[(i+1)%p.length];area+=a.x*b.z-b.x*a.z;}
+ for(let i=1;i<p.length-1;i++)area>0?idx.push(0,i+1,i):idx.push(0,i,i+1);
+ for(let i=0;i<p.length;i++){const j=(i+1)%p.length;area>0?idx.push(i,j,p.length+i,j,p.length+j,p.length+i):idx.push(j,i,p.length+i,p.length+j,j,p.length+i);}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(new Array(p.length*4).fill(0),2));g.setIndex(idx);g.computeVertexNormals();return g;
+}
 export function buildStoneStairs(G){
  const pts=G.points,W=NAMSAN.stairWidth,group=new THREE.Group();group.name='남산 돌계단';
- const geos=[],curbs=[];let steps=0;const C=NAMSAN_COLORS;
+ const geos=[],curbs=[],joins=[];let steps=0;const C=NAMSAN_COLORS;
  const color=(g,top,side)=>{const n=g.attributes.position.count,ny=g.attributes.normal,col=new Float32Array(n*3);for(let i=0;i<n;i++){const c=ny.getY(i)>.5?top:side;col.set(c,i*3);}g.setAttribute('color',new THREE.BufferAttribute(col,3));return g;};
  const runs=courseRuns(pts,true),stairRuns=[];
  for(const run of runs){
   const a=pts[run[0]],b=pts[run.at(-1)],rise=b.y-a.y,len=b.s-a.s;if(len<1)continue;
   const n=Math.max(1,Math.round(rise/NAMSAN.riser));stairRuns.push({s0:a.s,s1:b.s,y0:a.y,y1:b.y,steps:n});
+  const stepPlan=namsanStairSteps(pts,{s0:a.s,s1:b.s,y0:a.y,y1:b.y,steps:n});
   for(let k=0;k<n;k++){
-   const sA=a.s+len*k/n,sB=a.s+len*(k+1)/n,m=courseAt(pts,(sA+sB)/2),depth=sB-sA,top=m.y+.02;
+   if(k){const a=stepPlan[k-1],b=stepPlan[k],inHairpin=hairpinStep(a)||hairpinStep(b);
+    // 급한 코너의 중심선에만 좁은 이음면을 둔다. 큰 이음면은 반대편 단까지 가로지른다.
+    const sharp=inHairpin&&((b.sA>592.2&&b.sA<592.5)||(b.sA>594&&b.sA<594.3));
+    const join=inHairpin?(sharp?stairTurnJoin(a,b,-.44):null):stairTurnJoin(a,b,W);if(join&&join.polygon.length>=3){
+    const P=join.polygon,bottom=Math.min(...P.map(p=>G.ground(p.x,p.z)),join.top-.2)-.3,pos=[],idx=[];
+    for(const p of P)pos.push(p.x,join.top,p.z);for(const p of P)pos.push(p.x,bottom,p.z);
+    for(let j=1;j<P.length-1;j++)idx.push(0,j+1,j);
+    for(let j=0;j<P.length;j++){const q=(j+1)%P.length;idx.push(j,q,P.length+j,q,P.length+q,P.length+j);}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(new Array(P.length*4).fill(0),2));g.setIndex(idx);g.computeVertexNormals();joins.push(color(g,C.stairTop,C.stairSide));
+   }}
+   const {mid:m,depth,top:height}=stepPlan[k],top=height+.02;
    const corners=[[-1,-1],[1,-1],[-1,1],[1,1]].map(([u,v])=>G.ground(m.x+m.nx*W/2*u+m.tx*depth/2*v,m.z+m.nz*W/2*u+m.tz*depth/2*v));
    const bot=Math.min(...corners,top-.2)-.3,tint=.94+.1*((k*7919)%13)/13;
-   const tread=color(new THREE.BoxGeometry(W,top-bot,depth+.06),C.stairTop.map(v=>v*tint),C.stairSide);
-   tread.rotateY(m.heading+Math.PI);tread.translate(m.x,(top+bot)/2,m.z);geos.push(tread);
-   for(const s of [-1,1]){const cx=m.x+m.nx*(W/2+.16)*s,cz=m.z+m.nz*(W/2+.16)*s,ctop=top+.2,cbot=Math.min(bot,G.ground(cx,cz)-.3);
+   const tread=hairpinStep(stepPlan[k])?clippedHairpinTread(stepPlan[k],stepPlan,W,bot,top):new THREE.BoxGeometry(W,top-bot,depth+.06);
+   if(tread){if(!hairpinStep(stepPlan[k])){tread.rotateY(m.heading+Math.PI);tread.translate(m.x,(top+bot)/2,m.z);}geos.push(color(tread,C.stairTop.map(v=>v*tint),C.stairSide));}
+   for(const s of (hairpinStep(stepPlan[k])?[]:[-1,1])){const cx=m.x+m.nx*(W/2+.16)*s,cz=m.z+m.nz*(W/2+.16)*s,ctop=top+.2,cbot=Math.min(bot,G.ground(cx,cz)-.3);
     const c=color(new THREE.BoxGeometry(.32,ctop-cbot,depth+.08),C.curb,C.curb.map(v=>v*.86));c.rotateY(m.heading+Math.PI);c.translate(cx,(ctop+cbot)/2,cz);curbs.push(c);}
    steps++;
   }
  }
  const treadMesh=new THREE.Mesh(mergeGeometries(geos),vstd());treadMesh.name='돌계단 디딤돌';treadMesh.castShadow=treadMesh.receiveShadow=true;group.add(treadMesh);
  const curbMesh=new THREE.Mesh(mergeGeometries(curbs),vstd());curbMesh.name='돌계단 측벽';curbMesh.castShadow=curbMesh.receiveShadow=true;group.add(curbMesh);
- geos.forEach(g=>g.dispose());curbs.forEach(g=>g.dispose());
+ if(joins.length){const mesh=new THREE.Mesh(mergeGeometries(joins),vstd());mesh.name='돌계단 굽이 이음면';mesh.castShadow=mesh.receiveShadow=true;group.add(mesh);}
+ geos.forEach(g=>g.dispose());curbs.forEach(g=>g.dispose());joins.forEach(g=>g.dispose());
  group.userData={steps,runs:stairRuns};return group;
 }
 
@@ -436,17 +514,21 @@ export function buildTrailForest(plan,toon,{height,mobile=false}={}){
 
 // ── 10. 풀밭(11-21): 관악산과 같은 카툰 풀밭(toon/grass-field.js, 카메라 둘레·같은 밀도·휴대폰은 화질 '낮음' 반경)을 남산 땅에 깐다 ──
 // 높이는 그려진 지형 면(terrain.userData.surface), 막힘은 코스 노면·경계석·돌계단·두 광장·성곽·버스 차로·시가지·시설·상호작용 소품 자리.
-export function namsanGrassGround(G,{surface=G.ground,walls=[],items=[],sites=[]}={}){
+export function namsanGrassGround(G,{surface=G.ground,walls=[],items=[],sites=[],lamps=[],rockMask=false}={}){
  const pathClear=NAMSAN.pathWidth/2+.2,stairClear=NAMSAN.stairWidth/2+.35,wallClear=WALL.thick/2+.55;
  // 성곽 가운데 선 점(1.5m 간격)을 8m 칸에 나눠 둔다
  const CELL=8,wallCells=new Map();
  for(const w of walls){const line=wallLine(G,w);if(!line)continue;for(const p of line.P){const k=`${Math.floor(p.x/CELL)},${Math.floor(p.z/CELL)}`;if(!wallCells.has(k))wallCells.set(k,[]);wallCells.get(k).push(p.x,p.z);}}
  const nearWall=(x,z,r)=>{const cx=Math.floor(x/CELL),cz=Math.floor(z/CELL);for(let j=-1;j<=1;j++)for(let i=-1;i<=1;i++){const a=wallCells.get(`${cx+i},${cz+j}`);if(!a)continue;for(let k=0;k<a.length;k+=2)if((a[k]-x)**2+(a[k+1]-z)**2<r*r)return true;}return false;};
  const ITEM_R={sign:.9,stamp:.9,'summit-stone':1.6,rest:3.6};
- const spots=[...items.filter(i=>i.x!=null).map(i=>({x:i.x,z:i.z,r:ITEM_R[i.kind]??1})),...sites];
+ const spots=[...items.filter(i=>i.x!=null).map(i=>({x:i.x,z:i.z,r:ITEM_R[i.kind]??1})),...sites,...lamps.map(p=>({x:p.x,z:p.z,r:.55}))];
  const busHalf=G.bus?G.bus.points[0].width/2+.6:0;
  function blocked(x,z,reach=0){
   if(!G.park(x,z))return true; // 시가지 바닥
+  if(rockMask&&surface.slope){
+   // 다발 중심뿐 아니라 잎이 닿는 가장자리도 검사한다.
+   for(const [dx,dz] of [[0,0],[reach,0],[-reach,0],[0,reach],[0,-reach]]){const xx=x+dx,zz=z+dz;const hh=surface(xx,zz),sl=surface.slope(xx,zz);if(namsanRockValue(xx,zz,hh,sl)>NAMSAN_ROCK_CLEAR&&!namsanLedgeGreen(xx,zz,hh,sl))return true;}
+  }
   for(const P of [G.plaza,G.startPlaza])if(Math.hypot(x-P.x,z-P.z)<P.r+.6+reach)return true;
   const hit=G.nearest(x,z),stairs=G.points[hit.index]?.stairs||G.points[hit.index+1]?.stairs;
   if(hit.distance<(stairs?stairClear:pathClear)+reach*.5)return true;
@@ -455,7 +537,7 @@ export function namsanGrassGround(G,{surface=G.ground,walls=[],items=[],sites=[]
   for(const s of spots)if(Math.hypot(x-s.x,z-s.z)<s.r+reach)return true;
   return false;
  }
- return {height:surface,blocked,heightMax:Infinity};
+ return {height:surface,blocked,heightMax:Infinity,slopeMax:.55};
 }
 // 상호작용 소품(약수터·물확·실개천·돌탑 무리) 자리: game.js가 붙이는 buildNamsanInteract와 같은 계획을 다시 구해 풀을 비운다
 function interactSites(G,{walls,lamps,lanterns,items}){
@@ -470,7 +552,7 @@ function interactSites(G,{walls,lamps,lanterns,items}){
 // terrainTile·forestKeep: 붙이는 쪽 성능 조절(월드개발 11-19, 휴대폰). 기본은 예전 그대로.
 export function buildNamsan({G,data,toon,forest=true,grass=true,mobile=false,terrainTile=100,forestKeep=null,forestNear=undefined}){
  const root=new THREE.Group();root.name='남산';
- const terrain=buildNamsanTerrain(G,toon.materialFactory.terrain(),{mobile,tile:terrainTile});toon.toonify(terrain,{kind:'prop'});
+ const terrain=buildNamsanTerrain(G,toon.materialFactory.terrain({stableHash:true}),{mobile,tile:terrainTile});toon.toonify(terrain,{kind:'prop'});
  const path=buildCoursePath(G),stairs=buildStoneStairs(G),wall=buildFortressWall(G,data.walls);
  // 쉼터는 성곽이 지나는 쪽(낮춘 단 위)에 둔다. 성곽이 없으면 남서쪽.
  {const lz=wallLowZone(G),near=data.walls.find(w=>w.courseSide&&w.points.some(p=>Math.hypot(p.x-lz.x,p.z-lz.z)<lz.r));if(near){G.restSide=near.courseSide;G.restOnWall=true;}}
@@ -483,12 +565,12 @@ export function buildNamsan({G,data,toon,forest=true,grass=true,mobile=false,ter
  toon.toonify(props,{kind:'prop'});toon.toonify(furniture,{kind:'prop',keepMaps:true});
  root.add(terrain,props,furniture);
  // 밤 가로등(월드아트 11-19): 코스·계단·광장·쉼터·정류장 등 + 성곽 벽 비춤. 불빛은 그림 효과, 실제 광원은 night-lighting.js lampPoints로(월드개발 연결)
- const lamps=buildNamsanLamps(G,{walls:data.walls,lanterns:lanterns.userData.spots,items:furniture.userData.items});toon.toonify(lamps.userData.body,{kind:'prop'});root.add(lamps);
+ const lamps=buildNamsanLamps(G,{walls:data.walls,lanterns:lanterns.userData.spots,items:furniture.userData.items,surface:terrain.userData.surface});toon.toonify(lamps.userData.body,{kind:'prop'});root.add(lamps);
  // 순환버스(월드아트 11-19): 차로·정류장·하차 지점·버스 한 대. 움직임은 월드개발(ns.bus.bus를 placeOnLane으로 옮김)
  const bus=G.bus?buildNamsanBus(G):null;if(bus){toon.toonify(bus.root,{kind:'prop',keepMaps:true});root.add(bus.root);}
  // 풀밭: 관악산과 같은 toon 풀밭(카메라 둘레). 매 프레임 갱신은 toon.pipeline.update가 한다.
  let grassField=null;if(grass&&toon.attachGround){const lampSpots=lamps.userData.spots??[],items=furniture.userData.items;
-  grassField=toon.attachGround(namsanGrassGround(G,{surface:terrain.userData.surface,walls:data.walls,items,sites:interactSites(G,{walls:data.walls,lamps:lampSpots,lanterns:lanterns.userData.spots,items})}));}
+  grassField=toon.attachGround(namsanGrassGround(G,{surface:terrain.userData.surface,walls:data.walls,items,lamps:lampSpots,rockMask:true,sites:interactSites(G,{walls:data.walls,lamps:lampSpots,lanterns:lanterns.userData.spots,items})}));}
  // 숲(11-21 관악산 수준으로): 자료 숲(forest.json) + 길가 숲 띠·덤불층(planTrailForest) + 가까운 나무만 입체 모양(관악산 near-trees.js, 화질별 개수·반경 같음)
  let trees=null,trail=null,near=null;const surface=terrain.userData.surface??G.ground;
  if(forest&&data.forest&&toon.natureParts){trees=buildForest(G,data.forest,toon.natureParts,{mobile,keep:forestKeep,height:surface,...(forestNear?{nearDist:forestNear}:{})});root.add(trees);

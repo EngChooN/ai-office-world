@@ -54,3 +54,12 @@ test('그림: 등이 몇 개든 그리기 5번, 받침이 땅속까지(경사에
  assert.equal(g.getObjectByName('가로등 유리').material.emissiveIntensity,0);
  g.userData.update(1);assert.equal(g.getObjectByName('가로등 바닥 빛').visible,true);assert.ok(g.getObjectByName('가로등 유리').material.emissiveIntensity>1);
 });
+
+test('코스 가로등 높이는 실제로 그린 지면을 따른다',()=>{
+ const shifted=planNamsanLamps(G,{walls:data.walls,surface:(x,z)=>G.ground(x,z)+2}).spots.filter(s=>s.s!=null);
+ assert.equal(shifted.length,route.length);
+ for(let i=0;i<route.length;i++){
+  assert.equal(shifted[i].x,route[i].x);
+  assert.ok(Math.abs(shifted[i].y-route[i].y-2)<1e-8);
+ }
+});
