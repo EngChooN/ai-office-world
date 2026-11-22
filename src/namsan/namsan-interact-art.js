@@ -141,13 +141,13 @@ function lockFenceParts(L,R){
  parts.push(beam([hx,1.2,hz],[hx,1.3,hz],.03,C.brass));
  return {parts,posts,span};
 }
-// 자물쇠 자리: 칸마다 쇠줄 3줄 × 0.11m. filled는 정해진 무늬(가운데 칸 빽빽, openBay는 듬성 — 새 자물쇠 걸 빈 자리)
+// 자물쇠 자리: 칸마다 쇠줄 3줄 × 0.11m. 11-22부터 처음엔 모두 빈 고리(미리 그린 가짜 자물쇠 없음 — 서버에 저장된 진짜 자물쇠만 setAll로 칠함).
+// 색·하트·크기·기울기 무늬(hash)는 남겨 색을 안 준 자물쇠에 씀
 function lockSlots(L,R){
  const span=L.bays*L.bay/R,slots=[];
  for(let b=0;b<L.bays;b++)for(const [k,y] of L.bars.entries()){const m=Math.floor((L.bay-.24)/L.pitch)+1;
   for(let j=0;j<m;j++){const f=-span/2+(b*L.bay+.12+j*L.pitch+(k%2)*L.pitch*.5)/R;if(f>-span/2+(b+1)*L.bay/R-.08/R)continue;
-   const id=slots.length,hh=hash(id*1.37+b*9.1),open=b===L.openBay,mid=Math.abs(b-(L.bays-1)/2)<1.2;
-   const filled=open?hh<.3:hh<(mid?.86:.72);
+   const id=slots.length,filled=false;
    slots.push({i:id,bay:b,bar:k,f,y,filled,color:INTERACT_COLORS.locks[Math.floor(hash(id*7.7)*INTERACT_COLORS.locks.length)],heart:hash(id*3.3)<.22,scale:.85+hash(id*5.1)*.4,tilt:(hash(id*2.9)-.5)*.5});}}
  return slots;
 }
@@ -240,7 +240,11 @@ export function buildNamsanInteract(G,opts={}){
   mineM.name='내 자물쇠 표시';mineM.userData.noToon=true;mineM.frustumCulled=false;mineM.renderOrder=2;mineM.count=0;g.add(mineM);
   const mine=new Map(); // 자리 → 걸린 시각(clock)
   const O=new THREE.Object3D(),zero=new THREE.Matrix4().makeScale(0,0,0),col=new THREE.Color();
-  const anim={i:-1,t0:0},aim={i:-1};let clock=0;
+  const anim={i:-1,t0:0},aim={i:-1},hov={i:-1};let clock=0;
+  for(const s of slots){s.color0=s.color;s.heart0=s.heart;}
+  // 마우스 올린 자물쇠(11-22): 1.25배 + 뒤에 흰 테두리 하나(내 자물쇠 금테와 같은 모양)
+  const hoverRing=new THREE.Mesh(new THREE.RingGeometry(.062,.088,16).translate(0,-.06,0),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.95,depthWrite:false,side:THREE.DoubleSide}));
+  hoverRing.name='자물쇠 고르기 테두리';hoverRing.userData.noToon=true;hoverRing.visible=false;hoverRing.renderOrder=3;g.add(hoverRing);
   // 테두리는 자물쇠 몸 바로 뒤(광장 반대쪽 2.5cm)라 앞에서 보면 자물쇠를 둘러싼 금테로 보임
   const placeMine=(s,k)=>{const r=RR+.025;O.position.set(Math.sin(s.f)*r,s.y,Math.cos(s.f)*r);O.rotation.set(0,s.f,0);O.rotateX(s.tilt*.3);O.scale.setScalar(s.scale*k);O.updateMatrix();return O.matrix;};
   const writeMine=()=>{if(mineM.material!==mineMat)mineM.material=mineMat; // 툰 변환(toonify)이 바꿔도 빛나는 색 재질로 되돌림
@@ -249,7 +253,7 @@ export function buildNamsanInteract(G,opts={}){
     mineM.setMatrixAt(n++,placeMine(s,k));}
    mineM.count=n;mineM.instanceMatrix.needsUpdate=true;};
   const place=(s,swing=0,drop=0,k=1)=>{O.position.set(Math.sin(s.f)*RR,s.y+drop,Math.cos(s.f)*RR);O.rotation.set(0,s.f,0);O.rotateX(s.tilt*.3+swing);O.scale.setScalar(s.scale*k);O.updateMatrix();return O.matrix;};
-  const write=s=>{const on=s.filled,mBody=on?place(s,anim.i===s.i?anim.swing:0,anim.i===s.i?anim.drop:0):zero;
+  const write=s=>{const on=s.filled,mBody=on?place(s,anim.i===s.i?anim.swing:0,anim.i===s.i?anim.drop:0,hov.i===s.i?1.25:1):zero;
    boxM.setMatrixAt(s.i,on&&!s.heart?mBody:zero);heartM.setMatrixAt(s.i,on&&s.heart?mBody:zero);shM.setMatrixAt(s.i,on?mBody:zero);
    emptyM.setMatrixAt(s.i,on?zero:place(s,0,0,aim.i===s.i?1.6+Math.sin(clock*6)*.25:1));
    col.set(s.color);boxM.setColorAt(s.i,col);heartM.setColorAt(s.i,col);emptyM.setColorAt(s.i,aim.i===s.i?col.set(C.aim):col.copy(emptyCol));};
@@ -270,6 +274,14 @@ export function buildNamsanInteract(G,opts={}){
     anim.i=i;anim.t0=clock;anim.swing=0;anim.drop=.22;write(s);flush();pop.position.set(Math.sin(s.f)*(RR-.1),s.y+.1,Math.cos(s.f)*(RR-.1));pop.rotation.set(0,s.f,0);return world(s);},
    // 다른 사람 자물쇠·저장된 상태 그대로 칠하기: [{i,color,heart}] (없는 자리는 기본 무늬)
    setFilled:list=>{for(const o of list){const s=slots[o.i];if(!s)continue;s.filled=true;if(o.color)s.color=o.color;if(o.heart!=null)s.heart=!!o.heart;if(o.mine)mine.set(o.i,-99);write(s);}flush();writeMine();},
+   // 난간 전체를 이 목록으로 다시 칠함(11-22): [{i,color,heart,mine}] 밖의 자리는 빈 고리. 흔들리는 중인 자리는 목록에 있으면 그대로 둠
+   setAll:list=>{const want=new Map();for(const o of list)if(slots[o.i])want.set(o.i,o);mine.clear();
+    for(const s of slots){const o=want.get(s.i);if(o){s.filled=true;s.color=o.color??s.color0;s.heart=o.heart!=null?!!o.heart:s.heart0;if(o.mine)mine.set(s.i,-99);}
+     else{if(anim.i===s.i){anim.i=-1;anim.swing=anim.drop=0;pop.material.opacity=0;}s.filled=false;s.color=s.color0;s.heart=s.heart0;}write(s);}
+    flush();writeMine();},
+   // 마우스 올림 강조. -1이면 끔
+   hover:i=>{if(hov.i===i)return;const prev=hov.i;hov.i=slots[i]?.filled?i:-1;if(prev>=0)write(slots[prev]);if(hov.i>=0){const s=slots[hov.i];write(s);hoverRing.position.set(Math.sin(s.f)*(RR+.028),s.y,Math.cos(s.f)*(RR+.028));hoverRing.rotation.set(0,s.f,0);hoverRing.rotateX(s.tilt*.3);hoverRing.scale.setScalar(s.scale*1.3);}
+    hoverRing.visible=hov.i>=0;flush();},
    // 내 자물쇠 표시를 이 자리들로 바꿈(저장된 내 것 다시 칠할 때). 막 건 효과 없이 은은한 테두리만
    markMine:list=>{mine.clear();for(const i of list)if(slots[i])mine.set(i,-99);writeMine();},
    // 걸 자리가 몸에 가리지 않는 카메라 추천: 난간 앞 비스듬히(사람 반대쪽 옆 50°, 2.4m, 걸 자리보다 0.85m 위)에서 걸 자리를 봄.

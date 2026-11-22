@@ -3,6 +3,8 @@
 // 환경 변수(코드 안에 경로·주소를 박지 않는다):
 //  PORT             기다릴 포트(기본 8787)          HOST            기다릴 주소(기본 0.0.0.0)
 //  DATA_DIR         신고 기록(reports.jsonl) 폴더(기본 ./data-multi). 90일 지난 줄은 시작할 때·하루마다 지운다
+//                   남산 사랑의 자물쇠(11-22)도 여기 namsan-locks.json에 영구 저장(임시 파일에 쓴 뒤 이름 바꾸기). 운영자가 파일을 고치면 5초 안에 다시 읽어 남산 방에 다시 보냄
+//                   (scripts/namsan-locks-admin.mjs). LOCKS_FILE로 파일 경로만 바꿀 수 있음
 //  ALLOWED_ORIGINS  허용할 페이지 주소(쉼표). 비우면 모두 허용(경고 출력). Origin 머리말이 없는 접속(앱·시험 도구)은 허용
 //  MAX_PER_ROOM_CHRISTMAS(30, 크리스마스 광장 정원 — 값을 주면 코드의 EXPERIENCE_MAX보다 우선) TREE_RESET_MS(300000, 빈 크리스마스 방의 트리를 버리기까지)
 //  MAX_PER_ROOM(30, 크리스마스 밖 체험) MAX_CLIENTS(400) MAX_PER_IP(32) BANNED_WORDS(쉼표, 이름 금칙어) TRUST_PROXY(1이면 X-Forwarded-For·CF-Connecting-IP를 접속 수 제한에 씀)
@@ -12,11 +14,12 @@
 // IP는 디스크·로그에 남기지 않는다. 메모리에서만 비밀 값으로 해시해 같은 곳 접속 수 제한·신고 숨김 유지에 쓴다.
 import http from 'node:http';
 import {createHmac,randomBytes} from 'node:crypto';
-import {mkdirSync,readFileSync,writeFileSync,appendFileSync,existsSync,renameSync} from 'node:fs';
+import {mkdirSync,readFileSync,writeFileSync,appendFileSync,existsSync,renameSync,statSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {handshakeResponse,wrapSocket} from './ws.mjs';
 import {createRooms,pruneReports,parseWordList} from './rooms.mjs';
+import {createLockStore} from './namsan-locks.mjs';
 import {EXPERIENCES} from '../src/multi-protocol.js';
 
 const list=s=>String(s??'').split(',').map(x=>x.trim()).filter(Boolean);
@@ -44,9 +47,16 @@ export function startServer(env=process.env,{quiet=false,now=()=>Date.now()}={})
  }
  const initialReports=pruneFile();
  const chatBanned=loadChatBanned(env);
+ // 남산 자물쇠 파일: 읽기(깨졌으면 옆에 .broken으로 남기고 빈 목록) → 바뀌면 0.3초 모아 쓰기 → 남이 고친 파일(mtime이 내가 쓴 것과 다름)은 다시 읽기
+ const lockFile=resolve(env.LOCKS_FILE||join(dataDir,'namsan-locks.json'));let lockMtime=0,lockTimer=null;
+ const mtimeOf=f=>{try{return statSync(f).mtimeMs;}catch{return 0;}};
+ function readLockFile(){if(!existsSync(lockFile))return null;try{return JSON.parse(readFileSync(lockFile,'utf8'));}catch(e){try{renameSync(lockFile,lockFile+'.broken-'+now());}catch{}say('locks-broken',{message:e.message});return null;}}
+ function saveLocks(){clearTimeout(lockTimer);lockTimer=null;try{const tmp=lockFile+'.tmp';writeFileSync(tmp,JSON.stringify(locks.toJSON()));renameSync(tmp,lockFile);lockMtime=mtimeOf(lockFile);}catch(e){say('locks-save-error',{message:e.message});}}
+ const locks=createLockStore({now,banned:chatBanned.words,initial:readLockFile(),onChange:()=>{if(!lockTimer){lockTimer=setTimeout(saveLocks,300);lockTimer.unref?.();}}});
+ lockMtime=mtimeOf(lockFile);
  const secret=randomBytes(32),ipKey=ip=>ip?createHmac('sha256',secret).update(ip).digest('base64url').slice(0,16):'';
  const rooms=createRooms({now,initialReports,
-  maxPerRoom:Number(env.MAX_PER_ROOM)||30,...(Number(env.TREE_RESET_MS)>0?{treeResetMs:Number(env.TREE_RESET_MS)}:{}),...(Number(env.MAX_PER_ROOM_CHRISTMAS)>0?{maxByExperience:{christmas:Number(env.MAX_PER_ROOM_CHRISTMAS)}}:{}),maxClients:Number(env.MAX_CLIENTS)||400,maxPerIp:Number(env.MAX_PER_IP)||32,banned:list(env.BANNED_WORDS),chatBanned:chatBanned.words,
+  maxPerRoom:Number(env.MAX_PER_ROOM)||30,...(Number(env.TREE_RESET_MS)>0?{treeResetMs:Number(env.TREE_RESET_MS)}:{}),...(Number(env.MAX_PER_ROOM_CHRISTMAS)>0?{maxByExperience:{christmas:Number(env.MAX_PER_ROOM_CHRISTMAS)}}:{}),maxClients:Number(env.MAX_CLIENTS)||400,maxPerIp:Number(env.MAX_PER_IP)||32,banned:list(env.BANNED_WORDS),chatBanned:chatBanned.words,locks,
   reports:{append:rec=>{appendFileSync(reportFile,JSON.stringify(rec)+'\n');say('report',{room:rec.room,reason:rec.reason});}}});
  const started=now();
  const server=http.createServer((req,res)=>{
@@ -89,10 +99,12 @@ export function startServer(env=process.env,{quiet=false,now=()=>Date.now()}={})
  let lastStats='';
  const summary=setInterval(()=>{const i=rooms.info(),line=JSON.stringify({clients:i.clients,rooms:i.rooms.length,...i.stats});if(line!==lastStats){lastStats=line;say('summary',JSON.parse(line));}},60000);
  const daily=setInterval(()=>{try{pruneFile();rooms.prune(90);}catch(e){say('prune-error',{message:e.message});}},86400e3);
- for(const t of [tick,ping,summary,daily])t.unref?.();
- const ready=new Promise((ok,fail)=>{server.once('error',fail);server.listen(port,host,()=>{const a=server.address();say('start',{port:a.port,host,dataDir,origins:origins.length?origins:'*(모두 허용)',reports:initialReports.length,chatBanned:chatBanned.words.length});if(!origins.length)say('warn',{message:'ALLOWED_ORIGINS가 비어 모든 페이지 주소를 허용합니다'});ok(a.port);});});
- async function close(){clearInterval(tick);clearInterval(ping);clearInterval(summary);clearInterval(daily);for(const s of sockets)s.conn.close(1001,'server shutdown');await new Promise(ok=>server.close(()=>ok()));say('stop');}
- return {server,rooms,ready,close,get port(){return server.address()?.port;},reportFile};
+ // 운영자가 자물쇠 파일을 고쳤으면(내가 쓴 뒤 mtime이 바뀜) 다시 읽고 남산 방에 목록을 다시 보낸다
+ const lockWatch=setInterval(()=>{const m=mtimeOf(lockFile);if(!m||m===lockMtime||lockTimer)return;const d=readLockFile();lockMtime=mtimeOf(lockFile);if(!d)return;locks.replace(d);rooms.lockResync();say('locks-reload',{locks:locks.size});},Number(env.LOCKS_WATCH_MS)||5000);
+ for(const t of [tick,ping,summary,daily,lockWatch])t.unref?.();
+ const ready=new Promise((ok,fail)=>{server.once('error',fail);server.listen(port,host,()=>{const a=server.address();say('start',{port:a.port,host,dataDir,origins:origins.length?origins:'*(모두 허용)',reports:initialReports.length,chatBanned:chatBanned.words.length,locks:locks.size});if(!origins.length)say('warn',{message:'ALLOWED_ORIGINS가 비어 모든 페이지 주소를 허용합니다'});ok(a.port);});});
+ async function close(){clearInterval(tick);clearInterval(ping);clearInterval(summary);clearInterval(daily);clearInterval(lockWatch);if(lockTimer)saveLocks();for(const s of sockets)s.conn.close(1001,'server shutdown');await new Promise(ok=>server.close(()=>ok()));say('stop');}
+ return {server,rooms,ready,close,get port(){return server.address()?.port;},reportFile,lockFile,locks,saveLocks};
 }
 
 // 직접 실행했을 때만 띄운다(시험에서는 startServer를 불러 쓴다)

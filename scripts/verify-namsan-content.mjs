@@ -3,7 +3,7 @@
 //        쌍안경 이름표(관악산), 자물쇠 걸기·다시 열어도 그대로, 야경 벤치 앉기·차·일어나기, 버스 기다리기→타기→정상에서 내리기·건너뛰기
 //  phone 휴대폰 세로 390×844(터치): 6단계 공통 화면·기능 스위치, 큰 도장 누르기로 약수, 자물쇠 카드, 벤치, 쌍안경 ✕ 내리기(44px)
 //  land  휴대폰 가로 844×390(터치): 자물쇠 카드·할 일 칩이 화면 안·겹침 없음
-//  multi 두 창 같은 방: 자물쇠가 상대 화면에 걸림, 버스 탄 사람이 act p:sit·x:bus로 보임
+//  multi 두 창 같은 방(서버 없음): 자물쇠는 「이 기기에만」(11-22부터 서버 저장 — 서버 두 창 점검은 scripts/namsan/verify-namsan-locks.mjs), 버스 탄 사람이 act p:sit·x:bus로 보임
 //   node scripts/verify-namsan-content.mjs → artifacts/namsan-step5/(사진·report.json). 실패가 있으면 종료 코드 1. PART=pc,phone 처럼 일부만.
 import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
@@ -76,9 +76,9 @@ if(PART.includes('pc')){
  await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,lk.face+Math.PI),lk);await sl(600);await p.keyboard.press('KeyF');await sl(500);
  await sl(900);const av=await ev(p,()=>({v:window.namsan.lockAimView(),cam:window.namsan.cam()}));check('pc: 자물쇠 카드 동안 카메라가 걸 자리 보이는 곳(aimView)',av.v&&Math.hypot(av.cam[0]-av.v.p[0],av.cam[1]-av.v.p[1],av.cam[2]-av.v.p[2])<.3,av);
  await p.click('.ns-lock-colors button[data-c="4"]');await p.click('.ns-lock-shape button[data-h="1"]');await shot(p,'pc-lock-card');await p.click('[data-lk="hang"]');await sl(700);await shot(p,'pc-lock-hang');await sl(1600);
- const L1=await ev(p,()=>window.namsan.locks());check('pc: 자물쇠 걸림·저장(파랑 하트)',L1.mine.length===1&&L1.mine[0].c===4&&L1.mine[0].h===1&&L1.count.filled===177,L1);
+ const L1=await ev(p,()=>window.namsan.locks());check('pc: 자물쇠 걸림·저장(파랑 하트, 혼자 걷기 = 이 기기에만, 가짜 자물쇠 없음)',L1.local.length===1&&L1.local[0].c===4&&L1.local[0].h===1&&L1.count.filled===1&&L1.conn==='solo',L1);
  await p.reload();await p.waitForFunction(()=>window.namsan?.started,null,{timeout:180000});const L2=await ev(p,()=>window.namsan.locks());
- check('pc: 다시 들어와도 내 자물쇠 그대로',L2.mine.length===1&&L2.count.filled===177,{mine:L2.mine,count:L2.count});
+ check('pc: 다시 들어와도 내 자물쇠 그대로',L2.local.length===1&&L2.count.filled===1,{local:L2.local,count:L2.count});
  // 야경 벤치(밤)
  await p.goto(`${URL0}?time=20:30&weather=clear`);await p.waitForFunction(()=>window.namsan?.started,null,{timeout:180000});await sl(500);
  const b0=S.benches[0];await ev(p,b=>window.namsan.goTo(b.x+Math.sin(b.yaw)*.8,b.z+Math.cos(b.yaw)*.8,b.yaw),b0);await sl(700);v=await view(p);
@@ -117,7 +117,7 @@ if(PART.includes('phone')){
  await p.tap('#auto');await sl(4000);check('phone: 큰 단추 누르기로 약수',(await ev(p,()=>window.namsan.status().interact.progress.drinks))===1);
  const lk=S.spots.find(s=>s.id==='locks-summit');await ev(p,lk=>window.namsan.goTo(lk.x,lk.z,lk.face+Math.PI),lk);await sl(700);await p.tap('#auto');await sl(500);
  L=await layout(p);check('phone: 자물쇠 카드 단추 화면 안·44px·안 겹침',L.inside&&!L.small.length&&!L.overlap.length,L);await shot(p,'phone-lock-card');
- await p.tap('.ns-lock-colors button[data-c="1"]');await p.tap('[data-lk="hang"]');await sl(700);check('phone: 자물쇠 걸기',(await ev(p,()=>window.namsan.locks().mine.length))===1);
+ await p.tap('.ns-lock-colors button[data-c="1"]');await p.tap('[data-lk="hang"]');await sl(700);check('phone: 자물쇠 걸기',(await ev(p,()=>window.namsan.locks().local.length))===1);
  const b0=S.benches[1];await ev(p,b=>window.namsan.goTo(b.x+Math.sin(b.yaw)*.8,b.z+Math.cos(b.yaw)*.8,b.yaw),b0);await sl(700);await p.tap('#auto');await sl(1300);
  check('phone: 벤치 앉기',(await ev(p,()=>window.namsan.seat()?.pose))==='sit');
  L=await layout(p);check('phone: 앉은 동안 칩(차·일어나기) 화면 안·안 겹침',L.inside&&!L.overlap.length,L);await shot(p,'phone-bench');
@@ -147,7 +147,7 @@ if(PART.includes('multi')){
  await ev(A,lk=>window.namsan.goTo(lk.x+.6,lk.z,lk.face+Math.PI),lk);await ev(B,lk=>window.namsan.goTo(lk.x-.6,lk.z,lk.face+Math.PI),lk);await sl(4000);
  const before=await ev(B,()=>window.namsan.locks().count.filled);
  await ev(A,()=>window.namsan.lockCard({c:2,h:1,hang:true}));await sl(2000);const bl=await ev(B,()=>window.namsan.locks());
- check('multi: A가 건 자물쇠가 B 화면에 걸림',bl.count.filled===before+1&&bl.remoteHung>=1,{before,after:bl.count.filled,remote:bl.remote});await shot(B,'multi-lock-B');
+ check('multi: 서버 없는 창끼리 방에서는 A 자물쇠가 「이 기기에만」 — B 화면에 안 걸림(11-22 서버 저장으로 바뀜, 서버 두 창은 namsan/verify-namsan-locks.mjs)',bl.count.filled===before&&bl.conn==='offline'&&(await ev(A,()=>window.namsan.locks().local.length))===1,{before,after:bl.count.filled,conn:bl.conn});await shot(B,'multi-lock-B');
  const stops=await ev(A,()=>window.namsan.interact().cands.filter(c=>c.action==='bus').map(c=>({x:c.x,z:c.z})));
  const w=(await ev(A,()=>window.namsan.bus())).next.start.wait;for(const q of [A,B])await ev(q,w=>{window.namsan.busClockOffset=w-2;},w);
  await ev(A,s=>window.namsan.goTo(s.x,s.z,0),stops[0]);await ev(B,s=>window.namsan.goTo(s.x+2,s.z+3,0),stops[0]);await sl(700);await A.keyboard.press('KeyF');await sl(14000);

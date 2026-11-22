@@ -56,7 +56,8 @@ test('자물쇠 난간: 정상 광장 안 가장자리 호, 버스 고리·가�
 
 test('그림: 그리기 횟수·삼각형 상한, 자리 4종, 자물쇠 걸기', ()=>{
  const ia=buildNamsanInteract(G,opts),{count,spots,locks}=ia.userData;
- assert.ok(count.draws<=22,`그리기 ${count.draws}번`);assert.ok(count.triangles<50000,`삼각형 ${count.triangles}`);
+ assert.ok(count.draws<=23,`그리기 ${count.draws}번`); // 23 = 11-22 자물쇠 마우스 올림 테두리 1개(평소엔 숨김이라 실제 그리기 0)
+ assert.ok(count.triangles<50000,`삼각형 ${count.triangles}`);
  assert.deepEqual(spots.map(s=>s.kind).sort(),['cairnField','loveLocks','spring','stream','stream']);
  for(const s of spots){assert.ok(Number.isFinite(s.x+s.y+s.z+s.face),s.id);}
  const dip=spots.find(s=>s.kind==='stream');assert.ok(Math.abs(dip.waterAt[1]-(plan.basins[0].y+BASIN.waterY))<.01);

@@ -1,7 +1,7 @@
 // 한 게임 통합 7단계(월드개발 11-20): 관악산·남산 함께 걷기 섞임 시험. vite와 함께 걷기 서버를 이 스크립트가 직접 띄운다(공개 서버에 안 붙음).
 //  ① 같은 서버에 관악산 2명(관악산-1)·남산 2명(남산-1): 명단은 같은 산 사람만, 서버 /health 인원(11-21 산별 서버: 관악산 1서버 줄 2·남산 1서버 줄 2)
 //  ② 채팅: 관악산 말은 관악산 사람만, 남산 말은 남산 사람만 받음
-//  ③ 행동 상태: 남산 사람이 자물쇠를 걸면 남산 상대는 받고(act x 'lk-…'), 관악산 사람 명단에는 그런 값이 없음
+//  ③ 자물쇠: 남산 사람이 걸면 남산 상대 화면에 걸리고(11-22부터 서버 보관함), 관악산 사람 명단·act에는 아무것도 없음
 //  ④ 동행 제안을 다른 산 사람 id로 보내면 거절되고, 받은 쪽에는 아무 제안도 안 뜸
 //  ⑤ 이름이 같은 두 사람(관악산·남산)도 서로 안 섞임
 //  ⑥ 관악산 사람이 남산으로 옮기면: 관악산 명단에서 빠지고 남산 명단에 들어감
@@ -72,14 +72,15 @@ try{
  check('채팅: 관악산 말은 관악산만',cg2.includes('관악산에서 인사')&&!cn2.includes('관악산에서 인사')&&!cn1.includes('관악산에서 인사'),{G2:cg2,N2:cn2,N1:cn1});
  check('채팅: 남산 말은 남산만',cn2.includes('남산에서 인사')&&!cg2.includes('남산에서 인사')&&!cg1.includes('남산에서 인사'),{G1:cg1,G2:cg2,N2:cn2});
 
- // ── ③ 행동 상태(자물쇠) ──
- await N1.evaluate(()=>{const s=window.namsan.spots().spots.find(x=>x.action==='lock');window.namsan.goTo(s.x,s.z);return window.namsan.lockCard({c:3,h:1,hang:true});});
- await N2.waitForFunction(()=>(window.namsan.multi()?.roster?.[0]?.act?.x??'').startsWith('lk-'),null,{timeout:15000}).catch(()=>{});await sleep(1200);
- const [an2,ag1,ag2]=await Promise.all([N2,G1,G2].map(p=>info(p)));
- const x2=an2?.roster?.[0]?.act?.x??'';
+ // ── ③ 자물쇠(11-22부터 서버 보관함 lk-* 메시지, act x 'lk-'는 더 안 보냄): 남산 상대 화면엔 걸리고, 관악산 명단·act엔 아무것도 없음 ──
+ const before=await N2.evaluate(()=>window.namsan.locks().count.filled);
+ await N1.evaluate(()=>{const s=window.namsan.spots().spots.find(x=>x.action==='lock');window.namsan.goTo(s.x,s.z);return window.namsan.lockCard({c:3,h:1,text:'두 산 섞임 점검',hang:true});});
+ await N2.waitForFunction(b=>window.namsan.locks().count.filled>b,before,{timeout:15000}).catch(()=>{});await sleep(1200);
+ const [ag1,ag2]=await Promise.all([G1,G2].map(p=>info(p)));
  const gActs=[...(ag1?.roster??[]),...(ag2?.roster??[])].map(r=>r.act?.x??null);
- check('자물쇠: 남산 상대는 받음, 관악산 명단엔 없음',x2.startsWith('lk-')&&gActs.every(x=>!String(x??'').startsWith('lk-')),{n2sees:x2,gwanakActs:gActs});
- const nl=await N2.evaluate(()=>window.namsan.locks());check('자물쇠: 남산 상대 화면에 걸림',nl.remoteHung>=1,{remoteHung:nl.remoteHung});
+ const nl=await N2.evaluate(()=>window.namsan.locks());
+ check('자물쇠: 남산 상대 화면에 걸림(서버 보관함)',nl.count.filled>before,{before,after:nl.count.filled,conn:nl.conn});
+ check('자물쇠: 관악산 명단·act엔 없음',gActs.every(x=>!String(x??'').startsWith('lk-')),{gwanakActs:gActs});
 
  // ── ④ 다른 산 사람에게 동행 제안 ──
  await G1.evaluate(id=>window.dispatchEvent(new CustomEvent('hiking:pair-offer',{detail:{to:id}})),n1.id);await sleep(3000);

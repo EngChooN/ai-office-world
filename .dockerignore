@@ -14,6 +14,8 @@
 !src/christmas/gondola.js
 !src/christmas/festive-layout.js
 !src/lounge/room-rules.js
+!src/namsan/namsan-lock-rules.js
+!server/namsan-locks.mjs
 !server/ws.mjs
 !server/rooms.mjs
 !server/multi-server.mjs

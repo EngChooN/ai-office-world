@@ -267,7 +267,9 @@ export function parseExperience(raw){
 // 공통 = 이름 묻기 j·신고·나가기 b·채팅 c·행동 상태 act(11-10). 등산은 위치·인사·동물·같이 셀카, 흡연장은 위치 s·담배 상태 lounge:smoke(docs/멀티-서버-운영안내.md §3-1).
 const COMMON_MESSAGES=['j','report','b','c','act'];
 export const EXPERIENCE_MESSAGES=Object.freeze({
- hiking:Object.freeze([...COMMON_MESSAGES,'s','g','a','sr','sa','sd','se','pair:offer','pair:accept','pair:decline','pair:cancel','pair:end']),
+ hiking:Object.freeze([...COMMON_MESSAGES,'s','g','a','sr','sa','sd','se','pair:offer','pair:accept','pair:decline','pair:cancel','pair:end',
+  // 남산 사랑의 자물쇠(11-22): 서버가 남산 방에서만 받는다(server/rooms.mjs lockMessage, 규격 src/namsan/namsan-lock-rules.js)
+  'lk-list','lk-hang','lk-del','lk-report','lk-bundle']),
  smoking:Object.freeze([...COMMON_MESSAGES,'s','lounge:smoke']),
  // 크리스마스(11-16): 위치 s + 트리 장식(달기·되돌리기·꼭대기 별). 트리 규칙은 src/christmas/tree-state.js(서버·화면 공용)
  //  + 놀이(11-16 2차): 선물·눈사람·눈싸움·썰매 같이 타기 요청. 판정은 src/christmas/room-play.js(XMAS_PLAY_MESSAGES와 같은 목록, 테스트가 맞춰 봄)

@@ -53,10 +53,10 @@ export const NS_ACTIONS=Object.freeze({
  cairn:{...ACTIONS.cairn,label:'돌 올리기',sub:STONE_NOTICE,done:'돌을 하나 올렸어요'},
 });
 
-// ⑤ 사랑의 자물쇠(대표 결정 11-20: 내 기기 저장 + 같은 방 공유, 글 쓰기 없음, 서버에 오래 남기지 않음).
-// 한 사람 최대 개수·색 이름은 월드개발 추천안(대표 미확인). 색 순서는 그림 INTERACT_COLORS.locks와 같다.
+// ⑤ 사랑의 자물쇠(11-20 처음: 내 기기 저장 + 같은 방 공유. 11-22 대표 지적으로 서버 영구 저장·한마디 30자·눌러 읽기·신고, 규칙 namsan-lock-rules.js).
+// 한 사람 최대 개수·색 이름은 월드개발 추천안(대표 미확인). 색 순서는 그림 INTERACT_COLORS.locks와 같다. 문구는 월드디자인 시안 v2 §⑤.
 export const NS_LOCKS=Object.freeze({max:3,colors:Object.freeze(['빨강','분홍','노랑','초록','파랑','보라','주황','하양','자주','청록']),
- notice:'게임 속 자물쇠예요 · 이 기기에 저장되고, 함께 걷기 중이면 같은 방 사람에게 보여요'});
+ notice:'게임 속 자물쇠예요 · 건 글은 서버에 저장되어 남산에 온 모두에게 보여요'});
 
 // ⑥ 정상 야경 벤치·순환버스 문구
 export const NS_BENCH=Object.freeze({label:'벤치에 앉기',sub:'서울 불빛 보기',reach:2.2,

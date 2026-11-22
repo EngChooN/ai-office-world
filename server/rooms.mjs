@@ -17,11 +17,14 @@
 //  방에 아무도 없는 채로 treeResetMs(기본 5분)가 지나면 트리를 버린다(디스크에 쓰지 않음).
 // 크리스마스 놀이(11-16 2차): 선물 우체통·모닥불 자리·썰매 줄·눈사람 마당·눈싸움 판정은 src/christmas/room-play.js(방마다 하나, 화면 혼자 모드와 같은 코드).
 //  빈 방 초기화는 트리와 같이(눈사람·모두의 카드도 버림). 선물 받을 사람이 잠깐 끊겼으면(유예 중) 돌아올 때 준다. 신고 기록에 대상이 보낸 최근 카드 글 3개(cards)도 싣는다.
+// 남산 사랑의 자물쇠(11-22): 등산 체험의 남산 방(남산, 남산-2 …)에서만 lk-list·lk-hang·lk-del·lk-report·lk-bundle을 받는다. 규격은 src/namsan/namsan-lock-rules.js 위 주석.
+//  걸면 남산 방 모두(남산 1~3서버)에게 lk-add, 떼기·신고 숨김은 lk-gone. 받는 사람마다 mine을 따로 붙인다(기기 열쇠 해시 c.lockOwner). 신고는 reports.append에 kind:'lock'으로.
 // 채팅 지킴이(11-16, 세 체험 공통): 속도 제한 + 같은 말 반복 + 30초 쉬기(createChatGuard). 막히면 {t:'c-limit',reason,wait}.
 import {sanitizeName,anonymousName,REPORT_REASONS,GESTURES,FLAG,parseExperience,messageAllowed,CHAT,sanitizeChat,createChatGuard,sanitizeSmoke,sanitizeAct,SERVERS,EXPERIENCES,EXPERIENCE_MAX,findServer,serverRoomName,PAIR} from '../src/multi-protocol.js';
 import {createTreeState,TREE_RULES} from '../src/christmas/tree-state.js';
 import {createRoomPlay} from '../src/christmas/room-play.js';
 import {checkLoungeAct} from '../src/lounge/room-rules.js'; // 흡연장 자리 판정(11-17): 벤치 좌판·난간 지점·자판기는 먼저 온 사람
+import {ownerHash} from './namsan-locks.mjs'; // 남산 사랑의 자물쇠(11-22): 보관함은 opts.locks(createLockStore), 파일은 서버가
 
 export const ROOM_DEFAULTS=Object.freeze({
  maxPerRoom:30,           // 한 방 최대 인원(11-13 대표 지시 20 → 30)
@@ -86,7 +89,36 @@ export function createRooms(opts={}){
  const ghosts=new Map();           // resume 토큰 → {id, experience, room(방 이름), hiddenUntil, avoid, at}
  const hiddenByIp=new Map();       // ipKey → until (메모리만)
  const reportLog=[...(opts.initialReports??[])];
- const stats={replaced:0,pairOffers:0,pairDenied:0,pairs:0,pairEnds:0,joined:0,chats:0,chatLimited:0,smokes:0,acts:0,badExperience:0,wrongExperience:0,full:0,stateAccepted:0,rateDropped:0,teleportRejected:0,resynced:0,jumps:0,relayed:0,animals:0,animalDup:0,reports:0,hidden:0,invalid:0,snapshots:0,tree:0,treeDenied:0,treeResets:0,play:0};
+ const stats={locks:0,lockDenied:0,lockReports:0,replaced:0,pairOffers:0,pairDenied:0,pairs:0,pairEnds:0,joined:0,chats:0,chatLimited:0,smokes:0,acts:0,badExperience:0,wrongExperience:0,full:0,stateAccepted:0,rateDropped:0,teleportRejected:0,resynced:0,jumps:0,relayed:0,animals:0,animalDup:0,reports:0,hidden:0,invalid:0,snapshots:0,tree:0,treeDenied:0,treeResets:0,play:0};
+
+ // 남산 자물쇠: 보관함(없으면 걸기는 busy), 남산 방 판정, 남산 방 모두에게 보내기
+ const lockStore=opts.locks??null;
+ const isNamsanRoom=room=>room?.experience==='hiking'&&/^남산(-\d{1,3})?$/.test(room.name);
+ const namsanMembers=()=>[...rooms.values()].filter(isNamsanRoom).flatMap(r=>[...r.members.values()]);
+ function lockMessage(c,m,t,room){
+  if(!isNamsanRoom(room)){stats.invalid++;return;}
+  const q=Number.isInteger(m.q)?m.q&0xffff:0,owner=ownerHash(m.owner);if(owner)c.lockOwner=owner;
+  if(!lockStore){if(m.t==='lk-hang')send(c,{t:'lk-err',q,code:'busy'});else if(m.t==='lk-list')send(c,{t:'lk-all',locks:[],bundle:0,off:1});return;}
+  switch(m.t){
+   case 'lk-list':send(c,{t:'lk-all',...lockStore.list(owner)});return;
+   case 'lk-bundle':send(c,{t:'lk-bundle',...lockStore.bundlePage(Number.isInteger(m.page)?m.page:0,owner)});return;
+   case 'lk-hang':{
+    const r=lockStore.hang({owner,ip:c.ipKey,name:c.hidden()?anonymousName(c.id,c.experience):c.name,slot:m.slot,c:m.c,h:m.h,text:m.text});
+    if(!r.ok){stats.lockDenied++;send(c,{t:'lk-err',q,code:r.code});return;}
+    stats.locks++;send(c,{t:'lk-ok',q,lock:lockStore.pub(r.lock,owner),moved:r.moved});
+    for(const x of namsanMembers())if(x!==c)send(x,{t:'lk-add',lock:lockStore.pub(r.lock,x.lockOwner),moved:r.moved});
+    return;}
+   case 'lk-del':{const r=lockStore.remove({owner,id:m.id});if(!r.ok){send(c,{t:'lk-err',q,code:'bad'});return;}for(const x of namsanMembers())send(x,{t:'lk-gone',id:r.id});return;}
+   case 'lk-report':{
+    const r=lockStore.report({reporter:owner,id:m.id,reason:m.reason});if(!r.ok){stats.invalid++;return;}
+    send(c,{t:'lk-reported',id:m.id});if(r.again)return;
+    stats.lockReports++;try{reports.append({at:t,kind:'lock',room:room.key,reporter:c.id,target:r.lock.id,targetName:r.lock.name,reason:m.reason,text:r.lock.text,count:r.lock.reports.length,...(r.hidden?{hidden:1}:{})});}catch{}
+    if(r.hidden)for(const x of namsanMembers())send(x,{t:'lk-gone',id:r.lock.id,why:'report'});
+    return;}
+  }
+ }
+ // 운영자 파일 고침·되살리기 뒤: 남산 방 모두에게 목록을 다시 보낸다(서버가 파일을 다시 읽었을 때)
+ function lockResync(){if(!lockStore)return;for(const x of namsanMembers())send(x,{t:'lk-all',...lockStore.list(x.lockOwner??null)});}
 
  // 동행: pairs id→상대 id(양쪽), offers id→제안(보낸 쪽·받는 쪽 둘 다 같은 객체), declines '보낸>받은'→재제안 가능 시각, lastOffer id→마지막 제안 시각, away id→유예 끝 시각
  const pairs=new Map(),offers=new Map(),declines=new Map(),lastOffer=new Map(),away=new Map();
@@ -319,6 +351,7 @@ export function createRooms(opts={}){
     reportLog.push(rec);stats.reports++;try{reports.append(rec);}catch{}
     send(c,{t:'report-ok',to:target.id});
     maybeHide(target,t);return;}
+   case 'lk-list':case 'lk-hang':case 'lk-del':case 'lk-report':case 'lk-bundle':lockMessage(c,m,t,room);return;
    case 'b':leave(c,{keep:false});return;
    case 'pair:offer':case 'pair:accept':case 'pair:decline':case 'pair:cancel':case 'pair:end':pairMessage(c,m,t,room);return;
    default:
@@ -345,5 +378,5 @@ export function createRooms(opts={}){
  // 서버 고르기 창용 인원: {hiking:[{id,name,count,max}],smoking:[…]} (SERVERS 표 순서)
  const serverCounts=()=>Object.fromEntries(EXPERIENCES.map(x=>[x,(servers[x]??[]).map(s=>({id:s.id,name:s.name,count:sizeOf(x,serverRoomName(s.room)),max:capOf(x)}))]));
  const pairOf=id=>pairs.get(id)??null;
- return {join,leave,message,tick,prune,info,serverCounts,pairOf,stats,rooms,clients,trees,capOf,get reportLog(){return reportLog;},options:o};
+ return {join,leave,message,tick,prune,info,serverCounts,pairOf,lockResync,locks:lockStore,stats,rooms,clients,trees,capOf,get reportLog(){return reportLog;},options:o};
 }
