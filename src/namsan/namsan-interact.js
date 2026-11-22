@@ -19,7 +19,7 @@ export function loadNsProgress(storage){
  for(const k of ['drinks','dips','stones','benches','busRides'])p[k]=int(raw[k]);
  if(raw.read&&typeof raw.read==='object')for(const [k,v] of Object.entries(raw.read))if(v===true&&/^[a-z0-9-]{1,32}$/.test(k))p.read[k]=true;
  if(Number.isFinite(raw.certifiedAt))p.certifiedAt=raw.certifiedAt;
- if(Array.isArray(raw.locks))p.locks=raw.locks.filter(l=>Number.isInteger(l?.i)&&l.i>=0&&l.i<4096&&Number.isInteger(l.c)&&l.c>=0&&l.c<NS_LOCKS.colors.length).slice(0,NS_LOCKS.max).map(l=>({i:l.i,c:l.c,h:l.h?1:0,at:Number.isFinite(l.at)?l.at:0}));
+ if(Array.isArray(raw.locks))p.locks=raw.locks.filter(l=>Number.isInteger(l?.i)&&l.i>=0&&l.i<4096&&Number.isInteger(l.c)&&l.c>=0&&l.c<NS_LOCKS.colors.length).slice(0,NS_LOCKS.max).map(l=>({i:l.i,c:l.c,h:l.h?1:0,at:Number.isFinite(l.at)?l.at:0,...(typeof l.text==='string'&&l.text?{text:l.text.slice(0,120)}:{})})); // text: 11-22 「이 기기에만」 자물쇠의 한마디
  return p;
 }
 export const saveNsProgress=(storage,p)=>{try{storage?.setItem(NS_PROGRESS_KEY,JSON.stringify(p));return true;}catch{return false;}};
@@ -47,15 +47,17 @@ export function planNightBenches(G,{avoid=[],busClear=()=>true,count=2,gap=5,wan
 }
 const READ_LABEL={sign:'이정표 읽기','summit-stone':'정상석 확인'};
 /**
- * deps: player() → {x,z,heading(카메라가 보는 쪽),elevation,inSummit,busy}, stamps() → 찍은 번호 배열, addStamp(n) → 새로 찍었으면 true,
+ * deps: player() → {x,z,heading(카메라가 보는 쪽),elevation,inSummit,busy,floor('ground'|'deck', 11-22 전망대)}, stamps() → 찍은 번호 배열, addStamp(n) → 새로 찍었으면 true,
  *  ui(interaction-ui의 openBoard·closeBoard·toast·setAction·setBino·setMarkers), sound(play·playAction·cancel), storage,
  *  geo(lat,lon) → {x,z}, projectDir(bearing,elevDeg) → {x,y,visible}, projectWorld(x,y,z) → {x,y,visible}, cameraInfo() → {fov,aspect,zoom},
  *  weather() → {kind,label}, gadget() → 'none'|'binoculars', summitCount() → 관악산 완등 횟수(쌍안경 「다녀온 산」),
- *  onLock(cand)·onBench(cand)·onBus(cand)·onSummitCard() — 실행을 game.js가 맡는 것
+ *  onLock(cand)·onBench(cand)·onBus(cand)·onSummitCard()·onTower(cand) — 실행을 game.js가 맡는 것
+ *  towerSpots = [{id,action:'tower'|'scope'|'towerexit',x,z,y,floor,label,sub}] 전망탑 입구·망원경·나가기(11-22), towerRow(c,key) = 그 줄
  */
 export function createNamsanInteract({spots=[],items=[],benches=[],busStops=[],player,stamps=()=>[],addStamp=()=>false,ui,sound={play(){},playAction(){},cancel(){}},storage=null,now=()=>Date.now(),
  geo,projectDir=()=>null,projectWorld=()=>null,cameraInfo=()=>({fov:65,aspect:16/9,zoom:1}),weather=()=>({kind:'clear',label:''}),gadget=()=>'none',summitCount=()=>0,
- onLock=()=>{},onBench=()=>{},onBus=()=>{},onSummitCard=()=>{},busRow=()=>null,lockRow=()=>null}={}){
+ onLock=()=>{},onLockRead=()=>{},onBench=()=>{},onBus=()=>{},onSummitCard=()=>{},busRow=()=>null,lockRow=()=>null,lockReadRow=()=>null,
+ towerSpots=[],onTower=()=>{},towerRow=()=>null}={}){
  const progress=loadNsProgress(storage),persist=()=>saveNsProgress(storage,progress);
  let t=0,current=null,view=null,action=null,result=null,tagsOn=true,lastBino=null,lastTick=-9;const cool={};
  // ── 후보(한 번) ──
@@ -64,7 +66,7 @@ export function createNamsanInteract({spots=[],items=[],benches=[],busStops=[],p
  for(const s of spots){
   const base={id:s.id,x:s.x,z:s.z,y:s.y,site:s,group:s.id,glyph:glyph[s.action]??'·'};
   if(s.action==='drink'||s.action==='dip'||s.action==='cairn')cands.push({...base,action:s.action,showRadius:s.action==='cairn'?4.5:RULES.show});
-  else if(s.action==='lock')cands.push({...base,action:'lock',showRadius:4});
+  else if(s.action==='lock'){cands.push({...base,action:'lock',showRadius:4});cands.push({...base,id:`${s.id}-read`,action:'lockread',glyph:'♥',showRadius:4,priority:1});} // 11-22: 2 = 자물쇠 읽기
  }
  for(const it of items){
   if(it.kind==='sign')cands.push({id:`ns-sign-${it.n}`,x:it.x,z:it.z,y:it.y??0,site:it,group:`ns-sign-${it.n}`,action:'read',glyph:'i',showRadius:RULES.show});
@@ -72,6 +74,8 @@ export function createNamsanInteract({spots=[],items=[],benches=[],busStops=[],p
   else if(it.kind==='summit-stone')cands.push({id:'ns-summit-stone',x:it.x,z:it.z,y:it.y??0,site:it,group:'ns-summit',action:'stone',glyph:'臺',showRadius:RULES.showStamp,priority:0});
  }
  benches.forEach((b,i)=>cands.push({id:`ns-bench-${i+1}`,x:b.x,z:b.z,y:b.y??0,site:b,group:`ns-bench-${i+1}`,action:'bench',glyph:'椅',showRadius:NS_BENCH.reach}));
+ // 전망탑(11-22): 입구(광장)·망원경·나가기(전망대 안). floor = 'ground'(기본)|'deck' — 플레이어와 같은 층 후보만 본다(탑 문 앞과 전망대 안은 x,z가 1m 남짓 떨어져 있음)
+ for(const t of towerSpots)cands.push({id:t.id,x:t.x,z:t.z,y:t.y??0,site:t,group:t.id,action:t.action,glyph:{tower:'塔',scope:'鏡',towerexit:'↓'}[t.action]??'·',showRadius:t.showRadius??3,floor:t.floor??'ground',priority:t.priority??0});
  for(const b of busStops)cands.push({id:`ns-bus-${b.stop}`,x:b.x,z:b.z,y:b.y??0,site:b,group:`ns-bus-${b.stop}`,action:'bus',glyph:'車',showRadius:6});
  const doneFor=c=>c.action==='read'?!!progress.read[c.id]:c.action==='stamp'?stamps().includes(c.site.n):c.action==='stone'?progress.certifiedAt!=null:false;
 
@@ -85,11 +89,14 @@ export function createNamsanInteract({spots=[],items=[],benches=[],busStops=[],p
    if(wait>0&&c.action!=='cairn')return {key,label:a.label,sub:a.sub,state:'lock',reason:`${Math.ceil(wait)}초 뒤에 다시 할 수 있어요`};
    return {key,label:a.label,sub:c.action==='cairn'?`${STONE_NOTICE}${progress.stones?` · 내 돌 ${progress.stones}개`:''}`:a.sub,state:'ready'};}
   if(c.action==='lock')return lockRow(c,key)??{key,label:'사랑의 자물쇠 걸기',sub:`내 자물쇠 ${progress.locks.length} / ${NS_LOCKS.max}`,state:progress.locks.length>=NS_LOCKS.max?'lock':'ready',reason:progress.locks.length>=NS_LOCKS.max?`내 자물쇠 ${NS_LOCKS.max}개를 다 걸었어요`:''};
+  if(c.action==='lockread')return lockReadRow(c,key)??{key,label:'자물쇠 읽기',sub:'',state:'ready'};
   if(c.action==='bench')return {key,label:NS_BENCH.label,sub:NS_BENCH.sub,state:'ready'};
+  if(c.action==='tower'||c.action==='scope'||c.action==='towerexit')return towerRow(c,key)??{key,label:c.site.label??'',sub:c.site.sub??'',state:'ready'};
   if(c.action==='bus')return busRow(c,key)??{key,label:'순환버스 타기',sub:c.site.stop==='start'?'정상까지':'백범광장까지',state:'ready'};
   return {key,label:'',sub:'',state:'ready'};
  }
  const hidden=()=>!!action||ui.boardOpen||!!player().busy;
+ const onFloor=p=>{const f=p.floor??'ground';return cands.filter(c=>(c.floor??'ground')===f);};
 
  // ── 읽기 ──
  function signPages(c){
@@ -148,7 +155,8 @@ export function createNamsanInteract({spots=[],items=[],benches=[],busStops=[],p
   const c=view.cands[i];if(row.state==='lock'){ui.toast(row.reason||'지금은 할 수 없어요');return true;}
   if(c.action==='read')openRead(c);else if(c.action==='stone')stone();else if(c.action==='stamp')stamp(c);
   else if(NS_ACTIONS[c.action])begin(c.action,c);
-  else if(c.action==='lock')onLock(c);else if(c.action==='bench')onBench(c);else if(c.action==='bus')onBus(c);
+  else if(c.action==='lock')onLock(c);else if(c.action==='lockread')onLockRead(c);else if(c.action==='bench')onBench(c);else if(c.action==='bus')onBus(c);
+  else if(c.action==='tower'||c.action==='scope'||c.action==='towerexit')onTower(c);
   return true;
  }
  function update(dt,{moving=false,started=true}={}){
@@ -162,14 +170,14 @@ export function createNamsanInteract({spots=[],items=[],benches=[],busStops=[],p
   if(g==='binoculars'){const m=binoModel();lastBino=m;ui.setBino(m);if(m.focus)next={kind:'bino',rows:[{key:'F',label:`${m.focus.name} 자세히`,sub:'',state:'ready'}],focus:m.focus,cands:[]};}
   else if(lastBino){lastBino=null;ui.setBino(null);}
   if(!next&&g==='none'&&!hidden()){
-   const hit=pickCandidate(cands,p,current);
+   const hit=pickCandidate(onFloor(p),p,current);
    if(hit){if(current!==hit.primary.id&&t-lastTick>=RULES.recheck){lastTick=t;sound.play('tick');}current=hit.primary.id;
     const cs=[hit.primary,...hit.stack].sort((a,b)=>(a.priority??0)-(b.priority??0)).slice(0,3);next={kind:'world',rows:cs.map(rowFor),cands:cs};}
    else current=null;
   }else if(g!=='none'||hidden())current=null;
   view=next;
   if(g==='none'&&!ui.boardOpen&&!action&&!p.busy){const out=[];
-   for(const o of markerCandidates(cands,p,{done:c=>doneFor(c)||c.id===current||c.action==='bench'})){const q=projectWorld(o.c.x,(o.c.y??0)+1.6,o.c.z);if(q?.visible)out.push({id:o.c.id,x:q.x,y:q.y,glyph:o.c.glyph,far:o.d>RULES.show+4});}
+   for(const o of markerCandidates(onFloor(p),p,{done:c=>doneFor(c)||c.id===current||c.action==='bench'||c.action==='lockread'})){const q=projectWorld(o.c.x,(o.c.y??0)+1.6,o.c.z);if(q?.visible)out.push({id:o.c.id,x:q.x,y:q.y,glyph:o.c.glyph,far:o.d>RULES.show+4});}
    ui.setMarkers(out);}else ui.setMarkers([]);
   const pose=action?actionPose(action.id,action.t,action.total):{pitch:0,drop:0};api.pitch=pose.pitch;api.drop=pose.drop;
  }

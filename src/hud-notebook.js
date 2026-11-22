@@ -36,9 +36,13 @@ const STAMP_RULES=[
  [/^순환버스/,'🚌','타기',()=>'순환버스'],
  [/바로 가기$/,'⏭','바로 가기',()=>'순환버스'],
  [/^건너뛰기/,'⏭','건너뛰기',()=>'순환버스'],
+ // 남산 전망탑(11-22)
+ [/^타워 들어가기/,'🗼','들어가기',()=>'남산타워 전망대'],
+ [/^엘리베이터로 나가기/,'⬇','나가기',()=>'정상 광장으로'],
+ [/^망원경/,'🔭','망원경',(l,r)=>r.sub?.split('·')[0]?.trim()||'전망대'],
 ];
 // 도장 글자 → 제작 아이콘 이름(아이콘-규칙-v1 §7). ㊞·✓은 도장 글자라 그대로 글자로 그린다.
-export const STAMP_IC=Object.freeze({'🪧':'h-sign','🏅':'h-medal','💧':'h-spring','🖐':'h-hand-water','🪨':'h-stone-tower','👋':'c-wave','🔎':'c-detail','☝':'c-tap','⏳':'c-wait','🧘':'h-breathe','🧍':'c-stand-up','✋':'h-stop','▶':'h-walk','🔒':'c-lock','🪑':'c-sit','🚌':'c-enter','⏭':'c-right'});
+export const STAMP_IC=Object.freeze({'🪧':'h-sign','🏅':'h-medal','💧':'h-spring','🖐':'h-hand-water','🪨':'h-stone-tower','👋':'c-wave','🔎':'c-detail','☝':'c-tap','⏳':'c-wait','🧘':'h-breathe','🧍':'c-stand-up','✋':'h-stop','▶':'h-walk','🔒':'c-lock','🪑':'c-sit','🚌':'c-enter','⏭':'c-right','🗼':'x-fly-up','⬇':'x-fly-down','🔭':'h-binoculars'});
 export const stampIcon=(ic,size='l')=>STAMP_IC[ic]?icon(STAMP_IC[ic],{size,fallback:ic}):esc(ic);
 // 정적 화면(hiking/index.html)의 아이콘 자리 <x data-icon="이름" data-icon-size="m"> 채우기
 export function fillIcons(root){for(const el of root?.querySelectorAll?.('[data-icon]')??[])if(!el.firstElementChild)el.innerHTML=icon(el.dataset.icon,{size:el.dataset.iconSize||'m'});}

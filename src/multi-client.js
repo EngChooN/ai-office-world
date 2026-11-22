@@ -329,7 +329,7 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
   }
  }
  function driveAvatar(r,dt,now){
-  const e=r.entry,s=r.sample,h=e.hiker,y=groundHeight(s.x,s.z);
+  const e=r.entry,s=r.sample,h=e.hiker,y=groundHeight(s.x,s.z,s.zone);   // 셋째 값 구역: 남산 전망대(zone 'summit') 바닥 높이용(11-22), 관악산은 안 읽음
   h.scene.position.set(s.x,y,s.z);
   if(e.heading===null){h.snapTo?.(s.heading);e.heading=s.heading;}
   h.turnTo(s.heading,dt);
@@ -339,7 +339,7 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
   const run=!!(r.flags&FLAG.run),step=.7*(run?1.16:1);
   e.walkPhase+=horizontal/step;
   const inSession=social.state.session&&(social.state.session.requester===r.id||social.state.session.partner===r.id),asRequester=inSession&&social.state.session.requester===r.id;
-  const surface=(x,z)=>groundHeight(x,z);
+  const surface=(x,z)=>groundHeight(x,z,s.zone);
   // 자세·기구는 받은 act(11-10). act가 아직 없으면 옛 위치 flags의 앉음 그대로.
   const body=remoteBody(r.act,{sitFlag:!!(r.flags&FLAG.sit),teaSince:r.teaSince??null,now,session:asRequester});
   h.update({clip:!s.moving?'Idle':e.slope>.15?'Climb':'Walk',distance:e.walkPhase,stride:1,stepLength:step,idleSeconds:now,slope:e.slope,pose:body.pose,teaProgress:body.teaProgress,running:run,speed:s.speed,dt,surfaceHeight:surface,gadget:body.gadget,selfie:body.selfie});
@@ -409,14 +409,14 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
   assign(cls.avatar,t);
   for(const row of cls.avatar){const r=roster.get(row.p.id);if(r.entry)driveAvatar(r,dt,t);}
   // 모델이 아닌 사람은 캡슐(밤 조명 쪽 자리표시)로
-  const capsule=cls.capsule.map(row=>{const r=roster.get(row.p.id),s=r.sample;return {x:s.x,y:groundHeight(s.x,s.z),z:s.z,heading:s.heading,color:r.color,lamp:true};});
+  const capsule=cls.capsule.map(row=>{const r=roster.get(row.p.id),s=r.sample;return {x:s.x,y:groundHeight(s.x,s.z,s.zone),z:s.z,heading:s.heading,color:r.color,lamp:true};});
   night?.setOthers(capsule);
   for(const e of pool)if(e.assigned&&!cls.avatar.some(row=>row.p.id===e.assigned)){roster.get(e.assigned)&&(roster.get(e.assigned).entry=null);e.assigned=null;e.hiker.scene.visible=false;e.acts?.cancel();e.applied=null;}
   stats.avatarsDrawn=cls.avatar.length;stats.capsules=capsule.length;stats.hidden=cls.hidden;
   // 이름표
   for(const x of tagEls.values())x.seen=false;
-  for(const row of cls.name){const r=roster.get(row.p.id);placeTag(r,row.d,'name',groundHeight(r.sample.x,r.sample.z));}
-  for(const row of cls.dot){const r=roster.get(row.p.id);placeTag(r,row.d,'dot',groundHeight(r.sample.x,r.sample.z));}
+  for(const row of cls.name){const r=roster.get(row.p.id);placeTag(r,row.d,'name',groundHeight(r.sample.x,r.sample.z,r.sample.zone));}
+  for(const row of cls.dot){const r=roster.get(row.p.id);placeTag(r,row.d,'dot',groundHeight(r.sample.x,r.sample.z,r.sample.zone));}
   for(const [id,x] of tagEls)if(!x.seen)x.root.style.display='none';
   {const w=local.walk?.()??{};greet.update({now:t,people:greetPeople(),moving:!!(w.auto||w.moving)||local.speed()>.3,tag:tagBox,
    busy:local.sit()||local.gadget()!=='none'||!!local.selfie?.()||!!local.busy?.()||!!social.state.session||netState!=='online'});}
@@ -456,14 +456,14 @@ export async function mountMultiplayer({scene,camera,hikerUrl,prepareGltf=null,n
   netState='offline';emitStatus(true);pairState(true);
  }
  emitStatus(true);pairState(true);
- const info=()=>({id:myId,name:myName,room,transport:transport.kind,status:netState,roster:[...roster.values()].map(r=>({id:r.id,name:r.name,x:r.sample?.x,z:r.sample?.z,heading:r.sample?.heading,speed:r.sample?.speed,moving:r.sample?.moving,model:!!r.entry,act:r.act??null,drawnAct:r.entry?.drawn??null,gesture:r.gesture&&performance.now()/1000<r.gesture.until?r.gesture.kind:null,blocked:moderation.isBlocked(r.id)})),stats:{...stats},hub:hub?.stats??null,social:{session:social.state.session,incoming:social.state.incoming,outgoing:social.state.outgoing,log:social.state.log.slice(-12)},fullCap,pool:pool.length,moderation:moderation.data,sim:sim?.info()??null,server:viaServer?transport.info:null,pair:{...pair.view(),hidden:hiddenSelf,guide:pairGuideNow&&{mode:pairGuideNow.mode,near:pairGuideNow.near,distance:pairGuideNow.distance,lead:pairGuideNow.lead,laneTarget:pairGuideNow.laneTarget,pace:pairGuideNow.pace,waiting:pairGuideNow.waiting},log:pairLog.slice(-12)}});
+ const info=()=>({id:myId,name:myName,room,transport:transport.kind,status:netState,roster:[...roster.values()].map(r=>({id:r.id,name:r.name,x:r.sample?.x,z:r.sample?.z,zone:r.sample?.zone,drawnY:r.entry?r.entry.hiker.scene.position.y:null,heading:r.sample?.heading,speed:r.sample?.speed,moving:r.sample?.moving,model:!!r.entry,act:r.act??null,drawnAct:r.entry?.drawn??null,gesture:r.gesture&&performance.now()/1000<r.gesture.until?r.gesture.kind:null,blocked:moderation.isBlocked(r.id)})),stats:{...stats},hub:hub?.stats??null,social:{session:social.state.session,incoming:social.state.incoming,outgoing:social.state.outgoing,log:social.state.log.slice(-12)},fullCap,pool:pool.length,moderation:moderation.data,sim:sim?.info()??null,server:viaServer?transport.info:null,pair:{...pair.view(),hidden:hiddenSelf,guide:pairGuideNow&&{mode:pairGuideNow.mode,near:pairGuideNow.near,distance:pairGuideNow.distance,lead:pairGuideNow.lead,laneTarget:pairGuideNow.laneTarget,pace:pairGuideNow.pace,waiting:pairGuideNow.waiting},log:pairLog.slice(-12)}});
  // 머리 위 말풍선용 화면 위치: 내 id는 내 몸, 그 밖에는 원격 아바타(차단·카메라 뒤·화면 밖이면 visible:false). 채팅 HUD(hiking-chat-ui.js)가 매 프레임 부른다.
  const headV=new THREE.Vector3();
  function screenPos(id){
-  let x,z;
-  if(id===myId){const p=local.position();if(!p)return null;x=p.x;z=p.z;}
-  else{const r=roster.get(id);if(!r?.sample)return null;x=r.sample.x;z=r.sample.z;}
-  headV.set(x,groundHeight(x,z)+tagHeight+.1,z).project(camera);
+  let x,z,zone;
+  if(id===myId){const p=local.position();if(!p)return null;x=p.x;z=p.z;zone=p.zone;}
+  else{const r=roster.get(id);if(!r?.sample)return null;x=r.sample.x;z=r.sample.z;zone=r.sample.zone;}
+  headV.set(x,groundHeight(x,z,zone)+tagHeight+.1,z).project(camera);
   return {x:(headV.x*.5+.5)*innerWidth,y:(-headV.y*.5+.5)*innerHeight,visible:headV.z>-1&&headV.z<1&&Math.abs(headV.x)<1.1&&Math.abs(headV.y)<1.1};
  }
  // 걷기 직전에 main.js가 부른다: 동행 중 자동 걷기 옆 자리(laneTarget)·속도 배율(pace). 동행이 아니면 null.

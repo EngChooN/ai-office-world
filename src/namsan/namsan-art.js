@@ -3,6 +3,7 @@ import {namsanRockValue,namsanLedgeGreen,NAMSAN_ROCK_CLEAR} from './namsan-rock-
 // 모두 MeshStandard(일부 꼭짓점 색·절차 캔버스 무늬)로 만들고, 붙이는 쪽이 toon.toonify(group,{kind:'prop'})로 카툰 재질로 바꾼다(관악산 시설과 같은 길).
 // 지형 판만 toon.materialFactory.terrain()을 받는다. 높이는 namsan-data.js createNamsanGround의 ground(x,z)를 쓴다.
 // 실제 시설 모양·상호를 따라 하지 않는다(설계 §5·§9): 전망탑·광장·등불·쉼터는 게임 디자인, 성곽 위치·코스·지형만 실제 자료.
+import {TOWER_SHAPE} from './namsan-tower-shape.js';   // 탑 치수(11-22 전망대 규칙과 같이 씀)
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {trailSignModel,stampBoxModel} from '../../assets/realistic/interaction-props.js';
@@ -287,7 +288,7 @@ export function buildFortressWall(G,walls){
 
 // ── 5. 게임 속 「남산 전망탑」: 둥근 받침 건물 + 가늘어지는 기둥 + 큰 전망 원반 + 빨강·흰 안테나. 실제 탑을 본뜬 것이 아니라 동동이 화풍의 통통한 탑.
 // 밤에는 전망 원반 창 띠가 몇 초마다 색을 바꾸고(설계 §6 재미 1) 기둥에 은은한 빛, 꼭대기 빨간 등이 깜빡인다. update(t, night 0~1)를 매 프레임 부른다.
-export const TOWER={baseR:10.5,baseH:7,shaftTop:104,podMid:114,podR:13.5,deckTop:130,top:236,colors:['#5fb6ff','#a77bff','#ff7ab8','#5fe0b0','#ffd36b']};
+export const TOWER={...TOWER_SHAPE,colors:['#5fb6ff','#a77bff','#ff7ab8','#5fe0b0','#ffd36b']};
 export function buildViewTower(){
  const C=NAMSAN_COLORS,root=new THREE.Group();root.name='남산 전망탑';
  const lathe=(pts,seg=40)=>new THREE.LatheGeometry(pts.map(([r,y])=>new THREE.Vector2(r,y)),seg);
