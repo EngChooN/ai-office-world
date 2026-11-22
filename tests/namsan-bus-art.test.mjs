@@ -57,7 +57,7 @@ test('밤 불빛(11-20): 툰 변환으로 재질을 갈아 끼워도 앞등·뒷
  assert.ok(get('light').material.emissiveIntensity>day+2,'앞등이 화면 재질에서 밝아짐');
  assert.ok(get('tail').material.emissiveIntensity>1.4,'뒷등');
  assert.ok(get('버스 유리').material.emissiveIntensity>.4,'창 불빛');
- for(const n of ['버스 앞등 번짐','버스 뒷등 번짐','버스 앞 빛 웅덩이']){const m=get(n);assert.ok(m.visible&&m.material.opacity>.2,n);assert.equal(m.material.blending,2,`${n} 더하기 섞기`);}
+ for(const n of ['버스 앞등 번짐','버스 뒷등 번짐','버스 앞 빛 웅덩이']){const m=get(n);assert.ok(m.visible&&m.material.opacity>.2,n);assert.ok(m.material.blending===5&&m.material.blendDst===201&&m.material.blendDstAlpha===201,`${n} 더하기 섞기(화면 알파는 그대로, 11-22)`);}
 });
 
 // 11-21 대표 지적: 코너에서 시점이 뚝뚝 끊김 · 차로가 성곽을 뚫고 지나감

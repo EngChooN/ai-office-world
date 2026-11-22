@@ -7,7 +7,7 @@ export const TOON={
  // 점광원·스폿 합 상한(albedo 배수, light-cap.js의 점근값). 해·달은 제외. 밤 노출 2.4배를 곱해도 밝은 단이 1.0을 넘지 않게.
  localLightCap:.45,
  // strength: 시간대별 외곽선 세기. 참고 사진(「야생의 숨결」 낮)에는 배경 외곽선이 없어 낮은 0(기준값 §2-6). 노을·밤은 5단계에서 정한다.
- outline:{day:'#3b2f2a',night:'#1d2a44',strength:{day:0,sunset:1,night:1},width:[1,1,1.5],fadeNear:60,fadeFar:900,depthEdge:.012,normalEdge:.42},
+ outline:{day:'#3b2f2a',night:'#1d2a44',strength:{day:0,sunset:1,night:1},width:[1,1,1.5],fadeNear:60,fadeFar:900,creaseNear:14,creaseFar:32,depthEdge:.012,normalEdge:.42},
  bloom:{
   day:{threshold:.85,strength:.35,radius:.45},
   sunset:{threshold:.8,strength:.35,radius:.5},

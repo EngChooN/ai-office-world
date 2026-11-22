@@ -241,10 +241,11 @@ function frame(now,background=false){
  if(interaction)frameMetrics.stage('interaction',()=>interaction.update(dt,{cmd,started,speed}));
  if(firstHeading){hiker.snapTo(baseHeading());firstHeading=false;}
  // 카메라 기준과 독립. 충돌·정지 시에는 마지막 방향을 유지한다.
- // 직접 걷기(앞·뒤·옆·대각선)는 몸이 카메라가 보는 쪽을 향한 채 움직이고, 자동 걷기는 실제 이동 방향을 향한다.
- const direct=!state.auto&&!!(cmd.forward||cmd.side),backward=direct&&cmd.forward<0;
- if(tp){if(tp.snap)hiker.snapTo(tp.heading);else hiker.turnTo(tp.heading,dt);}else if(moving)hiker.turnTo(direct?heading:autoView.active?autoView.heading:movementHeading(before,[x,0,z],avatar.rotation.y),dt);else if(selfieActive(state)||(state.gadget??'none')!=='none')hiker.turnTo(heading,dt); // 쌍안경·휴대폰을 든 동안은 몸이 보는 방향을 따른다
- {const travelled=state.steps+state.stepPhase;walkPhase??=travelled;walkPhase+=(backward?-1:1)*(travelled-(lastTravelled??travelled));lastTravelled=travelled;}
+ // 직접 걷기는 몸이 누른 방향(카메라 기준)을 향해 걷는다 — 뒤로 누르면 돌아서서 카메라 쪽으로 걸어옴(11-22 대표 지적: 흡연장·크리스마스와 같게, 예전엔 앞을 본 채 뒷걸음).
+ // 자동 걷기는 실제 이동 방향을 향한다. 뒤로 걷는 속도(0.6배)·보폭은 movement.js 그대로
+ const direct=!state.auto&&!!(cmd.forward||cmd.side),backward=direct&&cmd.forward<0,inputHeading=direct?heading-Math.atan2(cmd.side||0,cmd.forward||0):heading;
+ if(tp){if(tp.snap)hiker.snapTo(tp.heading);else hiker.turnTo(tp.heading,dt);}else if(moving)hiker.turnTo(direct?inputHeading:autoView.active?autoView.heading:movementHeading(before,[x,0,z],avatar.rotation.y),dt);else if(selfieActive(state)||(state.gadget??'none')!=='none')hiker.turnTo(heading,dt); // 쌍안경·휴대폰을 든 동안은 몸이 보는 방향을 따른다
+ {const travelled=state.steps+state.stepPhase;walkPhase??=travelled;walkPhase+=travelled-(lastTravelled??travelled);lastTravelled=travelled;}
  if(tp)walkPhase=tp.phase; // 즐길거리로 걸어가는 동안의 걸음 위상
  const horizontal=Math.hypot(x-before[0],z-before[2]);
  const travelSlope=horizontal>1e-7?((offTrailNow()||freeZone()?y:p.y)-beforeY)/horizontal:0;

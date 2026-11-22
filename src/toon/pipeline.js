@@ -13,10 +13,10 @@ import {TOON,bloomFor,gradeFor,outlineFor,outlineWidth,phaseWeights} from './pal
 // 법선 버퍼를 따로 그리지 않아 장면을 한 번만 렌더한다.
 const EDGE_SHADER={
  uniforms:{tDepth:{value:null},tColor:{value:null},cameraNear:{value:.1},cameraFar:{value:30000},projInv:{value:new THREE.Matrix4()},texStep:{value:new THREE.Vector2(1/1024,1/1024)},
-  depthEdge:{value:TOON.outline.depthEdge},normalEdge:{value:TOON.outline.normalEdge},fadeNear:{value:TOON.outline.fadeNear},fadeFar:{value:TOON.outline.fadeFar}},
+  depthEdge:{value:TOON.outline.depthEdge},normalEdge:{value:TOON.outline.normalEdge},fadeNear:{value:TOON.outline.fadeNear},fadeFar:{value:TOON.outline.fadeFar},creaseNear:{value:TOON.outline.creaseNear},creaseFar:{value:TOON.outline.creaseFar}},
  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
  fragmentShader:`#include <packing>
- uniform sampler2D tDepth,tColor;uniform float cameraNear,cameraFar,depthEdge,normalEdge,fadeNear,fadeFar;uniform mat4 projInv;uniform vec2 texStep;varying vec2 vUv;
+ uniform sampler2D tDepth,tColor;uniform float cameraNear,cameraFar,depthEdge,normalEdge,fadeNear,fadeFar,creaseNear,creaseFar;uniform mat4 projInv;uniform vec2 texStep;varying vec2 vUv;
  vec3 viewPos(vec2 uv){float d=texture2D(tDepth,uv).x;vec4 p=projInv*vec4(uv*2.-1.,d*2.-1.,1.);return p.xyz/p.w;}
  void main(){
   float dc=texture2D(tDepth,vUv).x;
@@ -30,6 +30,8 @@ const EDGE_SHADER={
   vec3 n1=normalize(cross(r-c,u-c)),n2=normalize(cross(u-c,l-c)),n3=normalize(cross(l-c,d-c)),n4=normalize(cross(d-c,r-c));
   float bend=1.-min(dot(n1,n3),dot(n2,n4));
   float crease=smoothstep(normalEdge,normalEdge+.3,bend)*(1.-smoothstep(.05,.2,jump));
+  // 접힌 모서리는 가까이서만(11-22 대표 지적: 밤에 먼 나무 잎 덩어리의 잔면마다 선이 그어져 점·줄무늬 격자로 보였다). 실루엣은 그대로 멀리까지
+  crease*=1.-smoothstep(creaseNear,creaseFar,z);
   float edge=max(silhouette,crease*.75);
   // 외곽선 제외 표시(알파 < .75: 풀잎·물). 자신이나 이웃이 표시돼 있으면 선을 긋지 않는다(풀밭이 검은 잡음으로 덮이지 않게).
   float keep=min(texture2D(tColor,vUv).a,min(min(texture2D(tColor,vUv+vec2(texStep.x,0.)).a,texture2D(tColor,vUv-vec2(texStep.x,0.)).a),min(texture2D(tColor,vUv+vec2(0.,texStep.y)).a,texture2D(tColor,vUv-vec2(0.,texStep.y)).a)));

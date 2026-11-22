@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {ADDITIVE_KEEP_ALPHA} from './toon/keep-alpha-blend.js';
 
 // ?fx=off 는 전후 비교용: 계곡 물(옛 단색 띠)·그림자 얼룩·빛줄기·잎 투과광 강화를 모두 끈다.
 export const FX_OFF=/[?&]fx=off(&|$)/.test(globalThis.location?.search??'');
@@ -147,7 +148,7 @@ export function createLightShafts({mobile=false}={}){
  const uniforms={...LIGHT_FX,
   fxCam:{value:new THREE.Vector3()},fxRadius:{value:cfg.radius},fxHeight:{value:cfg.height},fxWidthMul:{value:1},fxCount:{value:max},
   fxStrength:{value:cfg.strength},fxColor:{value:new THREE.Color(1,.92,.72)},fxCanopy:{value:1}};
- const material=new THREE.ShaderMaterial({uniforms,vertexShader:SHAFT_VERTEX,fragmentShader:SHAFT_FRAGMENT,transparent:true,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,fog:false,toneMapped:true});
+ const material=new THREE.ShaderMaterial({uniforms,vertexShader:SHAFT_VERTEX,fragmentShader:SHAFT_FRAGMENT,transparent:true,depthWrite:false,depthTest:false,...ADDITIVE_KEEP_ALPHA,side:THREE.DoubleSide,fog:false,toneMapped:true});
  const mesh=new THREE.Mesh(geometry,material);mesh.frustumCulled=false;mesh.renderOrder=5;mesh.name='빛줄기';
  const color=new THREE.Color();
  return {mesh,material,

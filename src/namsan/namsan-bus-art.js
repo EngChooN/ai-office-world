@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {courseAt,NAMSAN} from './namsan-data.js';
+import {ADDITIVE_KEEP_ALPHA} from '../toon/keep-alpha-blend.js';
 
 // ── 치수(월드개발과 맞출 기준값) ──
 export const BUS=Object.freeze({
@@ -126,7 +127,7 @@ export function buildBus({name='남산 순환버스'}={}){
  // 밤 불빛(11-20): 앞등·뒷등 둘레 번짐 + 앞 바닥에 비치는 빛 웅덩이. 더하기 섞기 그림이라 실제 광원 0개·그리기 3번(밤이 아니면 숨김)
  const glowTex=canvasTex(128,128,(g,w,h)=>{const r=g.createRadialGradient(w/2,h/2,0,w/2,h/2,w/2);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.25,'rgba(255,255,255,.55)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,w,h);});
  const poolTex=canvasTex(128,256,(g,w,h)=>{g.save();g.scale(1,h/w*1.9);const cy=2,r=g.createRadialGradient(w/2,cy,0,w/2,cy,w/2);r.addColorStop(0,'rgba(255,255,255,.9)');r.addColorStop(.5,'rgba(255,255,255,.32)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,w,h);g.restore();}); // 앞뒤로 긴 타원(네 변 모두 0으로 흐려 네모 테가 안 보임)
- const addMat=(color,map)=>new THREE.MeshBasicMaterial({color,map,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending,fog:false,side:THREE.DoubleSide});
+ const addMat=(color,map)=>new THREE.MeshBasicMaterial({color,map,transparent:true,opacity:0,depthWrite:false,...ADDITIVE_KEEP_ALPHA,fog:false,side:THREE.DoubleSide});
  const glowGeo=(list,r)=>mergeGeometries(list.map(([x,y,z,dz])=>new THREE.PlaneGeometry(r*2,r*2).rotateY(dz<0?Math.PI:0).translate(x,y,z+dz*.02)));
  const nightFx=[
   [glowGeo([-1,1].map(s=>[s*(hw-.42),.82,hl+.05,1]),.34),addMat('#fff0c0',glowTex),'버스 앞등 번짐'],

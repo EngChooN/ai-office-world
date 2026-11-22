@@ -6,7 +6,7 @@ import {initialState,restore,advance,cameraRelative,BACKWARD_MULTIPLIER,ROUTE_MI
 import {sample,speedFor} from '../src/route.js';
 import {createHeightFollow,followHeight,CAMERA_RISE_SECONDS,CAMERA_FALL_SECONDS} from '../src/view.js';
 import {KEY_COMMANDS,escapeClosesPanel,POINTER_UNLOCK_GRACE_MS} from '../src/input.js';
-const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
+const main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8'),namsan=readFileSync(new URL('../src/namsan/game.js',import.meta.url),'utf8');
 const where=s=>s.zone==='plaza'?{x:s.plaza.x,z:s.plaza.z,s:null}:{s:s.s,lateral:s.lateral};
 
 // 일시정지 개념이 없다: 저장에서 이어와도 첫 걷기 입력부터 바로 움직인다.
@@ -57,9 +57,11 @@ test('광장: S 뒷걸음은 몸·시선 방향(plaza.heading)을 바꾸지 않�
  }
  assert.ok(ROUTE_MIN_S>-1e9);
 });
-test('main: 직접 걷기는 몸이 카메라 방향, 뒷걸음은 보행 위상을 거꾸로 돌린다',()=>{
- assert.match(main,/hiker\.turnTo\(direct\?heading:autoView\.active\?autoView\.heading:movementHeading\(/); // 자동 걷기는 평활 길 방향(src/auto-view.js)
- assert.match(main,/walkPhase\+=\(backward\?-1:1\)\*/);
+test('main: 직접 걷기는 몸이 누른 방향(카메라 기준)을 보고 앞으로 걷는다(11-22, 흡연장·크리스마스와 같게)',()=>{
+ assert.match(main,/inputHeading=direct\?heading-Math\.atan2\(cmd\.side\|\|0,cmd\.forward\|\|0\):heading/);
+ assert.match(main,/hiker\.turnTo\(direct\?inputHeading:autoView\.active\?autoView\.heading:movementHeading\(/); // 자동 걷기는 평활 길 방향(src/auto-view.js)
+ assert.doesNotMatch(main,/walkPhase\+=\(backward\?-1:1\)\*/);
+ assert.match(namsan,/hiker\.turnTo\(direct\?heading-Math\.atan2\(cmd\.side\|\|0,cmd\.forward\|\|0\):r\.heading/);
  assert.match(main,/distance:walkPhase,/);assert.match(main,/phase:walkPhase,/);
 });
 

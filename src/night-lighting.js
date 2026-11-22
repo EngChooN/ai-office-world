@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {sunPosition,resolveUtcMs,effectiveTime,timeOverridden} from './daytime.js';
 import {PARK_LAMP_LATERAL,PARK_END_S,LAMP_HEIGHT,REAL_LIGHT_COUNT,PLAZA_LAMPS,FACILITY_LAMPS,HEADLAMP,OTHERS,lampAmount,headlampDark,headlampOn,lampStations,lampWeights,selectOthers,mountFor,crowdFromSearch} from './night-lighting-config.js';
+import {ADDITIVE_KEEP_ALPHA} from './toon/keep-alpha-blend.js';
 
 const LAMP_COLOR=0xffd9a0,LAMP_INTENSITY=95,DECAL_COLOR=[1,.78,.46],OTHER_COLOR=[1,.95,.82];
 const smooth=(k,dt)=>1-Math.exp(-Math.max(0,Math.min(dt,.5))/k);
@@ -14,7 +15,7 @@ function decalMaterial(color){
   uniforms:{uColor:{value:new THREE.Color().setRGB(...color,THREE.LinearSRGBColorSpace)},uAmount:{value:0}},
   vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(position,1.);}',
   fragmentShader:'uniform vec3 uColor;uniform float uAmount;varying vec2 vUv;\nvoid main(){float r=length(vUv-.5)*2.;float a=pow(clamp(1.-r,0.,1.),1.7)*uAmount;gl_FragColor=vec4(uColor,a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',
-  transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4
+  transparent:true,...ADDITIVE_KEEP_ALPHA,depthWrite:false,fog:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4
  });
 }
 // 점 모양 글로우(빌보드). 크기는 월드 m 단위(uSize)를 화면 픽셀로 바꾼다.
@@ -23,7 +24,7 @@ function glowMaterial(color,size,maxPx=90){
   uniforms:{uColor:{value:new THREE.Color().setRGB(...color,THREE.LinearSRGBColorSpace)},uAmount:{value:0},uSize:{value:size},uScale:{value:700},uMax:{value:maxPx}},
   vertexShader:'uniform float uSize,uScale,uMax;void main(){vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(uSize*uScale/max(.5,-mv.z),2.,uMax);}',
   fragmentShader:'uniform vec3 uColor;uniform float uAmount;\nvoid main(){float r=length(gl_PointCoord-.5)*2.;float a=(pow(clamp(1.-r,0.,1.),2.2)*.9+step(r,.16)*.5)*uAmount;if(a<.004)discard;gl_FragColor=vec4(uColor,min(a,1.));\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',
-  transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,fog:false
+  transparent:true,...ADDITIVE_KEEP_ALPHA,depthWrite:false,fog:false
  });
 }
 const flatQuad=()=>{const g=new THREE.PlaneGeometry(1,1);g.rotateX(-Math.PI/2);return g;};

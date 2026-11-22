@@ -413,11 +413,11 @@ function frame_(now){
  if(first){hiker.snapTo(st.heading);first=false;}
  else if(seat){if(!seat.snapped){hiker.snapTo(seat.heading);seat.snapped=true;}}
  else if(tp){if(tp.snap)hiker.snapTo(tp.heading);else hiker.turnTo(tp.heading,dtRaw);}
- else if(moving)hiker.turnTo(direct?heading:r.heading,dtRaw);
+ else if(moving)hiker.turnTo(direct?heading-Math.atan2(cmd.side||0,cmd.forward||0):r.heading,dtRaw);   // 직접 걷기는 누른 방향(카메라 기준)을 본다 — 뒤로 누르면 돌아서서 걸어옴(11-22 대표 지적, 흡연장·크리스마스와 같게)
  const k=courseAt(G.points,st.s),slope=moving&&!tower.inside?(()=>{const a=courseAt(G.points,st.s-1.5),b=courseAt(G.points,st.s+1.5);return (b.y-a.y)/3*Math.sign(Math.cos(r.heading-k.heading));})():0;
  // 남산 계단은 넓은 단이라 보폭 = 한 단 폭 쪽(stairGait, 걷는 속도와 같은 셈)
  const gait=stairsNow?{stride:stairGait(G,st.s,slope,slope<0?-1:1).stride}:gaitFor(slope,'paved',slope<0?-1:1),stepLength=gait.stride*strideScaleFor(hiker.strideScale,!!st.running,stairsNow);
- walkPhase+=r.moved/Math.max(.1,stepLength)*(cmd.forward<0?-1:1);if(tp)walkPhase=tp.phase;
+ walkPhase+=r.moved/Math.max(.1,stepLength);if(tp)walkPhase=tp.phase;
  // 발소리(관악산과 같은 소리 파일·규칙): 한 걸음마다 'hiking:step'. 계단 = 돌계단 소리, 그 밖 = 돌길(포장)
  if(started&&moving){stepPhase+=r.moved/Math.max(.1,stepLength);while(stepPhase>=1){stepPhase-=1;stepCount++;window.dispatchEvent(new CustomEvent('hiking:step',{detail:{step:stepCount,material:stairsNow?'stairs':'paved',slope:Math.abs(slope),s:st.s,zone:'route',position:[st.x,y,st.z],distance:st.distance,elapsed:st.elapsed}}));}}
  const surface=tp?trail.height:tower.inside?()=>deckPlan.y:(x,z)=>heightAt(G,x,z);
@@ -443,6 +443,7 @@ function frame_(now){
  if(selfieActive(gs)){const lens=hiker.phoneCamera?.(true);if(lens?.visible){camera.position.copy(lens.position);lookGoal.copy(lens.position).add(lens.direction);}else{camera.position.fromArray(selfiePosition([px,smoothY+hiker.eyeHeight,pz],heading,look.pitch));lookGoal.set(px,smoothY+hiker.eyeHeight-.04,pz);}}   // 셀카(관악산과 같음): 손에 든 휴대폰 앞면 렌즈
  if(ride)rideCamera(dtRaw);else lockCamera(dtRaw);
  if(tower.inside&&view==='third'&&!selfieActive(gs))clampDeckCamera(dtRaw);   // 1인칭·셀카는 눈·손 자리라 그대로
+ if(tower.inside&&view==='first'&&gs.gadget==='binoculars'&&!selfieActive(gs))deckScopeEye();
  {const co=window.namsan.cameraOverride;if(co){camera.position.fromArray(co.p);lookGoal.fromArray(co.t);}}
  camera.lookAt(lookGoal);cameraReady=true;
  trail?.afterCamera();   // 말풍선·고양이 칩은 이번 프레임 카메라로 자리를 잡는다
@@ -573,6 +574,14 @@ function clampDeckCamera(dt){const p=camera.position,a=lookGoal,C=DECK_CAM;
   const [dx,dz]=dirAt(deckCam.ang),reach=deckCamReach(a.x,a.z,dx,dz,full);
   p.x=a.x+dx*reach;p.z=a.z+dz*reach;p.y+=(1-reach/full)*Math.min(1.8,full*.6);}
  p.y=THREE.MathUtils.clamp(p.y,deckPlan.y+.35,deckPlan.y+DECK.height-.3);}
+// 전망대에서 쌍안경·망원경(11-22 대표 지적: 망원경으로 아무것도 안 보임): 동동이 눈높이(약 0.6m)가 손잡이·창턱·망원경 몸통과 같아
+// 배율 10배에선 그것들이 화면을 다 덮었다. 바깥을 볼 때는 보는 방향 그대로 눈을 유리 띠 바로 밖으로 옮겨 실내 소품을 등 뒤에 둔다(기둥 쪽·옆으로 길게 보면 그대로)
+const SCOPE_EYE={rOut:DECK.glass+.6,maxPush:6};
+function deckScopeEye(){const p=camera.position;let dx=lookGoal.x-p.x,dz=lookGoal.z-p.z;const h=Math.hypot(dx,dz);if(h<1e-4)return;dx/=h;dz/=h;
+ const ox=p.x-TW.x,oz=p.z-TW.z,b=ox*dx+oz*dz,oo=ox*ox+oz*oz;
+ const dc=b*b-(oo-DECK.core*DECK.core);if(dc>0&&-b-Math.sqrt(dc)>0)return;   // 엘리베이터 기둥 쪽
+ const t=-b+Math.sqrt(Math.max(0,b*b-(oo-SCOPE_EYE.rOut*SCOPE_EYE.rOut)));if(!(t>0)||t>SCOPE_EYE.maxPush)return;
+ p.x+=dx*t;p.z+=dz*t;lookGoal.x+=dx*t;lookGoal.z+=dz*t;}
 // 엘리베이터 연출 화면(DOM): 양쪽 문이 닫혔다 열림 · 층 표시(1→5→전망)·층 점·흔들림 · 건너뛰기 단추
 const elevUI=(()=>{const el=document.createElement('div');el.className='ns-elev';el.hidden=true;el.setAttribute('role','dialog');el.setAttribute('aria-label','엘리베이터');
  el.innerHTML=`<i class="dr l"></i><i class="dr r"></i><div class="cab"><div class="ind"><b class="ar">▲</b><b class="fl">1</b></div><ol class="dots">${[1,2,3,4,5].map(n=>`<li>${n}</li>`).join('')}<li>전망</li></ol><p class="cap"></p><p class="note">${deckHeightText()}</p></div><button type="button" class="skip">건너뛰기 ⏭</button>`;

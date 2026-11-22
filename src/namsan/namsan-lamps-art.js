@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {NAMSAN,courseAt} from './namsan-data.js';
 import {WALL,wallLine,wallLowZone} from './namsan-art.js';
+import {ADDITIVE_KEEP_ALPHA} from '../toon/keep-alpha-blend.js';
 
 // 배치 기준(게임 디자인 값). 간격은 코스 거리 s 기준 m.
 export const LAMPS=Object.freeze({
@@ -112,7 +113,7 @@ void main(){${wall?'float a=pow(clamp(1.-vUv.x*vUv.x,0.,1.),1.6)*pow(clamp(1.-vU
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`,
-  transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,side:wall?THREE.DoubleSide:THREE.FrontSide,
+  transparent:true,...ADDITIVE_KEEP_ALPHA,depthWrite:false,fog:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4,side:wall?THREE.DoubleSide:THREE.FrontSide,
  });
 }
 function haloMaterial(color){
@@ -120,7 +121,7 @@ function haloMaterial(color){
   uniforms:{uColor:{value:new THREE.Color().setRGB(...color,THREE.LinearSRGBColorSpace)},uAmount:{value:0},uSize:{value:1.5},uScale:{value:700},uMax:{value:140}},
   vertexShader:'uniform float uSize,uScale,uMax;attribute float aK;varying float vK;void main(){vK=aK;vec4 mv=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mv;gl_PointSize=clamp(uSize*aK*uScale/max(.5,-mv.z),2.,uMax);}',
   fragmentShader:'uniform vec3 uColor;uniform float uAmount;varying float vK;\nvoid main(){float r=length(gl_PointCoord-.5)*2.;float a=(pow(clamp(1.-r,0.,1.),2.4)*.8+step(r,.14)*.35)*uAmount;if(a<.004)discard;gl_FragColor=vec4(uColor,min(a,1.));\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n}',
-  transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,fog:false,
+  transparent:true,...ADDITIVE_KEEP_ALPHA,depthWrite:false,fog:false,
  });
 }
 
