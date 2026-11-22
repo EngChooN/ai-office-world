@@ -1,6 +1,8 @@
 // 추정(후기 근거, 현장 확인 전). 환경음-구간별-설계.md
 import {surfaceAt} from './route-surfaces.js';
 export const VERIFIED=false, CITY_SUMMIT_ENABLED=false, CICADA_ENABLED=false;
+// 정상 사람들 소리(summit-crowd-loop): 11-22 대표 "환호 소리가 기괴하다" → 관악산·남산 모두 끔. 다른 소리로 바꾸면 다시 켠다
+export const CROWD_ENABLED=false;
 export const VOLUME_SAVE_KEY='gwanak-hiking:ambient-volume:v1';
 export const LAYER_FILES={stream:'stream-loop.flac',forest:'wind-forest-loop.flac',ridge:'wind-ridge-loop.flac',birds:'birds-loop.flac',crowd:'summit-crowd-loop.flac',city:'city-far-loop.flac'};
 export const FILE_RMS_DB={stream:-26,forest:-30,ridge:-24,birds:-34,crowd:-34,city:-36};
@@ -35,7 +37,7 @@ export function ambientTargets(m,h,{birds=true,gust=0}={}){
  const section=ambientSectionAt(m),t=clamp((h-WIND_RIDGE.h0)/(WIND_RIDGE.h1-WIND_RIDGE.h0)),e=t*t*(3-2*t)*(WIND_RIDGE.exposure[section]||0),distance=STREAM_NEAR.distance===null?streamDistance(m):Math.min(STREAM_NEAR.distance,streamDistance(m)*2.5);
  const forest=WIND_FOREST.dbMin+8*clamp((h-100)/460);
  const shift=windShiftDb(WEATHER_SOUND.wind),rain=WEATHER_SOUND.rain,birdDb=birds&&rain<.6?SECTION_TARGET_DB.birds[section]:null;
- const targets={stream:section<=3?streamDb(distance):null,forest:section<7&&e<1?forest+20*Math.log10(1-e)+shift:null,ridge:e>0?-48+15*e+gust+shift:null,birds:birdDb===null?null:birdDb-14*rain,city:SECTION_TARGET_DB.city[section],crowd:section===7?-44:section===6&&m>=4609?-54+6*clamp((m-4609)/200):null};
+ const targets={stream:section<=3?streamDb(distance):null,forest:section<7&&e<1?forest+20*Math.log10(1-e)+shift:null,ridge:e>0?-48+15*e+gust+shift:null,birds:birdDb===null?null:birdDb-14*rain,city:SECTION_TARGET_DB.city[section],crowd:!CROWD_ENABLED?null:section===7?-44:section===6&&m>=4609?-54+6*clamp((m-4609)/200):null};
  const budgetDb=(section<=5?BUDGET_DB.low:BUDGET_DB.high)+Math.max(0,shift)*.6,sum=powerDb(Object.values(targets)),correction=Math.min(0,budgetDb-sum);
  for(const key in targets)if(targets[key]!==null)targets[key]+=correction;
  return {section,targets,distance,exposure:e,budgetDb,correction,sumRmsDb:powerDb(Object.values(targets))};

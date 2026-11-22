@@ -6,7 +6,7 @@ import {RainLayer} from './weather-sound.js';
 //  preload(section) 미리 받을 파일 · birdPhase(section) 'low'|'upper'|null · crossfadeFor(next,prev,jump) 초 · tone(name,next) 로우패스 Hz|null · muffle 버스 안 먹먹하게(남산)
 // 까마귀·목탁은 INTERMITTENT.crow·moktak이 있을 때만(남산 설정엔 없음).
 export const GWANAK_AMBIENT_CONFIG=Object.freeze({...GWANAK_AMBIENT,
- preload:section=>section>=5?['wind-ridge-loop.flac','summit-crowd-loop.flac','moktak-01.flac','moktak-02.flac','moktak-03.flac']:[],
+ preload:section=>section>=5?['wind-ridge-loop.flac',...(GWANAK_AMBIENT.CROWD_ENABLED?['summit-crowd-loop.flac']:[]),'moktak-01.flac','moktak-02.flac','moktak-03.flac']:[],
  birdPhase:section=>section<=5?(section>=4?'upper':'low'):null,
  crossfadeFor:(next,prev,jump)=>jump?GWANAK_AMBIENT.CROSSFADE_S.jump:next===2||prev===2?GWANAK_AMBIENT.CROSSFADE_S.city:next>=6?GWANAK_AMBIENT.CROSSFADE_S.upper:GWANAK_AMBIENT.CROSSFADE_S.forest,
  tone:(name,next)=>name==='stream'?Math.max(1200,9000/(1+next.distance/20)):name==='ridge'?1200+2300*next.exposure:null,

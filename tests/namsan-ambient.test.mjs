@@ -16,13 +16,11 @@ test('0~1067m 1m마다 합계 ≤ 예산, 물소리·까마귀·목탁 층 없�
  assert.ok(!Object.values(LAYER_FILES).some(f=>/stream|crow(?!d)|moktak/.test(f)));
  assert.equal(NAMSAN_AMBIENT_CONFIG.INTERMITTENT.crow,undefined);assert.equal(NAMSAN_AMBIENT_CONFIG.INTERMITTENT.moktak,undefined);
 });
-test('설계표 대표값: 출발 −44, 정상 광장 가운데 사람 −44·가장자리 −48, 밤 새 끔·도시 +2',()=>{
+test('설계표 대표값: 출발 −44, 정상 사람 소리 꺼짐(11-22), 밤 새 끔·도시 +2',()=>{
  setWeatherSound({wind:null,rain:0});
  assert.equal(ambientTargets(0,108).targets.city,-44);
- assert.equal(ambientTargets(1060,267,{summitDist:0}).targets.crowd,-44);
- assert.equal(ambientTargets(1060,267,{summitDist:46}).targets.crowd,-48);
- assert.equal(ambientTargets(1030,267).targets.crowd,-48);   // 구간 6인데 광장 원 밖 = 가장자리 값(11-21 검토 2)
- assert.equal(ambientTargets(900,250).targets.crowd,null);assert.equal(ambientTargets(1010-25,260).targets.crowd,-53);
+ // 정상 사람들 소리는 11-22 대표 요청으로 끔(CROWD_ENABLED=false) → 정상·광장 어디서도 null
+ for(const [s,h,o] of [[1060,267,{summitDist:0}],[1060,267,{summitDist:46}],[1030,267,{}],[900,250,{}],[985,260,{}]])assert.equal(ambientTargets(s,h,o).targets.crowd,null);
  const night=ambientTargets(500,180,{night:1});assert.equal(night.targets.birds,null);assert.equal(night.targets.city,ambientTargets(500,180).targets.city+2);
  assert.equal(crossfadeFor(2,1,false),8);assert.equal(crossfadeFor(3,2,false),6);assert.equal(crossfadeFor(3,2,true),1.5);
 });
