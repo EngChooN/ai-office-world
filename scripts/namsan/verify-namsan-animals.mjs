@@ -37,8 +37,9 @@ const faceTo=(p,x,z)=>ev(p,([x,z])=>{const s=window.namsan.status();window.namsa
 // 코스 s에 서서 kind를 하나 부른다(옆 1m·앞 ahead m, 양쪽 중 자리가 나는 쪽). 돌려줌 = 동물 상태
 async function summonAt(p,s,kind,{ahead=2,offset=1}={}){
  await ev(p,s=>{window.namsan.setAuto(false);window.namsan.jump(s);},s);await sl(300);
- for(const side of [1,-1]){const id=await ev(p,([k,a,o,sd])=>window.namsan.trail.summon(k,{ahead:a,offset:o,side:sd}),[kind,ahead,offset,side]);if(!id)continue;await sl(200);
-  const a=(await animals(p)).find(x=>x.id===id);if(a&&!(await ev(p,a=>window.namsan.animalLanes.inForbid(a.x,a.z),a))){await faceTo(p,a.x,a.z);return a;}}
+ for(const side of [1,-1]){const id=await ev(p,([k,a,o,sd])=>window.namsan.trail.summon(k,{ahead:a,offset:o,side:sd}),[kind,ahead,offset,side]);if(!id)continue;
+  // 11-22: 휴대폰 창은 그림이 늦게 생겨 0.2초 뒤엔 아직 없을 때가 있었다(검수 실패 원인) → 2초까지 기다림
+  let a=null;for(let k=0;k<10&&!a;k++){await sl(200);a=(await animals(p)).find(x=>x.id===id);}if(a&&!(await ev(p,a=>window.namsan.animalLanes.inForbid(a.x,a.z),a))){await faceTo(p,a.x,a.z);return a;}}
  return null;}
 // 땅에 붙었는지·금지 밖인지(배회 중 날기·나무 위·덤불 속 빼고)
 const groundCheck=p=>ev(p,()=>{const L=window.namsan.animalLanes,h=window.namsan.trail.height;return window.namsan.animals().filter(a=>a.state==='wander'&&a.visible&&!['fly','hidden','climb'].includes(a.mode)).map(a=>({id:a.id,kind:a.kind,mode:a.mode,dy:+(a.y-h(a.x,a.z)-(a.kind==='magpie'?.085*1.3:0)).toFixed(3),forbid:L.inForbid(a.x,a.z),bush:!!L.inBush?.(a.x,a.z)}));});
@@ -134,9 +135,10 @@ if(PART.includes('multi')){
  const key=l=>JSON.stringify(l.list.map(s=>[s.id,s.kind,s.x,s.z]));
  check('multi: 같은 방 두 화면의 출현 목록(자리·종류)이 같음',la.slot===lb.slot&&key(la)===key(lb),{slot:la.slot,n:la.list.length});
  // A가 실제 출현 동물(까치·토끼·다람쥐) 옆으로 가서 놀라게 한다 → B에 전해짐
- const got=await ev(A,()=>new Promise(res=>{window.addEventListener('hiking:animal-startle',e=>res(e.detail),{once:true});setTimeout(()=>res(null),60000);
-  (async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));window.namsan.setAuto(false);
-   for(const sp of window.namsan.spawns().list.filter(s=>s.kind==='magpie'||s.kind==='hare')){window.namsan.jump(Math.max(2,sp.m-2));await sl(600);
+ const got=await ev(A,()=>new Promise(res=>{window.addEventListener('hiking:animal-startle',e=>{window.__startled=true;res(e.detail);},{once:true});setTimeout(()=>res(null),60000);
+  (async()=>{const sl=ms=>new Promise(r=>setTimeout(r,ms));window.namsan.setAuto(false);const t0=performance.now();
+   // 11-22: 동물이 배회 중 길에서 먼 쪽에 있으면 한 바퀴로는 4m 안에 못 들어갈 때가 있다(검수 실패) → 놀랄 때까지 50초 동안 되풀이
+   for(let round=0;!window.__startled&&performance.now()-t0<50000;round++,await sl(50))for(const sp of window.namsan.spawns().list.filter(s=>s.kind==='magpie'||s.kind==='hare')){if(window.__startled)break;window.namsan.jump(Math.max(2,sp.m-2));await sl(600);
     const a=window.namsan.animals().find(x=>x.id===sp.id);if(!a)continue;const L=window.namsan.animalLanes;
     // 동물 쪽 길 가장자리로(걷는 곳 안에서 가장 가까운 자리)
     for(let k=0;k<=20;k++){const s=window.namsan.status(),dx=a.x-s.x,dz=a.z-s.z,d=Math.hypot(dx,dz);if(d<1.4)break;if(!window.namsan.goTo(s.x+dx/d*.3,s.z+dz/d*.3))break;}

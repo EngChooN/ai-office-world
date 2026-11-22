@@ -442,7 +442,7 @@ function frame_(now){
   const gy=G.ground(camGoal.x,camGoal.z)+.5;if(camGoal.y<gy)camGoal.y=gy;camera.position.copy(camGoal);}
  if(selfieActive(gs)){const lens=hiker.phoneCamera?.(true);if(lens?.visible){camera.position.copy(lens.position);lookGoal.copy(lens.position).add(lens.direction);}else{camera.position.fromArray(selfiePosition([px,smoothY+hiker.eyeHeight,pz],heading,look.pitch));lookGoal.set(px,smoothY+hiker.eyeHeight-.04,pz);}}   // 셀카(관악산과 같음): 손에 든 휴대폰 앞면 렌즈
  if(ride)rideCamera(dtRaw);else lockCamera(dtRaw);
- if(tower.inside)clampDeckCamera();
+ if(tower.inside&&view==='third'&&!selfieActive(gs))clampDeckCamera(dtRaw);   // 1인칭·셀카는 눈·손 자리라 그대로
  {const co=window.namsan.cameraOverride;if(co){camera.position.fromArray(co.p);lookGoal.fromArray(co.t);}}
  camera.lookAt(lookGoal);cameraReady=true;
  trail?.afterCamera();   // 말풍선·고양이 칩은 이번 프레임 카메라로 자리를 잡는다
@@ -555,13 +555,23 @@ function leaveTowerNow(){const e=tower.elev;tower.elev=null;elevUI.hide();if(tow
 // 망원경: 망원경 뒤에 서서 그 방향을 보고 쌍안경 화면(배율 최대)으로. 내리기는 쌍안경과 같음(✕·B·Esc)
 function useScope(sc){st.x=sc.stand.x;st.z=sc.stand.z;st.heading=sc.stand.heading;camBase=st.heading;look.yaw=0;look.pitch=-.03;hiker.snapTo(st.heading);st.auto=false;
  setGadget(gs,'binoculars');if(gs.gadget==='binoculars'){for(let i=0;i<8;i++)zoomStep(gs,1);syncView();input.clear?.();nsUI.toast(`망원경 · ${sc.name.replace(/ \(.*\)/,'')} 쪽 · 둘러보면 이름표가 보여요`,{ms:3000});}}
-// 3인칭 카메라가 유리 밖·기둥 속·천장 위로 나가지 않게
-// 바깥쪽: 전망대 안에서는 탑 겉모습을 숨기므로 카메라가 유리 밖 2.6m까지 나가도 된다(창가에서 안쪽을 볼 때 유리 너머로 나를 봄 — 머리 위에 붙지 않게).
-// 안쪽: 엘리베이터 기둥에 막히면 머리 → 카메라 줄을 줄이고(옆으로 밀지 않음) 줄인 만큼 위로 올려 내려다본다
-const _dc=new THREE.Vector3();
-function clampDeckCamera(){const p=camera.position,a=lookGoal,ok=(x,z)=>{const r=Math.hypot(x-TW.x,z-TW.z);return r<=DECK.glass+2.6&&r>=DECK.core+.3;};
- if(!ok(p.x,p.z)&&ok(a.x,a.z)){let lo=0,hi=1;for(let i=0;i<14;i++){const m=(lo+hi)/2;_dc.lerpVectors(a,p,m);if(ok(_dc.x,_dc.z))lo=m;else hi=m;}const full=p.distanceTo(a);p.lerpVectors(a,p,lo);p.y+=(1-lo)*Math.min(1.8,full*.6);}
- if(Math.hypot(p.x-TW.x,p.z-TW.z)>DECK.glass-.3)p.y=Math.max(p.y,deckPlan.y+1.9);   // 유리 밖이면 창턱·손잡이 위로 넘겨 봄
+// 3인칭 카메라가 유리 밖·기둥 속·천장 위로 나가지 않게(11-22 검수 ①: 예전엔 유리 밖 2.6m까지 나가 창가에서 안쪽을 보면 바닥 끝·지상 숲이 보였다)
+// 카메라는 늘 창턱 안쪽(DECK.sill−0.15)·기둥 밖. 뒤가 막히면 동동이 둘레로 최대 100° 돌려 거리가 나는 쪽을 찾고(머리에 붙지 않게),
+// 그래도 모자란 거리만큼 위로 올려 내려다본다. 도는 각은 매 프레임 부드럽게 따라가 튀지 않음
+const DECK_CAM={rOut:DECK.sill-.15,rIn:DECK.core+.3,want:2.4,maxSwing:100*Math.PI/180,step:7.5*Math.PI/180,ease:6};
+const deckCam={ang:0};
+function deckCamReach(ax,az,dx,dz,full){const st=.1;let t=0;   // (ax,az)에서 (dx,dz) 방향으로 실내를 벗어나지 않고 갈 수 있는 거리
+ for(;t+st<=full;t+=st){const r=Math.hypot(ax+dx*(t+st)-TW.x,az+dz*(t+st)-TW.z);if(r>DECK_CAM.rOut||r<DECK_CAM.rIn)break;}return t;}
+function clampDeckCamera(dt){const p=camera.position,a=lookGoal,C=DECK_CAM;
+ const ra=Math.hypot(a.x-TW.x,a.z-TW.z);if(ra>C.rOut||ra<C.rIn){deckCam.ang=0;p.y=THREE.MathUtils.clamp(p.y,deckPlan.y+.35,deckPlan.y+DECK.height-.3);return;}
+ const hx=p.x-a.x,hz=p.z-a.z,full=Math.hypot(hx,hz);
+ if(full>1e-3){const ux=hx/full,uz=hz/full,dirAt=th=>[ux*Math.cos(th)-uz*Math.sin(th),ux*Math.sin(th)+uz*Math.cos(th)];
+  const need=Math.min(full,C.want)-.05,side=Math.sign(deckCam.ang)||1;let target=null,best=0,bestTh=0;
+  for(let k=0;k*C.step<=C.maxSwing+1e-6&&target==null;k++)for(const s of k?[side,-side]:[1]){const th=s*k*C.step,[dx,dz]=dirAt(th),f=deckCamReach(a.x,a.z,dx,dz,full);
+   if(f>=need){target=th;break;}if(f>best+.05){best=f;bestTh=th;}}
+  target??=bestTh;deckCam.ang+=(target-deckCam.ang)*(1-Math.exp(-(dt||0)*C.ease));
+  const [dx,dz]=dirAt(deckCam.ang),reach=deckCamReach(a.x,a.z,dx,dz,full);
+  p.x=a.x+dx*reach;p.z=a.z+dz*reach;p.y+=(1-reach/full)*Math.min(1.8,full*.6);}
  p.y=THREE.MathUtils.clamp(p.y,deckPlan.y+.35,deckPlan.y+DECK.height-.3);}
 // 엘리베이터 연출 화면(DOM): 양쪽 문이 닫혔다 열림 · 층 표시(1→5→전망)·층 점·흔들림 · 건너뛰기 단추
 const elevUI=(()=>{const el=document.createElement('div');el.className='ns-elev';el.hidden=true;el.setAttribute('role','dialog');el.setAttribute('aria-label','엘리베이터');
@@ -575,7 +585,7 @@ const elevUI=(()=>{const el=document.createElement('div');el.className='ns-elev'
 // 전망대 안에서 늘 보이는 「나가기」 단추(HUD 버튼으로도 되게, 대표 요청 §3)
 {const b=document.createElement('button');b.type='button';b.className='ns-deck-exit';b.innerHTML='<span aria-hidden="true">⬇</span> 전망대 나가기';b.addEventListener('click',e=>{command('tower-exit');e.currentTarget.blur();});document.body.append(b);}
 window.namsan.tower=()=>({inside:tower.inside,elev:tower.elev&&{dir:tower.elev.dir,t:+tower.elev.t.toFixed(2),phase:elevatorAt(tower.elev.dir,tower.elev.t).phase,floor:elevatorAt(tower.elev.dir,tower.elev.t).floor},
- door:towerDoor,deck:{y:deckPlan.y,arrive:deckPlan.arrive,exit:deckPlan.exit,scopes:deckPlan.scopes.map(({id,name,bearing,x,z,stand})=>({id,name,bearing:+bearing.toFixed(1),x,z,stand})),labels:deckPlan.labels.map(({name,bearing,km,row})=>({name,bearing:+bearing.toFixed(1),km:+km.toFixed(2),row}))},
+ door:towerDoor,deck:{y:deckPlan.y,center:{x:TW.x,z:TW.z},sill:DECK.sill,rMax:DECK.rMax,arrive:deckPlan.arrive,exit:deckPlan.exit,scopes:deckPlan.scopes.map(({id,name,bearing,x,z,stand})=>({id,name,bearing:+bearing.toFixed(1),x,z,stand})),labels:deckPlan.labels.map(({name,bearing,km,row})=>({name,bearing:+bearing.toFixed(1),km:+km.toFixed(2),row}))},
  towerVisible:ns.tower.visible,deckVisible:deckArt.visible,r:+Math.hypot(st.x-TW.x,st.z-TW.z).toFixed(2)});
 window.namsan.deckGoTo=(x,z,heading=null)=>{if(!tower.inside)return false;const o={x,z,heading:heading??st.heading};{const dx=o.x-TW.x,dz=o.z-TW.z,r=Math.hypot(dx,dz)||1,c=Math.min(DECK.rMax,Math.max(DECK.rMin,r));st.x=TW.x+dx/r*c;st.z=TW.z+dz/r*c;}st.heading=o.heading;camBase=st.heading;look.yaw=0;look.pitch=0;hiker.snapTo(st.heading);return window.namsan.tower();};   // 점검용
 window.namsan.towerGo=what=>{if(what==='in'){if(!tower.inside&&!tower.elev)enterTower();}else if(what==='out'){if(tower.inside&&!tower.elev)exitTower();}else if(what==='skip')skipElevator();else if(what==='now-out')leaveTowerNow();return window.namsan.tower();};

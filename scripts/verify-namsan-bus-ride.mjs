@@ -27,8 +27,13 @@ async function atS(target,label){
  const rec=await ev(()=>window.__rec);let maxYaw=0,maxCam=0;const wrap=d=>Math.atan2(Math.sin(d),Math.cos(d));
  for(let i=1;i<rec.length;i++){const dt=(rec[i].t-rec[i-1].t)/1000;if(dt<.012)continue;maxYaw=Math.max(maxYaw,Math.abs(wrap(rec[i].yaw-rec[i-1].yaw)));
   maxCam=Math.max(maxCam,Math.abs(wrap(Math.atan2(rec[i].cx,rec[i].cz)-Math.atan2(rec[i-1].cx,rec[i-1].cz))));}
- return {frames:rec.length,한프레임_버스방향최대도:+(maxYaw*57.3).toFixed(2),한프레임_시점최대도:+(maxCam*57.3).toFixed(2)};}
-const up=await atS(1838-45,'오르는길-급커브');check('오르는 길 급커브: 버스 방향·시점이 한 프레임에 3° 넘게 튀지 않음',up.한프레임_버스방향최대도<3&&up.한프레임_시점최대도<3,up);
+ // 11-22: 화면 없는 브라우저는 약 0.13초마다 몰아서 그려(4ms·130ms 번갈아) 「한 프레임 각도」가 그 사이 돈 만큼 커진다 → 판정은 0.1초 이상 구간의 초당 각도로.
+ //  기준 180°/s = 60fps에서 한 프레임 3°. 진짜 튐(한 번에 수십°)은 0.13초 구간에서도 180°/s를 넘는다.
+ let rateYaw=0,rateCam=0;const ang=r=>Math.atan2(r.cx,r.cz);
+ for(let i=0,j=0;i<rec.length;i++){while(j<rec.length&&rec[j].t-rec[i].t<100)j++;if(j>=rec.length)break;const dt=(rec[j].t-rec[i].t)/1000;
+  rateYaw=Math.max(rateYaw,Math.abs(wrap(rec[j].yaw-rec[i].yaw))/dt);rateCam=Math.max(rateCam,Math.abs(wrap(ang(rec[j])-ang(rec[i])))/dt);}
+ return {frames:rec.length,버스방향_초당최대도:+(rateYaw*57.3).toFixed(1),시점_초당최대도:+(rateCam*57.3).toFixed(1),참고_한프레임_버스방향최대도:+(maxYaw*57.3).toFixed(2),참고_한프레임_시점최대도:+(maxCam*57.3).toFixed(2)};}
+const up=await atS(1838-45,'오르는길-급커브');check('오르는 길 급커브: 버스 방향·시점이 초당 180°(60fps 한 프레임 3°)보다 빨리 돌지 않음',up.버스방향_초당최대도<180&&up.시점_초당최대도<180,up);
 // 정상까지 가서 내려오는 쪽 버스는 다른 대: 내려오는 급커브는 같은 버스가 정상 찍고 내려올 때 s≈2404
 await ev(()=>{const b=window.namsan.bus();window.namsan.busClockOffset+=b.ride.until-2;});await sl(5000);
 const down=await ev(()=>window.namsan.bus());check('정상에서 내림(막힘 없이 도착)',!down.ride,{ride:down.ride});

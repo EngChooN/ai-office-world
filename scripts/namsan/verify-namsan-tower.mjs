@@ -107,6 +107,12 @@ try{
  const bp=await ev(B,()=>window.namsan.status());await ev(A,({x,z})=>{const s=window.namsan.status(),dx=x-s.x,dz=z-s.z,d=Math.hypot(dx,dz)||1;const c=Math.cos(.45),sn=Math.sin(.45),ux=(dx*c-dz*sn)/d,uz=(dx*sn+dz*c)/d;window.namsan.deckGoTo(x-ux*3.2,z-uz*3.2,Math.atan2(-dx,-dz)+.25);},{x:bp.x,z:bp.z});
  await sl(1500);await shot(A,'pc-8-deck-together');
  await ev(B,({x,z})=>{const s=window.namsan.status(),dx=x-s.x,dz=z-s.z;window.namsan.deckGoTo(s.x,s.z,Math.atan2(-dx,-dz));},await ev(A,()=>window.namsan.status()));await sl(1200);await shot(B,'phone-5-deck-together');
+ // 11-22 검수 ①: 창가(걷는 고리 바깥 끝)에서 안쪽을 봐도 카메라가 창턱 안에 있고 머리에 붙지 않음(동동이와 1.5m 이상). 여러 방향에서
+ for(const [pg,lb] of [[B,'phone'],[A,'pc']]){const res=[];
+  for(const [i,bear] of [0,2.1,4.2].entries()){const d=await ev(pg,b=>{const t=window.namsan.tower().deck;const x=t.center.x+Math.sin(b)*t.rMax,z=t.center.z-Math.cos(b)*t.rMax;window.namsan.deckGoTo(x,z,Math.atan2(-(t.center.x-x),-(t.center.z-z)));return t;},bear);
+   await sl(1600);const c=await ev(pg,()=>window.namsan.cam()),s=await ev(pg,()=>window.namsan.status());
+   res.push({camR:+Math.hypot(c[0]-d.center.x,c[2]-d.center.z).toFixed(2),toMe:+Math.hypot(c[0]-s.x,c[2]-s.z).toFixed(2),up:+(c[1]-d.y).toFixed(2)});if(i===0)await shot(pg,`${lb}-5b-window-inward`);}
+  check(`${lb}: 창가에서 안쪽을 봐도 카메라가 창턱 안(${'≤'}12.9m)·동동이와 1.5m 이상`,res.every(r=>r.camR<=12.9&&r.toMe>=1.5),{res});}
  // 7) 나가기 단추(B: 손가락) → 문 앞
  const ex=B.locator('.ns-deck-exit');const exBox=await ex.boundingBox();check('휴대폰 「전망대 나가기」 단추 보임·44px',exBox&&exBox.height>=44,{exBox});
  await ex.tap();await until(B,()=>!window.namsan.tower().elev,null,6000);await sl(300);
