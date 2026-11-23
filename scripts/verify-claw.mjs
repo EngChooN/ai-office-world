@@ -102,11 +102,23 @@ async function sizeRun(size){
  await click(p,'.kh-todo[data-act=side]');await sl(900);await p.screenshot({path:`${OUT}/${size}-5side.png`});
  {const a=(await st(p)).play.claw;const R2=await box('right');await p.mouse.move(R2.x+R2.width/2,R2.y+R2.height/2);await p.mouse.down();await sl(400);await p.mouse.up();const b=(await st(p)).play.claw;
   ok(`${tag} 옆에서 볼 때 ▶ = 화면 오른쪽(기계 안쪽)`,b.z<a.z-.03&&Math.abs(b.x-a.x)<.01,`${JSON.stringify(a)}→${JSON.stringify(b)}`);}
- await click(p,'.kh-todo[data-act=side]');await sl(300);
  await p.evaluate(()=>claw.aim(0));await sl(100);
- await click(p,'.kh-big[data-act=press]');await sl(1500);
- s=await st(p);ok(`${tag} 뽑기 → 집게 내려감(입력 잠금)`,s.mode==='drop'&&await p.evaluate(()=>document.querySelector('.kh-pad').hasAttribute('data-lock')));
- await p.screenshot({path:`${OUT}/${size}-6drop.png`});
+ // 옆에서 본 채로 뽑기: 그림 집게(손가락 각)를 매 프레임 적어 「벌리고 내려감 → 바닥에서 조임 → 조인 채 올라옴」 확인(대표 피드백 11-23)
+ await p.evaluate(()=>{const C=claw.shop.userData.machines[0].group.userData.claw,log=window.__clawLog=[];
+  const tick=()=>{const f=C.fingers.map(f=>f.rotation.x);log.push({drop:C.state.drop,ang:(f[0]+f[1]+f[2])/3,st:claw.play.status().claw?.state});if(log.length<2000)requestAnimationFrame(tick);};requestAnimationFrame(tick);});
+ await click(p,'.kh-big[data-act=press]');
+ {let shot=false;for(let t=0;t<40&&!shot;t++){await sl(50);const d=await p.evaluate(()=>{const C=claw.shop.userData.machines[0].group.userData.claw;return {drop:C.state.drop,st:claw.play.status().claw?.state};});
+   if(d.st==='drop'&&d.drop>.08){await p.screenshot({path:`${OUT}/${size}-6side-down.png`});shot=true;}}
+  ok(`${tag} 옆에서: 내려가는 장면 찍음`,shot);}
+ s=await st(p);ok(`${tag} 뽑기 → 집게 내려감(입력 잠금)`,['drop','close','lift'].includes(s.play.claw?.state)&&s.mode==='drop'&&await p.evaluate(()=>document.querySelector('.kh-pad').hasAttribute('data-lock')));
+ await sl(3500);
+ {const L=await p.evaluate(()=>window.__clawLog.slice());
+  const rest=L[0].ang,down=L.filter(x=>x.st==='drop'&&x.drop>.01),ci=L.findIndex(x=>x.st==='close'),deep=Math.max(...L.map(x=>x.drop)),up=L.filter(x=>x.st==='lift'&&x.drop<deep-.02);
+  // 손가락 각: 작을수록(−쪽) 벌어짐
+  ok(`${tag} 그림 집게: 벌린 채 내려감`,down.length>3&&down.every(x=>x.ang<rest-.25),`쉼 ${rest.toFixed(2)} 내려갈 때 ${down.length?Math.max(...down.map(x=>x.ang)).toFixed(2):'-'}`);
+  ok(`${tag} 그림 집게: 바닥에서 조이기 시작`,ci>0&&Math.abs(L[ci].drop-deep)<.01,`조임 시작 깊이 ${L[ci]?.drop.toFixed(3)} 가장 깊이 ${deep.toFixed(3)}`);
+  ok(`${tag} 그림 집게: 조인 채 올라옴`,up.length>3&&up.every(x=>x.ang>L[ci].ang+.05),`조임 시작 ${L[ci]?.ang.toFixed(2)} 올라올 때 ${up.length?Math.min(...up.map(x=>x.ang)).toFixed(2):'-'}`);}
+ await p.screenshot({path:`${OUT}/${size}-6drop.png`}); // 옆 보기는 다음 기계로 가면 저절로 꺼짐
  await waitResult(p);s=await st(p);ok(`${tag} 집게 결과(물리): ${s.play.result?.kind}`,['win','near','miss'].includes(s.play.result?.kind),JSON.stringify(s.play.result));
  await resultChecks(p,tag,'집게');await p.screenshot({path:`${OUT}/${size}-7clawresult.png`});
  await click(p,'.kh-card [data-c=stop]');await sl(500);

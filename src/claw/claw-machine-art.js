@@ -60,7 +60,9 @@ function signTexture(M){return canvasTex(256,96,(g,w,h)=>{
  g.fillStyle=M.bodyDark;g.font=`900 34px ${FONT}`;g.textBaseline='middle';g.fillText(M.name,72,38);
  g.fillStyle=M.body;g.font=`700 18px ${FONT}`;g.fillText(M.sub,74,70);});}
 
-// ── 집게: 레일 위 수레(carriage) → 줄 → 머리 → 손가락 3개. set({x,z,drop,open})로 움직인다.
+// 손가락 각(rad): open 0 → shut, 1 → wide. 끝이 가운데에서 떨어진 거리가 물리 집게발 끝(claw-physics CLAW_RIG, 닫힘 −0.04 ~ 최대 1.0)과 같게 맞춘 값
+export const FINGER_ANGLE=Object.freeze({shut:.3,wide:-.57});
+// ── 집게: 레일 위 수레(carriage) → 줄 → 머리 → 손가락 3개. set({x,z,drop,open,opens})로 움직인다.
 function buildClaw(mats){
  const C=CLAW,root=new THREE.Group();root.name='집게';
  const gantry=new THREE.Group();gantry.name='집게 가로대';root.add(gantry);          // x 방향 가로대(z로 움직임)
@@ -80,12 +82,13 @@ function buildClaw(mats){
  // 바닥 그림자 점(조작 중 집게 자리 안내, 설계 §2 ③). 밝은 바닥에서도 보이게 짙은 반투명.
  const dot=new THREE.Mesh(new THREE.CircleGeometry(.035,16).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:'#2b2f36',transparent:true,opacity:.35,depthWrite:false}));dot.name='집게 그림자 점';dot.renderOrder=1;root.add(dot);
  const state={x:C.home[0],z:C.home[1],drop:0,open:0};
- const set=({x=state.x,z=state.z,drop=state.drop,open=state.open,dotY=null}={})=>{
+ const set=({x=state.x,z=state.z,drop=state.drop,open=state.open,opens=null,dotY=null}={})=>{
   Object.assign(state,{x,z,drop,open});
   gantry.position.set(0,C.railY,z);cart.position.x=x;
   const len=Math.max(.02,C.railY-C.clawTip-C.clawTop+drop);cable.scale.y=len;head.position.y=-len;
-  // open 0 = 오므림(손가락 끝이 가운데로), 1 = 활짝
-  for(const f of fingers)f.rotation.x=-.25+open*.85;
+  // open 0 = 오므림(손가락 끝이 가운데에서 살짝 겹침), 1 = 활짝. rotation.x가 −쪽이면 끝이 바깥으로 간다(11-23 방향 바로잡음).
+  // opens = 손가락마다 따로(물리 집게발이 인형에 막혀 덜 오므려진 것까지 그대로 그림), 없으면 open 하나로
+  fingers.forEach((f,i)=>{f.rotation.x=FINGER_ANGLE.shut+(opens?.[i]??open)*(FINGER_ANGLE.wide-FINGER_ANGLE.shut);});
   dot.position.set(x,(dotY??C.floorY)+.004,z);
  };
  set({});

@@ -14,7 +14,8 @@ import {CLAW_TUNING,judgeTimer,judgeKey,fmtTimer,hund,encodeClawPos,decodeClawPo
 // 타이머 연출·구경 연출(집게가 정해진 결과대로 움직임) 단계 시간(초)
 export const SEQ_TIMES=Object.freeze({down:1.0,close:.45,up:.9,carry:1.0,release:.35,fall:.55,settle:.35});
 const SEQ=['down','close','up','carry','release','fall','settle'];
-const OPEN={play:.6,down:.85,grab:.32,shut:0,release:.95};
+// 집게 벌림(그림 open). play = 물리 쉼 자세(CLAW_RIG.rest)와 같게, down = 물리 내려가기(CLAW_RIG.open)와 같게 — 내 판·구경·타이머가 같은 모양
+const OPEN={play:.21,down:.62,grab:.32,shut:0,release:.75};
 const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
 const ease=t=>t<.5?2*t*t:1-(-2*t+2)**2/2;
 const GEOM=geomFrom(CLAW);
@@ -27,7 +28,7 @@ const idOfObj=o=>o?.userData?.plushId??(o?.name?.includes(':')?o.name.split(':')
 export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'common',toonify=null,audio=null,pityFor=()=>false,onEvent=()=>{},rareOf=()=>false,T=CLAW_TUNING,seed=7}){
  const rigs=shop.userData.machines.map((M,i)=>{const U2=M.group.userData,kind=U2.kind??M.kind??'claw';
   const rest=kind==='timer'?[U2.stage.x,U2.stage.z]:[CLAW.home[0],CLAW.home[1]];
-  return {i,M,U:U2,kind,rest,x:rest[0],z:rest[1],tx:rest[0],tz:rest[1],drop:0,open:0,seq:null,owner:null,ownerAct:null,lightT:0,lightMode:'idle',
+  return {i,M,U:U2,kind,rest,x:rest[0],z:rest[1],tx:rest[0],tz:rest[1],drop:0,open:OPEN.play,seq:null,owner:null,ownerAct:null,lightT:0,lightMode:'idle',
    sim:null,views:null,timer:null,key:null,keyFx:null,door:null};});
  let mode='idle',cur=null,elapsed=0,clock=0,armedOnce=false,result=null,playN=0,phase='',hold={x:0,z:0},bumpX=0,bumpZ=0,pityNow=false,clawWon=[],doneAt=0,lastV=0,refills=0;
  const P=CLAW.play,W=CLAW.width;
@@ -67,7 +68,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
 
  function setLights(r,m,sec=0){r.lightMode=m;r.lightT=sec;r.U.setLights?.(m);}
  const topAtM=(r,x,z)=>r.sim?GEOM.floorY+r.sim.topAt(x/U,z/U)*U:CLAW.floorY;
- function pose(r){r.U.claw?.set({x:r.x,z:r.z,drop:r.drop,open:r.open,dotY:topAtM(r,r.x,r.z)});}
+ function pose(r){const live=r.sim&&!r.seq&&!(r.owner&&r!==cur);r.U.claw?.set({x:r.x,z:r.z,drop:r.drop,open:r.open,opens:live?r.opens:null,dotY:topAtM(r,r.x,r.z)});}
  const tipY=r=>CLAW.clawTop-r.drop;
 
  // ── 정해진 결과대로 움직이는 집게(타이머 연출·다른 손님 구경). given = 이미 있는 인형(타이머 단 위), 없으면 makePlushObj로 새로
@@ -87,13 +88,13 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   const s=r.seq;s.t+=dt;const name=SEQ[s.k],dur=SEQ_TIMES[name],k=Math.min(1,s.t/dur),e=ease(k),carryLen=SEQ_TIMES.up+SEQ_TIMES.carry;
   const grab=s.res.kind!=='miss';
   switch(name){
-   case 'down':r.drop=s.depth*e;r.open=OPEN.down;break;
+   case 'down':r.drop=s.depth*e;r.open=OPEN.play+(OPEN.down-OPEN.play)*Math.min(1,s.t/.2);break; // 내려가기 시작하며 벌림(0.2초), 벌린 채 바닥까지
    case 'close':r.open=OPEN.down+((grab?OPEN.grab:OPEN.shut)-OPEN.down)*e;if(k>=1&&grab&&!s.obj&&!s.slipped){attach(r);audio?.play('grab');}break;
    case 'up':r.drop=s.depth*(1-e);if(s.res.kind==='near'&&s.obj&&s.t/carryLen>=.5)dropBack(r);break;
    case 'carry':r.x=s.x0+(CLAW.home[0]-s.x0)*e;r.z=s.z0+(CLAW.home[1]-s.z0)*e;if(s.res.kind==='near'&&s.obj)dropBack(r);break;
    case 'release':r.open=OPEN.grab+(OPEN.release-OPEN.grab)*e;
     if(k>=1&&s.obj){s.falling={obj:s.obj,from:s.obj.position.clone(),to:new THREE.Vector3(CLAW.home[0],CLAW.floorY-.32,CLAW.home[1]),t:0,dur:.4,chute:true};s.obj=null;audio?.play('chute');}break;
-   case 'fall':r.open=OPEN.release+(OPEN.shut-OPEN.release)*e;r.x=CLAW.home[0]+(r.rest[0]-CLAW.home[0])*e;r.z=CLAW.home[1]+(r.rest[1]-CLAW.home[1])*e;break;
+   case 'fall':r.open=OPEN.release+(OPEN.play-OPEN.release)*e;r.x=CLAW.home[0]+(r.rest[0]-CLAW.home[0])*e;r.z=CLAW.home[1]+(r.rest[1]-CLAW.home[1])*e;break;
   }
   if(s.obj)hang(r,s.obj);tickFalling(r,dt);pose(r);
   if(k>=1){s.k++;s.t=0;if(s.k>=SEQ.length){finishSeq(r);return true;}}
@@ -101,7 +102,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
  }
  function finishSeq(r){
   const s=r.seq;r.seq=null;if(s.falling&&(!s.falling.keep||s.falling.chute))r.M.group.remove(s.falling.obj);if(s.obj&&!s.given)r.M.group.remove(s.obj);
-  r.x=r.tx=r.rest[0];r.z=r.tz=r.rest[1];r.drop=0;r.open=0;pose(r);
+  r.x=r.tx=r.rest[0];r.z=r.tz=r.rest[1];r.drop=0;r.open=OPEN.play;pose(r);
   if(r.kind==='timer'&&s.res.kind==='win')r.U.setPrize?.(nextPrize(r,s.res.id));
   if(s.local)finishLocal(r,s.res);else outcomeFx(r,s.res);
  }
@@ -166,7 +167,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   const r=cur;mode='idle';phase='';audio?.stop('motor');resetRig(r);setLights(r,'idle');onEvent('quit',{machine:r.i});cur=null;return true;
  }
  function resetRig(r){
-  r.x=r.tx=r.rest[0];r.z=r.tz=r.rest[1];r.drop=0;r.open=0;
+  r.x=r.tx=r.rest[0];r.z=r.tz=r.rest[1];r.drop=0;r.open=OPEN.play;
   if(r.kind==='claw'){const c=r.sim.claw;c.state='idle';c.x=GEOM.HOME.x;c.z=GEOM.HOME.z;c.y=GEOM.HOME.y;}else pose(r);
   if(r.kind==='timer'){r.U.setTimer?.({text:'00.00',state:'ready'});r.U.setButton?.('off');r.timer=null;}
   if(r.kind==='key'){r.U.resetCells?.();r.U.key?.set({x:T.key.startX,y:T.key.startY,push:0});r.key=null;}

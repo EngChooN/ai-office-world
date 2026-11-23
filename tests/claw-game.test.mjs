@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {CLAW_TUNING as T,seoulDate,msToNextGrant,freshState,sanitizeState,grantDaily,grantedToday,canPlay,spendCoin,recordResult,rulesFor,pityLeft,pityOn,kindOf,
  judgeTimer,fmtTimer,judgeKey,keyMissText,timerDiffText,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,ACT_PHASES,dexCount} from '../src/claw/claw-rules.js';
-import {geomFrom,createClawSim,runDrop,BODY_TYPES,PLUSH_BODY} from '../src/claw/claw-physics.js';
+import {geomFrom,createClawSim,runDrop,BODY_TYPES,PLUSH_BODY,CLAW_RIG,U} from '../src/claw/claw-physics.js';
+const CLAW_RIG_TIP=th=>(CLAW_RIG.hinge+CLAW_RIG.l1*Math.sin(th)+CLAW_RIG.l2*Math.sin(th-CLAW_RIG.bend))*U; // 물리 집게발 끝이 가운데에서 떨어진 거리(m, 겹치면 −)
 import {CLAW} from '../src/claw/claw-machine-art.js';
 import {KEY} from '../src/claw/claw-machines-more.js';
 import {plushSize} from '../src/claw/claw-plush.js';
@@ -78,6 +79,25 @@ test('집게 물리: 기계 치수에서 만든 상자·구멍, 인형 8종 몸,
  // 같은 씨앗 = 같은 더미
  const a=createClawSim({geom:g,ids:['cat'],sizeOf:plushSize,seed:9,count:6}),b=createClawSim({geom:g,ids:['cat'],sizeOf:plushSize,seed:9,count:6});
  assert.deepEqual(a.dolls.map(d=>d.cx.toFixed(4)),b.dolls.map(d=>d.cx.toFixed(4)));
+});
+test('집게 순서(대표 피드백 11-23): 벌리고 내려감 → 벌린 채 바닥 → 바닥에서 조임 → 조인 채 올라옴 → 출구에서 놓음, 그림 벌린 폭 = 물리 집게발 폭', async ()=>{
+ const THREE=await import('three');const {buildClawMachine}=await import('../src/claw/claw-machine-art.js');
+ const g=geomFrom(CLAW),sim=createClawSim({geom:g,ids:['squirrel','hare','magpie'],sizeOf:plushSize,seed:5,count:T.claw.dolls,power:T.claw.power});
+ const m=buildClawMachine('forest'),c=m.userData.claw,R=CLAW_RIG_TIP;
+ sim.start();sim.setPos(0,-.5);const rest=sim.clawPose().open;sim.drop();
+ const log=[];let firstMove=null;
+ for(let t=0;t<16&&sim.claw.state!=='done';t+=1/60){sim.step(1/60);const p=sim.clawPose();log.push({s:sim.claw.state,...p});if(firstMove==null&&p.drop>.002)firstMove=p;}
+ assert.ok(firstMove&&firstMove.open>rest+.3,`내려가기 시작할 때 이미 벌림(${firstMove?.open.toFixed(2)} > 쉼 ${rest.toFixed(2)})`);
+ const down=log.filter(p=>p.s==='drop'&&p.drop>.002);assert.ok(down.length>10&&down.every(p=>p.open>.55),'벌린 채 내려감');
+ const bottom=Math.max(...log.map(p=>p.drop)),closeAt=log.findIndex(p=>p.s==='close');
+ assert.ok(Math.abs(log[closeAt].drop-bottom)<.005,'조이기는 바닥(가장 깊은 곳)에서 시작');
+ const lift=log.filter(p=>p.s==='lift'||p.s==='carry');assert.ok(lift.length&&lift.every(p=>p.open<log[closeAt].open),'조인 채 올라오고 옮김');
+ const rel=log.findIndex(p=>p.s==='release');assert.ok(rel>0&&Math.abs(log[rel].x-CLAW.home[0])<1e-6&&Math.abs(log[rel].z-CLAW.home[1])<1e-6,'출구 위에서 놓음');
+ assert.ok(log.at(-1).open>lift.at(-1).open,'놓을 때 벌림');
+ // 그림 손가락 끝이 가운데에서 떨어진 거리 ≈ 물리 집게발 끝 거리(1cm 안)
+ for(const th of [-.04,.18,.6,1]){const open=(th+.04)/1.04;c.set({drop:0,open});m.updateMatrixWorld(true);
+  const h=c.head.getWorldPosition(new THREE.Vector3()),t=c.fingers[0].localToWorld(new THREE.Vector3(0,-.14,0)).sub(h);
+  assert.ok(Math.abs(t.z-R(th))<.012,`th ${th}: 그림 ${t.z.toFixed(3)} 물리 ${R(th).toFixed(3)}`);}
 });
 test('보장: 같은 기계 5번 연달아 실패 → 다음 판 도움(집게 힘센 집게·열쇠 넓은 구멍), 타이머는 기본 끔', ()=>{
  const s=freshState();for(let i=0;i<T.pity.after;i++)recordResult(s,'forest',{kind:'miss'});

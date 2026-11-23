@@ -37,7 +37,12 @@ test('집게 자세: 손가락 끝 높이 = clawTop − drop, 여닫기, 그림�
  const m=buildClawMachine('forest');m.updateMatrixWorld(true);const c=m.userData.claw;
  for(const drop of [0,.2,CLAW.dropMax]){c.set({x:.1,z:-.1,drop,open:.5});m.updateMatrixWorld(true);const p=c.tipWorld();
   assert.ok(Math.abs(p.y-(CLAW.clawTop-drop))<1e-6,`drop ${drop} → ${p.y}`);assert.ok(Math.abs(p.x-.1)<1e-6&&Math.abs(p.z+.1)<1e-6);}
- c.set({open:0});const shut=c.fingers[0].rotation.x;c.set({open:1});assert.ok(c.fingers[0].rotation.x>shut);
+ // 여닫기 방향: open이 클수록 손가락 끝이 집게 가운데에서 멀어짐(11-23 거꾸로였던 것 고침), opens로 손가락마다 따로
+ const spread=()=>{m.updateMatrixWorld(true);const h=c.head.getWorldPosition(new THREE.Vector3());let s=0;
+  for(const f of c.fingers){const t=f.localToWorld(new THREE.Vector3(0,-.14,0)).sub(h);s+=Math.hypot(t.x,t.z);}return s/3;};
+ let prev=-1;for(const open of [0,.25,.5,.75,1]){c.set({drop:0,open});const s=spread();assert.ok(s>prev,`open ${open} 벌어진 거리 ${s.toFixed(3)}`);prev=s;}
+ c.set({open:0});assert.ok(spread()<.02,'오므리면 끝이 가운데로 모임(물리처럼 살짝 겹침)');
+ c.set({open:0,opens:[1,0,0]});m.updateMatrixWorld(true);assert.ok(c.fingers[0].rotation.x<c.fingers[1].rotation.x,'opens 손가락마다');
  c.set({x:.2,z:.1,dotY:.7});assert.ok(Math.abs(c.dot.position.y-.704)<1e-6);
  for(const id of MACHINES.map(x=>x.id))assert.ok(buildClawMachine(id).getObjectByName('뽑기 단추'));
  assert.throws(()=>buildClawMachine('없는기계'));

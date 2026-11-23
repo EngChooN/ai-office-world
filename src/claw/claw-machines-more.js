@@ -127,7 +127,7 @@ export function buildTimerMachine(theme='city',{toonify=null,guestObject=null,pr
  glassBox(root,late);
  const claw=buildClaw(mats);root.add(claw.root);claw.root.remove(claw.dot);
  const button=bigButton(root,T.button,'#3fbf6a',.062);button.name='시작 단추';
- finish(root,mats,toonify,late);claw.set({x:st.x,z:st.z,drop:0,open:.55});
+ finish(root,mats,toonify,late);claw.set({x:st.x,z:st.z,drop:0,open:.21});
  // 이름판(앞)·숫자판(앞) — 빛나는 판이라 카툰 재질로 바꾸지 않는다
  const sign=timerSign(M);if(sign){const m=new THREE.Mesh(new THREE.PlaneGeometry(W*.72,W*.72/4),new THREE.MeshStandardMaterial({map:sign,emissive:new THREE.Color('#ffffff'),emissiveMap:sign,emissiveIntensity:.25,roughness:.7}));
   m.position.set(0,(C.height+T.height)/2,.181);m.name='기계 간판';root.add(m);}

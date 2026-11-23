@@ -83,8 +83,9 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
   drop(){if(claw.state!=='move')return false;claw.state='drop';claw.t=0;claw.touched=false;return true;},
   step(dt){const n=Math.min(12,Math.round(dt/SUB));for(let i=0;i<n;i++)sub();},
   settle(sec){for(let i=0;i<sec/SUB;i++)sub();},
-  /** 집게 그림 값(기계 좌표 m): x·z·drop(0 = 처음 높이)·open(0 오므림~1 활짝) */
-  clawPose(){const th=(claw.th[0]+claw.th[1]+claw.th[2])/3;return {x:claw.x*U,z:claw.z*U,drop:Math.max(0,(HOME.y-claw.y)*U),open:Math.max(0,Math.min(1,(th-CL.closed)/(CL.splay-CL.closed)))};},
+  /** 집게 그림 값(기계 좌표 m): x·z·drop(0 = 처음 높이)·open(0 오므림~1 활짝)·opens(그림 손가락 0·1·2 순서 = 물리 집게발 0·2·1, 그림은 +z에서 반대로 돎) */
+  clawPose(){const o=k=>Math.max(0,Math.min(1,(claw.th[k]-CL.closed)/(CL.splay-CL.closed)));const opens=[o(0),o(2),o(1)];
+   return {x:claw.x*U,z:claw.z*U,drop:Math.max(0,(HOME.y-claw.y)*U),open:(opens[0]+opens[1]+opens[2])/3,opens};},
   /** 인형 하나의 몸 틀(0번 공 자리 + 머리·좌우 방향, 단위) — 그림이 자세를 맞출 때 씀 */
   frame(di){const D=dolls[di],i=D.first;return {p:[P.x[i],P.y[i],P.z[i]],up:[P.x[i+1]-P.x[i],P.y[i+1]-P.y[i],P.z[i+1]-P.z[i]],side:[P.x[i+3]-P.x[i+2],P.y[i+3]-P.y[i+2],P.z[i+3]-P.z[i+2]],
    lup:[D.parts[1][0]-D.parts[0][0],D.parts[1][1]-D.parts[0][1],D.parts[1][2]-D.parts[0][2]],lside:[D.parts[3][0]-D.parts[2][0],D.parts[3][1]-D.parts[2][1],D.parts[3][2]-D.parts[2][2]]};},
