@@ -129,7 +129,7 @@ const play=createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf,toonify:toon.
    hud.showResult({res,machine:d.machine,kind:d.kind,isNew:rec.isNew,count:rec.count,fails:state.pity[M.id]??0,coins:state.coins});
   }
  }});
-let side=false; // 집게 「👁 옆에서」 시점(설계 v2 §4)
+let side=0; // 집게 「👁 옆에서」 시점(설계 v2 §4): 0 = 정면, 1 = 오른쪽 옆, -1 = 왼쪽 옆(「반대쪽에서 보기」로 바꿈)
 
 function startPlay(i,{confirmed=false}={}){
  if(play.mode!=='idle')return false;
@@ -139,7 +139,7 @@ function startPlay(i,{confirmed=false}={}){
  const mid=MACHINES[i].id;if(!state.seen[mid]&&!confirmed){hud.showRules(i,{first:true});return false;}
  if(!state.seen[mid]){state.seen[mid]=true;}
  spendCoin(state,mid);saveState(state);
- const s=U.machines[i].stand;player.place(s.x,s.z,0);runOn=false;side=false;
+ const s=U.machines[i].stand;player.place(s.x,s.z,0);runOn=false;side=0;
  play.start(i);return true;
 }
 function nearMachine(){let best=-1,bd=2.0;U.machines.forEach((M,i)=>{const d=Math.hypot(player.x-M.stand.x,player.z-M.stand.z);if(d<bd){bd=d;best=i;}});return best;}
@@ -189,14 +189,14 @@ function updatePlayer(dt){
 //  조작·결과를 보는 동안만 내 화면에서 내 동동이를 숨긴다(다른 손님 화면에는 기계 앞에 선 모습 그대로 보임)
 //  높이는 월드아트 값(1.9·세로 2.2)보다 낮춤: 높으면 위 간판 상자가 레일 쪽 집게를 가린다(특히 세로 화면)
 const PLAY_CAM=Object.freeze({pos:[0,1.6,1.75],look:[0,.84,0],fov:44,portrait:Object.freeze({pos:[0,1.55,2.25],look:[0,.86,0],fov:58})});
-// 「👁 옆에서」: 기계 오른쪽 옆(이웃 기계와 사이)에서 유리 상자를 본다 — 앞뒤 거리가 보이게
+// 「👁 옆에서」: 기계 옆(이웃 기계·벽과 사이)에서 유리 상자를 본다 — 앞뒤 거리가 보이게. pos는 오른쪽 옆 값, 왼쪽은 x를 뒤집음
 const SIDE_CAM=Object.freeze({pos:[1.5,1.42,.05],look:[0,.86,0],fov:44,fovPortrait:64});
 const camPos=new THREE.Vector3(),camLook=new THREE.Vector3(),wantPos=new THREE.Vector3(),wantLook=new THREE.Vector3();let camFov=BASE_FOV,camInit=false;
 function updateCamera(dt){
  const i=play.machine;
  if(play.mode!=='idle'&&i>=0){ // 조작 카메라: 기계 정면 고정(월드아트 CLAW.camera, 세로 휴대폰은 portrait)
   const M=U.machines[i],C=M.kind==='claw'?PLAY_CAM:M.group.userData.camera??PLAY_CAM,P=innerWidth<innerHeight?C.portrait:C;
-  if(M.kind==='claw'&&side){wantPos.set(M.x+SIDE_CAM.pos[0],SIDE_CAM.pos[1],M.z+SIDE_CAM.pos[2]);wantLook.set(M.x+SIDE_CAM.look[0],SIDE_CAM.look[1],M.z+SIDE_CAM.look[2]);camFov=innerWidth<innerHeight?SIDE_CAM.fovPortrait:SIDE_CAM.fov;}else{
+  if(M.kind==='claw'&&side){wantPos.set(M.x+side*SIDE_CAM.pos[0],SIDE_CAM.pos[1],M.z+SIDE_CAM.pos[2]);wantLook.set(M.x+SIDE_CAM.look[0],SIDE_CAM.look[1],M.z+SIDE_CAM.look[2]);camFov=innerWidth<innerHeight?SIDE_CAM.fovPortrait:SIDE_CAM.fov;}else{
   wantPos.set(M.x+P.pos[0],P.pos[1],M.z+P.pos[2]);const lk=P.look??C.look;wantLook.set(M.x+lk[0],lk[1],M.z+lk[2]);camFov=P.fov;}
  }else{
   if(player.moving&&!input.looking()){let d=player.heading-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*1.2));}
@@ -241,7 +241,8 @@ hud=createClawHud({mobile,catalog,pools,state:()=>state,thumb:id=>thumbs.get(id)
  play:()=>{const i=nearMachine();if(i>=0)startPlay(i);},
  bigDown:ts=>play.bigDown(ts),bigUp:ts=>play.bigUp(ts),
  confirmStart:i=>{const n=nearMachine();startPlay(i,{confirmed:true});void n;},
- side:()=>{side=!side;},
+ side:()=>{side=side?0:1;},
+ flip:()=>{if(side)side=-side;},
  quit:()=>play.quit(),
  again:()=>{const i=play.machine;play.done();if(i>=0)startPlay(i);},
  stop:()=>{play.done();},
@@ -278,7 +279,7 @@ renderer.setAnimationLoop(()=>{
  // 집게: 십자 단추 + 키(←→/AD 좌우, ↑↓/WS 안·밖). 화면 오른쪽 = 기계 +X, ▲ = 안쪽(−Z)
  let dir={x:0,z:0};
  if(play.mode==='play'&&play.kind==='claw'&&!hud.card){const p=hud.padDir(),mv=input.move(),sx=Math.sign(p.x+Math.sign(mv.side)),sz=Math.sign(p.z-Math.sign(mv.forward));
-  dir=side?{x:sz,z:-sx}:{x:sx,z:sz};} // 단추 방향은 화면 기준(옆에서 볼 때 ▶ = 화면 오른쪽 = 기계 안쪽)
+  dir=side?{x:side*sz,z:-side*sx}:{x:sx,z:sz};} // 단추 방향은 화면 기준(오른쪽 옆에서 볼 때 ▶ = 기계 안쪽, 왼쪽 옆에서는 ▶ = 기계 앞쪽, ▲ = 화면 안쪽)
  play.update(dt,dir);
  multi.update(dt);
  U.update(dt);U.fadeWalls(camera);
@@ -298,7 +299,7 @@ else if(granted===0)setTimeout(()=>hud.toast(`오늘의 코인은 ${T.coin.cap}�
 if(!state.seenTip){state.seenTip=true;saveState(state);setTimeout(()=>hud.toast('기계 앞에 가면 「한 판」 단추가 나와요 · ☰ 기계에서 「가기」도 돼요',{sec:4.4}),granted?5200:1200);}
 
 // 진단·자동 점검용(브라우저 콘솔 window.claw)
-window.claw={shop,player,play,multi,hud,state,cam,catalog,pools,
+window.claw={shop,player,play,multi,hud,state,cam,camera,catalog,pools,
  get fps(){return fps;},
  status(){return {fps:+fps.toFixed(1),mode:play.mode,near:nearMachine(),coins:state.coins,plays:state.plays,wins:state.wins,dex:Object.fromEntries(Object.entries(state.dex).map(([k,v])=>[k,v.n])),pity:{...state.pity},
   player:{x:+player.x.toFixed(2),z:+player.z.toFixed(2),heading:+player.heading.toFixed(2)},play:play.status(),multi:multi.status(),guests:guests.length,catalog:catalog.length,

@@ -39,6 +39,7 @@ async function checkButtons(p,label,sels){
  ok(`${label}: 화면 안`,!out.length,out.map(r=>r.cls).join(', '));
  ok(`${label}: 안 겹침`,!over.length,over.join(', '));
 }
+const innerW=size=>SIZES[size][0],innerH=size=>SIZES[size][1];
 const click=async(p,sel)=>{const el=await p.waitForSelector(sel,{state:'visible',timeout:15000});await el.click();};
 const st=p=>p.evaluate(()=>window.claw.status());
 
@@ -102,6 +103,17 @@ async function sizeRun(size){
  await click(p,'.kh-todo[data-act=side]');await sl(900);await p.screenshot({path:`${OUT}/${size}-5side.png`});
  {const a=(await st(p)).play.claw;const R2=await box('right');await p.mouse.move(R2.x+R2.width/2,R2.y+R2.height/2);await p.mouse.down();await sl(400);await p.mouse.up();const b=(await st(p)).play.claw;
   ok(`${tag} 옆에서 볼 때 ▶ = 화면 오른쪽(기계 안쪽)`,b.z<a.z-.03&&Math.abs(b.x-a.x)<.01,`${JSON.stringify(a)}→${JSON.stringify(b)}`);}
+ // 왼쪽 옆(대표 피드백 11-23): 「왼쪽 옆에서 보기」 칩 → 카메라가 기계 왼쪽, ▶ = 화면 오른쪽 = 기계 앞쪽
+ {const T=await rect(p,'.kh-todo');const inView=T.every(r=>r.x>=0&&r.y>=0&&r.r<=innerW(size)&&r.b<=innerH(size)),apart=T.length===2&&(T[0].b<=T[1].y||T[1].b<=T[0].y||T[0].r<=T[1].x||T[1].r<=T[0].x);
+  ok(`${tag} 옆에서 볼 때 「정면으로」·「왼쪽 옆에서」 칩 둘 다 화면 안·안 겹침`,inView&&apart&&T.every(r=>r.h>=44),JSON.stringify(T.map(r=>[r.x,r.y,r.w,r.h])));
+  const mx=await p.evaluate(()=>claw.shop.userData.machines[0].x??claw.shop.userData.machines[0].group.position.x);
+  await click(p,'.kh-todo[data-act=flip]');await sl(900);await p.screenshot({path:`${OUT}/${size}-5side-left.png`});
+  const camX=await p.evaluate(()=>claw.camera?.position.x);
+  ok(`${tag} 왼쪽 옆으로 바꾸면 카메라가 기계 왼쪽`,camX==null||camX<mx-1,`카메라 x ${camX} 기계 x ${mx}`);
+  const a=(await st(p)).play.claw;const R2=await box('right');await p.mouse.move(R2.x+R2.width/2,R2.y+R2.height/2);await p.mouse.down();await sl(400);await p.mouse.up();const b=(await st(p)).play.claw;
+  ok(`${tag} 왼쪽 옆에서 볼 때 ▶ = 화면 오른쪽(기계 앞쪽)`,b.z>a.z+.03&&Math.abs(b.x-a.x)<.01,`${JSON.stringify(a)}→${JSON.stringify(b)}`);
+  ok(`${tag} 옆에서 볼 때 「옆에서 보면…」 안내 숨김(칩과 안 겹침)`,!(await rect(p,'.kh-hint')).length);
+  ok(`${tag} 왼쪽 옆에서는 칩이 「오른쪽 옆에서 보기」`,await p.evaluate(()=>document.querySelector('.kh-todo[data-act=flip]')?.textContent.includes('오른쪽 옆')));}
  await p.evaluate(()=>claw.aim(0));await sl(100);
  // 옆에서 본 채로 뽑기: 그림 집게(손가락 각)를 매 프레임 적어 「벌리고 내려감 → 바닥에서 조임 → 조인 채 올라옴」 확인(대표 피드백 11-23)
  await p.evaluate(()=>{const C=claw.shop.userData.machines[0].group.userData.claw,log=window.__clawLog=[];
