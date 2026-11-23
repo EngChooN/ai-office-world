@@ -175,12 +175,14 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
 }
 /** 새 상자 처음 자리(공정 범위 안에서 조금씩 다르게, v4.1 §1-2): 가운데 ±startJitterM, 돌림 ±startJitterDeg. rnd = 0~1 난수 */
 export function startPose(B,rnd=Math.random){return {x:(rnd()*2-1)*B.startJitterM/U,z:(rnd()*2-1)*B.startJitterM/U,yaw:Math.PI/2+(rnd()*2-1)*B.startJitterDeg*Math.PI/180};}
-/** 기계 상태 「아슬아슬」(v4.1 §5-1): 받침 여유 nearSupportM 이하 또는 기울기 nearStateTiltDeg 이상(이미 떨어진 상자는 아님) */
-export const nearState=(sim,B)=>!sim.won&&(sim.support()<=B.nearSupportM||sim.tilt()>=B.nearStateTiltDeg);
-/** 한 판 결과: 떨어짐 = win, 기울기 nearTiltDeg 넘게 바뀜 또는 nearMoveM 넘게 옮겨짐 = near(아까움), 나머지 = miss */
+/** 막이 봉 밖으로 나갔거나 봉 아래로 끼었나(판 끝나면 바로 처음 자리, 대표 2026-11-23) — geom = bridgeGeom */
+export const offRails=(sim,geom)=>{const c=sim.center();return !sim.won&&(Math.abs(c[2])>geom.layout.guardZ||c[1]<geom.barY-1);};
+/** 기계 상태 「아슬아슬」(v4.1 §5-1): 받침 여유 nearSupportM 이하(이미 떨어진 상자는 아님). 기울기 조건은 뺌 — 막이 봉에 기대 늘 20° 넘게 기울어 83% 판에서 켜졌음(월드디자인 2026-11-23) */
+export const nearState=(sim,B)=>!sim.won&&sim.support()<=B.nearSupportM;
+/** 한 판 결과: 떨어짐 = win, 받침 여유가 nearSupportM 이하로 이번 판에 새로 들어감 = near(아까움), 나머지 = miss */
 export function bridgeOutcome(sim,before,B){
- if(sim.won)return 'win';const c=sim.center(),moved=Math.hypot(c[0]-before.c[0],c[2]-before.c[2])*U,turned=Math.abs(sim.tilt()-before.tilt);
- return turned>B.nearTiltDeg||moved>B.nearMoveM?'near':'miss';
+ if(sim.won)return 'win';
+ return before.support>B.nearSupportM&&sim.support()<=B.nearSupportM?'near':'miss';
 }
 /** 판 전 기록(결과·진척 판정용) */
 export const bridgeSnap=sim=>({c:sim.center(),tilt:sim.tilt(),yaw:sim.yaw(),support:sim.support()});

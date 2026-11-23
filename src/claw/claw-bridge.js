@@ -146,11 +146,11 @@ export function buildBridgeMachine(theme,{toonify=null,T=CLAW_TUNING}={}){
  // 봉 4개(사진: 맨 금속 관, 고무 없음) + 양옆 레일(사각 관, 구덩이 옆벽 위) + 봉 끝 죔쇠(레일 위). 봉 자리 = L.bars(판정과 같은 값)
  const inside=new THREE.Group();inside.name='봉·받침';root.add(inside);
  const parts={bar:[],grip:[],post:[]},RW=.022,v=new THREE.Vector3(),up=new THREE.Vector3(0,1,0),q=new THREE.Quaternion();
- for(const S of L.bars){const a=new THREE.Vector3(...S.a).multiplyScalar(U),bb=new THREE.Vector3(...S.b).multiplyScalar(U);a.y=bb.y=y;
+ for(const S of L.bars){const by=C.floorY+S.a[1]*U,lift=by-y,a=new THREE.Vector3(...S.a).multiplyScalar(U),bb=new THREE.Vector3(...S.b).multiplyScalar(U);a.y=bb.y=by;
   v.subVectors(bb,a);const len=v.length();q.setFromUnitVectors(up,v.normalize());
-  // 봉은 레일 가운데까지(죔쇠 속으로)
-  parts.bar.push(new THREE.CylinderGeometry(r,r,len+RW,12).applyQuaternion(q).translate((a.x+bb.x)/2,y,(a.z+bb.z)/2));
-  for(const e of [a,bb]){const s=Math.sign(e.x);parts.grip.push(new RoundedBoxGeometry(.03,r*2+.014,.034,2,.004).translate(e.x+s*RW/2,y,e.z));}}
+  // 봉은 레일 가운데까지(죔쇠 속으로). 막이 봉은 판정대로 3cm 위(claw-bridge-layout.js GUARD_RISE) — 죔쇠를 그만큼 길게 해 레일에 닿게
+  parts.bar.push(new THREE.CylinderGeometry(r,r,len+RW,12).applyQuaternion(q).translate((a.x+bb.x)/2,by,(a.z+bb.z)/2));
+  for(const e of [a,bb]){const s=Math.sign(e.x);parts.grip.push(new RoundedBoxGeometry(.03,r*2+.014+lift,.034,2,.004).translate(e.x+s*RW/2,by-lift/2,e.z));}}
  for(const s of [-1,1]){const x=(s<0?px0:px1)+s*RW/2;
   parts.post.push(new RoundedBoxGeometry(RW,RW,pd,2,.004).translate(x,y-r-.003,(pz0+pz1)/2));}
  for(const [k,list] of Object.entries(parts)){const g=mergeGeometries(list.map(x=>{x.deleteAttribute('uv');return x.index?x.toNonIndexed():x;}),false);list.forEach(x=>x.dispose());

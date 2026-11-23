@@ -131,7 +131,8 @@ const play=createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf,toonify:toon.
   else if(type==='mach'){saveMachState(state,MACHINES[d.machine].id,d.st);saveState(state);}
   else if(type==='reset')hud?.toast(`${MACHINES[d.machine].name} 상자를 다시 놓았어요`,{sec:2.6});
   else if(type==='drop'&&d.res?.kind==='pending'){hud?.toast(d.auto?'시간 끝! 집게 내려가는 중…':'집게 내려가는 중…',{sec:2,urgent:true});}
-  else if(type==='start'&&d.pity){hud?.toast(`이번 판은 ${({claw:'힘센 집게',bridge:'힘센 집게',timer:'넓은 성공 칸',key:'넓은 구멍'})[d.kind]}예요!`,{sec:2.6,urgent:true});}
+  else if(type==='start'&&d.staff){state.pity[MACHINES[d.machine].id]=0;saveState(state);hud?.toast('직원이 상자를 처음 자리에 다시 놓아 줬어요!',{sec:2.6,urgent:true});} // 봉 직원 도움: 다시 놓으면 실패 수를 처음부터
+  else if(type==='start'&&d.pity&&d.kind!=='bridge'){hud?.toast(`이번 판은 ${({claw:'힘센 집게',timer:'넓은 성공 칸',key:'넓은 구멍'})[d.kind]}예요!`,{sec:2.6,urgent:true});}
   else if(type==='result'){
    const M=MACHINES[d.machine],res=d.res,rec=recordResult(state,M.id,res);saveState(state);
    if(res.kind==='win'){syncShowcase();player.cheer();vibrate(40);}else player.sigh();

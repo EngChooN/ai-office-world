@@ -18,7 +18,9 @@ export const CLAW_TUNING=Object.freeze({
  key:Object.freeze({cols:4,rows:2,cellH:1.4,holeY:.32,startX:.15,startY:-.3,speed:1.4,fit:.14,fitRare:.08,nearMul:2,pityFitBonus:.05,holdLimitSec:10,gapSec:.3}),
  // 봉(월드디자인 설계 v4.1 §7, 다리 걸치기): 2발 약한 집게로 봉 두 개 위 상자를 밀어 봉 사이로 떨어뜨림. 판정 = 물리(claw-bridge-physics.js). 모두 임시값
  bridge:Object.freeze({gap:.13,barR:.012,barLen:.55,barFriction:.35,box:Object.freeze([.16,.10,.22]),boxMass:1.0,boxMassRare:1.2,prongs:2,clawGrab:.0012,clawOpen:.9,
-  moveSpeed:.30,holdLimitSec:10,gapSec:.3,nearTiltDeg:15,nearMoveM:.03,nearSupportM:.02,nearStateTiltDeg:20,refillSec:2.5,startJitterM:.004,startJitterDeg:8,pityPower:1.5,pityAfter:8}),
+  moveSpeed:.30,holdLimitSec:10,gapSec:.3,nearSupportM:.02,refillSec:2.5,startJitterM:.004,startJitterDeg:8,pityAfter:8,lieDeg:45,liePlays:3}),
+ // ↑ pityAfter판 연달아 실패 → 직원 도움(상자를 처음 자리에 다시 놓음, 대표 2026-11-23: 힘센 집게는 상자를 밀기만 해 효과 없음). 아슬아슬한 상자면 건너뜀
+ //   lieDeg 넘게 누운 채 liePlays판이면 다시 놓음(막이 봉 밖·봉 아래 끼임은 판 끝나면 바로, 대표 2026-11-23)
  // 기계 상태 공유·자리 잡기(v4.1 §8). 지금은 혼자 뽑기만 씀(stuck*·solo). 서버 쪽 값(leave·idle·drop·commit…)은 3단계 서버 연결 때 씀
  share:Object.freeze({leaveSec:3,idleSec:60,idleWaitSec:20,hiddenSec:20,dropSec:15,dropMax:3,nextSec:10,commitSec:8,idleResetMin:30,stuckPlays:6,stuckMoveM:.005,stuckTiltDeg:2,
   maxMoveM:.12,maxTurnDeg:60,yieldAfter:3,nearBubbleM:6,nearBubbleGapSec:120}),
@@ -83,11 +85,11 @@ export function spendCoin(s,machineId,now=Date.now(),T=CLAW_TUNING){
 
 // ── 보장(같은 기계 연달아 실패 뒤 도움) ──
 /** 이 기계 종류에 보장이 켜져 있나(타이머는 기본 끔 — 완료 기준 「10.00에서만 성공」) */
-export function pityOn(kind,T=CLAW_TUNING){if(kind==='bridge')return T.bridge.pityAfter>0&&T.bridge.pityPower>1;if(!T.pity.after)return false;if(kind==='timer')return T.timer.pityWinSec>0;if(kind==='key')return T.key.pityFitBonus>0;return true;}
+export function pityOn(kind,T=CLAW_TUNING){if(kind==='bridge')return T.bridge.pityAfter>0;if(!T.pity.after)return false;if(kind==='timer')return T.timer.pityWinSec>0;if(kind==='key')return T.key.pityFitBonus>0;return true;}
 export const pityAfter=(kind,T=CLAW_TUNING)=>kind==='bridge'?T.bridge.pityAfter:T.pity.after; // 봉은 8판(v4.1 §7-5), 나머지는 pity.after
 export const pityLeft=(s,machineId,T=CLAW_TUNING)=>{const k=kindOf(machineId);return pityOn(k,T)?Math.max(0,pityAfter(k,T)-(s.pity[machineId]??0)):null;};
 export const pityNow=(s,machineId,T=CLAW_TUNING)=>pityLeft(s,machineId,T)===0;
-export const PITY_NAME=Object.freeze({claw:'힘센 집게',bridge:'힘센 집게',timer:'넓은 성공 칸',key:'넓은 구멍'});
+export const PITY_NAME=Object.freeze({claw:'힘센 집게',bridge:'직원 도움',timer:'넓은 성공 칸',key:'넓은 구멍'});
 
 // ── 타이머 판정(설계 v3 §3-2, 시안 함수 그대로): 화면 숫자 = 0.01초 아래 버림, 판정은 그 숫자로만 ──
 export const hund=ms=>Math.floor(ms/10+1e-9);
@@ -145,10 +147,11 @@ export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.
   lines.push('「→」를 누르고 있다가 놓고, 「↑」를 누르고 있다가 놓아요. 놓으면 집게가 저절로 내려갔다 올라와요',
    '집게는 상자를 들지 못해요. 밀고 걸어서 봉 사이로 떨어뜨리면 성공',
    '봉은 4개예요: 가운데 두 봉에 상자가 걸쳐 있고, 앞뒤 봉은 상자가 밖으로 나가지 않게 막아요. 가운데 두 봉 사이로 빠지면 성공',
-   bars.near?`이 기계는 가운데 봉이 팔(八) 자예요: 왼쪽 ${Math.round(bars.near*100)}cm → 오른쪽 ${Math.round(bars.far*100)}cm`:`가운데 두 봉 사이 ${Math.round(bars.gap*1000)/10}cm`,
+   bars.near?`이 기계는 가운데 봉이 팔(八) 자예요: 왼쪽 ${Math.round(bars.near*1000)/10}cm → 오른쪽 ${Math.round(bars.far*1000)/10}cm`:`가운데 두 봉 사이 ${Math.round(bars.gap*1000)/10}cm`,
    '한가운데를 노리면 두 발이 양옆으로 빠져요 · 모서리를 노려요',
    shared?`상자 자리는 모두 같아요. 앞사람이 옮긴 그대로 이어서 하고, 아무도 안 하면 ${T.share.idleResetMin}분 뒤 처음 자리로 돌아가요`:'상자는 판이 끝나도 그 자리에 남아요. 이 기기에서는 오늘 안에 이어서 해요');
-  if(pityOn('bridge',T))pity=`${P}번 연달아 못 떨어뜨리면 다음 한 판은 힘센 집게(힘 ${B.pityPower}배, 꼭 되는 건 아니에요)`;}
+  lines.push('상자가 앞뒤 봉 밖으로 나가거나 봉 아래에 끼면 직원이 처음 자리에 다시 놓아 줘요');
+  if(pityOn('bridge',T))pity=`${P}번 연달아 못 떨어뜨리면 직원이 상자를 처음 자리에 다시 놓아 줘요(떨어지기 직전 상자는 그대로 둬요)`;}
  else{const c=T.key;
   lines.push(`큰 단추를 누르고 있으면 열쇠가 오른쪽으로 가요. 떼면 그 자리에 멈춰요`,`다시 누르고 있으면 위로 가요. 떼면 열쇠를 꽂아요`,
    `구멍 가운데에서 ${c.fit.toFixed(2)}칸 안이면 그 칸 인형이 나와요. 희귀·특별 칸은 구멍이 작아요(${c.fitRare.toFixed(2)}칸)`,`${c.nearMul}배 안이면 아까움(구멍 가장자리), 그 밖이면 실패`);
@@ -158,11 +161,11 @@ export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.
 }
 
 // ── 혼자 뽑기 기계 상태(v4.1 §3 A안, 대표 승인): 봉 상자 자리를 이 기기에 오늘(서울 0시)까지. st = 상자 공 자리(mm 정수, claw-bridge-physics.js boxState)
-//  {day, st:[int…], id 지금 상자 경품, mv 옮긴 판 수, still 진척 없는 판 수}
+//  {day, st:[int…], id 지금 상자 경품, mv 옮긴 판 수, still 진척 없는 판 수, lay 누운 채 판 수}
 export function sanitizeMachState(m,kind){
  if(!m||typeof m!=='object'||kind!=='bridge')return null;const day=date(m.day);if(!day)return null;
  const st=Array.isArray(m.st)&&m.st.length>=6&&m.st.length<=96&&m.st.every(v=>Number.isInteger(v)&&Math.abs(v)<=2000)?m.st.slice():null;
- return {day,st,id:typeof m.id==='string'&&/^[a-z0-9-]{1,24}$/.test(m.id)?m.id:'',mv:int(m.mv,0,9999),still:int(m.still,0,999)};
+ return {day,st,id:typeof m.id==='string'&&/^[a-z0-9-]{1,24}$/.test(m.id)?m.id:'',mv:int(m.mv,0,9999),still:int(m.still,0,999),lay:int(m.lay??0,0,999)};
 }
 /** 오늘 이어서 쓸 기계 상태(날짜가 바뀌었으면 null = 처음 자리) */
 export const machStateToday=(s,machineId,now=Date.now())=>{const m=s.mach?.[machineId];return m&&m.day===seoulDate(now)?m:null;};

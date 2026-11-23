@@ -14,7 +14,7 @@ const TIMER_RATTLE=TIMER.door.rattle;
 import {plushGeometry,plushMaterial,plushLineMaterial} from './claw-plush.js';
 import {geomFrom,createClawSim,toMachine,U} from './claw-physics.js';
 import {CLAW_TUNING,judgeTimer,judgeKey,fmtTimer,hund,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,hideAfterOf} from './claw-rules.js';
-import {createBridgeSim,startPose,nearState,bridgeOutcome,bridgeSnap,noProgress} from './claw-bridge-physics.js';
+import {createBridgeSim,startPose,nearState,bridgeOutcome,bridgeSnap,noProgress,offRails} from './claw-bridge-physics.js';
 import {MACHINES} from './claw-palette.js';
 
 // 타이머 연출·구경 연출(집게가 정해진 결과대로 움직임) 단계 시간(초)
@@ -41,7 +41,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   const rest=kind==='timer'?[U2.stage.x,U2.stage.z]:[CLAW.home[0],CLAW.home[1]];
   return {i,M,U:U2,kind,rest,x:rest[0],z:rest[1],tx:rest[0],tz:rest[1],drop:0,open:OPEN.play,seq:null,owner:null,ownerAct:null,lightT:0,lightMode:'idle',
    sim:null,views:null,timer:null,key:null,keyFx:null,door:null,dseq:null,taken:null,shut:null,wakeT:0,
-   bsim:null,bk:null,box:null,before:null,refillT:0,mv:0,still:0};});
+   bsim:null,bk:null,box:null,before:null,refillT:0,mv:0,still:0,lay:0};});
  let mode='idle',cur=null,elapsed=0,clock=0,armedOnce=false,result=null,playN=0,phase='',hold={x:0,z:0},bumpX=0,bumpZ=0,pityNow=false,clawWon=[],doneAt=0,lastV=0,refills=0;
  const P=CLAW.play,W=CLAW.width;
 
@@ -76,16 +76,18 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
  // ── 봉 기계: 상자 물리(claw-bridge-physics.js). 상자 자리는 판 사이에 남고(혼자 뽑기 = 이 기기에 오늘까지, v4.1 §3), 성공하면 2.5초 뒤 다른 상자
  const B=T.bridge;
  const boxMass=id=>rarityOf(id)==='rare'||rarityOf(id)==='special'?B.boxMassRare:B.boxMass;
- const bridgePower=pity=>{const g=B.clawGrab*(pity?B.pityPower:1);return {grab:g,carry:g*.8};};
- function buildBridge(r,{fresh=false,not=null}={}){
+ const bridgePower=()=>({grab:B.clawGrab,carry:B.clawGrab*.8});
+ function buildBridge(r,{fresh=false,not=null,keep=null}={}){
   const saved=fresh?null:machState(r.i),pool=pools[r.i];
-  const id=saved?.id&&pool.includes(saved.id)?saved.id:not?pool.find(x=>x!==not)??pool[0]:pool[0];
-  r.box=id;r.mv=saved?.mv??0;r.still=saved?.still??0;
-  r.bsim=createBridgeSim({geom:r.U.geom,box:B.box,mass:boxMass(id),power:bridgePower(false),friction:B.barFriction,openTo:B.clawOpen,seed:seed+r.i*31,pose:startPose(B),st:saved?.st??null});
+  const id=keep&&pool.includes(keep)?keep:saved?.id&&pool.includes(saved.id)?saved.id:not?pool.find(x=>x!==not)??pool[0]:pool[0];
+  r.box=id;r.mv=saved?.mv??0;r.still=saved?.still??0;r.lay=saved?.lay??0;
+  r.bsim=createBridgeSim({geom:r.U.geom,box:B.box,mass:boxMass(id),power:bridgePower(),friction:B.barFriction,openTo:B.clawOpen,seed:seed+r.i*31,pose:startPose(B),st:saved?.st??null});
   r.U.setBox?.(id);syncBox(r);
  }
  function syncBox(r){if(!r.bsim)return;r.U.placeBox?.(r.bsim.frame(),{visible:!r.bsim.gone});}
- const bridgeSave=r=>({st:r.bsim.won?null:r.bsim.boxState(),id:r.box,mv:r.mv,still:r.still});
+ const bridgeSave=r=>({st:r.bsim.won?null:r.bsim.boxState(),id:r.box,mv:r.mv,still:r.still,lay:r.lay});
+ // 막힘(v4.1 §6-1 + 대표 2026-11-23): 집게가 닿지 않는 곳·여러 판 진척 없음·막이 봉 밖/봉 아래 끼임·누운 채 여러 판
+ const bridgeStuck=r=>!r.bsim.won&&(r.bsim.outOfReach()||r.still>=T.share.stuckPlays||offRails(r.bsim,r.U.geom)||r.lay>=B.liePlays);
  for(const r of rigs){
   if(r.kind==='claw')buildPhysics(r);
   if(r.kind==='bridge')buildBridge(r);
@@ -176,15 +178,17 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
  function start(i){
   const r=rigs[i];if(mode!=='idle'||r.owner||r.seq||r.dseq)return false;clearTaken(r,{now:true});
   cur=r;mode='play';elapsed=0;armedOnce=false;result=null;playN=(playN+1)&0xffff;phase='play';hold={x:0,z:0};pityNow=!!pityFor(i);lastV=0;
-  setLights(r,'play');audio?.play('coin');
+  setLights(r,'play');audio?.play('coin');let staff=false;
   if(r.kind==='claw'){r.sim.claw.power={...(pityNow?T.claw.pityPower:T.claw.power)};r.sim.start();clawWon=[];doneAt=0;r.dropAt=null;r.x=r.rest[0];r.z=r.rest[1];}
   else if(r.kind==='bridge'){
    if(!r.bsim||r.bsim.won||r.refillT>0){r.refillT=0;buildBridge(r,{fresh:true,not:r.box});}
-   r.bsim.claw.power=bridgePower(pityNow);r.bsim.start();r.bk={phase:'k1',holding:false,holdT:0,gapT:0};r.before=bridgeSnap(r.bsim);r.beforeFrame=r.bsim.frame();
+   // 직원 도움(보장 판): 상자를 처음 자리에 다시 놓음. 떨어지기 직전(아슬아슬)이면 그대로 두고 다음 판으로 미룸
+   else if(pityNow){if(nearState(r.bsim,B))pityNow=false;else{buildBridge(r,{fresh:true,keep:r.box});staff=true;onEvent('mach',{machine:i,st:bridgeSave(r)});}}
+   r.bsim.claw.power=bridgePower();r.bsim.start();r.bk={phase:'k1',holding:false,holdT:0,gapT:0};r.before=bridgeSnap(r.bsim);r.beforeFrame=r.bsim.frame();
    r.x=r.rest[0];r.z=r.rest[1];r.drop=0;doneAt=0;r.dropAt=null;}
   else if(r.kind==='timer'){r.timer={phase:'ready',t0:0,readyT:0,ms:0};r.U.setBand?.(T.timer);r.U.setTimer?.({text:'00.00',state:'ready'});r.U.setButton?.('start');}
   else{r.key={phase:'k1',x:T.key.startX,y:T.key.startY,holding:false,holdT:0,gapT:0};r.keyFx=null;r.U.resetCells?.();r.U.setHoles?.({fit:T.key.fit,fitRare:T.key.fitRare,pity:pityNow,pityBonus:T.key.pityFitBonus});r.U.key?.set({x:r.key.x,y:r.key.y,push:0});}
-  onEvent('start',{machine:i,kind:r.kind,pity:pityNow});return true;
+  onEvent('start',{machine:i,kind:r.kind,pity:pityNow,staff});return true;
  }
  const armed=()=>mode==='play'&&!!cur&&(cur.kind!=='claw'||elapsed>=T.claw.dropLockSec);
  const holdState=r=>r.kind==='bridge'?r.bk:r.key; // 봉·열쇠 = 누르고 있다가 놓기 두 번(→ 그리고 ↑)
@@ -241,7 +245,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
  function done(){if(mode!=='result')return;const r=cur;mode='idle';phase='';cur=null;clearTaken(r);
   if(r.kind==='claw'){r.wakeT=2;if(r.sim.left()<T.claw.dolls-4)buildPhysics(r);}
   // 봉: 막힘(집게가 닿지 않는 곳·여러 판 진척 없음)이면 기계가 비는 지금 처음 자리로(v4.1 §6-1)
-  if(r.kind==='bridge'&&!r.bsim.won&&(r.bsim.outOfReach()||r.still>=T.share.stuckPlays)){buildBridge(r,{fresh:true});r.U.showGhost?.(null);onEvent('reset',{machine:r.i});onEvent('mach',{machine:r.i,st:bridgeSave(r)});}
+  if(r.kind==='bridge'&&bridgeStuck(r)){buildBridge(r,{fresh:true,keep:r.box});r.U.showGhost?.(null);onEvent('reset',{machine:r.i});onEvent('mach',{machine:r.i,st:bridgeSave(r)});}
   if(r.kind==='key'){r.U.resetCells?.();r.U.key?.set({x:T.key.startX,y:T.key.startY,push:0});r.key=null;}
   if(r.kind==='timer'){r.U.setTimer?.({text:'00.00',state:'ready'});r.U.setButton?.('off');r.timer=null;}}
 
@@ -287,7 +291,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
     for(const e of b.events.splice(0)){if(r!==cur)continue;if(e.type==='close')audio?.play('grab');else if(e.type==='won'){audio?.play('chute');}else if(e.type==='done')doneAt=elapsed+.9;}
     if(r===cur&&mode==='drop'&&(doneAt&&elapsed>=doneAt||elapsed>40)){
      const kind=bridgeOutcome(b,r.before,B),won=kind==='win';
-     if(won){r.mv=0;r.still=0;r.refillT=B.refillSec;}else{r.mv++;r.still=noProgress(b,r.before,T.share)?r.still+1:0;}
+     if(won){r.mv=0;r.still=0;r.lay=0;r.refillT=B.refillSec;}else{r.mv++;r.still=noProgress(b,r.before,T.share)?r.still+1:0;r.lay=b.tilt()>B.lieDeg?r.lay+1:0;}
      r.U.showGhost?.(r.beforeFrame,won?null:b.frame());
      result={kind,id:won?r.box:null,near:!won&&nearState(b,B)};r.pendingSave=true;finishLocal(r,result);}
     // 저장은 상자가 멈춘(잠든) 뒤에: 봉 끝에 걸쳐 흔들리는 중에 저장하면 다시 놓을 때 더 움직임
@@ -371,7 +375,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   /** 큰 단추 상태: 'claw' · timer 'ready'|'run' · key 'k1'|'k1-hold'|'gap'|'k2'|'k2-hold' · 'drop' */
   get sub(){if(!cur)return '';if(mode==='drop')return 'drop';if(cur.kind==='timer')return cur.timer?.phase??'';if(cur.kind==='key'||cur.kind==='bridge'){const k=holdState(cur);return k?.holding?`${k.phase}-hold`:k?.phase??'';}return 'claw';},
   /** 봉 기계 상자 상태(이름표 「아슬아슬」·점검): near = 기계 상태가 성공에 가까움(v4.1 §5-1) */
-  bridge:i=>{const r=rigs[i];if(!r?.bsim)return null;const b=r.bsim;return {box:r.box,won:b.won,refill:r.refillT>0,near:nearState(b,B),support:+b.support().toFixed(4),tilt:+b.tilt().toFixed(1),mv:r.mv,still:r.still,stuck:b.outOfReach()||r.still>=T.share.stuckPlays,st:b.boxState()};},
+  bridge:i=>{const r=rigs[i];if(!r?.bsim)return null;const b=r.bsim;return {box:r.box,won:b.won,refill:r.refillT>0,near:nearState(b,B),support:+b.support().toFixed(4),tilt:+b.tilt().toFixed(1),mv:r.mv,still:r.still,lay:r.lay,off:offRails(b,r.U.geom),stuck:bridgeStuck(r),st:b.boxState()};},
   busy:i=>rigs[i]?.owner??null,
   rig:i=>rigs[i],kindAt:i=>rigs[i]?.kind,
   sim:i=>rigs[i]?.sim??null,

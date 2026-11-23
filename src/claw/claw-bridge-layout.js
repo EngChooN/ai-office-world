@@ -8,6 +8,7 @@ export const U=.1;
 export const BAR_Y=2.4;      // 봉 가운데 높이(바닥에서 24cm) — claw-bridge-physics.js BAR_Y와 같음
 export const DECK_DROP=1.2;  // 받침판 윗면 = 봉 윗면에서 12cm 아래 — claw-bridge-physics.js DECK_DROP과 같음
 export const GUARD_CLEAR=.008; // 막이 봉 안쪽 가장자리 = 상자(가운데 놓임) 끝 + 0.8cm. 사진: 상자 끝이 막이 봉 바로 안쪽, 받침↔막이 간격은 가운데 간격보다 좁음(약 절반)
+export const GUARD_RISE=.3;  // 막이 봉 가운데 = 받침 봉보다 3cm 위(월드디자인 2026-11-23 시험: 같은 높이면 기운 상자가 넘어가 영영 못 떨어짐, 2cm는 아직 넘고 4~5cm는 끼임). 실물 재현 아닌 판정 보정
 export const RAIL_IN=.07;    // 옆 레일 안쪽 면 = 기계 반폭 − 0.07m(= 판정 BOX.x0·x1, 집게 기계 둘레 판과 같은 자리)
 export const PIT_PAD=.02;    // 구덩이 앞·뒤 끝 = 막이 봉 바깥 가장자리 + 2cm
 
@@ -24,7 +25,8 @@ export function bridgeLayout(C,bars,B){
  // 봉 i: 0 = 뒤 막이, 1 = 뒤 받침, 2 = 앞 받침, 3 = 앞 막이. barZ(i,x) = 그 x에서 봉 가운데 z
  const ROLE=['guard','support','support','guard'],SIGN=[-1,-1,1,1];
  const barZ=(i,x)=>SIGN[i]*(ROLE[i]==='guard'?guardZ:half(x));
- const list=ROLE.map((role,i)=>({i,role,a:[x0,BAR_Y,barZ(i,x0)],b:[x1,BAR_Y,barZ(i,x1)]}));
+ const yOf=role=>BAR_Y+(role==='guard'?GUARD_RISE:0);
+ const list=ROLE.map((role,i)=>({i,role,a:[x0,yOf(role),barZ(i,x0)],b:[x1,yOf(role),barZ(i,x1)]}));
  const deckY=BAR_Y+barR-DECK_DROP;
  const pit={x0,x1,z0:-(guardZ+barR)-PIT_PAD*k,z1:guardZ+barR+PIT_PAD*k};
  // 구멍(두 받침 봉 사이 틈): 받침 봉 안쪽 가장자리 사이 + 레일 사이
