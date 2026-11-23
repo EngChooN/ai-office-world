@@ -6,7 +6,7 @@
 import {PLUSH,RARITY,RARITY_ORDER,MACHINES,plushInfo} from './claw-palette.js';
 
 export const CLAW_TUNING=Object.freeze({
- coin:Object.freeze({daily:10,cap:30,cost:1}),       // 하루 지급(서울 날짜가 바뀌면 한 번) · 모아 둘 수 있는 최대 · 한 판 값  [임시값]
+ coin:Object.freeze({daily:15,cost:1}),               // 하루 코인(서울 날짜가 바뀌면 이 개수로 다시 채움, 남은 코인은 넘어가지 않음) · 한 판 값  [대표 결정 11-23]
  pity:Object.freeze({after:5}),                       // 같은 기계에서 연달아 n번 실패하면 다음 판 도움(기계 종류마다 다름, 0이면 끔)  [임시값]
  // 집게(설계 v2·v3 §3-1): 물리 판정. 세기 = 집게발이 버티는 힘(잡기/들고 가기), 힘센 집게 = 보장 판(꼭 성공은 아님)
  claw:Object.freeze({timeSec:20,dropLockSec:.6,moveSpeed:.35,ramp:.1,dolls:14,
@@ -33,11 +33,13 @@ export function leftText(ms){const m=Math.max(0,Math.ceil(ms/60000)),h=Math.floo
 const MACHINE_IDS=MACHINES.map(m=>m.id);
 const int=(v,lo,hi,d=0)=>Number.isInteger(v)&&v>=lo&&v<=hi?v:d;
 const date=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)?v:null;
-export function freshState(){return {coins:0,lastGrant:null,plays:0,wins:0,dex:{},pity:{},seen:{},log:[],seenTip:false};}
+// coinV = 코인 규칙 판(2 = 11-23 대표 결정 「하루 15개로 다시 채움」, 그 전 저장(1) = 10개씩 더해 30개까지 모으던 규칙)
+export const COIN_V=2;
+export function freshState(){return {coins:0,lastGrant:null,coinV:COIN_V,plays:0,wins:0,dex:{},pity:{},seen:{},log:[],seenTip:false};}
 /** 저장값을 믿지 않고 정리한다(손님 인형 id는 isKnown이 true일 때만 남김 — 공개판에는 칸이 없다) */
 export function sanitizeState(raw,{isKnown=id=>!!plushInfo(id)}={}){
  const s=freshState();if(!raw||typeof raw!=='object')return s;
- s.coins=int(raw.coins,0,999);s.lastGrant=date(raw.lastGrant);s.plays=int(raw.plays,0,1e7);s.wins=int(raw.wins,0,1e7);s.seenTip=raw.seenTip===true;
+ s.coins=int(raw.coins,0,999);s.lastGrant=date(raw.lastGrant);s.coinV=raw.coinV===COIN_V?COIN_V:1;s.plays=int(raw.plays,0,1e7);s.wins=int(raw.wins,0,1e7);s.seenTip=raw.seenTip===true;
  if(raw.dex&&typeof raw.dex==='object')for(const [id,v] of Object.entries(raw.dex)){if(!isKnown(id)||!v)continue;const n=int(v.n,1,1e6,0);if(!n)continue;s.dex[id]={n,first:date(v.first)??'',machine:MACHINE_IDS.includes(v.machine)?v.machine:''};}
  if(raw.pity&&typeof raw.pity==='object')for(const id of MACHINE_IDS)if(Number.isInteger(raw.pity[id]))s.pity[id]=int(raw.pity[id],0,999);
  if(raw.seen&&typeof raw.seen==='object')for(const id of MACHINE_IDS)if(raw.seen[id]===true)s.seen[id]=true;
@@ -49,11 +51,15 @@ export function saveState(s,storage=globalThis.localStorage){try{storage?.setIte
 const addLog=(s,at,text,d=0)=>{s.log.push({at,text,d});while(s.log.length>CLAW_TUNING.log)s.log.shift();};
 
 // ── 코인 ──
-/** 오늘(서울) 아직 안 받았으면 지급. 반환 = 실제로 늘어난 코인 수(이미 받았으면 null, 상한이라 0일 수 있음) */
+/** 오늘(서울) 아직 안 받았으면 코인을 하루 개수로 다시 채움(어제 남은 코인은 넘어가지 않음). 반환 = 지금 코인 수(이미 받았으면 null)
+ *  옛 규칙 저장(coinV 1)을 처음 읽은 날: 오늘 이미 받았어도 하루 개수보다 적으면 그만큼 채워 줌, 많으면 오늘은 그대로 두고 다음 날부터 새 규칙 */
 export function grantDaily(s,now=Date.now(),T=CLAW_TUNING){
- const today=seoulDate(now);if(s.lastGrant===today)return null;
- const before=s.coins;s.coins=Math.min(T.coin.cap,s.coins+T.coin.daily);s.lastGrant=today;
- const got=s.coins-before;addLog(s,now,got?`오늘의 코인 +${got}`:`오늘의 코인 · 이미 ${T.coin.cap}개라 더 못 받았어요`,got);return got;
+ const today=seoulDate(now);
+ if(s.coinV!==COIN_V){s.coinV=COIN_V;
+  if(s.lastGrant===today){const add=Math.max(0,T.coin.daily-s.coins);if(!add)return null;s.coins+=add;addLog(s,now,`오늘의 코인을 ${T.coin.daily}개로 채웠어요(하루 ${T.coin.daily}개로 바뀜)`,add);return s.coins;}}
+ if(s.lastGrant===today)return null;
+ const before=s.coins;s.coins=T.coin.daily;s.lastGrant=today;
+ addLog(s,now,before>0?`오늘의 코인 ${T.coin.daily}개(어제 남은 ${before}개는 넘어오지 않아요)`:`오늘의 코인 ${T.coin.daily}개`,s.coins-before);return s.coins;
 }
 export const grantedToday=(s,now=Date.now())=>s.lastGrant===seoulDate(now);
 export const canPlay=(s,T=CLAW_TUNING)=>s.coins>=T.coin.cost;
@@ -118,7 +124,7 @@ export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.
    `구멍 가운데에서 ${c.fit.toFixed(2)}칸 안이면 그 칸 인형이 나와요. 희귀·특별 칸은 구멍이 작아요(${c.fitRare.toFixed(2)}칸)`,`${c.nearMul}배 안이면 아까움(구멍 가장자리), 그 밖이면 실패`);
   if(pityOn('key',T))pity=`${P}번 연달아 실패하면 다음 판은 구멍이 ${c.pityFitBonus.toFixed(2)}칸 넓어져요(그림도 넓어짐)`;}
  return {kind,lines,pity,rows:ids.map(id=>({id,name:nameOf(id),rarity:rarityOf(id),label:RARITY[rarityOf(id)]?.label??''})),
-  note:'코인은 매일 무료로만 받고, 사는 곳·바꾸는 곳은 없어요. 숫자는 시험용 임시값이에요.'};
+  note:`코인은 매일 0시(서울)에 무료로 ${T.coin.daily}개가 돼요. 남은 코인은 다음 날로 넘어가지 않아요. 사는 곳·바꾸는 곳은 없어요. 판정 숫자는 시험용 임시값이에요.`};
 }
 
 /** 한 판 결과 적기: 도감·보장 수·기록. res = {kind:'win'|'near'|'miss', id}. 반환 {isNew,count} */

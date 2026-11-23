@@ -30,14 +30,31 @@ test('서울 날짜·다음 지급까지 남은 시간', ()=>{
  assert.equal(seoulDate(KST-1000),'2026-11-23');assert.equal(seoulDate(KST),'2026-11-24');
  assert.equal(msToNextGrant(KST-60000),60000);assert.equal(msToNextGrant(KST),24*3600e3);
 });
-test('무료 코인: 서울 하루 한 번 +10, 상한 30, 이미 받았으면 null', ()=>{
+test('무료 코인(11-23 대표 결정): 하루 첫 접속에 15개, 다음 날은 남은 개수와 상관없이 15로 다시 채움, 이미 받았으면 null', ()=>{
+ assert.equal(T.coin.daily,15);assert.equal(T.coin.cap,undefined,'최대 30개 모으기 규칙 없음');
  const s=freshState();
- assert.equal(grantDaily(s,KST-5000),T.coin.daily);assert.equal(s.coins,10);assert.ok(grantedToday(s,KST-5000));
- assert.equal(grantDaily(s,KST-4000),null,'같은 날 두 번 안 줌');
- assert.equal(grantDaily(s,KST+1000),10);assert.equal(s.coins,20,'서울 0시 지나면 다시');
- s.coins=25;assert.equal(grantDaily(s,KST+1000+86400e3),5);assert.equal(s.coins,T.coin.cap,'상한까지만');
- s.coins=30;assert.equal(grantDaily(s,KST+1000+2*86400e3),0);assert.equal(s.coins,30);
- assert.match(s.log.at(-1).text,/30개라 더 못 받았어요/);assert.ok(s.log.length<=T.log);
+ assert.equal(grantDaily(s,KST-5000),15);assert.equal(s.coins,15,'하루 첫 접속 15개');assert.ok(grantedToday(s,KST-5000));
+ assert.equal(grantDaily(s,KST-4000),null,'같은 날 두 번 안 줌');assert.equal(s.coins,15);
+ s.coins=3;assert.equal(grantDaily(s,KST+1000),15);assert.equal(s.coins,15,'남은 3개 → 다음 날 15(더하지 않음)');
+ assert.match(s.log.at(-1).text,/어제 남은 3개는 넘어오지 않아요/);assert.equal(s.log.at(-1).d,12);
+ s.coins=0;assert.equal(grantDaily(s,KST+1000+86400e3),15);assert.equal(s.coins,15,'다 쓴 다음 날 15');
+ s.coins=15;assert.equal(grantDaily(s,KST+1000+2*86400e3),15);assert.equal(s.coins,15,'안 쓴 다음 날도 15(30이 되지 않음)');
+ for(let d=3;d<10;d++){grantDaily(s,KST+1000+d*86400e3);assert.equal(s.coins,15);}
+ assert.ok(s.log.length<=T.log);
+});
+test('무료 코인: 옛 규칙 저장(10개씩 더해 30개까지) 이어받기', ()=>{
+ const today=seoulDate(KST-5000),yday=seoulDate(KST-5000-86400e3);
+ // 옛 저장, 어제 받음·남은 28개 → 오늘 15
+ let s=sanitizeState({coins:28,lastGrant:yday,plays:9});assert.equal(s.coinV,1);
+ assert.equal(grantDaily(s,KST-5000),15);assert.equal(s.coins,15);assert.equal(s.coinV,2);assert.equal(s.plays,9);
+ // 옛 저장, 오늘 이미 10개 받고 4개 남음 → 오늘 15개로 채움, 같은 날 다시 안 줌, 다음 날 15
+ s=sanitizeState({coins:4,lastGrant:today});assert.equal(grantDaily(s,KST-5000),15);assert.equal(s.coins,15);assert.match(s.log.at(-1).text,/15개로 채웠어요/);
+ assert.equal(grantDaily(s,KST-4000),null);assert.equal(grantDaily(s,KST+1000),15);
+ // 옛 저장, 오늘 이미 받아 22개 → 오늘은 빼앗지 않음, 다음 날 15
+ s=sanitizeState({coins:22,lastGrant:today});assert.equal(grantDaily(s,KST-5000),null);assert.equal(s.coins,22);
+ assert.equal(grantDaily(s,KST+1000),15);assert.equal(s.coins,15);
+ // 새 저장은 판 표시가 남아 다시 이전하지 않음
+ s=sanitizeState(JSON.parse(JSON.stringify(s)));assert.equal(s.coinV,2);assert.equal(grantDaily(s,KST+2000),null);
 });
 test('한 판 값: 코인 1개, 없으면 못 함(사는 길 없음)', ()=>{
  const s=freshState();assert.equal(canPlay(s),false);assert.equal(spendCoin(s,'forest'),false);assert.equal(s.plays,0);
@@ -111,7 +128,7 @@ test('규칙 안내: 조절값에서 만든 글(값을 바꾸면 글도 바뀜)'
  const t=rulesFor('city',MACHINES[1].pool);assert.equal(t.kind,'timer');assert.ok(t.lines.some(l=>/딱 10\.00일 때만 성공/.test(l)));assert.ok(t.lines.some(l=>/9\.90~10\.10/.test(l)));assert.equal(t.pity,'');
  const t2=rulesFor('city',MACHINES[1].pool,{...T,timer:{...T.timer,okWinSec:.05,pityWinSec:.02}});assert.ok(t2.lines.some(l=>/9\.95~10\.05에 멈추면 성공/.test(l)));assert.match(t2.pity,/0\.02초/);
  assert.match(rulesFor('star',MACHINES[2].cells).lines.join(' '),/0\.14칸.*0\.08칸/);assert.match(rulesFor('forest',MACHINES[0].pool).pity,/힘센 집게/);
- for(const M of MACHINES)assert.match(rulesFor(M.id,M.pool).note,/사는 곳·바꾸는 곳은 없어요/);
+ for(const M of MACHINES){const n=rulesFor(M.id,M.pool).note;assert.match(n,/사는 곳·바꾸는 곳은 없어요/);assert.match(n,/15개/);assert.match(n,/넘어가지 않아요/);}
 });
 test('저장 정리: 이상한 값·모르는 인형(공개판의 손님 인형)·잘못된 기계는 버림', ()=>{
  const raw={coins:9999,lastGrant:'어제',plays:3,dex:{cat:{n:2,first:'2026-11-23',machine:'city'},'guest-1':{n:1},nope:{n:1},hare:{n:0}},pity:{forest:3,zzz:2},log:[{at:1,text:'a'},{x:1}],seenTip:true};

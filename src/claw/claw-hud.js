@@ -198,9 +198,9 @@ ${mi>=0?`<button type="button" class="kh-btn kh-go" data-go="${mi}">기계로 �
  }
  function renderCoin(p){
   const s=state(),got=grantedToday(s);
-  p.innerHTML=`<h2 class="kh-tab-h">${ict('coin','코인')}</h2><div class="kh-coinbig">${ic('coin','xl')}<b>${s.coins}</b><span>/ 최대 ${T.coin.cap}</span></div>
+  p.innerHTML=`<h2 class="kh-tab-h">${ict('coin','코인')}</h2><div class="kh-coinbig">${ic('coin','xl')}<b>${s.coins}</b><span>/ 하루 ${T.coin.daily}</span></div>
 <p class="kh-today">${got?`${icon('c-check',{size:'s'})} 오늘 받음`:'오늘 코인을 아직 안 받았어요'} · 다음 지급까지 ${esc(leftText(msToNextGrant()))}</p>
-<p class="kh-sub">매일 0시(서울)에 ${T.coin.daily}개를 무료로 받아요. 한 판에 ${T.coin.cost}개. 코인은 사는 곳·바꾸는 곳이 없어요.</p>
+<p class="kh-sub">매일 0시(서울)에 무료 코인이 ${T.coin.daily}개로 다시 채워져요. 남은 코인은 다음 날로 넘어가지 않아요. 한 판에 ${T.coin.cost}개. 코인은 사는 곳·바꾸는 곳이 없어요.</p>
 <h3 class="kh-h3">최근 기록</h3><ul class="kh-log">${s.log.length?[...s.log].reverse().map(r=>`<li><span>${esc(r.text)}</span>${r.d?`<b class="${r.d>0?'up':'down'}">${r.d>0?'+':''}${r.d}</b>`:''}</li>`).join(''):'<li class="kh-sub">아직 기록이 없어요</li>'}</ul>`;
  }
  let muted=false;

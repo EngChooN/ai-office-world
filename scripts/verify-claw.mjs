@@ -67,6 +67,7 @@ async function sizeRun(size){
  await p.waitForSelector('.kh-toast:not([hidden])',{timeout:5000}).catch(()=>{});await sl(200);
  const t0=await rect(p,'.kh-toast'),pill=(await rect(p,'.kh-pill'))[0],tr=await rect(p,'.uf-tr > *');
  ok(`${tag} 첫 알림 「오늘의 코인」 보임`,t0.length&&await p.evaluate(()=>document.querySelector('.kh-toast').textContent.includes('오늘의 코인')));
+ ok(`${tag} 하루 첫 접속 코인 15개(알림에도 15개)`,(await st(p)).coins===15&&await p.evaluate(()=>/15개/.test(document.querySelector('.kh-toast').textContent)),String((await st(p)).coins));
  ok(`${tag} 알림이 알약·위 단추와 안 겹침`,t0.length&&![pill,...tr].some(r=>hit(t0[0],r)),JSON.stringify(t0[0]));
  ok(`${tag} 알림이 위 단추보다 위층(z)`,await p.evaluate(()=>+getComputedStyle(document.querySelector('.kh-toast')).zIndex>+getComputedStyle(document.querySelector('.uf-tr')).zIndex));
  await p.screenshot({path:`${OUT}/${size}-1walk.png`});
@@ -179,10 +180,18 @@ async function sizeRun(size){
  await click(p,'.kh-card [data-c=close]');
  await click(p,'.uf-menu-btn');await click(p,'[data-uf-tab=coin]');await sl(200);
  ok(`${tag} 코인 탭: 오늘 받음·기록`,await p.evaluate(()=>{const t=document.querySelector('[data-uf-panel=coin]').textContent;return /오늘 받음/.test(t)&&/한 판/.test(t);}));
+ ok(`${tag} 코인 탭: 「/ 하루 15」·넘어가지 않음 안내(최대 30 없음)`,await p.evaluate(()=>{const t=document.querySelector('[data-uf-panel=coin]').textContent;return /\/ 하루 15/.test(t)&&/넘어가지 않아요/.test(t)&&!/최대/.test(t);}));
  await click(p,'.uf-x');
  const dexN=Object.keys((await st(p)).dex).length;
  await p.reload();await p.waitForFunction(()=>window.claw&&window.claw.fps>0,null,{timeout:180000});await sl(400);
  s=await st(p);ok(`${tag} 이어하기: 새로고침 뒤 코인 0·도감 ${dexN}종(같은 날 다시 안 줌)`,s.coins===0&&Object.keys(s.dex).length===dexN,`${s.coins} ${JSON.stringify(s.dex)}`);
+ // 다음 날(11-23 대표 결정): 남은 개수와 상관없이 15로 — 어제 받은 것으로 바꾸고 새로고침
+ const dayShift=async(patch)=>{await p.evaluate(patch=>{const k='claw-world:v1',v=JSON.parse(localStorage.getItem(k));const y=new Date(Date.now()+9*3600e3-86400e3).toISOString().slice(0,10);
+   Object.assign(v,patch);if(v.lastGrant==='Y')v.lastGrant=y;if(v.lastGrant==='T')v.lastGrant=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);if(patch.coinV===null)delete v.coinV;localStorage.setItem(k,JSON.stringify(v));},patch);
+  await p.reload();await p.waitForFunction(()=>window.claw&&window.claw.fps>0,null,{timeout:180000});await sl(1400);return st(p);};
+ s=await dayShift({coins:3,lastGrant:'Y'});ok(`${tag} 다음 날: 남은 3개 → 15개`,s.coins===15&&Object.keys(s.dex).length===dexN,String(s.coins));
+ s=await dayShift({coins:15,lastGrant:'Y'});ok(`${tag} 다음 날: 안 쓴 15개 → 15개(30 안 됨)`,s.coins===15,String(s.coins));
+ s=await dayShift({coins:4,lastGrant:'T',coinV:null});ok(`${tag} 옛 저장(오늘 받고 4개 남음) → 오늘 15개로 채움`,s.coins===15,String(s.coins));
  ok(`${tag} 페이지 오류 0`,!p.errs.length,p.errs.slice(0,3).join(' / '));
  await ctx.close();
 }
