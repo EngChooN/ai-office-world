@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {createToonStyle} from '../toon/index.js';
 import {composeEnvironment} from '../daytime.js';
-import {buildClawShop,SHOP,SHOP_LIGHTS} from './claw-shop-art.js';
+import {buildClawShop,SHOP,SHOP_LIGHTS,SHADOW_LAYER} from './claw-shop-art.js';
 import {CLAW} from './claw-machine-art.js';
 import {makePlush,PLUSH_IDS,plushTriangles} from './claw-plush.js';
 import {PLUSH,RARITY} from './claw-palette.js';
@@ -29,7 +29,7 @@ const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.05,200);
 const toon=await createToonStyle({renderer,scene,camera,mobile});
 const hemi=new THREE.HemisphereLight(L.hemi.sky,L.hemi.ground,L.hemi.intensity);
 const key=new THREE.DirectionalLight(L.key.color,L.key.intensity);key.position.set(...L.key.pos);key.castShadow=true;key.shadow.mapSize.set(L.key.shadow.map,L.key.shadow.map);
-Object.assign(key.shadow.camera,{left:-L.key.shadow.size,right:L.key.shadow.size,top:L.key.shadow.size,bottom:-L.key.shadow.size,near:1,far:30});key.shadow.bias=-.0006;key.shadow.normalBias=.03;
+Object.assign(key.shadow.camera,{left:-L.key.shadow.size,right:L.key.shadow.size,top:L.key.shadow.size,bottom:-L.key.shadow.size,near:1,far:30});key.shadow.bias=-.0006;key.shadow.normalBias=.03;key.shadow.camera.layers.enable(SHADOW_LAYER); // 기계 그림자 = 그림자 전용 상자
 scene.add(hemi,key,key.target);renderer.toneMappingExposure=L.exposure;
 // 낮 환경으로 후처리(외곽선·블룸·색보정) 값을 맞춘다(실내라 하늘은 안 그림)
 toon.pipeline.update(composeEnvironment({sun:{elevation:45,azimuth:160},moon:{elevation:-20,azimuth:0,illumination:.5}}));

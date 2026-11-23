@@ -1,6 +1,7 @@
 // 온라인 인형뽑기 타이머 기계·열쇠 기계 그림(월드아트, 2026-11-23). 규칙·판정은 월드개발(설계 v3 §3-2·§3-3 fmtTimer·judgeTimer·judgeKey).
 // 바닥 넓이·조작대·인형 나오는 문은 집게 기계(CLAW)와 같아서 가게 자리·부딪힘·서는 자리가 그대로 맞는다. 다른 것은 위쪽뿐이다.
-//  타이머(도시): 위 간판 자리에 큰 숫자판(기계 폭 84%, 숫자 높이 ≈ 기계 폭 20%) + 그 위 이름판, 유리 상자 안 가운데 단 위 인형 하나 + 단 위 고정 집게, 조작대 큰 단추 하나.
+//  타이머(도시): 위 간판 자리에 큰 숫자판(기계 폭 84%, 숫자 높이 ≈ 기계 폭 20%) + 그 위 이름판, 유리 상자 안 가운데 낮은 단 위 큰 인형 하나(11-23 v1.6) + 잠금 유리문,
+//   조작대 오른쪽 큰 단추 하나 + 왼쪽 경품 받침(문으로 꺼낸 큰 인형이 놓이는 곳).
 //  열쇠(별빛): 유리 상자 안 앞면에 칸 2줄×4칸(칸 폭 KEY.cell, 칸 높이 = 1.4칸 폭), 칸마다 아래 자물쇠 판 + 정사각 열쇠 구멍(그림 크기 = 판정 크기), 칸 앞을 오가는 열쇠.
 // 메모리: 숫자판은 384×144 캔버스 1장(보이는 숫자·상태가 바뀔 때만 다시 그림), 열쇠 칸 인형은 같은 종 형상 공유(텍스처 없음).
 // 좌표는 집게 기계와 같음: 앞 +Z, 바닥 y=0, 가운데 x=0.
@@ -9,7 +10,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {MACHINES,SHOP_COLORS,plushInfo} from './claw-palette.js';
 import {CLAW,buildClawMachine,lightController,machineKit} from './claw-machine-art.js';
-import {plushGeometry,plushSize,plushMaterial,plushLineMaterial,PLUSH_IDS} from './claw-plush.js';
+import {plushGeometry,plushSize,plushMaterial,plushLineMaterial,plushLineWidth,isOurPlush} from './claw-plush.js';
 import {guestSize,resolvePool} from './claw-guest.js';
 
 const {builder,machineLine,canvasTex,std,FONT,buildClaw,findMat}=machineKit;
@@ -19,13 +20,18 @@ const themeOf=t=>{const M=typeof t==='string'?MACHINES.find(m=>m.id===t):t;if(!M
 export const TIMER=Object.freeze({
  height:1.8,                                   // 이름판 위 끝
  display:Object.freeze({w:CLAW.width*.84,h:CLAW.width*.84*144/384,y:1.46,digitH:CLAW.width*.84*92/384}),   // 숫자판(앞면, 위 간판 상자 자리). 숫자 글자 높이 digitH ≈ 0.19m = 기계 폭 20%
- stage:Object.freeze({x:0,z:-.06,r:.13,top:CLAW.floorY+.18}), // 인형 올린 단(윗면 높이). 11-23: 집게 없이 문으로 꺼내므로 가운데
+ // 인형 올린 단(윗면 높이). 11-23 v1.6: 큰 인형(최대 0.50m)이 유리 상자(안 높이 0.74m) 안에 머리 위 18cm 남기고 들어가게 낮고 넓게(높이 6cm·반지름 20cm)
+ stage:Object.freeze({x:0,z:-.04,r:.2,top:CLAW.floorY+.06}),
+ big:Object.freeze({maxSize:.56}),             // 단 위에 올릴 수 있는 인형 높이 한도(m). 큰 인형 규칙(claw-palette.js BIG_PLUSH)이 이 아래여야 함
  // 잠금 유리문(11-23 대표 피드백: 10.00이면 문이 열려 인형을 꺼냄). 앞 유리 = 왼쪽 경첩 문, 오른쪽 기둥에 잠금 칸(불빛: 잠김 빨강·아까움 노랑 깜빡·열림 초록)
  door:Object.freeze({openAngle:1.6,rattle:.09,lockY:.92}),
- out:Object.freeze([-.24,CLAW.panel.top+.005,CLAW.depth/2+.1]),       // 꺼낸 인형이 놓이는 곳(조작대 위, 문 바로 앞, 큰 단추 왼쪽)
- button:Object.freeze([0,.5,.56]),             // 큰 단추(시작/멈춤) 자리
+ // 경품 받침(조작대 왼쪽, 조작대보다 10cm 앞으로 나옴): 꺼낸 큰 인형이 놓이는 곳. 열린 문(왼쪽 경첩, x ≈ -0.44)과 큰 단추에 닿지 않는 폭
+ tray:Object.freeze({x:-.2,w:.42,z0:CLAW.depth/2-.03,z1:CLAW.depth/2+.3,top:CLAW.panel.top+.016}),
+ out:Object.freeze([-.2,CLAW.panel.top+.016,CLAW.depth/2+.15]),       // 꺼낸 인형이 놓이는 곳(경품 받침 가운데)
+ button:Object.freeze([.17,.5,.56]),           // 큰 단추(시작/멈춤) 자리 — 11-23 v1.6: 경품 받침 자리를 비우려고 오른쪽으로
  // 조작 중 카메라 추천값: 숫자판과 단이 함께 보이게(집게 기계보다 낮고 앞에서)
- camera:Object.freeze({pos:[0,1.65,1.8],look:[0,1.05,0],fov:42,portrait:Object.freeze({pos:[0,1.85,2.2],fov:55})}),
+ // 11-23 v1.6: 큰 인형 — 숫자판·단 위 큰 인형·문 밖 경품 받침(y 0.5, z 0.6)이 한 화면에 들게 뒤로·위로 물리고 낮게 봄. 단 윗면은 서는 자리 동동이 모자 위로 보임
+ camera:Object.freeze({pos:[0,2.0,2.25],look:[0,.9,.1],fov:42,portrait:Object.freeze({pos:[0,2.3,2.7],look:[0,.92,.1],fov:55})}),
 });
 // 숫자 글자(설계 v3 §3-2: 0.01초 아래 버림, 늘 「두 자리.두 자리」). 화면 HUD와 같은 식 — 판정 쪽 fmtTimer 값(text)을 넘기면 그대로 쓴다.
 export function timerText(ms){const h=Math.max(0,Math.floor(ms/10+1e-9));return String(Math.floor(h/100)%100).padStart(2,'0')+'.'+String(h%100).padStart(2,'0');}
@@ -51,10 +57,7 @@ function paintTimer(g,w,h,{text,state,band,dim}){
   g.fillText(band.lo,bx+bw*.31,by+bh/2+1);g.fillText(band.mid,bx+bw*.5,by+bh/2+1);g.fillText(band.hi,bx+bw*.69,by+bh/2+1);
   g.fillStyle='#fff6e0';g.font=`700 12px ${FONT}`;g.fillText('실패',bx+bw*.1,by+bh/2+1);g.fillText('실패',bx+bw*.9,by+bh/2+1);}
 }
-function timerSign(M){return canvasTex(256,64,(g,w,h)=>{g.fillStyle=M.bodyDark;g.fillRect(0,0,w,h);g.fillStyle=M.trim;g.beginPath();g.roundRect(4,4,w-8,h-8,14);g.fill();
- // 시계 표시
- g.strokeStyle=M.bodyDark;g.lineWidth=5;g.beginPath();g.arc(32,32,15,0,Math.PI*2);g.stroke();g.beginPath();g.moveTo(32,32);g.lineTo(32,22);g.moveTo(32,32);g.lineTo(40,36);g.stroke();
- g.fillStyle=M.bodyDark;g.font=`900 26px ${FONT}`;g.textBaseline='middle';g.fillText(M.name,58,25);g.fillStyle=M.body;g.font=`700 14px ${FONT}`;g.fillText(M.sub,60,48);});}
+// 타이머 이름판 = 간판 아틀라스(claw-machine-art.js signAtlas)의 4:1 칸
 
 // 집게 기계와 같은 아래 몸통·조작대 판·문·투입구·유리 기둥·불빛 줄(b에 더함). bulbs: 'top' = 위 간판 상자 둘레, 'crest' = 위 이름판 둘레(타이머: 간판 자리를 숫자판이 씀).
 function lowerBody(b,M,{bulbs='top',glassTop=CLAW.glassTop,height=CLAW.height}={}){
@@ -100,18 +103,21 @@ function finish(root,mats,toonify,late){
 // 단추(누르면 내려감). 색은 setButton으로 바꿈.
 function bigButton(root,pos,color,r=.055){const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r+.003,.03,20),std(color,{emissive:new THREE.Color(color),emissiveIntensity:.3,roughness:.4}));
  m.position.set(pos[0],CLAW.panel.top+.025,pos[2]);root.add(m);const ring=new THREE.Mesh(new THREE.CylinderGeometry(r+.014,r+.014,.014,20),std('#2b2f36'));ring.position.set(pos[0],CLAW.panel.top+.008,pos[2]);root.add(ring);return m;}
-const sizeOf=id=>PLUSH_IDS.includes(id)?plushSize(id):guestSize(id);
+// 봉 기계(claw-bridge.js)도 같은 몸통·유리·마무리를 쓴다
+export const bodyKit=Object.freeze({lowerBody:(...a)=>lowerBody(...a),machineMats:M=>machineMats(M),glassBox:(...a)=>glassBox(...a),finish:(...a)=>finish(...a)});
+const sizeOf=id=>isOurPlush(id)?plushSize(id):guestSize(id);
+const KEY_BUTTON=Object.freeze([0,.5,.56]);    // 열쇠 기계 큰 단추(가운데, 타이머 단추가 옮겨 가기 전 자리 그대로)
 // 인형 하나(형상·재질 공유). 손님 인형(guest-*)은 guestObject(id)가 돌려준 물체를 쓴다.
 function plushAt(id,{toonify,guestObject,scale=1}){
- if(!PLUSH_IDS.includes(id)){if(!guestObject)throw new Error(`손님 인형은 guestObject가 필요: ${id}`);const o=guestObject(id);o.scale.multiplyScalar(scale);return o;}
+ if(!isOurPlush(id)){if(!guestObject)throw new Error(`손님 인형은 guestObject가 필요: ${id}`);const o=guestObject(id);o.scale.multiplyScalar(scale);return o;}
  const geo=plushGeometry(id),s=plushSize(id)*scale,g=new THREE.Group();g.name=`인형:${id}`;
  const m=new THREE.Mesh(geo.color,plushMaterial());m.castShadow=true;m.receiveShadow=true;m.scale.setScalar(s);g.add(m);toonify?.(g,{kind:'character'});
- const l=new THREE.Mesh(geo.line,plushLineMaterial());l.userData.outline=true;l.scale.setScalar(s);l.name='outline';g.add(l);g.userData.plushId=id;return g;}
+ const l=new THREE.Mesh(geo.line,plushLineMaterial(plushLineWidth(id)));l.userData.outline=true;l.scale.setScalar(s);l.name='outline';g.add(l);g.userData.plushId=id;g.userData.size=s;return g;}
 
 // ── 타이머 기계. 반환 group.userData: kind 'timer', machine, height, setTimer({ms|text,state,dim}), setBand(conf), setButton('start'|'stop'|'off'),
-//  setPrize(id), prize(지금 단 위 인형), stage(단 윗면 가운데, 기계 좌표), setDoor({open,rattle,lock}), door(상태), setLights, update(dt), press(k), spots(out = 꺼낸 인형 자리)
+//  setPrize(id)(큰 인형 BIG_PLUSH, 단 한도 TIMER.big.maxSize), prize(지금 단 위 인형), stage(단 윗면 가운데, 기계 좌표), setDoor({open,rattle,lock}), door(상태), setLights, update(dt), press(k), spots(out = 꺼낸 인형 자리)
 //  11-23(대표 피드백): 집게 없음. 유리 상자 안 = 단 위 인형 + 잠긴 앞 유리문. 성공이면 잠금이 풀리고 문이 열려 인형을 꺼낸다(연출 순서는 claw-play.js).
-export function buildTimerMachine(theme='city',{toonify=null,guestObject=null,prize=null}={}){
+export function buildTimerMachine(theme='timer-1',{toonify=null,guestObject=null,prize=null}={}){
  const M=themeOf(theme),C=CLAW,T=TIMER,W=C.width,D=C.depth,hw=W/2,hd=D/2,root=new THREE.Group();root.name=`인형뽑기 기계:${M.id}`;
  const mats=machineMats(M),b=builder(),late=[];
  lowerBody(b,M,{bulbs:'crest'});
@@ -121,8 +127,12 @@ export function buildTimerMachine(theme='city',{toonify=null,guestObject=null,pr
  b.rbox('gold',T.display.w+.03,T.display.h+.03,.012,.012,0,T.display.y,hd+.002);
  b.box('floor',W-.06,.02,D-.06,0,C.floorY-.005,0);b.box('back',W-.07,C.glassTop-C.floorY-.02,.012,0,(C.glassTop+C.floorY)/2,-hd+.04);
  // 단: 줄무늬 원기둥 + 윗판(인형이 앉는 곳)
- const st=T.stage;for(let k=0;k<4;k++)b.cyl(k%2?'trim':'accent',st.r,st.r,(st.top-C.floorY)/4,st.x,C.floorY+(k+.5)*(st.top-C.floorY)/4,st.z,{seg:20});
- b.cyl('dark',st.r+.012,st.r+.012,.014,st.x,st.top-.007,st.z,{seg:20});
+ const st=T.stage,sh=st.top-C.floorY;b.cyl('accent',st.r,st.r+.012,sh*.55,st.x,C.floorY+sh*.275,st.z,{seg:24});b.cyl('trim',st.r,st.r,sh*.45-.012,st.x,C.floorY+sh*.775-.006,st.z,{seg:24});   // 윗면은 금색 테가 덮음(같은 높이 두 면이 겹쳐 줄무늬가 나지 않게)
+ b.cyl('gold',st.r+.012,st.r+.012,.012,st.x,st.top-.006,st.z,{seg:24});
+ // 경품 받침: 조작대 왼쪽 위 판 + 앞·옆 턱 + 아래 받침 두 개(꺼낸 큰 인형이 놓임)
+ {const t=T.tray,d=t.z1-t.z0,zc=(t.z0+t.z1)/2;b.rbox('trim',t.w,.016,d,.006,t.x,t.top-.008,zc);
+  b.rbox('accent',t.w,.035,.016,.006,t.x,t.top+.012,t.z1-.008);for(const sx of [-1,1])b.rbox('accent',.016,.03,d-.02,.006,t.x+sx*(t.w/2-.008),t.top+.01,zc);
+  for(const sx of [-1,1])b.rbox('dark',.03,t.top-.016,.03,.008,t.x+sx*(t.w/2-.05),(t.top-.016)/2,t.z1-.05);}   // 바닥까지 닿는 다리 둘
  // 잠금 칸(오른쪽 앞 기둥, 문 걸쇠가 들어가는 곳)
  const ly=T.door.lockY;b.rbox('dark',.06,.13,.05,.01,hw-.03,ly,hd+.005);b.box('gold',.03,.016,.02,hw-.05,ly+.035,hd+.03);
  b.box('strip',W-.12,.015,.03,0,C.glassTop-.03,-hd+.08);
@@ -141,8 +151,7 @@ export function buildTimerMachine(theme='city',{toonify=null,guestObject=null,pr
  // 유리 반짝임 줄은 문과 같이 돌게 문 묶음으로 옮김
  for(const o of late)if(o!==led&&o.isMesh&&o.material?.isMeshBasicMaterial&&o.position.z>hd-.03){root.remove(o);o.position.x-=hinge.position.x;o.position.z=.004;hinge.add(o);}
  // 이름판(앞)·숫자판(앞) — 빛나는 판이라 카툰 재질로 바꾸지 않는다
- const sign=timerSign(M);if(sign){const m=new THREE.Mesh(new THREE.PlaneGeometry(W*.72,W*.72/4),new THREE.MeshStandardMaterial({map:sign,emissive:new THREE.Color('#ffffff'),emissiveMap:sign,emissiveIntensity:.25,roughness:.7}));
-  m.position.set(0,(C.height+T.height)/2,.181);m.name='기계 간판';root.add(m);}
+ {const m=machineKit.signMesh(M,W*.72,W*.72/4);if(m){m.position.set(0,(C.height+T.height)/2,.181);root.add(m);}}
  const cv=typeof document!=='undefined'?document.createElement('canvas'):null;let tex=null,disp=null;
  if(cv){cv.width=384;cv.height=144;tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
   disp=new THREE.Mesh(new THREE.PlaneGeometry(T.display.w,T.display.w*144/384),new THREE.MeshBasicMaterial({map:tex,toneMapped:false}));disp.position.set(0,T.display.y,hd+.01);disp.name='타이머 숫자판';root.add(disp);}
@@ -160,7 +169,8 @@ export function buildTimerMachine(theme='city',{toonify=null,guestObject=null,pr
  const setButton=m=>{const c=BTN[m]??BTN.off;button.material.color.set(c);button.material.emissive.set(c);button.material.emissiveIntensity=m==='off'?.05:.35;button.name=m==='stop'?'멈춤 단추':'시작 단추';};
  // 단 위 인형
  let prizeObj=null;const stageTop=new THREE.Vector3(st.x,st.top,st.z);
- const setPrize=id=>{if(prizeObj){root.remove(prizeObj);prizeObj=null;}if(!id)return null;prizeObj=plushAt(id,{toonify,guestObject});prizeObj.position.copy(stageTop);prizeObj.rotation.y=-.25;prizeObj.name=`단 위 인형:${id}`;root.add(prizeObj);return prizeObj;};
+ // 단 위 인형. 단이 받칠 수 있는 높이(TIMER.big.maxSize)보다 큰 인형은 그 높이로 줄여 유리 위에 닿지 않게
+ const setPrize=id=>{if(prizeObj){root.remove(prizeObj);prizeObj=null;}if(!id)return null;const sz=sizeOf(id);prizeObj=plushAt(id,{toonify,guestObject,scale:sz>T.big.maxSize?T.big.maxSize/sz:1});prizeObj.position.copy(stageTop);prizeObj.rotation.y=-.15;prizeObj.name=`단 위 인형:${id}`;root.add(prizeObj);return prizeObj;};
  // 꺼낸 인형을 단 인형 자리에서 떼어 냄(물체는 그대로 둠 — 연출 쪽이 조작대 위에 두었다가 치움)
  const detachPrize=()=>{const o=prizeObj;prizeObj=null;return o;};
  setPrize(prize??resolvePool(M.pool??[],[])[0]??null);
@@ -176,7 +186,7 @@ export function buildTimerMachine(theme='city',{toonify=null,guestObject=null,pr
   setLights:lights.setLights,update,press,mats,camera:T.camera,timer:{get text(){return S.text;},get state(){return S.state;}},
   spots:{stand:new THREE.Vector3(0,0,C.stand.z),button:new THREE.Vector3(T.button[0],C.panel.top+.04,T.button[2]),coin:new THREE.Vector3(...C.panel.coin).setZ(hd+.02),
    door:new THREE.Vector3(C.door[0],C.door[1],hd+.03),display:new THREE.Vector3(0,T.display.y,hd+.01),sign:new THREE.Vector3(0,T.height+.15,0),
-   out:new THREE.Vector3(...T.out),lock:new THREE.Vector3(hw-.03,ly,hd+.03)},pile:null};
+   out:new THREE.Vector3(...T.out),tray:new THREE.Vector3(T.tray.x,T.tray.top,(T.tray.z0+T.tray.z1)/2),lock:new THREE.Vector3(hw-.03,ly,hd+.03)},pile:null};
  return root;
 }
 
@@ -198,7 +208,7 @@ function keyMiniScale(id){const s=sizeOf(id);return (.13+(s-.2)/.12*.05)/s;}   /
 
 // 반환 group.userData: kind 'key', machine, height, key(set({x,y,push,aim}) · state, aim = 칸 앞면 겨눔 점 보이기), setCells(ids) · cells[{i,j,id,rare,obj,hole}], setHoles({fit,fitRare,pityBonus,pity}),
 //  markCell(i,j,'ok'|'near'|'miss'|null) · openCell(i,j)(칸 바닥이 열리고 인형이 떨어져 숨음, 0.6초) · resetCells() · cellAt(i,j), setLights, update, press, spots
-export function buildKeyMachine(theme='star',{toonify=null,guestObject=null,cells=null}={}){
+export function buildKeyMachine(theme='key-1',{toonify=null,guestObject=null,cells=null}={}){
  const M=themeOf(theme),C=CLAW,K=KEY,W=C.width,D=C.depth,hw=W/2,hd=D/2,root=new THREE.Group();root.name=`인형뽑기 기계:${M.id}`;
  const mats=machineMats(M),b=builder(),late=[];mats.back.emissiveIntensity=.75;
  lowerBody(b,M,{glassTop:K.glassTop,height:K.height});
@@ -217,15 +227,11 @@ export function buildKeyMachine(theme='star',{toonify=null,guestObject=null,cell
  b.build(mats,root,{outline:new Set(['body','top','dark'])});
  glassBox(root,late,{chuteGuard:false,glassTop:K.glassTop});
  // 간판(앞)
- const sign=machineKit.canvasTex(256,96,(g,w,h)=>{g.fillStyle=M.bodyDark;g.fillRect(0,0,w,h);g.fillStyle=M.trim;g.beginPath();g.roundRect(6,6,w-12,h-12,16);g.fill();
-  // 열쇠 표시
-  g.strokeStyle=M.bodyDark;g.fillStyle=M.bodyDark;g.lineWidth=7;g.beginPath();g.arc(30,46,12,0,Math.PI*2);g.stroke();g.fillRect(41,43,26,6);g.fillRect(58,49,5,9);g.fillRect(50,49,5,7);
-  g.font=`900 34px ${FONT}`;g.textBaseline='middle';g.fillText(M.name,74,38);g.fillStyle=M.body;g.font=`700 18px ${FONT}`;g.fillText(M.sub,76,70);});
+ // 간판(앞) = 간판 아틀라스 한 칸
  // 큰 단추(①옆으로 ②위로 같은 단추)
- const button=bigButton(root,TIMER.button,'#e8443a',.062);button.name='열쇠 단추';
+ const button=bigButton(root,KEY_BUTTON,'#e8443a',.062);button.name='열쇠 단추';
  finish(root,mats,toonify,late);
- if(sign){const m=new THREE.Mesh(new THREE.PlaneGeometry(W*.86,W*.86*96/256),new THREE.MeshStandardMaterial({map:sign,emissive:new THREE.Color('#ffffff'),emissiveMap:sign,emissiveIntensity:.25,roughness:.7}));
-  m.position.set(0,K.glassTop+(K.height-K.glassTop)/2,hd+.004);m.name='기계 간판';root.add(m);}
+ {const m=machineKit.signMesh(M,W*.86,W*.86*3/8);if(m){m.position.set(0,K.glassTop+(K.height-K.glassTop)/2,hd+.004);root.add(m);}}
  // ── 칸: 자물쇠 판(칸 아래쪽, 앞면)·열쇠 구멍·칸 바닥 덮개(열리면 아래로 젖혀짐)·인형
  const plateMat=std(M.trim,{roughness:.6}),plateRare=std('#fff3c8',{roughness:.6}),holeMat=new THREE.MeshBasicMaterial({color:'#15161c'}),rimMat=std(SHOP_COLORS.coin,{roughness:.35,metalness:.35});
  const markMats={ok:new THREE.MeshBasicMaterial({color:'#5cf08a',transparent:true,opacity:.55,depthWrite:false}),near:new THREE.MeshBasicMaterial({color:'#ffe04a',transparent:true,opacity:.55,depthWrite:false}),miss:new THREE.MeshBasicMaterial({color:'#ff5a4a',transparent:true,opacity:.45,depthWrite:false})};
@@ -284,7 +290,7 @@ export function buildKeyMachine(theme='star',{toonify=null,guestObject=null,cell
  const press=(k=1)=>{button.position.y=C.panel.top+.025-.012*k;};
  root.userData={kind:'key',machine:M,height:K.height,key:{set:setKey,state:keyState,root:keyRoot},cells:cellList,cellAt,setCells,setHoles,get holes(){return {...holeConf};},markCell,openCell,resetCells,
   setLights:lights.setLights,update,press,mats,camera:K.camera,
-  spots:{stand:new THREE.Vector3(0,0,C.stand.z),button:new THREE.Vector3(TIMER.button[0],C.panel.top+.04,TIMER.button[2]),coin:new THREE.Vector3(...C.panel.coin).setZ(hd+.02),
+  spots:{stand:new THREE.Vector3(0,0,C.stand.z),button:new THREE.Vector3(KEY_BUTTON[0],C.panel.top+.04,KEY_BUTTON[2]),coin:new THREE.Vector3(...C.panel.coin).setZ(hd+.02),
    door:new THREE.Vector3(C.door[0],C.door[1],hd+.03),grid:new THREE.Vector3(0,K.bottom+gh/2,K.front),sign:new THREE.Vector3(0,K.height+.15,0)},pile:null};
  return root;
 }

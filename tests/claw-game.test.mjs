@@ -4,13 +4,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {CLAW_TUNING as T,seoulDate,msToNextGrant,freshState,sanitizeState,grantDaily,grantedToday,canPlay,spendCoin,recordResult,rulesFor,pityLeft,pityOn,kindOf,
- judgeTimer,fmtTimer,judgeKey,keyMissText,timerDiffText,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,ACT_PHASES,dexCount} from '../src/claw/claw-rules.js';
+ judgeTimer,fmtTimer,judgeKey,keyMissText,timerDiffText,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,ACT_PHASES,dexCount,isRefillLog,levelOf,hideAfterOf,pityNow,
+ machStateToday,saveMachState,sanitizeMachState} from '../src/claw/claw-rules.js';
+import {createBridgeSim,bridgeGeom,runBridgeDrop,startPose,nearState,bridgeSnap,noProgress,boxParts} from '../src/claw/claw-bridge-physics.js';
 import {geomFrom,createClawSim,runDrop,BODY_TYPES,PLUSH_BODY,CLAW_RIG,U} from '../src/claw/claw-physics.js';
 const CLAW_RIG_TIP=th=>(CLAW_RIG.hinge+CLAW_RIG.l1*Math.sin(th)+CLAW_RIG.l2*Math.sin(th-CLAW_RIG.bend))*U; // 물리 집게발 끝이 가운데에서 떨어진 거리(m, 겹치면 −)
 import {CLAW} from '../src/claw/claw-machine-art.js';
 import {KEY} from '../src/claw/claw-machines-more.js';
 import {plushSize} from '../src/claw/claw-plush.js';
-import {PLUSH,MACHINES} from '../src/claw/claw-palette.js';
+import {PLUSH,MACHINES,BIG_PLUSH,BOX_PLUSH,GUEST_SLOTS} from '../src/claw/claw-palette.js';
 import {clawCatalog,resolvePool} from '../src/claw/claw-guest.js';
 import {sanitizeAct,EXPERIENCES,parseExperience,messageAllowed,SERVERS,findServer,anonymousName,ACT_SCHEMA} from '../src/multi-protocol.js';
 import {createRooms} from '../server/rooms.mjs';
@@ -36,7 +38,9 @@ test('무료 코인(11-23 대표 결정): 하루 첫 접속에 15개, 다음 날
  assert.equal(grantDaily(s,KST-5000),15);assert.equal(s.coins,15,'하루 첫 접속 15개');assert.ok(grantedToday(s,KST-5000));
  assert.equal(grantDaily(s,KST-4000),null,'같은 날 두 번 안 줌');assert.equal(s.coins,15);
  s.coins=3;assert.equal(grantDaily(s,KST+1000),15);assert.equal(s.coins,15,'남은 3개 → 다음 날 15(더하지 않음)');
- assert.match(s.log.at(-1).text,/어제 남은 3개는 넘어오지 않아요/);assert.equal(s.log.at(-1).d,12);
+ // 채움 기록(v4 §10): 늘어남·줄어듦 숫자 없이 「오늘 15개로 채웠어요」 + 결과 개수
+ assert.match(s.log.at(-1).text,/오늘 15개로 채웠어요/);assert.equal(s.log.at(-1).d,0);assert.equal(s.log.at(-1).t,'refill');assert.equal(s.log.at(-1).n,15);assert.ok(isRefillLog(s.log.at(-1)));
+ assert.ok(isRefillLog({text:'오늘의 코인 15개(어제 남은 13개는 넘어오지 않아요)',d:-13}),'예전 저장의 채움 줄도 같은 모양');assert.ok(!isRefillLog({text:'집게 1 한 판',d:-1}));
  s.coins=0;assert.equal(grantDaily(s,KST+1000+86400e3),15);assert.equal(s.coins,15,'다 쓴 다음 날 15');
  s.coins=15;assert.equal(grantDaily(s,KST+1000+2*86400e3),15);assert.equal(s.coins,15,'안 쓴 다음 날도 15(30이 되지 않음)');
  for(let d=3;d<10;d++){grantDaily(s,KST+1000+d*86400e3);assert.equal(s.coins,15);}
@@ -57,13 +61,25 @@ test('무료 코인: 옛 규칙 저장(10개씩 더해 30개까지) 이어받기
  s=sanitizeState(JSON.parse(JSON.stringify(s)));assert.equal(s.coinV,2);assert.equal(grantDaily(s,KST+2000),null);
 });
 test('한 판 값: 코인 1개, 없으면 못 함(사는 길 없음)', ()=>{
- const s=freshState();assert.equal(canPlay(s),false);assert.equal(spendCoin(s,'forest'),false);assert.equal(s.plays,0);
- s.coins=1;assert.ok(spendCoin(s,'forest',1));assert.equal(s.coins,0);assert.equal(s.plays,1);assert.equal(s.log.at(-1).d,-1);
+ const s=freshState();assert.equal(canPlay(s),false);assert.equal(spendCoin(s,'claw-1'),false);assert.equal(s.plays,0);
+ s.coins=1;assert.ok(spendCoin(s,'claw-1',1));assert.match(s.log.at(-1).text,/집게 1 한 판/);assert.equal(s.coins,0);assert.equal(s.plays,1);assert.equal(s.log.at(-1).d,-1);
  const src=read('src/claw/claw-hud.js')+read('src/claw/main.js');
  assert.doesNotMatch(src,/구매|결제|충전|buy|purchase/i,'코인을 사는 단추·말이 없다');
 });
-test('기계 짝: 숲속 = 집게(물리)·도시 = 타이머·별빛 = 열쇠(설계 v3)', ()=>{
- assert.deepEqual(MACHINES.map(m=>kindOf(m.id)),['claw','timer','key']);
+test('기계 16대(설계 v4.1 §12, 대표 승인): 집게 6·봉 4·타이머 3·열쇠 3, id·이름·경품 표 그대로', ()=>{
+ const n=k=>MACHINES.filter(m=>kindOf(m.id)===k).length;
+ assert.equal(MACHINES.length,16);assert.deepEqual([n('claw'),n('bridge'),n('timer'),n('key')],[6,4,3,3]);
+ assert.deepEqual(MACHINES.map(m=>m.id),['claw-1','claw-2','claw-3','claw-4','claw-5','claw-6','bridge-1','bridge-2','bridge-3','bridge-4','timer-1','timer-2','timer-3','key-1','key-2','key-3']);
+ for(const M of MACHINES)assert.match(M.name,/^(집게|봉|타이머|열쇠) \d$/,M.id);
+ assert.deepEqual(MACHINES.filter(m=>m.kind==='timer').map(m=>m.pool[0]),['big-squirrel','big-dongdong','big-haechi']);
+ // 봉: 기계마다 상자 2종, 8종 모두 뽑을 수 있음
+ const boxes=MACHINES.filter(m=>m.kind==='bridge').flatMap(m=>{assert.equal(m.pool.length,2,m.id);return m.pool;});assert.deepEqual([...new Set(boxes)].sort(),BOX_PLUSH.map(b=>b.id).sort());
+ // 손님 인형 자리(v4.1 §11): 열쇠 1·2의 8번째 칸에만, 다른 종류 pool에는 없음, guest-2 공개판 대체 = 회사원 동동이(희귀 → 작은 구멍)
+ for(const M of MACHINES){const ids=M.cells??M.pool,g=ids.map((id,i)=>id.startsWith('guest-')?i:-1).filter(i=>i>=0);
+  if(M.id==='key-1')assert.deepEqual([g,ids[7]],[[7],'guest-1']);else if(M.id==='key-2')assert.deepEqual([g,ids[7]],[[7],'guest-2']);else assert.deepEqual(g,[],M.id);
+  if(M.kind!=='key')assert.ok(!M.pool.some(id=>id.startsWith('guest-')),M.id);}
+ assert.equal(GUEST_SLOTS.find(g=>g.id==='guest-2').fallback,'dongdong-office');assert.deepEqual(resolvePool(MACHINES[14].cells).slice(-1),['dongdong-office']);
+ assert.equal(levelOf('timer-3'),4);assert.equal(hideAfterOf('timer-3'),3);assert.equal(hideAfterOf('timer-1'),0);
 });
 test('타이머 판정 표(설계 v3 §7-1): 화면 숫자로만, 0.01초 아래 버림', ()=>{
  const t=ms=>{const j=judgeTimer(ms);return [j.shown,j.r];};
@@ -100,7 +116,7 @@ test('집게 물리: 기계 치수에서 만든 상자·구멍, 인형 8종 몸,
 test('집게 순서(대표 피드백 11-23): 벌리고 내려감 → 벌린 채 바닥 → 바닥에서 조임 → 조인 채 올라옴 → 출구에서 놓음, 그림 벌린 폭 = 물리 집게발 폭', async ()=>{
  const THREE=await import('three');const {buildClawMachine}=await import('../src/claw/claw-machine-art.js');
  const g=geomFrom(CLAW),sim=createClawSim({geom:g,ids:['squirrel','hare','magpie'],sizeOf:plushSize,seed:5,count:T.claw.dolls,power:T.claw.power});
- const m=buildClawMachine('forest'),c=m.userData.claw,R=CLAW_RIG_TIP;
+ const m=buildClawMachine('claw-1'),c=m.userData.claw,R=CLAW_RIG_TIP;
  sim.start();sim.setPos(0,-.5);const rest=sim.clawPose().open;sim.drop();
  const log=[];let firstMove=null;
  for(let t=0;t<16&&sim.claw.state!=='done';t+=1/60){sim.step(1/60);const p=sim.clawPose();log.push({s:sim.claw.state,...p});if(firstMove==null&&p.drop>.002)firstMove=p;}
@@ -116,31 +132,42 @@ test('집게 순서(대표 피드백 11-23): 벌리고 내려감 → 벌린 채 
   const h=c.head.getWorldPosition(new THREE.Vector3()),t=c.fingers[0].localToWorld(new THREE.Vector3(0,-.14,0)).sub(h);
   assert.ok(Math.abs(t.z-R(th))<.012,`th ${th}: 그림 ${t.z.toFixed(3)} 물리 ${R(th).toFixed(3)}`);}
 });
-test('보장: 같은 기계 5번 연달아 실패 → 다음 판 도움(집게 힘센 집게·열쇠 넓은 구멍), 타이머는 기본 끔', ()=>{
- const s=freshState();for(let i=0;i<T.pity.after;i++)recordResult(s,'forest',{kind:'miss'});
- assert.equal(pityLeft(s,'forest'),0);assert.equal(pityLeft(s,'star'),T.pity.after,'기계마다 따로');assert.equal(pityLeft(s,'city'),null,'타이머 보장 끔');
- assert.ok(pityOn('claw')&&pityOn('key')&&!pityOn('timer'));
- const rec=recordResult(s,'forest',{kind:'win',id:'squirrel'},KST);assert.ok(rec.isNew);assert.equal(s.pity.forest,0);assert.equal(s.dex.squirrel.first,'2026-11-24');assert.equal(s.dex.squirrel.machine,'forest');
- assert.deepEqual(recordResult(s,'city',{kind:'win',id:'squirrel'}),{isNew:false,count:2});assert.equal(dexCount(s),1);
- recordResult(s,'city',{kind:'near',id:null});assert.equal(s.pity.city,1,'아까움도 실패로 셈');
+test('보장: 같은 기계 5번 연달아 실패 → 다음 판 도움(집게 힘센 집게·열쇠 넓은 구멍), 봉은 8판 뒤 힘센 집게, 타이머는 기본 끔', ()=>{
+ const s=freshState();for(let i=0;i<T.pity.after;i++)recordResult(s,'claw-1',{kind:'miss'});
+ assert.equal(pityLeft(s,'claw-1'),0);assert.equal(pityLeft(s,'claw-2'),T.pity.after,'같은 종류라도 기계마다 따로');assert.equal(pityLeft(s,'key-1'),T.pity.after);assert.equal(pityLeft(s,'timer-1'),null,'타이머 보장 끔');
+ assert.ok(pityOn('claw')&&pityOn('key')&&pityOn('bridge')&&!pityOn('timer'));
+ assert.equal(pityLeft(s,'bridge-1'),8,'봉 = 8판(v4.1 §7-5)');for(let i=0;i<8;i++)recordResult(s,'bridge-1',{kind:'near'});assert.ok(pityNow(s,'bridge-1'));assert.match(rulesFor('bridge-1',MACHINES[6].pool).pity,/힘센 집게.*1\.5배/);
+ const rec=recordResult(s,'claw-1',{kind:'win',id:'squirrel'},KST);assert.ok(rec.isNew);assert.equal(s.pity['claw-1'],0);assert.equal(s.dex.squirrel.first,'2026-11-24');assert.equal(s.dex.squirrel.machine,'claw-1');
+ assert.deepEqual(recordResult(s,'key-1',{kind:'win',id:'squirrel'}),{isNew:false,count:2});assert.equal(dexCount(s),1);
+ recordResult(s,'key-1',{kind:'near',id:null});assert.equal(s.pity['key-1'],1,'아까움도 실패로 셈');
 });
 test('규칙 안내: 조절값에서 만든 글(값을 바꾸면 글도 바뀜)', ()=>{
- const t=rulesFor('city',MACHINES[1].pool);assert.equal(t.kind,'timer');assert.ok(t.lines.some(l=>/딱 10\.00일 때만 성공/.test(l)));assert.ok(t.lines.some(l=>/9\.90~10\.10/.test(l)));assert.equal(t.pity,'');
- const t2=rulesFor('city',MACHINES[1].pool,{...T,timer:{...T.timer,okWinSec:.05,pityWinSec:.02}});assert.ok(t2.lines.some(l=>/9\.95~10\.05에 멈추면 성공/.test(l)));assert.match(t2.pity,/0\.02초/);
- assert.match(rulesFor('star',MACHINES[2].cells).lines.join(' '),/0\.14칸.*0\.08칸/);assert.match(rulesFor('forest',MACHINES[0].pool).pity,/힘센 집게/);
+ const t=rulesFor('timer-1',MACHINES[10].pool);assert.equal(t.kind,'timer');assert.ok(t.lines.some(l=>/딱 10\.00일 때만 성공/.test(l)));assert.ok(t.lines.some(l=>/9\.90~10\.10/.test(l)));assert.equal(t.pity,'');
+ const t2=rulesFor('timer-1',MACHINES[10].pool,{...T,timer:{...T.timer,okWinSec:.05,pityWinSec:.02}});assert.ok(t2.lines.some(l=>/9\.95~10\.05에 멈추면 성공/.test(l)));assert.match(t2.pity,/0\.02초/);
+ assert.match(rulesFor('key-1',MACHINES[13].cells).lines.join(' '),/0\.14칸.*0\.08칸/);assert.match(rulesFor('claw-1',MACHINES[0].pool).pity,/힘센 집게/);
+ assert.ok(rulesFor('timer-3',MACHINES[12].pool).lines.some(l=>/3\.00초부터 숫자가 어두워져요/.test(l)),'타이머 3만 보이는 차이');assert.ok(!rulesFor('timer-1',MACHINES[10].pool).lines.some(l=>/어두워져요/.test(l)));
+ // 봉 규칙 글(v4.1 §7-7): 혼자 = 오늘 안에 이어서, 가게 공유(3단계) = 모두 같음·30분
+ const b=rulesFor('bridge-3',MACHINES[8].pool);assert.equal(b.kind,'bridge');assert.match(b.lines.join(' '),/들지 못해요.*봉 사이로 떨어뜨리면 성공/);assert.match(b.lines.join(' '),/팔\(八\) 자.*11cm.*15cm/);assert.match(b.lines.join(' '),/오늘 안에 이어서/);
+ assert.match(rulesFor('bridge-1',MACHINES[6].pool,T,undefined,undefined,{shared:true}).lines.join(' '),/상자 자리는 모두 같아요.*30분/);
  for(const M of MACHINES){const n=rulesFor(M.id,M.pool).note;assert.match(n,/사는 곳·바꾸는 곳은 없어요/);assert.match(n,/15개/);assert.match(n,/넘어가지 않아요/);}
 });
 test('저장 정리: 이상한 값·모르는 인형(공개판의 손님 인형)·잘못된 기계는 버림', ()=>{
  const raw={coins:9999,lastGrant:'어제',plays:3,dex:{cat:{n:2,first:'2026-11-23',machine:'city'},'guest-1':{n:1},nope:{n:1},hare:{n:0}},pity:{forest:3,zzz:2},log:[{at:1,text:'a'},{x:1}],seenTip:true};
  const s=sanitizeState(raw);
- assert.equal(s.coins,0);assert.equal(s.lastGrant,null);assert.equal(s.plays,3);assert.deepEqual(Object.keys(s.dex),['cat']);assert.deepEqual(s.pity,{forest:3});assert.equal(s.log.length,1);assert.ok(s.seenTip);
+ assert.equal(s.coins,0);assert.equal(s.lastGrant,null);assert.equal(s.plays,3);assert.deepEqual(Object.keys(s.dex),['cat']);assert.equal(s.log.length,1);assert.ok(s.seenTip);
+ // 옛 기계 id(MVP 3대) → 16대 이어받기: forest → 집게 1, star → 열쇠 1, city → 큰 인형의 타이머(모르면 타이머 1), 처음 규칙 본 것도
+ assert.deepEqual(s.pity,{'claw-1':3});assert.equal(s.dex.cat.machine,'timer-1');
+ const m=sanitizeState({pity:{star:2,city:1},seen:{forest:true,city:true},dex:{'big-haechi':{n:1,machine:'city'},haechi:{n:1,machine:'star'}}});
+ assert.deepEqual(m.pity,{'key-1':2,'timer-1':1});assert.deepEqual(Object.keys(m.seen).sort(),['claw-1','timer-1','timer-2','timer-3']);assert.equal(m.dex['big-haechi'].machine,'timer-3');assert.equal(m.dex.haechi.machine,'key-1');
  // 개발용(손님 인형이 들어온 화면)에서는 손님 칸도 남는다
  assert.ok(sanitizeState(raw,{isKnown:id=>id==='guest-1'||id==='cat'}).dex['guest-1']);
  assert.deepEqual(sanitizeState('x'),freshState());
 });
-test('공개판 도감: 우리 인형 8칸만, 손님 자리는 우리 인형으로 바뀜(다른 회사 캐릭터 이름·파일 없음)', ()=>{
- assert.deepEqual(clawCatalog().map(c=>c.id),PLUSH.map(p=>p.id));
- for(const M of MACHINES)for(const id of resolvePool(M.cells??M.pool))assert.ok(PLUSH.some(p=>p.id===id),`${M.id} ${id}`);
+test('공개판 도감: 우리 인형 8 + 큰 인형 3 + 상자 8칸, 손님 자리는 우리 인형으로 바뀜(다른 회사 캐릭터 이름·파일 없음)', ()=>{
+ assert.deepEqual(clawCatalog().map(c=>c.id),[...PLUSH.map(p=>p.id),...BIG_PLUSH.map(b=>b.id),...BOX_PLUSH.map(b=>b.id)]); // 11-23 v1.6 큰 인형 3칸(월드아트) + v4.1 봉 상자 8칸
+ assert.equal(clawCatalog().length,19);assert.equal(clawCatalog().filter(c=>c.box).length,8);assert.deepEqual(clawCatalog().filter(c=>c.big).map(c=>c.base),['squirrel','dongdong','haechi']); // 도감 「큰」 딱지는 big으로 붙임
+ assert.deepEqual(sanitizeState({...freshState(),dex:{'big-haechi':{n:1,first:'2026-11-23'}}}).dex['big-haechi']?.n,1); // 큰 인형 저장이 지워지지 않음
+ for(const M of MACHINES)for(const id of resolvePool(M.cells??M.pool))assert.ok(PLUSH.some(p=>p.id===id)||BIG_PLUSH.some(b=>b.id===id)||BOX_PLUSH.some(b=>b.id===id),`${M.id} ${id}`);
  const src=['src/claw/main.js','src/claw/claw-hud.js','src/claw/claw-play.js','src/claw/claw-rules.js','src/claw/claw-multi.js','src/claw/claw-physics.js','claw/index.html'].map(read).join('\n');
  assert.doesNotMatch(src,/치이카와|chiikawa|ちいかわ|하치와레|우사기/i);
  // 비공개 자료 읽기는 VITE_CLAW_PRIVATE=1일 때만(빌드에서 빠짐)
@@ -155,7 +182,7 @@ test('같은 가게 손님 규격: claw 체험·위치/채팅/act만·1서버·�
  assert.match(anonymousName('ab12cd','claw'),/^뽑기손님[0-9A-Z]{4}$/);
  assert.deepEqual(sanitizeAct('claw',{m:2,ph:'drop',cx:encodeClawPos(.2),cz:encodeClawPos(-.28),r:'dongdong-santa',k:KIND_CODE.win,n:7,v:1000,o:'santa'}),{m:2,ph:'drop',cx:70,cz:22,r:'dongdong-santa',k:1,n:7,v:1000});
  {const [a,b]=decodeKeyPos(...encodeKeyPos(2.5,1.72));assert.ok(Math.abs(a-2.5)<1e-9&&Math.abs(b-1.72)<1e-9);}
- assert.equal(sanitizeAct('claw',{m:9,ph:'fly',r:'<b>'}),null);
+ assert.equal(sanitizeAct('claw',{m:17,ph:'fly',r:'<b>'}),null);assert.equal(sanitizeAct('claw',{m:16,ph:'play'}).m,16,'기계 16대(m 1~16)');
  assert.deepEqual(ACT_SCHEMA.claw.ph,ACT_PHASES);assert.equal(KIND_OF[KIND_CODE.near],'near');
  assert.ok(Math.abs(decodeClawPos(encodeClawPos(-.33))+.33)<.006);assert.equal(encodeClawPos(9),100);
 });
@@ -197,4 +224,40 @@ test('화면 규칙: 모든 조작이 화면 단추로(키는 덧붙임)·일시
  assert.doesNotMatch(hud+read('src/claw/main.js'),/일시정지|pause/i);
  assert.match(css,/\.kh-toast\{[^}]*z-index:50/);assert.match(css,/\.kh-card\{[^}]*z-index:55/);
  assert.match(css,/\.kh-dir\{[^}]*touch-action:none/);assert.match(css,/--kp:60px/);assert.match(css,/--kp:56px/);
+});
+
+// ── 봉 기계(설계 v4.1 §7, 다리 걸치기) ──
+const bridgeSim=(bars={gap:.13},o={})=>createBridgeSim({geom:bridgeGeom(CLAW,bars,T.bridge),box:T.bridge.box,power:{grab:T.bridge.clawGrab,carry:T.bridge.clawGrab*.8},friction:T.bridge.barFriction,openTo:T.bridge.clawOpen,...o});
+test('봉 물리: 상자가 가운데 받침 봉 둘에 걸쳐 쉼(기울기 0·양쪽 받침), 봉 4개·구멍 = 받침 봉 사이뿐, 상자 크기 = 조절값, 처음 자리 흔들림은 공정 범위 안', ()=>{
+ {const g=bridgeGeom(CLAW,{gap:.13},T.bridge);assert.equal(g.rods.length,4);assert.deepEqual(g.rods.map(r=>r.kind).sort(),['guard','guard','support','support']);
+  assert.ok(g.inGap(0,0)&&!g.inGap(0,1.0)&&!g.inGap(0,-1.0),'구멍 = 받침 봉 사이(바깥은 아님)');}
+ const B=T.bridge,s=bridgeSim();
+ assert.ok(s.sleeping,'가만히 두면 잠듦');assert.ok(s.tilt()<1,`기울기 ${s.tilt()}`);assert.ok(s.support()>.03,`받침 여유 ${s.support()}`);assert.ok(!nearState(s,B),'새 상자는 아슬아슬 아님');
+ const bp=boxParts(B.box);assert.ok(Math.abs(bp.half[0]*2*U-B.box[2])<1e-9&&Math.abs(bp.half[1]*2*U-B.box[1])<1e-9&&Math.abs(bp.half[2]*2*U-B.box[0])<1e-9,'그림 크기 = 판정 크기');
+ for(let i=0;i<20;i++){const p=startPose(B);assert.ok(Math.abs(p.x*U)<=B.startJitterM+1e-12&&Math.abs(p.yaw-Math.PI/2)<=B.startJitterDeg*Math.PI/180+1e-12,'긴 쪽이 앞뒤(90°) ± 8°');}
+ // 八자: 앞 11cm → 뒤 15cm
+ const g=bridgeGeom(CLAW,{near:.11,far:.15},B);assert.ok(Math.abs(g.barZ(1,g.xl)*2*U-.11)<1e-9&&Math.abs(g.barZ(1,g.xr)*2*U-.15)<1e-9,'八자: 왼쪽 11 → 오른쪽 15cm');
+});
+test('봉 물리: 집게는 상자를 들지 못함(약한 집게), 판이 끝나고 결과가 나옴, 모서리를 여러 번 밀면 떨어짐(성공)', ()=>{
+ const B=T.bridge,s=bridgeSim();const c=s.center();
+ // 가운데를 눌러도 들리지 않음: 판 도중 상자가 처음 높이보다 3cm 넘게 뜨지 않음
+ const y0=c[1];s.start();s.setPos(c[0],c[2]);s.drop();let maxY=y0;for(let t=0;t<14&&s.claw.state!=='done';t+=1/30){s.step(1/30);maxY=Math.max(maxY,s.center()[1]);}
+ assert.equal(s.claw.state,'done');assert.ok((maxY-y0)*U<.03,`들림 ${((maxY-y0)*U).toFixed(3)}m`);
+ // 정해 둔 순서(모서리 노리기)로 몇 판 안에 떨어짐
+ // 봉 4개(11-23 대표 사진): 상자 긴 쪽이 앞뒤로 받침 봉을 건넘. 모서리(앞뒤 끝)를 번갈아 누르는 정해 둔 순서로 몇 판 안에 받침 봉 사이로 떨어짐
+ let won=false,n=0;const s2=bridgeSim({gap:.13},{seed:3,pose:{x:0,z:0,yaw:Math.PI/2}});
+ while(!won&&n<25){n++;const k=s2.center();won=runBridgeDrop(s2,k[0]+(n%2?.5:-.5),k[2]+(n%3?.9:-.9),B).won;}
+ if(!won){for(let seed=4;seed<10&&!won;seed++){const s3=bridgeSim({gap:.13},{seed,pose:{x:0,z:0,yaw:Math.PI/2+seed*.02}});for(let m=0;m<25&&!won;m++){const k=s3.center();won=runBridgeDrop(s3,k[0]+(m%2?.5:-.5),k[2]+(m%3?.9:-.9),B).won;}}}
+ assert.ok(won,'정해 둔 순서로 25판 안에 성공하는 상자가 있음');
+});
+test('봉 상태 저장(혼자 뽑기 v4.1 §3): 상자 자리를 그대로 다시 놓음·오늘까지·새날은 처음 자리, 진척 없음 판정', ()=>{
+ const B=T.bridge,s=bridgeSim();const k=s.center();runBridgeDrop(s,k[0]+.9,k[2]+.6,B);
+ const st=s.boxState(),s2=bridgeSim({gap:.13},{st});
+ assert.ok(Math.hypot(...s.center().map((v,i)=>v-s2.center()[i]))*U<.004,'다시 놓은 상자 자리 4mm 안');assert.ok(Math.abs(s.tilt()-s2.tilt())<2);
+ const save=freshState(),now=KST-5000;saveMachState(save,'bridge-1',{st,id:'box-hare',mv:3,still:1},now);
+ const re=sanitizeState(JSON.parse(JSON.stringify(save)));assert.deepEqual(machStateToday(re,'bridge-1',now).st,st);assert.equal(machStateToday(re,'bridge-1',now).id,'box-hare');
+ assert.equal(machStateToday(re,'bridge-1',now+86400e3),null,'다음 날은 처음 자리');
+ assert.equal(sanitizeMachState({day:'2026-11-23',st:[1,2,'x']},'bridge').st,null,'이상한 공 자리는 버림(처음 자리로)');assert.equal(sanitizeMachState({day:'어제'},'bridge'),null);
+ assert.equal(sanitizeMachState({day:'2026-11-23',st:[]},'timer'),null,'봉 말고는 저장 안 함');
+ const s3=bridgeSim(),b3=bridgeSnap(s3);assert.ok(noProgress(s3,b3,T.share),'안 움직이면 진척 없음');
 });

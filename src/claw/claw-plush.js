@@ -5,12 +5,16 @@
 // 단위: 아래 형상은 높이 1로 만들고, 희귀도 크기(RARITY.size, m)로 줄인다. 앞 +Z, 바닥 y=0(엉덩이가 바닥에 앉음).
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {SimplifyModifier} from 'three/addons/modifiers/SimplifyModifier.js';
 import {v,smoothGeo,ell as kitEll,capsule,sweep,at,part,surf,smile,omega,grp} from '../toon/concept-kit.js';
-import {RARITY,PLUSH,plushInfo} from './claw-palette.js';
+import {RARITY,PLUSH,plushInfo,BIG_PLUSH,BIG_EXTRA,isBigPlush,baseOfPlush} from './claw-palette.js';
 
 // 가벼운 타원체(시안 도우미보다 칸 수를 줄였다)
-const E=(r,o={})=>kitEll(r,{w:12,h:8,...o});
-const Es=(r,o={})=>kitEll(r,{w:8,h:6,...o});
+// LOW = 먼 기계용 가벼운 형상을 만드는 중(plushGeometry(id,{low:true})): 타원체 칸 수를 반으로(같은 생김새·색, 삼각형 약 1/3)
+let LOW=false;
+const lowSeg=o=>LOW?{w:Math.max(5,(o.w??12)/2|0),h:Math.max(3,(o.h??8)/2|0)}:{};
+const E=(r,o={})=>kitEll(r,{w:12,h:8,...o,...lowSeg({w:12,h:8,...o})});
+const Es=(r,o={})=>kitEll(r,{w:8,h:6,...o,...lowSeg({w:8,h:6,...o})});
 // 얼굴 부품: 짙은 눈 + 하이라이트 하나, 볼, 입. line 0이라 외곽선 껍질에 안 들어간다.
 function face(g,c,r,{eyeYaw=.34,eyePitch=-.08,eye=v(.055,.07,.02),blushYaw=.6,blushPitch=-.3,blush='#f3a08f',mouth='#8a3f33',mouthPitch=-.32,kind='smile'}={}){
  for(const s of [-1,1]){const e=surf(g,c,r,s*eyeYaw,eyePitch,Es(eye),'#2a2321',{lift:-eye.z*.3});
@@ -171,18 +175,34 @@ function flatten(root){
  for(const g of [color,line]){g.translate(0,-bb.min.y,0);g.scale(k,k,k);g.computeBoundingSphere();g.userData.shared=true;}
  color.computeBoundingBox();return {color,line};
 }
-const geoCache=new Map();
+const geoCache=new Map(),GEO_ID=new WeakMap();
+/** 인형 색 형상 → 인형 id(먼 기계 더미 굽기가 어떤 인형인지 알아낼 때). 우리 인형이 아니면 null */
+export const plushIdOfGeometry=g=>GEO_ID.get(g)??null;
 export const PLUSH_IDS=Object.freeze(PLUSH.map(p=>p.id));
-export function plushGeometry(id){
- if(geoCache.has(id))return geoCache.get(id);
+// low = 먼 기계용 가벼운 형상(가게 claw-machine-lod.js가 먼 기계 더미를 한 덩어리로 구울 때 씀). 외곽선은 안 그리므로 line은 쓰지 않는다
+export function plushGeometry(id,{low=false}={}){
+ id=baseOfPlush(id);   // 큰 인형은 원래 인형 형상을 그대로 나눠 씀
+ const key=low?`${id}:low`:id;
+ if(geoCache.has(key))return geoCache.get(key);
  const make=MAKERS[id];if(!make)throw new Error(`인형 형상 없음: ${id}`);
- const root=make(),geo=flatten(root);
+ LOW=low;let root;try{root=make();}finally{LOW=false;}const geo=flatten(root);
  root.traverse(o=>{if(o.isMesh)o.geometry.dispose();});
- geoCache.set(id,geo);return geo;
+ geoCache.set(key,geo);if(!low)GEO_ID.set(geo.color,id);return geo;
 }
-export const plushSize=id=>RARITY[plushInfo(id)?.rarity??'common'].size;
+// 먼 기계 더미용 형상(색만): 가벼운 형상에서 꼭짓점 절반을 더 줄임(SimplifyModifier, 색 유지). 8종 합쳐 처음 한 번 약 0.1초, 평균 약 600 삼각형
+const farCache=new Map();let simplifier=null;
+export function plushFarGeometry(id){id=baseOfPlush(id);if(farCache.has(id))return farCache.get(id);
+ const low=plushGeometry(id,{low:true}).color.clone();let g=low;
+ try{simplifier??=new SimplifyModifier();g=simplifier.modify(low,Math.floor(low.attributes.position.count*.5));low.dispose();g.computeVertexNormals();}catch{g=low;}
+ g.userData.shared=true;g.computeBoundingSphere();farCache.set(id,g);return g;}
+// 큰 인형(타이머 기계 전용)까지 포함한 우리 인형 id
+export const OUR_PLUSH_IDS=Object.freeze([...PLUSH_IDS,...BIG_PLUSH.map(b=>b.id)]);
+export const isOurPlush=id=>OUR_PLUSH_IDS.includes(id);
+export const plushSize=id=>RARITY[plushInfo(id)?.rarity??'common'].size+(isBigPlush(id)?BIG_EXTRA:0);
+// 외곽선 두께(높이 1 기준): 큰 인형은 크기에 비례해 굵어지지 않게 원래 인형과 같은 실제 두께(약 4mm)로
+export const plushLineWidth=id=>.016*(isBigPlush(id)?RARITY[plushInfo(id).rarity].size/plushSize(id):1);
 // 삼각형 수(검사·메모리 확인용)
-export const plushTriangles=id=>plushGeometry(id).color.index.count/3;
+export const plushTriangles=(id,o)=>plushGeometry(id,o).color.index.count/3;
 
 // ── 재질(인형 전체가 나눠 씀). toonify로 카툰 재질이 되도록 MeshStandard로 만든다.
 let plushMat=null;const lineMats=new Map();
@@ -196,6 +216,6 @@ export function makePlush(id,{toonify=null,outline=true}={}){
  const geo=plushGeometry(id),s=plushSize(id),g=new THREE.Group();g.name=`인형:${id}`;
  const m=new THREE.Mesh(geo.color,plushMaterial());m.castShadow=true;m.receiveShadow=true;m.scale.setScalar(s);g.add(m);
  toonify?.(g,{kind:'character'});
- if(outline){const l=new THREE.Mesh(geo.line,plushLineMaterial());l.userData.outline=true;l.scale.setScalar(s);l.name='outline';g.add(l);}
+ if(outline){const l=new THREE.Mesh(geo.line,plushLineMaterial(plushLineWidth(id)));l.userData.outline=true;l.scale.setScalar(s);l.name='outline';g.add(l);}
  g.userData.plushId=id;g.userData.size=s;return g;
 }

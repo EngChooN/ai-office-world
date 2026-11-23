@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
-import {PLUSH,RARITY,RARITY_ORDER,MACHINES,GUEST_SLOTS} from '../src/claw/claw-palette.js';
+import {PLUSH,RARITY,RARITY_ORDER,MACHINES,GUEST_SLOTS,BIG_PLUSH,BOX_PLUSH} from '../src/claw/claw-palette.js';
 import {PLUSH_IDS,plushGeometry,plushTriangles,plushSize,makePlush} from '../src/claw/claw-plush.js';
 import {CLAW,buildClawMachine,fillPile} from '../src/claw/claw-machine-art.js';
 import {SHOP,buildClawShop} from '../src/claw/claw-shop-art.js';
@@ -34,7 +34,7 @@ test('기계 치수: 동동이 손이 닿는 조작대, 집게 범위가 유리 
  assert.ok(CLAW.clawTop+CLAW.clawTip<CLAW.railY+.001,'집게가 레일 아래에 매달림');
 });
 test('집게 자세: 손가락 끝 높이 = clawTop − drop, 여닫기, 그림자 점',()=>{
- const m=buildClawMachine('forest');m.updateMatrixWorld(true);const c=m.userData.claw;
+ const m=buildClawMachine('claw-1');m.updateMatrixWorld(true);const c=m.userData.claw;
  for(const drop of [0,.2,CLAW.dropMax]){c.set({x:.1,z:-.1,drop,open:.5});m.updateMatrixWorld(true);const p=c.tipWorld();
   assert.ok(Math.abs(p.y-(CLAW.clawTop-drop))<1e-6,`drop ${drop} → ${p.y}`);assert.ok(Math.abs(p.x-.1)<1e-6&&Math.abs(p.z+.1)<1e-6);}
  // 여닫기 방향: open이 클수록 손가락 끝이 집게 가운데에서 멀어짐(11-23 거꾸로였던 것 고침), opens로 손가락마다 따로
@@ -48,27 +48,27 @@ test('집게 자세: 손가락 끝 높이 = clawTop − drop, 여닫기, 그림�
  assert.throws(()=>buildClawMachine('없는기계'));
 });
 test('불빛 상태: idle·play·win·rainbow·off에서 전구 밝기가 바뀜',()=>{
- const m=buildClawMachine('star'),U=m.userData;const seen=new Set();
+ const m=buildClawMachine('key-1'),U=m.userData;const seen=new Set();
  for(const mode of ['idle','play','win','rainbow','off']){U.setLights(mode);U.update(.13);seen.add(U.mats.bulbA.emissiveIntensity.toFixed(2)+U.mats.bulbA.emissive.getHexString());}
  assert.ok(seen.size>=4);
 });
 test('인형 더미: 유리 안·구멍 밖, seed가 같으면 같은 배치, 꺼내기·되돌리기',()=>{
- const m=buildClawMachine('city'),p=fillPile(m,['cat','magpie','dongdong-office'],{count:14,seed:3});
+ const m=buildClawMachine('timer-1'),p=fillPile(m,['cat','magpie','dongdong-office'],{count:14,seed:3});
  assert.ok(p.items.length>=10&&p.items.length<=14,`${p.items.length}개`);
  const c=CLAW.chute,hw=CLAW.width/2,hd=CLAW.depth/2;
  for(const it of p.items){assert.ok(Math.abs(it.pos.x)<hw-.05&&Math.abs(it.pos.z)<hd-.05,'유리 안');
   assert.ok(!(it.pos.x>c.x[0]&&it.pos.x<c.x[1]&&it.pos.z>c.z[0]&&it.pos.z<c.z[1]),'구멍 위에 없음');assert.ok(it.pos.y>=CLAW.floorY);}
- const q=fillPile(buildClawMachine('city'),['cat','magpie','dongdong-office'],{count:14,seed:3});
+ const q=fillPile(buildClawMachine('timer-1'),['cat','magpie','dongdong-office'],{count:14,seed:3});
  assert.deepEqual(q.items.map(i=>[i.id,i.pos.x.toFixed(4)]),p.items.map(i=>[i.id,i.pos.x.toFixed(4)]));
  // 종마다 InstancedMesh 하나(+외곽선)
  const ims=p.group.children.filter(o=>o.isInstancedMesh&&!o.userData.outline);assert.equal(ims.length,new Set(p.items.map(i=>i.id)).size);
  const n=p.nearest(0,0);assert.ok(n);p.take(n.index);assert.ok(p.items[n.index].hidden);assert.notEqual(p.nearest(0,0)?.index,n.index);p.put(n.index);assert.ok(!p.items[n.index].hidden);
  assert.ok(p.topAt(n.item.pos.x,n.item.pos.z)>CLAW.floorY);
- assert.throws(()=>fillPile(buildClawMachine('star'),['guest-1'],{count:3}),/guestObject/);
+ assert.throws(()=>fillPile(buildClawMachine('key-1'),['guest-1'],{count:3}),/guestObject/);
 });
-test('가게: 기계 세 대가 걷는 범위 안·서는 자리가 막히지 않음, 들어온 자리 비어 있음, 벽 숨기기',()=>{
+test('가게(11-23 기계 16대·14×11m, 설계 v4·v4.1): 기계가 걷는 범위 안·서는 자리가 막히지 않음, 들어온 자리 비어 있음, 벽 숨기기',()=>{
  const shop=buildClawShop({mobile:true}),U=shop.userData,W=SHOP.walk;
- assert.equal(U.machines.length,3);
+ assert.equal(U.machines.length,16);assert.deepEqual([SHOP.w,SHOP.d],[14,11]);
  const inside=(x,z,c)=>c.r?Math.hypot(x-c.x,z-c.z)<c.r:x>c.x0&&x<c.x1&&z>c.z0&&z<c.z1;
  const free=(x,z)=>x>W.x[0]&&x<W.x[1]&&z>W.z[0]&&z<W.z[1]&&!U.colliders.some(c=>inside(x,z,c));
  for(const m of U.machines){assert.ok(free(m.stand.x,m.stand.z),`${m.id} 서는 자리`);assert.ok(m.group.userData.pile.items.length>=6,'휴대폰도 더미가 있음');}
@@ -83,9 +83,9 @@ test('가게: 기계 세 대가 걷는 범위 안·서는 자리가 막히지 �
 });
 test('손님 인형 자리: 공개판(설정 없음)에는 손님이 없고 대체 우리 인형이 그 자리에 놓임',async()=>{
  const guests=await loadGuests();assert.deepEqual(guests,[]);
- assert.equal(clawCatalog(guests).length,8);assert.ok(clawCatalog(guests).every(c=>!c.guest));
+ assert.equal(clawCatalog(guests).length,8+BIG_PLUSH.length+BOX_PLUSH.length);assert.ok(clawCatalog(guests).every(c=>!c.guest));
  for(const s of GUEST_SLOTS){assert.ok(PLUSH_IDS.includes(s.fallback),`${s.id} 대체 인형`);assert.ok(isGuestId(s.id));}
- for(const M of MACHINES){const pool=resolvePool(M.pool,guests);assert.ok(pool.every(id=>PLUSH_IDS.includes(id)),`${M.id} 공개판 목록`);}
+ for(const M of MACHINES){const pool=resolvePool(M.pool,guests);assert.ok(pool.every(id=>PLUSH_IDS.includes(id)||BIG_PLUSH.some(b=>b.id===id)||BOX_PLUSH.some(b=>b.id===id)),`${M.id} 공개판 목록`);}
  assert.deepEqual(resolvePool(['guest-1','cat'],[{id:'guest-1'}]),['guest-1','cat']);
  const g=await makeGuestPlush('guest-1',[]);assert.equal(g.userData.plushId,GUEST_SLOTS[0].fallback);
  // 공개 코드에는 다른 회사 캐릭터 이름이 글자로 들어가지 않는다(설명 주석 제외)

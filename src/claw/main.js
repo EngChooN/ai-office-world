@@ -16,8 +16,8 @@ import {currentChoice} from '../server-link.js';
 import {findServer} from '../multi-protocol.js';
 import {installHikingChat} from '../hiking-chat-ui.js';
 import {openWin,closeWin} from '../ui-frame.js';
-import {buildClawShop,SHOP,SHOP_LIGHT} from './claw-shop-art.js';
-import {CLAW} from './claw-machine-art.js';
+import {buildClawShop,SHOP,SHOP_LIGHT,SHADOW_LAYER} from './claw-shop-art.js';
+import {CLAW,setSignThumbs} from './claw-machine-art.js';
 import {makePlush} from './claw-plush.js';
 import {MACHINES,RARITY,RARITY_ORDER} from './claw-palette.js';
 import {loadGuests,makeGuestPlush,clawCatalog,resolvePool,isGuestId} from './claw-guest.js';
@@ -26,8 +26,10 @@ import {createClawPlay} from './claw-play.js';
 import {createClawAudio} from './claw-audio.js';
 import {createClawHud} from './claw-hud.js';
 import {createClawMulti,cleanName} from './claw-multi.js';
-import {CLAW_TUNING,loadState,saveState,grantDaily,canPlay,spendCoin,recordResult,pityNow,kindOf} from './claw-rules.js';
+import {CLAW_TUNING,loadState,saveState,grantDaily,canPlay,spendCoin,recordResult,pityNow,kindOf,KIND_INFO,machStateToday,saveMachState} from './claw-rules.js';
 import {plushSize} from './claw-plush.js';
+import {isBoxPlush} from './claw-palette.js';
+import {makeBoxPrize} from './claw-bridge.js';
 
 const q=new URLSearchParams(location.search);
 const mobile=q.get('mobile')==='1'||matchMedia('(pointer:coarse)').matches||/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -48,7 +50,8 @@ const toon=await createToonStyle({renderer,scene,camera,mobile});
 // 실내 빛: 반구광 + 위에서 비추는 그림자 빛 하나(월드아트 SHOP_LIGHT, 미리보기와 같은 값). 후처리 값은 낮 환경으로 맞춤
 const hemi=new THREE.HemisphereLight(L.hemi.sky,L.hemi.ground,L.hemi.intensity);
 const key=new THREE.DirectionalLight(L.key.color,L.key.intensity);key.position.set(...L.key.pos);key.castShadow=true;key.shadow.mapSize.set(mobile?1024:L.key.shadow.map,mobile?1024:L.key.shadow.map);
-Object.assign(key.shadow.camera,{left:-L.key.shadow.size,right:L.key.shadow.size,top:L.key.shadow.size,bottom:-L.key.shadow.size,near:1,far:30});key.shadow.bias=-.0006;key.shadow.normalBias=.03;
+{const ss=Math.max(L.key.shadow.size,SHOP.w/2+1);Object.assign(key.shadow.camera,{left:-ss,right:ss,top:ss,bottom:-ss,near:1,far:30});} // 14 × 11m 가게 전체가 그림자 안에
+key.shadow.bias=-.0006;key.shadow.normalBias=.03;
 scene.add(hemi,key,key.target);renderer.toneMappingExposure=L.exposure;
 toon.pipeline.update(composeEnvironment({sun:{elevation:45,azimuth:160},moon:{elevation:-20,azimuth:0,illumination:.5}}));
 document.documentElement.dataset.hudTime='day';
@@ -59,14 +62,17 @@ setLoad('인형 쌓는 중…');
 const guests=await loadGuests();
 const guestProtos=new Map();for(const g of guests)guestProtos.set(g.id,await makeGuestPlush(g.id,guests,{toonify:toon.toonify}));
 const guestObject=id=>guestProtos.get(id).clone(true);
-const shop=buildClawShop({toonify:toon.toonify,mobile,guests,guestObject,kinds:true});world.add(shop); // 기계 종류대로(숲속 = 집게·도시 = 타이머·별빛 = 열쇠, 설계 v3)
+const shop=buildClawShop({toonify:toon.toonify,mobile,guests,guestObject,kinds:true,T}); // 기계 16대 종류대로(집게 6·봉 4·타이머 3·열쇠 3, 설계 v4.1)
+world.add(shop);
 const U=shop.userData;
 const catalog=clawCatalog(guests),pools=MACHINES.map(M=>resolvePool(M.kind==='key'?M.cells??M.pool:M.pool,guests)); // 열쇠 기계는 칸 8개(MACHINES cells)
 const infoOf=id=>catalog.find(c=>c.id===id);
 const rarityOf=id=>infoOf(id)?.rarity??'common';
 const rareOf=id=>!!id&&RARITY_ORDER.indexOf(rarityOf(id))>=RARITY_ORDER.indexOf(T.notice.minRarity);
-const makePlushObj=id=>{if(isGuestId(id)&&guestProtos.has(id)){const o=guestObject(id);o.userData.size??=RARITY[rarityOf(id)].size;return o;}const o=makePlush(id,{toonify:toon.toonify});o.userData.size??=RARITY[rarityOf(id)]?.size??.24;return o;};
-const sizeOf=id=>isGuestId(id)?RARITY[rarityOf(id)].size:plushSize(id);
+const makePlushObj=id=>{if(isBoxPlush(id))return makeBoxPrize(id,{toonify:toon.toonify,box:T.bridge.box});if(isGuestId(id)&&guestProtos.has(id)){const o=guestObject(id);o.userData.size??=RARITY[rarityOf(id)].size;return o;}const o=makePlush(id,{toonify:toon.toonify});o.userData.size??=RARITY[rarityOf(id)]?.size??.24;return o;};
+const sizeOf=id=>isBoxPlush(id)?T.bridge.box[1]:isGuestId(id)?RARITY[rarityOf(id)].size:plushSize(id);
+// 기계 좌표 (x,z) → 가게 좌표(기계 방향을 돌림, 11-23 기계 16대: 봉은 +X, 열쇠는 −Z를 봄)
+const toShop=(M,x,z)=>{const c=Math.cos(M.heading??0),sn=Math.sin(M.heading??0);return [M.x+x*c+z*sn,M.z-x*sn+z*c];};
 
 // ── 저장(이 기기): 코인·도감·보장 수·기록. 그날 첫 접속이면 무료 코인
 const state=loadState(undefined,{isKnown:id=>!!infoOf(id)});
@@ -113,15 +119,19 @@ function makeThumbs(){
  finally{try{r?.dispose();r?.forceContextLoss();}catch{}}
 }
 makeThumbs();
+setSignThumbs(id=>thumbs.get(id)); // 기계 간판 오른쪽 대표 인형 그림(월드아트 signAtlas)
 
 // ── 한 판(집게)·결과
 let hud=null,multi=null,runOn=false;
 const play=createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf,toonify:toon.toonify,audio,rareOf,
  pityFor:i=>pityNow(state,MACHINES[i].id),
+ machState:i=>machStateToday(state,MACHINES[i].id), // 봉 상자 자리: 이 기기에 오늘까지(혼자 뽑기, v4.1 §3 A안)
  onEvent(type,d){
   if(type==='bump')vibrate(10);
+  else if(type==='mach'){saveMachState(state,MACHINES[d.machine].id,d.st);saveState(state);}
+  else if(type==='reset')hud?.toast(`${MACHINES[d.machine].name} 상자를 다시 놓았어요`,{sec:2.6});
   else if(type==='drop'&&d.res?.kind==='pending'){hud?.toast(d.auto?'시간 끝! 집게 내려가는 중…':'집게 내려가는 중…',{sec:2,urgent:true});}
-  else if(type==='start'&&d.pity){hud?.toast(`이번 판은 ${({claw:'힘센 집게',timer:'넓은 성공 칸',key:'넓은 구멍'})[d.kind]}예요!`,{sec:2.6,urgent:true});}
+  else if(type==='start'&&d.pity){hud?.toast(`이번 판은 ${({claw:'힘센 집게',bridge:'힘센 집게',timer:'넓은 성공 칸',key:'넓은 구멍'})[d.kind]}예요!`,{sec:2.6,urgent:true});}
   else if(type==='result'){
    const M=MACHINES[d.machine],res=d.res,rec=recordResult(state,M.id,res);saveState(state);
    if(res.kind==='win'){syncShowcase();player.cheer();vibrate(40);}else player.sigh();
@@ -139,13 +149,15 @@ function startPlay(i,{confirmed=false}={}){
  const mid=MACHINES[i].id;if(!state.seen[mid]&&!confirmed){hud.showRules(i,{first:true});return false;}
  if(!state.seen[mid]){state.seen[mid]=true;}
  spendCoin(state,mid);saveState(state);
- const s=U.machines[i].stand;player.place(s.x,s.z,0);runOn=false;side=0;
+ const M=U.machines[i],s=M.stand;player.place(s.x,s.z,M.heading);runOn=false;side=0;
  play.start(i);return true;
 }
 function nearMachine(){let best=-1,bd=2.0;U.machines.forEach((M,i)=>{const d=Math.hypot(player.x-M.stand.x,player.z-M.stand.z);if(d<bd){bd=d;best=i;}});return best;}
+// 같은 종류 중 걷는 거리가 가장 짧은 빈 기계(설계 v4 §4-2 「옆 빈 집게로 →」, 아슬아슬한 기계를 골라 주지 않음 — 거리로만). 없으면 -1
+function nearestFree(kind,not=-1){let best=-1,bd=Infinity;U.machines.forEach((M,i)=>{if(i===not||M.kind!==kind||play.busy(i))return;const d=Math.hypot(player.x-M.stand.x,player.z-M.stand.z);if(d<bd){bd=d;best=i;}});return best;}
 // 「가기」: 화면 0.4초 어두워졌다가 그 기계 앞(설계 §2 ☰ 기계)
 const fade=document.createElement('div');fade.style.cssText='position:fixed;inset:0;z-index:65;background:#3a2b22;opacity:0;pointer-events:none;transition:opacity .2s';document.body.append(fade);
-function goMachine(i){if(play.mode!=='idle')return;fade.style.opacity='1';setTimeout(()=>{const s=U.machines[i].stand;player.place(s.x,s.z+.15,0);cam.yaw=0;cam.pitch=.3;fade.style.opacity='0';},200);}
+function goMachine(i){if(play.mode!=='idle'||!U.machines[i])return;fade.style.opacity='1';setTimeout(()=>{const M=U.machines[i],[x,z]=toShop(M,0,CLAW.stand.z+.15);player.place(x,z,M.heading);cam.yaw=M.heading;cam.pitch=.3;fade.style.opacity='0';},200);}
 
 // ── 같은 가게 손님(구경)
 let lastNotice=-Infinity;
@@ -194,10 +206,11 @@ const SIDE_CAM=Object.freeze({pos:[1.5,1.42,.05],look:[0,.86,0],fov:44,fovPortra
 const camPos=new THREE.Vector3(),camLook=new THREE.Vector3(),wantPos=new THREE.Vector3(),wantLook=new THREE.Vector3();let camFov=BASE_FOV,camInit=false;
 function updateCamera(dt){
  const i=play.machine;
- if(play.mode!=='idle'&&i>=0){ // 조작 카메라: 기계 정면 고정(월드아트 CLAW.camera, 세로 휴대폰은 portrait)
-  const M=U.machines[i],C=M.kind==='claw'?PLAY_CAM:M.group.userData.camera??PLAY_CAM,P=innerWidth<innerHeight?C.portrait:C;
-  if(M.kind==='claw'&&side){wantPos.set(M.x+side*SIDE_CAM.pos[0],SIDE_CAM.pos[1],M.z+SIDE_CAM.pos[2]);wantLook.set(M.x+SIDE_CAM.look[0],SIDE_CAM.look[1],M.z+SIDE_CAM.look[2]);camFov=innerWidth<innerHeight?SIDE_CAM.fovPortrait:SIDE_CAM.fov;}else{
-  wantPos.set(M.x+P.pos[0],P.pos[1],M.z+P.pos[2]);const lk=P.look??C.look;wantLook.set(M.x+lk[0],lk[1],M.z+lk[2]);camFov=P.fov;}
+ if(play.mode!=='idle'&&i>=0){ // 조작 카메라: 기계 정면 고정(월드아트 CLAW.camera, 세로 휴대폰은 portrait). 봉은 집게 기계 몸이라 같은 카메라
+  const M=U.machines[i],C=M.kind==='claw'||M.kind==='bridge'?PLAY_CAM:M.group.userData.camera??PLAY_CAM,P=innerWidth<innerHeight?C.portrait:C;
+  const at=(v,x,y,z)=>{const [wx,wz]=toShop(M,x,z);return v.set(wx,y,wz);};
+  if(M.kind==='claw'&&side){at(wantPos,side*SIDE_CAM.pos[0],SIDE_CAM.pos[1],SIDE_CAM.pos[2]);at(wantLook,SIDE_CAM.look[0],SIDE_CAM.look[1],SIDE_CAM.look[2]);camFov=innerWidth<innerHeight?SIDE_CAM.fovPortrait:SIDE_CAM.fov;}else{
+  at(wantPos,P.pos[0],P.pos[1],P.pos[2]);const lk=P.look??C.look;at(wantLook,lk[0],lk[1],lk[2]);camFov=P.fov;}
  }else{
   if(player.moving&&!input.looking()){let d=player.heading-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*1.2));}
   wantLook.set(player.x,.62,player.z);const cp=Math.cos(cam.pitch);
@@ -211,6 +224,39 @@ function updateCamera(dt){
  if(Math.abs(camera.fov-camFov)>.05){camera.fov+=(camFov-camera.fov)*k;camera.updateProjectionMatrix();}
 }
 
+// 봉 기계 「옆에서 본 작은 창」(v4.1 §7-2): ↑를 누르는 동안·집게가 내려가는 동안 화면 위 왼쪽 150×104, 낮은 화질(카툰 후처리 없이 바로 그림)
+// 작은 창은 이 기계 안(옆 1.7m까지)만 그림: 가게 전체를 한 번 더 그리지 않게(조작 화면 그리기 ≤ 220, v4.1 §9-1)
+const miniCam=new THREE.PerspectiveCamera(38,146/100,.05,1.7),MINI={w:150,h:104};let miniOn=false;
+const miniFrame=document.createElement('div');miniFrame.className='kh-mini';miniFrame.hidden=true;miniFrame.setAttribute('aria-hidden','true');miniFrame.innerHTML='<span>옆에서</span>';document.body.append(miniFrame);
+{const st=document.createElement('style');st.textContent=`.kh-mini{box-sizing:border-box;position:fixed;left:calc(env(safe-area-inset-left,0px) + 10px);top:calc(env(safe-area-inset-top,0px) + 62px);width:${MINI.w}px;height:${MINI.h}px;border:2px solid #fffaf0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none;z-index:22}.kh-mini span{position:absolute;left:6px;top:4px;padding:1px 6px;border-radius:8px;background:rgba(42,33,60,.8);color:#fffaf0;font:800 11px/1.3 "Apple SD Gothic Neo",Pretendard,sans-serif}`;document.head.append(st);}
+function renderMini(){
+ const sub=play.sub,on=play.kind==='bridge'&&(play.mode==='play'&&sub.startsWith('k2')||play.mode==='drop')&&!hud.card;
+ if(on!==miniOn){miniOn=on;miniFrame.hidden=!on;}
+ if(!on)return;
+ // 한 줄 안내가 왼쪽 위에 있으면(PC) 그 아래로 내림 — 안내에 가리지 않게
+ {const h=document.querySelector('.kh-hint:not([hidden])')?.getBoundingClientRect(),top=h&&h.left<MINI.w+20&&h.top<120?Math.round(h.bottom+8):null,want=top?`${top}px`:'';if(miniFrame.style.top!==want)miniFrame.style.top=want;}
+ const M=U.machines[play.machine],[px,pz]=toShop(M,.95,-.02),[lx,lz]=toShop(M,0,-.02);miniCam.position.set(px,.98,pz);miniCam.lookAt(lx,.82,lz); // 봉 높이(0.80m)를 옆에서 조금 위로
+ const dpr=renderer.getPixelRatio(),r=miniFrame.getBoundingClientRect(),x=r.left+2,y=innerHeight-r.bottom+2,w=MINI.w-4,h=MINI.h-4;
+ renderer.setRenderTarget(null);renderer.setScissorTest(true);renderer.setScissor(x,y,w,h);renderer.setViewport(x,y,w,h);renderer.autoClear=false;renderer.clearDepth();
+ const vis=player.root.visible,au=renderer.shadowMap.autoUpdate;player.root.visible=false;renderer.shadowMap.autoUpdate=false;renderer.render(scene,miniCam);renderer.shadowMap.autoUpdate=au;player.root.visible=vis; // 그림자 지도는 본 화면 것을 그대로(다시 안 그림)
+ renderer.setScissorTest(false);renderer.setViewport(0,0,innerWidth,innerHeight);renderer.autoClear=true;void dpr;
+}
+// ── 먼 기계 가볍게(설계 v4 §6 휴대폰 한도, 정식 「가벼운 기계」 그림은 월드아트 몫): 카메라에서 먼 기계는 외곽선·집게·열쇠 장치를 숨기고 그림자를 안 드리움.
+//  쓰는 중·다른 손님이 쓰는 기계·가까운 기계(PC 8m·휴대폰 5.5m)는 그대로. 0.3초마다 다시 봄(경품을 새로 놓아도 따라감)
+key.shadow.camera.layers.enable(SHADOW_LAYER); // 기계 그림자 = 그림자 전용 상자(월드아트 claw-shop-art.js, 기계 부품은 그림자를 안 드리움)
+const LOD={far:mobile?5.5:8,t:0};
+const LOD_PART=o=>o.name==='outline'||o.name==='집게'||o.name==='열쇠'||o.name==='열쇠 구멍·칸 표시'||/^(자물쇠 판|구멍|칸 바닥)/.test(o.name);
+function applyLod(dt,force=false){
+ LOD.t-=dt;if(LOD.t>0&&!force)return;LOD.t=.3;
+ const stand=play.mode==='idle'?nearMachine():-1;
+ U.machines.forEach((M,i)=>{const near=i===play.machine||!!play.busy(i)||Math.hypot(camera.position.x-M.x,camera.position.z-M.z)<LOD.far;
+  // 월드아트 단계 그림(claw-machine-lod.js): 쓰는 중·앞에 선 기계·남이 쓰는 기계 = 자세히(0), 가까운 나머지 = 중간(1, 몸·더미를 구운 덩어리 + 외곽선, 전구 깜빡임 그대로), 먼 기계 = 가벼운 그림(2)
+  if(M.group.userData.setLod)M.group.userData.setLod(i===play.machine||!!play.busy(i)||i===stand?0:near?1:2);
+  else M.group.traverse(o=>{if(o===M.group)return;if(LOD_PART(o)){o.visible=near;return;}if(o.isMesh){o.userData.cast0??=o.castShadow;o.castShadow=near&&o.userData.cast0;}});M.lodNear=near;
+  // 기계 위 상태 불·아슬아슬 별(월드아트 claw-shop-art.js lamps): 뽑는 중 = 주황, 봉 상자 새로 놓는 중 = 정리 중(주황 깜빡), 빈 봉 기계가 아슬아슬하면 별
+  const br=M.kind==='bridge'?play.bridge(i):null;
+  U.lamps?.set(i,{busy:!!play.busy(i)||i===play.machine&&play.mode!=='idle',tidy:!!br?.refill||!!M.group.userData.tidying,near:!!br?.near});});
+}
 // ── 머리 위 자리(채팅 말풍선·이름표)
 const headV=new THREE.Vector3();
 function screenPos(id){
@@ -221,7 +267,7 @@ function screenPos(id){
 }
 // 다른 손님 이름표 + 기계 위 「○○ 뽑는 중」
 const tagLayer=document.createElement('div');tagLayer.className='kh-tags';tagLayer.setAttribute('aria-hidden','true');document.body.append(tagLayer);
-{const st=document.createElement('style');st.textContent=`.kh-tags{position:fixed;inset:0;pointer-events:none;z-index:20}.kh-tag{position:absolute;left:0;top:0;padding:3px 8px;border-radius:10px;background:rgba(58,43,34,.72);color:#fffaf0;font:700 12px/1.2 "Apple SD Gothic Neo",Pretendard,sans-serif;white-space:nowrap;will-change:transform}.kh-tag.busy{background:rgba(217,74,124,.9)}:root[data-claw-mode=play] .kh-tags,:root[data-claw-mode=drop] .kh-tags{opacity:.0}`;document.head.append(st);}
+{const st=document.createElement('style');st.textContent=`.kh-tags{position:fixed;inset:0;pointer-events:none;z-index:20}.kh-tag{position:absolute;left:0;top:0;padding:3px 8px;border-radius:10px;background:rgba(58,43,34,.72);color:#fffaf0;font:700 12px/1.2 "Apple SD Gothic Neo",Pretendard,sans-serif;white-space:nowrap;will-change:transform}.kh-tag.busy{background:rgba(217,74,124,.9)}.kh-tag.near{background:rgba(42,33,60,.86);color:#ffd6ea;border:1px solid #ff7fb0}:root[data-claw-mode=play] .kh-tags,:root[data-claw-mode=drop] .kh-tags{opacity:.0}`;document.head.append(st);}
 const tags=new Map();
 function tagEl(key,cls){let e=tags.get(key);if(!e){e=document.createElement('div');e.className=`kh-tag ${cls}`;tagLayer.append(e);tags.set(key,e);}e.dataset.seen='1';return e;}
 const tv=new THREE.Vector3();
@@ -229,7 +275,10 @@ function placeTag(e,v,text){if(e.textContent!==text)e.textContent=text;v.project
 function updateTags(){
  for(const e of tags.values())e.dataset.seen='';
  if(multi?.joined)for(const p of multi.people()){if(!p.shown||p.muted)continue;const a=multi.avatarOf(p.id);if(!a)continue;placeTag(tagEl(`p:${p.id}`,'name'),a.headTop(tv),p.name);}
- U.machines.forEach((M,i)=>{const id=play.busy(i);if(!id)return;tv.set(M.x,(M.group.userData.height??CLAW.height)+.22,M.z);placeTag(tagEl(`m:${i}`,'busy'),tv,`${multi?.nameOf(id)??'손님'} 뽑는 중`);});
+ U.machines.forEach((M,i)=>{const id=play.busy(i);tv.set(M.x,(M.group.userData.height??CLAW.height)+.22,M.z);
+  if(id){placeTag(tagEl(`m:${i}`,'busy'),tv,`${multi?.nameOf(id)??'손님'} 뽑는 중`);return;}
+  // 봉 기계 상자가 아슬아슬하면 4m 안에서만 이름표(v4.1 §5-2, 색만이 아니라 글로. 쓰는 중엔 안 보임). 지금은 내 화면(혼자 뽑기 상태)만
+  if(M.kind==='bridge'&&play.mode==='idle'&&Math.hypot(player.x-M.x,player.z-M.z)<4&&play.bridge(i)?.near)placeTag(tagEl(`n:${i}`,'near'),tv,`${MACHINES[i].name} · ✦ 아슬아슬`);});
  for(const [k,e] of tags)if(!e.dataset.seen){e.remove();tags.delete(k);}
 }
 
@@ -247,6 +296,7 @@ hud=createClawHud({mobile,catalog,pools,state:()=>state,thumb:id=>thumbs.get(id)
  again:()=>{const i=play.machine;play.done();if(i>=0)startPlay(i);},
  stop:()=>{play.done();},
  goMachine,
+ goFree:kind=>{const j=nearestFree(kind,nearMachine());if(j>=0)goMachine(j);},
  run:()=>{runOn=!runOn;},
  sound:on=>{audio.setMuted(!on);saveShared({sound:on});},
  servers:()=>openPick(),
@@ -284,12 +334,15 @@ renderer.setAnimationLoop(()=>{
  multi.update(dt);
  U.update(dt);U.fadeWalls(camera);
  updateCamera(dt);
+ applyLod(dt);
  player.root.visible=play.mode==='idle'||camera.position.distanceTo(wantPos)>.9; // 조작 카메라에 거의 닿으면 내 몸 숨김
  key.target.position.set(0,0,0);
  const near=play.mode==='idle'?nearMachine():-1,busy=U.machines.map((_,i)=>{const id=play.busy(i);return id?multi.nameOf(id):null;});
- hud.update(dt,{mode:play.mode,machine:play.machine,kind:play.kind,sub:play.sub,side,near,coins:state.coins,timeLeft:play.timeLeft,armed:play.armed,running:runOn,busy,busySig:busy.join('|')});
+ const freeKind=Object.fromEntries(Object.keys(KIND_INFO).map(k=>[k,nearestFree(k,near)]));
+ hud.update(dt,{mode:play.mode,machine:play.machine,kind:play.kind,sub:play.sub,side,near,coins:state.coins,timeLeft:play.timeLeft,armed:play.armed,running:runOn,busy,busySig:busy.join('|'),freeKind});
  updateTags();
  renderer.info.reset();toon.pipeline.render(dt);
+ renderMini();
  frames++;const now=performance.now();if(now-last>1000){fps=frames*1000/(now-last);frames=0;last=now;}
 });
 loading?.classList.add('done');setTimeout(()=>loading?.remove(),700);
@@ -303,7 +356,8 @@ window.claw={shop,player,play,multi,hud,state,cam,camera,catalog,pools,
  status(){return {fps:+fps.toFixed(1),mode:play.mode,near:nearMachine(),coins:state.coins,plays:state.plays,wins:state.wins,dex:Object.fromEntries(Object.entries(state.dex).map(([k,v])=>[k,v.n])),pity:{...state.pity},
   player:{x:+player.x.toFixed(2),z:+player.z.toFixed(2),heading:+player.heading.toFixed(2)},play:play.status(),multi:multi.status(),guests:guests.length,catalog:catalog.length,
   calls:renderer.info.render.calls,tris:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries,thumbs:thumbs.size};},
- goMachine,teleport(x,z,h=0){player.place(x,z,h);},
+ goMachine,nearestFree,teleport(x,z,h=0){player.place(x,z,h);},
+ get mini(){return miniOn;},
  // 점검용(개발 서버에서만): 코인 바꾸기·저장 지우기·집게 겨누기(가장 위 인형)·열쇠 옮기기
  ...(import.meta.env.DEV?{setCoins(n){state.coins=n;saveState(state);},resetSave(){localStorage.removeItem('claw-world:v1');},
   aim(k=0){const sim=play.sim(play.machine);if(!sim)return null;const D=sim.dolls.filter(d=>!d.gone).sort((a,b)=>b.cy-a.cy)[k];if(!D)return null;play.aim(D.cx*.1,D.cz*.1);return {id:D.id,x:D.cx*.1,z:D.cz*.1};},

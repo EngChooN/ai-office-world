@@ -16,11 +16,17 @@ export const CLAW_TUNING=Object.freeze({
  timer:Object.freeze({targetSec:10,okWinSec:0,nearWinSec:.1,maxSec:15,startLockSec:.5,readyLimitSec:20,hideAfterSec:0,pityWinSec:0}),
  // 열쇠(설계 v3 §3-3): 칸 2×4, 누르고 있기 → 오른쪽(떼면 고정) → 0.3초 → 누르고 있기 → 위(떼면 밀어 넣음). 단위 = 칸 폭
  key:Object.freeze({cols:4,rows:2,cellH:1.4,holeY:.32,startX:.15,startY:-.3,speed:1.4,fit:.14,fitRare:.08,nearMul:2,pityFitBonus:.05,holdLimitSec:10,gapSec:.3}),
+ // 봉(월드디자인 설계 v4.1 §7, 다리 걸치기): 2발 약한 집게로 봉 두 개 위 상자를 밀어 봉 사이로 떨어뜨림. 판정 = 물리(claw-bridge-physics.js). 모두 임시값
+ bridge:Object.freeze({gap:.13,barR:.012,barLen:.55,barFriction:.35,box:Object.freeze([.16,.10,.22]),boxMass:1.0,boxMassRare:1.2,prongs:2,clawGrab:.0012,clawOpen:.9,
+  moveSpeed:.30,holdLimitSec:10,gapSec:.3,nearTiltDeg:15,nearMoveM:.03,nearSupportM:.02,nearStateTiltDeg:20,refillSec:2.5,startJitterM:.004,startJitterDeg:8,pityPower:1.5,pityAfter:8}),
+ // 기계 상태 공유·자리 잡기(v4.1 §8). 지금은 혼자 뽑기만 씀(stuck*·solo). 서버 쪽 값(leave·idle·drop·commit…)은 3단계 서버 연결 때 씀
+ share:Object.freeze({leaveSec:3,idleSec:60,idleWaitSec:20,hiddenSec:20,dropSec:15,dropMax:3,nextSec:10,commitSec:8,idleResetMin:30,stuckPlays:6,stuckMoveM:.005,stuckTiltDeg:2,
+  maxMoveM:.12,maxTurnDeg:60,yieldAfter:3,nearBubbleM:6,nearBubbleGapSec:120}),
  notice:Object.freeze({minRarity:'rare',gapSec:10}),   // 다른 손님 소식은 희귀 이상만, 10초에 1번(설계 v1 §4)
  log:5,
 });
 export const SAVE_KEY='claw-world:v1';
-export const KINDS=Object.freeze(['claw','timer','key']);
+export const KINDS=Object.freeze(['claw','bridge','timer','key']);
 export const kindOf=machineId=>MACHINES.find(m=>m.id===machineId)?.kind??'claw';
 
 // ── 서울 날짜(무료 코인은 서울 0시에 바뀐다) ──
@@ -31,24 +37,31 @@ export function leftText(ms){const m=Math.max(0,Math.ceil(ms/60000)),h=Math.floo
 
 // ── 저장(이 기기, 이어하기) ──
 const MACHINE_IDS=MACHINES.map(m=>m.id);
+// 11-23 MVP 3대 → 16대(v4.1 §12): 옛 기계 id 저장값(보장 수·처음 규칙 본 것·도감의 나온 기계)을 새 id로 이어받는다. 타이머는 큰 인형마다 한 대로 나뉨
+export const MACHINE_RENAME=Object.freeze({forest:'claw-1',star:'key-1',city:'timer-1'});
+const bigTimer=id=>({'big-squirrel':'timer-1','big-dongdong':'timer-2','big-haechi':'timer-3'})[id];
+const renameMachine=(id,plush)=>MACHINE_IDS.includes(id)?id:id==='city'&&bigTimer(plush)?bigTimer(plush):MACHINE_RENAME[id]??'';
 const int=(v,lo,hi,d=0)=>Number.isInteger(v)&&v>=lo&&v<=hi?v:d;
 const date=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)?v:null;
 // coinV = 코인 규칙 판(2 = 11-23 대표 결정 「하루 15개로 다시 채움」, 그 전 저장(1) = 10개씩 더해 30개까지 모으던 규칙)
 export const COIN_V=2;
-export function freshState(){return {coins:0,lastGrant:null,coinV:COIN_V,plays:0,wins:0,dex:{},pity:{},seen:{},log:[],seenTip:false};}
+export function freshState(){return {coins:0,lastGrant:null,coinV:COIN_V,plays:0,wins:0,dex:{},pity:{},seen:{},log:[],seenTip:false,mach:{}};}
 /** 저장값을 믿지 않고 정리한다(손님 인형 id는 isKnown이 true일 때만 남김 — 공개판에는 칸이 없다) */
 export function sanitizeState(raw,{isKnown=id=>!!plushInfo(id)}={}){
  const s=freshState();if(!raw||typeof raw!=='object')return s;
  s.coins=int(raw.coins,0,999);s.lastGrant=date(raw.lastGrant);s.coinV=raw.coinV===COIN_V?COIN_V:1;s.plays=int(raw.plays,0,1e7);s.wins=int(raw.wins,0,1e7);s.seenTip=raw.seenTip===true;
- if(raw.dex&&typeof raw.dex==='object')for(const [id,v] of Object.entries(raw.dex)){if(!isKnown(id)||!v)continue;const n=int(v.n,1,1e6,0);if(!n)continue;s.dex[id]={n,first:date(v.first)??'',machine:MACHINE_IDS.includes(v.machine)?v.machine:''};}
- if(raw.pity&&typeof raw.pity==='object')for(const id of MACHINE_IDS)if(Number.isInteger(raw.pity[id]))s.pity[id]=int(raw.pity[id],0,999);
- if(raw.seen&&typeof raw.seen==='object')for(const id of MACHINE_IDS)if(raw.seen[id]===true)s.seen[id]=true;
- if(Array.isArray(raw.log))s.log=raw.log.filter(r=>r&&typeof r.text==='string'&&Number.isFinite(r.at)).slice(-CLAW_TUNING.log).map(r=>({at:r.at,text:r.text.slice(0,60),d:Number.isInteger(r.d)?r.d:0}));
+ if(raw.dex&&typeof raw.dex==='object')for(const [id,v] of Object.entries(raw.dex)){if(!isKnown(id)||!v)continue;const n=int(v.n,1,1e6,0);if(!n)continue;s.dex[id]={n,first:date(v.first)??'',machine:renameMachine(v.machine,id)};}
+ if(raw.pity&&typeof raw.pity==='object')for(const [k,v] of Object.entries(raw.pity)){const id=renameMachine(k);if(id&&Number.isInteger(v))s.pity[id]=Math.max(s.pity[id]??0,int(v,0,999));}
+ if(raw.seen&&typeof raw.seen==='object')for(const [k,v] of Object.entries(raw.seen)){if(v!==true)continue;const id=renameMachine(k);if(id)s.seen[id]=true;if(k==='city')for(const t of ['timer-1','timer-2','timer-3'])s.seen[t]=true;}
+ if(Array.isArray(raw.log))s.log=raw.log.filter(r=>r&&typeof r.text==='string'&&Number.isFinite(r.at)).slice(-CLAW_TUNING.log).map(r=>({at:r.at,text:r.text.slice(0,60),d:Number.isInteger(r.d)?r.d:0,...(r.t==='refill'?{t:'refill',n:int(r.n,0,999)}:{})}));
+ if(raw.mach&&typeof raw.mach==='object')for(const id of MACHINE_IDS){const m=sanitizeMachState(raw.mach[id],kindOf(id));if(m)s.mach[id]=m;}
  return s;
 }
 export function loadState(storage=globalThis.localStorage,opt){try{return sanitizeState(JSON.parse(storage?.getItem(SAVE_KEY)??'null'),opt);}catch{return freshState();}}
 export function saveState(s,storage=globalThis.localStorage){try{storage?.setItem(SAVE_KEY,JSON.stringify(s));return true;}catch{return false;}}
-const addLog=(s,at,text,d=0)=>{s.log.push({at,text,d});while(s.log.length>CLAW_TUNING.log)s.log.shift();};
+const addLog=(s,at,text,d=0,extra=null)=>{s.log.push({at,text,d,...extra});while(s.log.length>CLAW_TUNING.log)s.log.shift();};
+// 매일 채움 기록 줄(v4 §10, 대표 승인): 늘어남·줄어듦 숫자 없이 「오늘 15개로 채웠어요」 + 결과 개수(t:'refill', n). 예전 저장의 채움 줄도 화면이 같은 모양으로 그림
+export const isRefillLog=r=>r?.t==='refill'||typeof r?.text==='string'&&/^오늘의 코인/.test(r.text);
 
 // ── 코인 ──
 /** 오늘(서울) 아직 안 받았으면 코인을 하루 개수로 다시 채움(어제 남은 코인은 넘어가지 않음). 반환 = 지금 코인 수(이미 받았으면 null)
@@ -56,10 +69,10 @@ const addLog=(s,at,text,d=0)=>{s.log.push({at,text,d});while(s.log.length>CLAW_T
 export function grantDaily(s,now=Date.now(),T=CLAW_TUNING){
  const today=seoulDate(now);
  if(s.coinV!==COIN_V){s.coinV=COIN_V;
-  if(s.lastGrant===today){const add=Math.max(0,T.coin.daily-s.coins);if(!add)return null;s.coins+=add;addLog(s,now,`오늘의 코인을 ${T.coin.daily}개로 채웠어요(하루 ${T.coin.daily}개로 바뀜)`,add);return s.coins;}}
+  if(s.lastGrant===today){const add=Math.max(0,T.coin.daily-s.coins);if(!add)return null;s.coins+=add;addLog(s,now,`하루 ${T.coin.daily}개로 바뀌었어요 · 오늘 ${T.coin.daily}개로 채웠어요`,0,{t:'refill',n:s.coins});return s.coins;}}
  if(s.lastGrant===today)return null;
  const before=s.coins;s.coins=T.coin.daily;s.lastGrant=today;
- addLog(s,now,before>0?`오늘의 코인 ${T.coin.daily}개(어제 남은 ${before}개는 넘어오지 않아요)`:`오늘의 코인 ${T.coin.daily}개`,s.coins-before);return s.coins;
+ addLog(s,now,`오늘 ${T.coin.daily}개로 채웠어요`,0,{t:'refill',n:s.coins});void before;return s.coins;
 }
 export const grantedToday=(s,now=Date.now())=>s.lastGrant===seoulDate(now);
 export const canPlay=(s,T=CLAW_TUNING)=>s.coins>=T.coin.cost;
@@ -70,10 +83,11 @@ export function spendCoin(s,machineId,now=Date.now(),T=CLAW_TUNING){
 
 // ── 보장(같은 기계 연달아 실패 뒤 도움) ──
 /** 이 기계 종류에 보장이 켜져 있나(타이머는 기본 끔 — 완료 기준 「10.00에서만 성공」) */
-export function pityOn(kind,T=CLAW_TUNING){if(!T.pity.after)return false;if(kind==='timer')return T.timer.pityWinSec>0;if(kind==='key')return T.key.pityFitBonus>0;return true;}
-export const pityLeft=(s,machineId,T=CLAW_TUNING)=>pityOn(kindOf(machineId),T)?Math.max(0,T.pity.after-(s.pity[machineId]??0)):null;
+export function pityOn(kind,T=CLAW_TUNING){if(kind==='bridge')return T.bridge.pityAfter>0&&T.bridge.pityPower>1;if(!T.pity.after)return false;if(kind==='timer')return T.timer.pityWinSec>0;if(kind==='key')return T.key.pityFitBonus>0;return true;}
+export const pityAfter=(kind,T=CLAW_TUNING)=>kind==='bridge'?T.bridge.pityAfter:T.pity.after; // 봉은 8판(v4.1 §7-5), 나머지는 pity.after
+export const pityLeft=(s,machineId,T=CLAW_TUNING)=>{const k=kindOf(machineId);return pityOn(k,T)?Math.max(0,pityAfter(k,T)-(s.pity[machineId]??0)):null;};
 export const pityNow=(s,machineId,T=CLAW_TUNING)=>pityLeft(s,machineId,T)===0;
-export const PITY_NAME=Object.freeze({claw:'힘센 집게',timer:'넓은 성공 칸',key:'넓은 구멍'});
+export const PITY_NAME=Object.freeze({claw:'힘센 집게',bridge:'힘센 집게',timer:'넓은 성공 칸',key:'넓은 구멍'});
 
 // ── 타이머 판정(설계 v3 §3-2, 시안 함수 그대로): 화면 숫자 = 0.01초 아래 버림, 판정은 그 숫자로만 ──
 export const hund=ms=>Math.floor(ms/10+1e-9);
@@ -104,21 +118,37 @@ export function keyMissText(k){
 
 // ── 규칙 안내(ⓘ·처음 규칙 카드): 조절값에서 만든다 ──
 export const KIND_INFO=Object.freeze({
- claw:Object.freeze({icon:'🕹',short:'집게로 뽑기',level:1}),
- timer:Object.freeze({icon:'⏱',short:'딱 10.00에 멈추기',level:3}),
- key:Object.freeze({icon:'🔑',short:'열쇠로 칸 고르기',level:2}),
+ claw:Object.freeze({icon:'🕹',short:'집게로 뽑기',level:1,label:'집게'}),
+ bridge:Object.freeze({icon:'📦',short:'봉 위 상자 떨어뜨리기',level:2,label:'봉'}),
+ timer:Object.freeze({icon:'⏱',short:'딱 10.00에 멈추기',level:3,label:'타이머'}),
+ key:Object.freeze({icon:'🔑',short:'열쇠로 칸 고르기',level:2,label:'열쇠'}),
 });
-export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.name??id,rarityOf=id=>plushInfo(id)?.rarity??'common'){
- const kind=kindOf(machineId),P=T.pity.after,lines=[];let pity='';
+/** 기계 하나의 어려움 점(같은 종류 안 보이는 차이만, 설계 v4 §3-1) */
+export const levelOf=machineId=>MACHINES.find(m=>m.id===machineId)?.level??KIND_INFO[kindOf(machineId)]?.level??1;
+/** 타이머 숫자 어두워지는 초(기계별 보이는 차이, v4 §3-3: 타이머 3만 3초) */
+export const hideAfterOf=(machineId,T=CLAW_TUNING)=>MACHINES.find(m=>m.id===machineId)?.hideAfterSec??T.timer.hideAfterSec;
+/** shared = 가게 서버에서 기계 상태를 같이 쓰는 중(3단계, 지금은 늘 false = 혼자 뽑기 글) */
+export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.name??id,rarityOf=id=>plushInfo(id)?.rarity??'common',{shared=false}={}){
+ const kind=kindOf(machineId),P=pityAfter(kind,T),lines=[];let pity='';
  const ids=[...new Set(pool)].sort((a,b)=>RARITY_ORDER.indexOf(rarityOf(a))-RARITY_ORDER.indexOf(rarityOf(b)));
  if(kind==='claw'){const C=T.claw;
   lines.push(`십자 단추를 누르고 있으면 집게가 움직여요(${C.timeSec}초). 「뽑기」를 누르면 내려가요`,'집게는 실제로 인형을 조여서 들어 올려요. 무거운 인형·눌린 인형은 미끄러지기 쉬워요','「👁 옆에서」로 보면 집게가 앞뒤 어디 있는지 보여요');
+  if(shared)lines.push('인형 자리는 모두 같아요 · 걸쳐 있는 인형은 다음 사람이 가져갈 수도 있어요');
   if(pityOn('claw',T))pity=`${P}번 연달아 못 뽑으면 다음 한 판은 힘센 집게(꼭 잡히는 건 아니에요)`;}
  else if(kind==='timer'){const c=T.timer,t=c.targetSec.toFixed(2),lo=(c.targetSec-c.nearWinSec).toFixed(2),hi=(c.targetSec+c.nearWinSec).toFixed(2);
   lines.push('「▶ 시작」을 누르면 숫자가 0.01초씩 올라가요. 「✋ 멈춤」을 누른 순간 숫자가 멈춰요',
-   (c.okWinSec>0?`${(c.targetSec-c.okWinSec).toFixed(2)}~${(c.targetSec+c.okWinSec).toFixed(2)}에 멈추면 성공`:`화면 숫자가 딱 ${t}일 때만 성공`)+' — 잠긴 유리문이 열리고 인형을 꺼내요',
+   (c.okWinSec>0?`${(c.targetSec-c.okWinSec).toFixed(2)}~${(c.targetSec+c.okWinSec).toFixed(2)}에 멈추면 성공`:`화면 숫자가 딱 ${t}일 때만 성공`)+' — 잠긴 유리문이 열리고 큰 인형을 꺼내요',
    `${lo}~${hi}(${t} 빼고)는 문이 덜컥하다 닫히는 아까움, 그 밖이나 ${c.maxSec.toFixed(2)}를 넘기면 실패`);
+  const hide=hideAfterOf(machineId,T);if(hide>0)lines.push(`이 기계는 ${hide.toFixed(2)}초부터 숫자가 어두워져요(멈춘 숫자는 다시 밝게 보여요)`);
   if(pityOn('timer',T))pity=`${P}번 연달아 실패하면 다음 판은 성공 칸이 ±${c.pityWinSec.toFixed(2)}초 넓어져요`;}
+ else if(kind==='bridge'){const B=T.bridge,M=MACHINES.find(m=>m.id===machineId),bars=M?.bars??{gap:B.gap};
+  lines.push('「→」를 누르고 있다가 놓고, 「↑」를 누르고 있다가 놓아요. 놓으면 집게가 저절로 내려갔다 올라와요',
+   '집게는 상자를 들지 못해요. 밀고 걸어서 봉 사이로 떨어뜨리면 성공',
+   '봉은 4개예요: 가운데 두 봉에 상자가 걸쳐 있고, 앞뒤 봉은 상자가 밖으로 나가지 않게 막아요. 가운데 두 봉 사이로 빠지면 성공',
+   bars.near?`이 기계는 가운데 봉이 팔(八) 자예요: 왼쪽 ${Math.round(bars.near*100)}cm → 오른쪽 ${Math.round(bars.far*100)}cm`:`가운데 두 봉 사이 ${Math.round(bars.gap*1000)/10}cm`,
+   '한가운데를 노리면 두 발이 양옆으로 빠져요 · 모서리를 노려요',
+   shared?`상자 자리는 모두 같아요. 앞사람이 옮긴 그대로 이어서 하고, 아무도 안 하면 ${T.share.idleResetMin}분 뒤 처음 자리로 돌아가요`:'상자는 판이 끝나도 그 자리에 남아요. 이 기기에서는 오늘 안에 이어서 해요');
+  if(pityOn('bridge',T))pity=`${P}번 연달아 못 떨어뜨리면 다음 한 판은 힘센 집게(힘 ${B.pityPower}배, 꼭 되는 건 아니에요)`;}
  else{const c=T.key;
   lines.push(`큰 단추를 누르고 있으면 열쇠가 오른쪽으로 가요. 떼면 그 자리에 멈춰요`,`다시 누르고 있으면 위로 가요. 떼면 열쇠를 꽂아요`,
    `구멍 가운데에서 ${c.fit.toFixed(2)}칸 안이면 그 칸 인형이 나와요. 희귀·특별 칸은 구멍이 작아요(${c.fitRare.toFixed(2)}칸)`,`${c.nearMul}배 안이면 아까움(구멍 가장자리), 그 밖이면 실패`);
@@ -126,6 +156,17 @@ export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.
  return {kind,lines,pity,rows:ids.map(id=>({id,name:nameOf(id),rarity:rarityOf(id),label:RARITY[rarityOf(id)]?.label??''})),
   note:`코인은 매일 0시(서울)에 무료로 ${T.coin.daily}개가 돼요. 남은 코인은 다음 날로 넘어가지 않아요. 사는 곳·바꾸는 곳은 없어요. 판정 숫자는 시험용 임시값이에요.`};
 }
+
+// ── 혼자 뽑기 기계 상태(v4.1 §3 A안, 대표 승인): 봉 상자 자리를 이 기기에 오늘(서울 0시)까지. st = 상자 공 자리(mm 정수, claw-bridge-physics.js boxState)
+//  {day, st:[int…], id 지금 상자 경품, mv 옮긴 판 수, still 진척 없는 판 수}
+export function sanitizeMachState(m,kind){
+ if(!m||typeof m!=='object'||kind!=='bridge')return null;const day=date(m.day);if(!day)return null;
+ const st=Array.isArray(m.st)&&m.st.length>=6&&m.st.length<=96&&m.st.every(v=>Number.isInteger(v)&&Math.abs(v)<=2000)?m.st.slice():null;
+ return {day,st,id:typeof m.id==='string'&&/^[a-z0-9-]{1,24}$/.test(m.id)?m.id:'',mv:int(m.mv,0,9999),still:int(m.still,0,999)};
+}
+/** 오늘 이어서 쓸 기계 상태(날짜가 바뀌었으면 null = 처음 자리) */
+export const machStateToday=(s,machineId,now=Date.now())=>{const m=s.mach?.[machineId];return m&&m.day===seoulDate(now)?m:null;};
+export function saveMachState(s,machineId,st,now=Date.now()){s.mach??={};s.mach[machineId]={...st,day:seoulDate(now)};}
 
 /** 한 판 결과 적기: 도감·보장 수·기록. res = {kind:'win'|'near'|'miss', id}. 반환 {isNew,count} */
 export function recordResult(s,machineId,res,now=Date.now()){

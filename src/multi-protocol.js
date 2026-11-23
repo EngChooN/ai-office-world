@@ -115,9 +115,10 @@ export const ACT_SCHEMA=Object.freeze({
   mg:Object.freeze(Array.from({length:CAROUSEL_SEATS.length+1},(_,i)=>i)),
   //   + 11-18: hs 하늘 썰매(0 없음·1 땅·2 날아오르기·3 비행·4 내려앉기, src/christmas/sky-rules.js HS). 언덕 눈썰매 sl과 따로. 높이는 위치 메시지 s의 a칸
   hs:Object.freeze([0,1,2,3,4])}), // 자리 수는 레이아웃을 따름(월드아트가 자리를 늘리면 같이 늘어남)
- //  인형뽑기(11-23): m 쓰는 기계(0 없음·1~3) · ph 단계(''·play 조작·drop 판정 연출·win 성공·lose 실패) · cx,cz 집게 자리(cm, 기계 좌표 +50)·열쇠 자리(칸×100)
+ //  인형뽑기(11-23): m 쓰는 기계(0 없음·1~16) · ph 단계(''·play 조작·drop 판정 연출·win 성공·lose 실패) · cx,cz 집게 자리(cm, 기계 좌표 +50)·열쇠 자리(칸×100)
  //   · r 이번 판 인형 id · k 결과(0 아직·1 성공·2 아까움·3 실패) · n 판 번호 · v 타이머 멈춘 숫자(0.01초). 규칙은 src/claw/claw-rules.js(결과는 뽑는 사람 화면이 정하고 구경하는 화면은 그대로 그림)
- claw:Object.freeze({m:Object.freeze([0,1,2,3]),ph:Object.freeze(['','play','drop','win','lose']),cx:'int',cz:'int',r:'id',k:Object.freeze([0,1,2,3]),n:'int',v:'int'})
+ claw:Object.freeze({m:Object.freeze(Array.from({length:17},(_,i)=>i)), // 기계 번호 0(없음)·1~16(11-23 기계 16대, 설계 v4.1). 운영 서버는 다시 켜야 5~16번 기계 구경이 전달됨
+  ph:Object.freeze(['','play','drop','win','lose']),cx:'int',cz:'int',r:'id',k:Object.freeze([0,1,2,3]),n:'int',v:'int'})
 });
 export function sanitizeAct(exp,a){
  const sc=ACT_SCHEMA[exp];if(!sc||!a||typeof a!=='object'||Array.isArray(a))return null;

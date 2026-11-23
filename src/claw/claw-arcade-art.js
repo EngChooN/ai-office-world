@@ -119,18 +119,20 @@ export function buildArcadeDecor({S,hw,hd,machines,look=DEFAULT_LOOK,mobile=fals
  const bucket=()=>({lit:[],glass:[],neon:[]}),Pk={free:bucket(),back:bucket(),front:bucket(),left:bucket(),right:bucket()},P=Pk.free,colliders=[];
  // 장식 기계 자리(놀 수 있는 세 대 옆·앞벽 양쪽·왼벽 앞쪽). 뒷벽 붙은 것은 놀 수 있는 기계와 같은 z
  const bz=-hd+.12+.4,fz=hd-.12-.4;
- const cab=[
+ const cab=S.decorCabinets===false?[]:[
   {x:-3.5,z:bz,ry:0,body:A.cabinet[0],neon:N.pink,wall:'back'},{x:3.5,z:bz,ry:0,body:A.cabinet[1],neon:N.sky,wall:'back'},
   {x:-1.45,z:fz,ry:Math.PI,body:A.cabinet[2],neon:N.violet,wall:'front'},{x:-2.4,z:fz,ry:Math.PI,body:A.cabinet[0],neon:N.pink,wall:'front'},
   {x:1.45,z:fz,ry:Math.PI,body:A.cabinet[1],neon:N.sky,wall:'front'},{x:2.4,z:fz,ry:Math.PI,body:A.cabinet[3],neon:N.violet,wall:'front'},
   {x:-hw+.12+.4,z:2.25,ry:Math.PI/2,body:A.cabinet[3],neon:N.sky,wall:'left'},
  ];
+ // 기계 좌표 → 가게 좌표(기계 방향 heading, 11-23 기계 16대: 왼벽 봉·섬 뒤 열쇠는 돌아 있음)
+ const rot=(m,x,z)=>{const h=m.heading??0,c=Math.cos(h),s=Math.sin(h);return [m.x+x*c+z*s,m.z-x*s+z*c];};
  cab.forEach((c,i)=>{decorCabinet(Pk[c.wall],{...c,seed:i+3},A);const rot=Math.abs(Math.sin(c.ry))>.5,ex=(rot?.8:.86)/2+.03,ez=(rot?.86:.8)/2+.03+(rot?0:.08);
   colliders.push({x0:c.x-(rot?ez:ex),z0:c.z-(rot?ex:ez),x1:c.x+(rot?ez:ex),z1:c.z+(rot?ex:ez),id:`decor-${i}`});});
  // 놀 수 있는 기계 테두리 네온(기계 그림은 그대로, 앞 모서리를 감싸는 네온 띠 + 위 간판 밑줄)
  const machineNeon=[N.sky,N.pink,N.violet];
- machines.forEach((m,i)=>{const b=new THREE.Box3().setFromObject(m.group),W=.95/2+.015,D=.85/2+.015,top=Math.min(b.max.y,2.2)+.01,c=machineNeon[i%3];
-  const p=(x,y,z)=>new THREE.Vector3(m.x+x,y,m.z+z);
+ machines.forEach((m,i)=>{m.group.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(m.group),W=.95/2+.015,D=.85/2+.015,top=Math.min(b.max.y,2.2)+.01,c=machineNeon[i%3];
+  const p=(x,y,z)=>{const [wx,wz]=rot(m,x,z);return new THREE.Vector3(wx,y,wz);};
   // 조작 화면에서 기계 양옆에 크게 보이므로 다른 네온보다 가늘게
   for(const sx of [-1,1])P.neon.push(...straight(p(sx*W,.5,D),p(sx*W,top,D),.008,c));
   P.neon.push(...straight(p(-W,top,D),p(W,top,D),.008,c),...straight(p(-W,top,-D),p(-W,top,D),.008,c),...straight(p(W,top,-D),p(W,top,D),.008,c));
@@ -145,10 +147,10 @@ export function buildArcadeDecor({S,hw,hd,machines,look=DEFAULT_LOOK,mobile=fals
  const ring=(y,r,c)=>{const pts=[];for(let i=0;i<8;i++){const a=i/8*Math.PI*2+Math.PI/8;pts.push(new THREE.Vector3(st.x+Math.cos(a)*r,y,st.z+Math.sin(a)*r));}P.neon.push(...loop(pts,.014,c));};
  ring(.33,st.r+.025,N.pink);ring(isl.glassTop+.065,st.r-.06,N.sky);
  // 낮은 동그란 의자(기계 사이·앞 구석·섬 옆)
- const stools=[[-1.05,-2.25,0],[1.05,-2.25,1],[-3.85,3.05,2],[-3.35,2.75,0],[3.75,2.7,1],[1.15,.55,2]];
+ const stools=S.stools??[[-1.05,-2.25,0],[1.05,-2.25,1],[-3.85,3.05,2],[-3.35,2.75,0],[3.75,2.7,1],[1.15,.55,2]];
  for(const [x,z,k] of stools){stool(P,x,z,A.stool[k],A);colliders.push({x,z,r:.21,id:`stool-${x},${z}`});}
  // 미러볼 셋(천장 육각 테 가운데)
- const balls=[[-2.2,.2],[2.2,.2],[-.95,-1.05]];
+ const balls=S.balls??[[-2.2,.2],[2.2,.2],[-.95,-1.05]];
  for(const [x,z] of balls)discoBall(P,x,2.18,z,mobile?.15:.17,A);
  // ── 천장 네온: 분홍 네모 격자(1.5m) + 미러볼 둘레 하늘색 육각 테. 천장 판은 없다(위는 짙은 배경색 = 어두운 천장)
  const CY_=2.6,ceil=[];
@@ -175,7 +177,7 @@ export function buildArcadeDecor({S,hw,hd,machines,look=DEFAULT_LOOK,mobile=fals
  // ── 바닥 번짐: 놀 수 있는 기계 앞·장식 기계 앞·섬 둘레
  const glowParts=[],tex=glowTex();
  const glow=(x,z,sx,sz,hex)=>{glowParts.push(paint(new THREE.PlaneGeometry(sx,sz).rotateX(-Math.PI/2).translate(x,.004,z),hex));};
- machines.forEach((m,i)=>glow(m.x,m.z+.85/2+.35,1.25,.7,machineNeon[i%3]));
+ machines.forEach((m,i)=>{const [gx,gz]=rot(m,0,.85/2+.35),side=Math.abs(Math.sin(m.heading??0))>.5;glow(gx,gz,side?.7:1.25,side?1.25:.7,machineNeon[i%3]);});
  for(const c of cab){const fx=Math.sin(c.ry),fz2=Math.cos(c.ry);glow(c.x+fx*.62,c.z+fz2*.62,Math.abs(fx)>.5?.6:1.0,Math.abs(fx)>.5?1.0:.6,c.neon);}
  glow(st.x,st.z,2.6,2.6,N.pink);
  // 벽 밑 분홍 띠가 바닥에 비친 번짐(네 벽)

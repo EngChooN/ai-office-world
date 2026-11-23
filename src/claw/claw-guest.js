@@ -8,7 +8,7 @@
 //                      icon:(도감 그림 주소, 없으면 image), height:(m, 없으면 자리 희귀도 크기)}
 //    model(GLB)이 있으면 그 모델을, 없고 image(배경 투명 PNG)만 있으면 두께 있는 그림 판 인형을 만든다.
 import * as THREE from 'three';
-import {GUEST_SLOTS,PLUSH,RARITY} from './claw-palette.js';
+import {GUEST_SLOTS,PLUSH,RARITY,BIG_PLUSH,BOX_PLUSH} from './claw-palette.js';
 import {makePlush,plushSize} from './claw-plush.js';
 
 const slot=id=>GUEST_SLOTS.find(s=>s.id===id)??null;
@@ -21,8 +21,8 @@ export async function loadGuests(){
  for(const [path,load] of Object.entries(mods)){try{const g=await load();if(g&&slot(g.id))out.push(Object.freeze({...g,rarity:slot(g.id).rarity}));else console.warn('[claw] 손님 인형 자리 id가 맞지 않음',path);}catch(e){console.warn('[claw] 손님 인형 못 읽음',path,e);}}
  return out;
 }
-// 도감·확률 안내에 쓸 인형 목록: 우리 인형 8종 + 실제로 들어온 손님 인형만(공개판에는 손님 칸이 없다)
-export function clawCatalog(guests=[]){return [...PLUSH.map(p=>({...p,guest:false})),...guests.map(g=>({id:g.id,name:g.name,rarity:g.rarity,icon:g.icon??g.image??null,guest:true}))];}
+// 도감·확률 안내에 쓸 인형 목록: 우리 인형 8종 + 큰 인형 3종(타이머, big·base) + 상자 피규어 8종(봉, box·base, 11-23 v4.1) + 실제로 들어온 손님 인형만(공개판에는 손님 칸이 없다)
+export function clawCatalog(guests=[]){return [...PLUSH.map(p=>({...p,guest:false,big:false})),...BIG_PLUSH.map(b=>({...b,guest:false})),...BOX_PLUSH.map(b=>({...b,guest:false,big:false})),...guests.map(g=>({id:g.id,name:g.name,rarity:g.rarity,icon:g.icon??g.image??null,guest:true}))];}
 // 기계 인형 목록(pool)의 손님 자리를 실제 인형 또는 대체 인형으로 바꾼다
 export function resolvePool(pool,guests=[]){const have=new Set(guests.map(g=>g.id));return pool.map(id=>isGuestId(id)&&!have.has(id)?slot(id).fallback:id);}
 

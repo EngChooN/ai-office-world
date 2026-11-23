@@ -75,13 +75,14 @@ async function sizeRun(size){
  // ☰ → 기계 탭 → 「가기」(숲속 = 집게)
  await click(p,'.uf-menu-btn');await click(p,'[data-uf-tab=machines]');await sl(300);
  await p.screenshot({path:`${OUT}/${size}-2machines.png`});
+ ok(`${tag} 기계 탭: 종류별 4묶음(집게 6·봉 4·타이머 3·열쇠 3)·빈 기계 수`,await p.evaluate(()=>{const g=[...document.querySelectorAll('.kh-mgroup')];return g.length===4&&g.map(x=>x.querySelectorAll('.kh-mlist li').length).join()==='6,4,3,3'&&/빈 기계 6\/6/.test(g[0].textContent);}));
  await checkButtons(p,`${tag} 기계 탭(보이는 줄)`,['.uf-tab','.uf-x']);
  await p.evaluate(()=>document.querySelector('.uf-sheet [data-go="0"]').scrollIntoView({block:'nearest'}));
  await click(p,'.uf-sheet [data-go="0"]');await sl(900);
- let s=await st(p);ok(`${tag} 「가기」로 숲속 기계 앞`,s.near===0,`near=${s.near}`);
+ let s=await st(p);ok(`${tag} 「가기」로 집게 1 앞`,s.near===0,`near=${s.near}`);
  await p.screenshot({path:`${OUT}/${size}-3near.png`});
  await checkButtons(p,`${tag} 기계 앞`,['.kh-pill','.uf-tr > button:not([hidden])','[data-uf]']);
- ok(`${tag} 할 일 칩 「한 판 · 🪙1」·「규칙」`,(await p.evaluate(()=>[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|'))).match(/숲속 기계 한 판.*규칙/));
+ ok(`${tag} 할 일 칩 「한 판 · 🪙1」·「규칙」`,(await p.evaluate(()=>[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|'))).match(/집게 1 한 판.*규칙/));
  await click(p,'.kh-todo[data-act=rules]');await sl(250);
  ok(`${tag} 규칙 카드(조절값 글·보장 글·인형)`,await p.evaluate(()=>{const c=document.querySelector('.kh-card');return !c.hidden&&/20초/.test(c.textContent)&&/힘센 집게/.test(c.textContent)&&c.querySelectorAll('.kh-prizes span').length>=3;}));
  await click(p,'.kh-card [data-c=close]');
@@ -136,7 +137,7 @@ async function sizeRun(size){
  await resultChecks(p,tag,'집게');await p.screenshot({path:`${OUT}/${size}-7clawresult.png`});
  await click(p,'.kh-card [data-c=stop]');await sl(500);
  // ── 타이머: 진짜 누름으로 시작·멈춤(약 1초 → 실패), 숫자판 = 카드 숫자
- await p.evaluate(()=>claw.goMachine(1));await sl(900);await firstPlay(p,tag,'타이머');
+ await p.evaluate(()=>claw.goMachine(10));await sl(900);await firstPlay(p,tag,'타이머');
  ok(`${tag} 타이머: 큰 단추 「시작」(초록), 십자·⏱ 없음`,await p.evaluate(()=>{const b=document.querySelector('.kh-big');return /시작/.test(b.textContent)&&b.classList.contains('kh-green')&&document.querySelector('.kh-pad').hidden&&document.querySelector('.kh-timer').hidden;}));
  await p.screenshot({path:`${OUT}/${size}-8timer-ready.png`});
  {const b=await bigBox(p);await p.mouse.click(b.x+b.width/2,b.y+b.height/2);}await sl(1100);
@@ -144,7 +145,7 @@ async function sizeRun(size){
  await p.screenshot({path:`${OUT}/${size}-9timer-run.png`});
  {const b=await bigBox(p);await p.mouse.click(b.x+b.width/2,b.y+b.height/2);}
  await waitResult(p,15000);
- {const r=await p.evaluate(()=>({card:document.querySelector('.kh-card [data-num]')?.textContent,disp:claw.shop.userData.machines[1].group.userData.timer.text,res:claw.play.status().result}));
+ {const r=await p.evaluate(()=>({card:document.querySelector('.kh-card [data-num]')?.textContent,disp:claw.shop.userData.machines[10].group.userData.timer.text,res:claw.play.status().result}));
   ok(`${tag} 타이머: 멈춘 숫자 = 카드 숫자(${r.card})·${r.res.kind}`,r.card===r.disp&&r.card===r.res.shown&&/^\d\d\.\d\d$/.test(r.card),JSON.stringify(r));}
  await resultChecks(p,tag,'타이머');await p.screenshot({path:`${OUT}/${size}-10timer-result.png`});
  // 한 판 더: 누른 시각 10.004초 → 10.00 성공 → 도감
@@ -153,13 +154,15 @@ async function sizeRun(size){
  ok(`${tag} 타이머: 10.004초 → 10.00 성공`,tw.kind==='win'&&tw.shown==='10.00',JSON.stringify(tw));
  await waitResult(p,15000);await p.screenshot({path:`${OUT}/${size}-11timer-win.png`});
  await click(p,'.kh-card [data-c=dex]');await sl(500);
- ok(`${tag} 도감에 뽑은 인형(색 칸)`,await p.evaluate(()=>document.querySelectorAll('.kh-cell:not(.none)').length>=1&&/\d \/ 8/.test(document.querySelector('.kh-count')?.textContent??'')));
+ ok(`${tag} 도감에 뽑은 인형(색 칸)`,await p.evaluate(()=>document.querySelectorAll('.kh-cell:not(.none)').length>=1&&new RegExp(`\\d / ${claw.catalog.length}$`).test(document.querySelector('.kh-count')?.textContent??'')));
+ ok(`${tag} 도감 19칸: 큰 인형 3칸 「큰」·상자 8칸 「상자」 딱지(작은 인형 칸엔 없음)`,await p.evaluate(()=>{const big=claw.catalog.filter(c=>c.big).map(c=>c.id),box=claw.catalog.filter(c=>c.box).map(c=>c.id),cells=[...document.querySelectorAll('.kh-cell')];
+  return claw.catalog.length===19&&big.length===3&&box.length===8&&cells.length===19&&cells.every(el=>{const t=el.querySelector('.kh-big')?.textContent??'';return t===(big.includes(el.dataset.id)?'큰':box.includes(el.dataset.id)?'상자':'');});}));
  await p.screenshot({path:`${OUT}/${size}-12dex.png`});
  await click(p,'.kh-cell:not(.none)');await sl(200);
  ok(`${tag} 인형 자세히(처음 뽑은 날·모은 수)`,await p.evaluate(()=>/처음 뽑은 날/.test(document.querySelector('.kh-detail')?.textContent??'')));
  await click(p,'.uf-x');await sl(400);
  // ── 열쇠: 진짜 누르고 있기 두 번
- await p.evaluate(()=>claw.goMachine(2));await sl(900);await firstPlay(p,tag,'열쇠');
+ await p.evaluate(()=>claw.goMachine(13));await sl(900);await firstPlay(p,tag,'열쇠');
  await p.screenshot({path:`${OUT}/${size}-13key.png`});
  const k0=(await st(p)).play.key;await holdBig(p,600);await sl(80);const k1=(await st(p)).play.key;
  ok(`${tag} 열쇠: 누르고 있으면 오른쪽, 떼면 고정`,k1.x>k0.x+.4&&k1.phase==='gap',`${JSON.stringify(k0)}→${JSON.stringify(k1)}`);
@@ -167,6 +170,23 @@ async function sizeRun(size){
  await holdBig(p,700);await sl(80);const k3=(await st(p)).play;ok(`${tag} 열쇠: 누르고 있다 떼면 꽂고 판정`,k3.mode==='drop'&&k3.key.y>k2.y+.5,JSON.stringify(k3.key));
  await sl(300);await p.screenshot({path:`${OUT}/${size}-14key-push.png`});
  await waitResult(p,15000);await resultChecks(p,tag,'열쇠');await p.screenshot({path:`${OUT}/${size}-15key-result.png`});
+ await click(p,'.kh-card [data-c=stop]');await sl(500);
+ // ── 봉(설계 v4.1 §7): 「→」 누르고 있기 → 「↑」 누르고 있기(옆 작은 창) → 떼면 집게가 내려감 → 상자는 그 자리에 남음(새로고침 뒤에도, 오늘까지)
+ await p.evaluate(()=>claw.goMachine(6));await sl(900);await firstPlay(p,tag,'봉');
+ ok(`${tag} 봉: 큰 단추 「오른쪽」, 십자·⏱ 없음`,await p.evaluate(()=>/오른쪽/.test(document.querySelector('.kh-big').textContent)&&document.querySelector('.kh-pad').hidden&&document.querySelector('.kh-timer').hidden));
+ const bb0=(await st(p)).play.claw;await holdBig(p,700);await sl(80);const bb1=(await st(p)).play.claw;
+ ok(`${tag} 봉: 누르고 있으면 집게가 오른쪽, 떼면 고정`,bb1.x>bb0.x+.1&&bb1.phase==='gap',`${JSON.stringify(bb0)}→${JSON.stringify(bb1)}`);
+ await sl(500);{const b=await bigBox(p);await p.mouse.move(b.x+b.width/2,b.y+b.height/2);await p.mouse.down();await sl(450);
+  const m=await p.evaluate(()=>{const e=document.querySelector('.kh-mini');return {on:claw.mini,shown:!e.hidden,r:e.getBoundingClientRect().toJSON()};});
+  ok(`${tag} 봉: 「↑」 누르는 동안 옆에서 본 작은 창(150×104, 화면 안)`,m.on&&m.shown&&Math.round(m.r.width)===150&&Math.round(m.r.height)===104&&m.r.left>=0&&m.r.top>=0,JSON.stringify(m));
+  await sl(100);const m2=await p.evaluate(()=>document.querySelector('.kh-mini').getBoundingClientRect().toJSON());m.r=m2;const pr=[...await rect(p,'.kh-pill'),...await rect(p,'.uf-tr > *'),...await rect(p,'.kh-quit'),...await rect(p,'.kh-hint')];ok(`${tag} 봉: 작은 창이 알약·위 단추·한 줄 안내와 안 겹침`,!pr.some(r=>hit(m.r,r)),JSON.stringify(pr));
+  await p.screenshot({path:`${OUT}/${size}-17bridge-up.png`});await p.mouse.up();}
+ await sl(80);ok(`${tag} 봉: 떼면 집게가 저절로 내려감`,(await st(p)).mode==='drop');
+ await waitResult(p,40000);s=await st(p);ok(`${tag} 봉 결과(물리): ${s.play.result?.kind}`,['win','near','miss'].includes(s.play.result?.kind),JSON.stringify(s.play.result));
+ await resultChecks(p,tag,'봉');await p.screenshot({path:`${OUT}/${size}-18bridge-result.png`});
+ await p.waitForFunction(()=>{const m=claw.state.mach?.['bridge-1'];return !!m;},null,{timeout:15000}).catch(()=>{});await sl(2500); // 상자가 멈춘 뒤 저장됨
+ const bs=await p.evaluate(()=>({b:claw.play.bridge(6),saved:!!claw.state.mach?.['bridge-1'],st:claw.state.mach?.['bridge-1']?.st??null}));
+ ok(`${tag} 봉: 판이 끝나면 상자 자리를 이 기기에 저장`,bs.saved,JSON.stringify(bs.b&&{support:bs.b.support,tilt:bs.b.tilt}));
  await click(p,'.kh-card [data-c=stop]');await sl(500);
  // 그만두기: 집게 한 판 → ✕ → 확인 → 그만두기(코인 안 돌려줌)
  await p.evaluate(()=>claw.goMachine(0));await sl(900);const cb=(await st(p)).coins;
@@ -185,6 +205,10 @@ async function sizeRun(size){
  const dexN=Object.keys((await st(p)).dex).length;
  await p.reload();await p.waitForFunction(()=>window.claw&&window.claw.fps>0,null,{timeout:180000});await sl(400);
  s=await st(p);ok(`${tag} 이어하기: 새로고침 뒤 코인 0·도감 ${dexN}종(같은 날 다시 안 줌)`,s.coins===0&&Object.keys(s.dex).length===dexN,`${s.coins} ${JSON.stringify(s.dex)}`);
+ {const b2=await p.evaluate(()=>claw.play.bridge(6)),b1=bs.b;
+  // 저장한 상자 자리(공 자리 mm)와 새로고침 뒤 자리를 비교: 공마다 8mm 안(다시 놓을 때 0.4초 굳힘으로 생기는 어긋남 허용)
+  const diff=bs.st&&b2.st&&bs.st.length===b2.st.length?Math.max(...bs.st.map((v,i)=>Math.abs(v-b2.st[i]))):null;
+  ok(`${tag} 봉: 새로고침해도 상자가 그 자리(저장한 자리와 공마다 8mm 안)`,b1.won||b1.refill?b2.support>.03:diff!==null&&diff<=8,`최대 어긋남 ${diff}mm · ${b1.support}/${b1.tilt} → ${b2.support}/${b2.tilt}`);}
  // 다음 날(11-23 대표 결정): 남은 개수와 상관없이 15로 — 어제 받은 것으로 바꾸고 새로고침
  const dayShift=async(patch)=>{await p.evaluate(patch=>{const k='claw-world:v1',v=JSON.parse(localStorage.getItem(k));const y=new Date(Date.now()+9*3600e3-86400e3).toISOString().slice(0,10);
    Object.assign(v,patch);if(v.lastGrant==='Y')v.lastGrant=y;if(v.lastGrant==='T')v.lastGrant=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);if(patch.coinV===null)delete v.coinV;localStorage.setItem(k,JSON.stringify(v));},patch);
@@ -198,7 +222,12 @@ async function sizeRun(size){
 
 // ── PC 키(덧붙임): E 한 판, ←/↑ 누르고 있기, Space 뽑기, Esc 그만두기 확인
 async function keysRun(){
- const {ctx,p}=await open('pc');await p.evaluate(()=>{claw.seen(true);claw.goMachine(0);});await sl(800);
+ const {ctx,p}=await open('pc');
+ // 「옆 빈 집게로 →」(설계 v4 §4-2): 집게 2를 다른 손님이 쓰는 중이면 칩 → 누르면 같은 종류의 가까운 빈 기계 앞
+ await p.evaluate(()=>{claw.seen(true);claw.play.watch('other',{m:2,ph:'play',cx:50,cz:50,r:'',k:0,n:1,v:0});claw.goMachine(1);});await sl(900);
+ {const t=await p.evaluate(()=>[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|'));ok('[pc] 쓰는 중인 기계 앞: 「○○님이 뽑는 중」 + 「옆 빈 집게로 →」',/집게 2는 .*뽑는 중/.test(t)&&/옆 빈 집게로/.test(t),t);
+  await p.screenshot({path:`${OUT}/pc-busy-free.png`});await click(p,'.kh-todo[data-act=free]');await sl(900);const n=(await st(p)).near;ok('[pc] 「옆 빈 집게로」 → 집게 1 또는 3 앞',n===0||n===2,`near=${n}`);}
+ await p.evaluate(()=>{claw.play.unwatch('other');claw.goMachine(0);});await sl(800);
  await p.keyboard.press('KeyE');await sl(800);let s=await st(p);ok('[키] E = 한 판',s.mode==='play');
  const c0=s.play.claw;await p.keyboard.down('ArrowRight');await sl(500);await p.keyboard.up('ArrowRight');await p.keyboard.down('KeyW');await sl(400);await p.keyboard.up('KeyW');
  const c1=(await st(p)).play.claw;ok('[키] →·W 누르고 있기로 집게 이동',c1.x>c0.x+.05&&c1.z<c0.z-.03,`${JSON.stringify(c0)}→${JSON.stringify(c1)}`);
@@ -210,11 +239,11 @@ async function keysRun(){
  await p.waitForFunction(()=>window.claw.play.mode==='drop',null,{timeout:70000});ok('[키] 20초 지나면 저절로 뽑기',true);
  await p.waitForFunction(()=>window.claw.hud.card==='result',null,{timeout:40000});await click(p,'.kh-card [data-c=stop]');
  // 타이머: Space 누른 순간으로 시작·멈춤
- await p.evaluate(()=>claw.goMachine(1));await sl(900);await p.keyboard.press('KeyE');await sl(600);await p.keyboard.press('Space');await sl(800);
+ await p.evaluate(()=>claw.goMachine(10));await sl(900);await p.keyboard.press('KeyE');await sl(600);await p.keyboard.press('Space');await sl(800);
  ok('[키] 타이머 Space = 시작',(await st(p)).play.timer.phase==='run');await p.keyboard.press('Space');await sl(300);ok('[키] 타이머 Space = 멈춤',(await st(p)).play.timer.phase==='stop');
  await p.waitForFunction(()=>window.claw.hud.card==='result',null,{timeout:15000});await click(p,'.kh-card [data-c=stop]');
  // 열쇠: Space 누르고 있기·떼기
- await p.evaluate(()=>claw.goMachine(2));await sl(900);await p.keyboard.press('KeyE');await sl(600);
+ await p.evaluate(()=>claw.goMachine(13));await sl(900);await p.keyboard.press('KeyE');await sl(600);
  await p.keyboard.down('Space');await sl(500);await p.keyboard.up('Space');await sl(80);ok('[키] 열쇠 Space 누르고 있기 → 떼면 고정',(await st(p)).play.key.phase==='gap');
  ok('[키] 페이지 오류 0',!p.errs.length,p.errs.join(' / '));await ctx.close();
 }
@@ -229,26 +258,26 @@ async function multiRun(){
  await A.evaluate(()=>claw.seen(true));await B.evaluate(()=>claw.seen(true));
  await A.evaluate(()=>claw.goMachine(0));await sl(700);await click(A,'.kh-big[data-act=play]');await sl(600);
  await A.evaluate(()=>claw.play.aim(.25,-.2));await sl(900);
- const rb=await B.evaluate(()=>claw.play.status().rigs[0]);ok('[두 창] 구경: 숲속 기계 집게가 A 자리로',!!rb.owner&&Math.abs(rb.x-.25)<.05&&Math.abs(rb.z+.2)<.05,JSON.stringify(rb));
+ const rb=await B.evaluate(()=>claw.play.status().rigs[0]);ok('[두 창] 구경: 집게 1 집게가 A 자리로',!!rb.owner&&Math.abs(rb.x-.25)<.05&&Math.abs(rb.z+.2)<.05,JSON.stringify(rb));
  await A.evaluate(()=>claw.play.press());await A.waitForFunction(()=>window.claw.hud.card==='result',null,{timeout:40000});await sl(1500);
  ok('[두 창] 구경: 집게 결과를 B 화면에서도 다시 그림',await B.evaluate(()=>!!claw.play.status().rigs[0].seq||claw.play.status().rigs[0].lights!=='play'));
  await click(A,'.kh-card [data-c=stop]');await sl(1200);
  // 열쇠 기계: A가 희귀 칸(위 줄 해치)을 연다 → B 구경·소식
- await A.evaluate(()=>claw.goMachine(2));await sl(700);await click(A,'.kh-big[data-act=play]');await sl(600);
- await B.evaluate(()=>claw.goMachine(2));await sl(900);
- ok('[두 창] B 화면: 「기다리기 · 가나 뽑는 중」(같은 기계 못 씀)',await B.evaluate(()=>/기다리기 · 가나 뽑는 중/.test(document.querySelector('.kh-todo')?.textContent??'')&&!document.querySelector('.kh-big[data-act=play]')));
+ await A.evaluate(()=>claw.goMachine(13));await sl(700);await click(A,'.kh-big[data-act=play]');await sl(600);
+ await B.evaluate(()=>claw.goMachine(13));await sl(900);
+ ok('[두 창] B 화면: 「열쇠 1은 가나님이 뽑는 중」 + 「옆 빈 열쇠로 →」(같은 기계 못 씀)',await B.evaluate(()=>{const t=[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|');return /열쇠 1은 가나님이 뽑는 중/.test(t)&&/옆 빈 열쇠로/.test(t)&&!document.querySelector('.kh-big[data-act=play]');}));
  ok('[두 창] 기계 위 「가나 뽑는 중」 이름표',await B.evaluate(()=>[...document.querySelectorAll('.kh-tag.busy')].some(e=>/가나 뽑는 중/.test(e.textContent))));
  await B.screenshot({path:`${OUT}/multi-watch-play.png`});
- await B.evaluate(()=>claw.teleport(0,1.0,0));await sl(300);
+ await B.evaluate(()=>claw.teleport(-1.15,-2.3,Math.PI));await sl(300);
  await A.evaluate(()=>{claw.play.bigDown();claw.play.bigUp();});await sl(500);
  await A.evaluate(()=>{claw.play.bigDown();claw.play.keyTo(1.5,1.72);claw.play.bigUp();});await sl(900);
- ok('[두 창] 구경: B 화면 열쇠 칸이 열림(해치)',await B.evaluate(()=>{const c=claw.shop.userData.machines[2].group.userData.cellAt(1,1);return claw.play.status().rigs[2].owner&&c.id==='haechi';}));
+ ok('[두 창] 구경: B 화면 열쇠 칸이 열림(해치)',await B.evaluate(()=>{const c=claw.shop.userData.machines[13].group.userData.cellAt(1,1);return claw.play.status().rigs[13].owner&&c.id==='haechi';}));
  await B.screenshot({path:`${OUT}/multi-watch-drop.png`});
  await A.waitForFunction(()=>window.claw.hud.card==='result',null,{timeout:12000});await sl(700);
  ok('[두 창] B 소식: 「가나님이 … 희귀/특별 인형 …을 뽑았어요」',await B.evaluate(()=>/가나님이 .*(희귀|특별) 인형/.test(document.querySelector('.kh-toast')?.textContent??'')));
  await B.screenshot({path:`${OUT}/multi-notice.png`});
  await click(A,'.kh-card [data-c=stop]');await sl(1200);
- ok('[두 창] A가 그만두면 B 화면 기계 비움',await B.evaluate(()=>!claw.play.status().rigs[2].owner));
+ ok('[두 창] A가 그만두면 B 화면 기계 비움',await B.evaluate(()=>!claw.play.status().rigs[13].owner));
  ok('[두 창] 페이지 오류 0',!A.errs.length&&!B.errs.length,[...A.errs,...B.errs].join(' / '));
  await ctx.close();
 }
@@ -267,7 +296,7 @@ async function serverRun(){
   ok('[서버] 상태 알약 「1서버 · 👥 2/30」',await A.evaluate(()=>/1서버 · .*2\/30/.test(document.querySelector('.kh-pill-t').textContent)));
   const health=await (await fetch(`http://127.0.0.1:${sport}/health`)).json();ok('[서버] /health 인형가게 2명',health.servers?.claw?.[0]?.count===2,JSON.stringify(health.servers?.claw));
   await A.evaluate(()=>{claw.seen(true);claw.goMachine(0);});await sl(700);await click(A,'.kh-big[data-act=play]');await sl(600);await A.evaluate(()=>claw.play.aim(-.1,.05));await sl(900);
-  const rb=await B.evaluate(()=>claw.play.status().rigs[0]);ok('[서버] 구경: 숲속 기계 집게가 A 자리로',!!rb.owner&&Math.abs(rb.x+.1)<.05,JSON.stringify(rb));
+  const rb=await B.evaluate(()=>claw.play.status().rigs[0]);ok('[서버] 구경: 집게 1 집게가 A 자리로',!!rb.owner&&Math.abs(rb.x+.1)<.05,JSON.stringify(rb));
   await B.evaluate(()=>claw.goMachine(0));await sl(900);await B.screenshot({path:`${OUT}/server-watch.png`});
   // 채팅
   await B.evaluate(()=>window.dispatchEvent(new CustomEvent('claw:chat-send',{detail:{text:'구경 중이에요'}})));await sl(800);

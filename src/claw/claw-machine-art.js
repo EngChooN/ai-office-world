@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {MACHINES,SHOP_COLORS} from './claw-palette.js';
-import {plushGeometry,plushSize,plushMaterial,plushLineMaterial,PLUSH_IDS} from './claw-plush.js';
+import {plushGeometry,plushSize,plushMaterial,plushLineMaterial,OUR_PLUSH_IDS} from './claw-plush.js';
 import {guestSize} from './claw-guest.js';
 
 // ── 치수(월드개발과 맞출 기준값, m) ──
@@ -49,16 +49,75 @@ function machineLine(){if(lineMat)return lineMat;const m=new THREE.MeshBasicMate
  m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed+=normalize(normal)*.008;');};m.customProgramCacheKey=()=>'claw-machine-line';m.userData.shared=true;return lineMat=m;}
 function canvasTex(w,h,draw){if(typeof document==='undefined')return null;
  const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;}
-// 집게 그림(간판 왼쪽 표시)
-function clawGlyph(g,x,y,s,color){g.strokeStyle=color;g.lineWidth=s*.12;g.lineCap='round';g.beginPath();g.moveTo(x,y-s*.6);g.lineTo(x,y-s*.15);g.stroke();
- g.fillStyle=color;g.beginPath();g.arc(x,y-s*.1,s*.16,0,Math.PI*2);g.fill();
- for(const k of [-1,1]){g.beginPath();g.moveTo(x+k*s*.08,y-s*.05);g.quadraticCurveTo(x+k*s*.42,y+s*.15,x+k*s*.18,y+s*.5);g.stroke();}
- g.beginPath();g.moveTo(x,y);g.lineTo(x,y+s*.45);g.stroke();}
-function signTexture(M){return canvasTex(256,96,(g,w,h)=>{
- g.fillStyle=M.bodyDark;g.fillRect(0,0,w,h);g.fillStyle=M.trim;g.beginPath();g.roundRect(6,6,w-12,h-12,16);g.fill();
- clawGlyph(g,40,46,44,M.bodyDark);
- g.fillStyle=M.bodyDark;g.font=`900 34px ${FONT}`;g.textBaseline='middle';g.fillText(M.name,72,38);
- g.fillStyle=M.body;g.font=`700 18px ${FONT}`;g.fillText(M.sub,74,70);});}
+// ── 간판 한 장 모으기(11-23 v4 §3-4·§6: 이름판·번호판 ≤ 2장). 기계 16대 간판 + 서는 자리 바닥 번호판을 2048×1024 한 장에 그린다.
+// 한 칸 512×192(집게·봉·열쇠 간판 8:3, 타이머 이름판은 위 512×128 = 4:1). 아래 줄(y 768~)은 바닥 번호판 128×128 × 16.
+// 간판 = 왼쪽 큰 번호(글자 높이 ≥ 0.12m, 4m에서 읽힘) · 가운데 종류 그림·「종류」·별명 · 오른쪽 대표 인형 그림(인형 작은 그림이 오면 setSignThumbs로 채움).
+// 재질 하나(카툰으로 바꾸지 않는 빛나는 판)를 16대가 같이 쓴다.
+export const SIGN_ATLAS=Object.freeze({w:2048,h:1024,cw:512,ch:192,cols:4,badge:128,badgeY:768});
+const SIGN_KIND=Object.freeze({claw:'집게',bridge:'봉',timer:'타이머',key:'열쇠'});
+// 대표 인형(간판 그림): 설계 v4 §3-2 표. 열쇠는 표에 없어 기계마다 다른 희귀·특별 인형(추천안·대표 미확인)
+const SIGN_REP=Object.freeze({'key-1':'haechi','key-2':'dongdong-santa','key-3':'dongdong-office'});
+export const signRep=M=>SIGN_REP[M.id]??(M.pool?.[0]??'').replace(/^box-/,'');
+const numberOf=M=>(String(M.name).match(/\d+$/)??[''])[0];
+// 종류 그림(간판 가운데): 집게 = 3발, 봉 = 2발 + 봉 두 개, 타이머 = 시계, 열쇠 = 열쇠
+function kindGlyph(g,kind,x,y,s,color){g.save();g.strokeStyle=color;g.fillStyle=color;g.lineCap='round';g.lineJoin='round';g.lineWidth=s*.12;
+ if(kind==='claw'||kind==='bridge'){g.beginPath();g.moveTo(x,y-s*.6);g.lineTo(x,y-s*.2);g.stroke();
+  if(kind==='claw'){g.beginPath();g.arc(x,y-s*.1,s*.16,0,Math.PI*2);g.fill();
+   for(const k of [-1,1]){g.beginPath();g.moveTo(x+k*s*.08,y-s*.05);g.quadraticCurveTo(x+k*s*.42,y+s*.15,x+k*s*.18,y+s*.5);g.stroke();}
+   g.beginPath();g.moveTo(x,y);g.lineTo(x,y+s*.45);g.stroke();}
+  else{g.fillRect(x-s*.3,y-s*.24,s*.6,s*.16); // 2발: 가로 머리 + 곧은 팔 둘 + 안으로 꺾인 발끝
+   for(const k of [-1,1]){g.beginPath();g.moveTo(x+k*s*.26,y-s*.1);g.lineTo(x+k*s*.3,y+s*.3);g.lineTo(x+k*s*.14,y+s*.42);g.stroke();}
+   g.lineWidth=s*.09;for(const k of [-1,1]){g.beginPath();g.arc(x+k*s*.36,y+s*.62,s*.07,0,Math.PI*2);g.stroke();}}}
+ else if(kind==='timer'){g.beginPath();g.arc(x,y,s*.42,0,Math.PI*2);g.stroke();g.beginPath();g.moveTo(x,y);g.lineTo(x,y-s*.28);g.moveTo(x,y);g.lineTo(x+s*.2,y+s*.1);g.stroke();g.fillRect(x-s*.08,y-s*.62,s*.16,s*.1);}
+ else{g.lineWidth=s*.13;g.beginPath();g.arc(x-s*.22,y,s*.2,0,Math.PI*2);g.stroke();g.fillRect(x-s*.02,y-s*.06,s*.6,s*.12);g.fillRect(x+s*.38,y+s*.06,s*.09,s*.18);g.fillRect(x+s*.22,y+s*.06,s*.09,s*.13);}
+ g.restore();}
+const fitFont=(g,text,maxW,px,weight)=>{let p=px;do{g.font=`${weight} ${p}px ${FONT}`;if(g.measureText(text).width<=maxW)break;p-=2;}while(p>12);return p;};
+function drawSign(g,M,x0,y0,thumb){
+ const timer=M.kind==='timer',w=SIGN_ATLAS.cw,h=timer?128:SIGN_ATLAS.ch,pad=timer?6:10;
+ g.save();g.translate(x0,y0);g.clearRect(0,0,w,SIGN_ATLAS.ch);
+ g.fillStyle=M.bodyDark;g.fillRect(0,0,w,h);g.fillStyle=M.trim;g.beginPath();g.roundRect(pad,pad,w-pad*2,h-pad*2,timer?18:28);g.fill();
+ // 큰 번호(왼쪽): 집게·봉·열쇠 160px 칸에 130px 글자(숫자 높이 약 0.15m), 타이머는 120px 칸에 140px 글자(약 0.13m)
+ const bs=timer?h-8:h-32,bx=timer?6:18,by=timer?4:16;
+ g.fillStyle=M.bodyDark;g.beginPath();g.roundRect(bx,by,bs,bs,timer?16:24);g.fill();
+ g.fillStyle='#fffaf0';g.textAlign='center';g.textBaseline='middle';g.font=`900 ${timer?140:130}px ${FONT}`;g.fillText(numberOf(M),bx+bs/2,by+bs/2+(timer?8:8));
+ // 종류 그림·이름·별명(가운데)
+ const tx=bx+bs+14,pic=timer?h-20:128,px=w-pad-12-pic,mid=px-tx-10;
+ kindGlyph(g,M.kind,tx+(timer?18:24),timer?h*.36:58,timer?34:46,M.bodyDark);
+ g.textAlign='left';g.fillStyle=M.bodyDark;fitFont(g,SIGN_KIND[M.kind],mid-(timer?44:58),timer?40:50,900);g.fillText(SIGN_KIND[M.kind],tx+(timer?42:56),timer?h*.36:60);
+ g.fillStyle=M.body;fitFont(g,M.sub,mid,timer?28:36,800);g.fillText(M.sub,tx,timer?h*.76:136);
+ // 대표 인형 그림(오른쪽): 밝은 원 + 희귀도 테. 작은 그림이 아직 없으면 종류 그림
+ const cx=px+pic/2,cy=h/2,r=pic/2;g.fillStyle='#fffaf0';g.beginPath();g.arc(cx,cy,r,0,Math.PI*2);g.fill();
+ g.lineWidth=timer?5:7;g.strokeStyle=M.accent;g.stroke();
+ if(thumb){g.save();g.beginPath();g.arc(cx,cy,r-4,0,Math.PI*2);g.clip();const k=(r*2.15)/Math.max(thumb.width,thumb.height);g.drawImage(thumb,cx-thumb.width*k/2,cy-thumb.height*k/2+r*.06,thumb.width*k,thumb.height*k);g.restore();}
+ else kindGlyph(g,M.kind,cx,cy,r*.9,M.body);
+ g.restore();}
+function drawBadge(g,M,i){const s=SIGN_ATLAS.badge,x=i*s,y=SIGN_ATLAS.badgeY;g.clearRect(x,y,s,s);
+ g.fillStyle=M.bodyDark;g.beginPath();g.roundRect(x+4,y+4,s-8,s-8,26);g.fill();g.strokeStyle=M.trim;g.lineWidth=6;g.stroke();
+ g.fillStyle='#fffaf0';g.textAlign='center';g.textBaseline='middle';g.font=`900 96px ${FONT}`;g.fillText(numberOf(M),x+s/2,y+s/2+6);}
+let atlas=null;
+export function signAtlas(){
+ if(atlas)return atlas;if(typeof document==='undefined')return null;
+ const c=document.createElement('canvas');c.width=SIGN_ATLAS.w;c.height=SIGN_ATLAS.h;const g=c.getContext('2d');
+ const slot=i=>[(i%SIGN_ATLAS.cols)*SIGN_ATLAS.cw,Math.floor(i/SIGN_ATLAS.cols)*SIGN_ATLAS.ch];
+ MACHINES.forEach((M,i)=>{const [x,y]=slot(i);drawSign(g,M,x,y,null);drawBadge(g,M,i);});
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
+ const material=new THREE.MeshStandardMaterial({map:tex,emissive:new THREE.Color('#ffffff'),emissiveMap:tex,emissiveIntensity:.25,roughness:.7,name:'claw-sign-atlas'});material.userData.shared=true;
+ const badgeMat=new THREE.MeshStandardMaterial({map:tex,roughness:.8,polygonOffset:true,polygonOffsetFactor:-2,name:'claw-badge-atlas'});badgeMat.userData.shared=true;
+ // 칸 → uv 네모 [u0,v0,u1,v1]
+ const uvOf=i=>{const M=MACHINES[i],[x,y]=slot(i),h=M.kind==='timer'?128:SIGN_ATLAS.ch;return [x/SIGN_ATLAS.w,1-(y+h)/SIGN_ATLAS.h,(x+SIGN_ATLAS.cw)/SIGN_ATLAS.w,1-y/SIGN_ATLAS.h];};
+ const badgeUv=i=>{const s=SIGN_ATLAS.badge;return [i*s/SIGN_ATLAS.w,1-(SIGN_ATLAS.badgeY+s)/SIGN_ATLAS.h,(i+1)*s/SIGN_ATLAS.w,1-SIGN_ATLAS.badgeY/SIGN_ATLAS.h];};
+ // 대표 인형 작은 그림 채우기: thumb(id) = 그림 주소(data URL) 또는 그림. 다 그려지면 텍스처를 한 번 올림
+ const setThumbs=thumb=>{MACHINES.forEach((M,i)=>{const src=thumb(signRep(M));if(!src)return;const [x,y]=slot(i);
+  const put=img=>{drawSign(g,M,x,y,img);tex.needsUpdate=true;};
+  if(typeof src==='string'){const img=new Image();img.onload=()=>put(img);img.src=src;}else put(src);});};
+ return atlas={canvas:c,texture:tex,material,badgeMat,uvOf,badgeUv,setThumbs};
+}
+/** 평면 형상의 uv를 아틀라스 네모로 */
+export function atlasPlane(w,h,[u0,v0,u1,v1]){const g=new THREE.PlaneGeometry(w,h),uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)?u1:u0,uv.getY(i)?v1:v0);return g;}
+/** 기계 앞 간판(아틀라스 한 칸). 없으면(노드 시험) 빈 묶음 */
+export function signMesh(M,w,h){const A=signAtlas(),i=MACHINES.findIndex(m=>m.id===M.id);if(!A||i<0)return null;
+ const m=new THREE.Mesh(atlasPlane(w,h,A.uvOf(i)),A.material);m.name='기계 간판';return m;}
+export const setSignThumbs=thumb=>signAtlas()?.setThumbs(thumb);
 
 // 손가락 각(rad): open 0 → shut, 1 → wide. 끝이 가운데에서 떨어진 거리가 물리 집게발 끝(claw-physics CLAW_RIG, 닫힘 −0.04 ~ 최대 1.0)과 같게 맞춘 값
 export const FINGER_ANGLE=Object.freeze({shut:.3,wide:-.57});
@@ -97,7 +156,7 @@ function buildClaw(mats){
 
 // ── 기계 한 대. theme = MACHINES의 id(forest·city·star) 또는 같은 꼴의 객체.
 // 반환 group.userData: machine(색·이름), claw(set·state·tipWorld), setLights(mode), update(dt), spots(기계 좌표), pile(fillPile 결과)
-export function buildClawMachine(theme='forest',{toonify=null}={}){
+export function buildClawMachine(theme='claw-1',{toonify=null}={}){
  const M=typeof theme==='string'?MACHINES.find(m=>m.id===theme):theme;if(!M)throw new Error(`기계 없음: ${theme}`);
  const C=CLAW,S=SHOP_COLORS,W=C.width,D=C.depth,hw=W/2,hd=D/2,root=new THREE.Group();root.name=`인형뽑기 기계:${M.id}`;
  const mats={body:std(M.body),top:std(M.body),dark:std(M.bodyDark),trim:std(M.trim),accent:std(M.accent,{roughness:.5}),metal:std(S.metal,{roughness:.35,metalness:.3}),
@@ -156,10 +215,8 @@ export function buildClawMachine(theme='forest',{toonify=null}={}){
   // 유리 반사 줄(흰 사선 두 줄): 유리가 있다는 걸 보이게
   const hl=new THREE.Mesh(new THREE.PlaneGeometry(.035,gh*.8),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:.35,depthWrite:false}));
   hl.position.set(hw-.18,gy+.02,hd-.015);hl.rotation.z=-.35;hl.renderOrder=3;const hl2=hl.clone();hl2.scale.x=.5;hl2.position.x=hw-.12;late.push(hl,hl2);}
- // 간판 글자판(앞)
- const tex=signTexture(M);
- if(tex){const sign=new THREE.Mesh(new THREE.PlaneGeometry(W*.86,W*.86*96/256),new THREE.MeshStandardMaterial({map:tex,emissive:new THREE.Color('#ffffff'),emissiveMap:tex,emissiveIntensity:.25,roughness:.7}));
-  sign.position.set(0,C.glassTop+topH/2,hd+.004);sign.name='기계 간판';root.add(sign);}
+ // 간판 글자판(앞): 16대가 한 장(signAtlas)을 나눠 씀. 카툰으로 바꾸지 않는 빛나는 판이라 toonify 뒤에 붙인다(late)
+ {const sign=signMesh(M,W*.86,W*.86*3/8);if(sign){sign.position.set(0,C.glassTop+topH/2,hd+.004);late.push(sign);}}
  // 뽑기 단추(따로: 누르면 내려감) — 기계 테마 강조색
  const button=new THREE.Mesh(new THREE.CylinderGeometry(.04,.042,.03,16),std('#e8443a',{emissive:new THREE.Color('#e8443a'),emissiveIntensity:.25,roughness:.4}));
  button.position.set(C.panel.button[0],C.panel.top+.025,C.panel.button[2]);button.name='뽑기 단추';root.add(button);
@@ -194,7 +251,7 @@ export function fillPile(machine,ids,{count=14,seed=1,toonify=null,outline=true,
  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)slots.push({x:inner.x[0]+cell[0]*(c+.5),z:inner.z[0]+cell[1]*(r+.5),layer:0});
  for(let r=0;r<rows-1;r++)for(let c=0;c<cols-1;c++)slots.push({x:inner.x[0]+cell[0]*(c+1),z:inner.z[0]+cell[1]*(r+1),layer:1});
  let n=0;
- const ours=new Set(PLUSH_IDS),sizeOf=id=>ours.has(id)?plushSize(id):guestSize(id);
+ const ours=new Set(OUR_PLUSH_IDS),sizeOf=id=>ours.has(id)?plushSize(id):guestSize(id);
  for(const s of slots){if(n>=count)break;const id=ids[Math.floor(rnd()*ids.length)],size=sizeOf(id),r=size*.38;
   const x=s.x+(rnd()-.5)*cell[0]*.3,z=s.z+(rnd()-.5)*cell[1]*.3;if(blocked(x,z,r))continue;
   const y=C.floorY+(s.layer?.09+rnd()*.03:0);
@@ -242,7 +299,7 @@ export function lightController(M,mats){
  return {setLights,update,get mode(){return mode;}};
 }
 // 타이머·열쇠 기계(claw-machines-more.js)가 같은 도우미를 쓴다
-export const machineKit=Object.freeze({builder,machineLine,canvasTex,std,FONT,buildClaw,findMat,mulberry});
+export const machineKit=Object.freeze({builder,machineLine,canvasTex,std,FONT,buildClaw,findMat,mulberry,signMesh});
 // toonify 뒤 바뀐 재질 찾기(불빛 깜빡임은 바뀐 재질에 해야 보인다)
 function findMat(root,name){let m=null;root.traverse(o=>{if(!m&&o.isMesh&&o.name===name)m=o.material;});return m;}
 function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
