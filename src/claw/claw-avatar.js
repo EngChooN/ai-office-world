@@ -1,19 +1,21 @@
 // 인형가게 동동이(월드개발, 2026-11-23). 흡연장 avatar.js와 같은 몸·걸음(공용 link-hiker·realistic-hiker를 고치지 않고 씀)에
-// 옷은 바꾸지 않는다(등산복 동동이 = 허브 카드 outfit 'hike'). 등산 스틱만 숨긴다.
+// 옷은 인형가게 전용 옷(claw-outfits.js, 11-23 대표 피드백: 등산복 말고). 등산 스틱도 숨긴다. outfit = 'hoodie'(기본)|'jacket'|'tee'.
 // 기계 앞 자세(두 손 조작·만세·고개 숙임)는 월드아트 claw-poses.js(11-23): operate(기계 group|null)·cheer()·sigh().
 import * as THREE from 'three';
 import {buildToonHikerGltf} from '../toon/link-hiker.js';
 import {createRealisticHiker} from '../realistic-hiker.js';
 import {loadRig,WALK_SPEED,RUN_MUL,BASE_STRIDE} from '../lounge/avatar.js';
 import {createClawPoser} from './claw-poses.js';
+import {applyClawOutfit,DEFAULT_CLAW_OUTFIT} from './claw-outfits.js';
 export {WALK_SPEED,RUN_MUL};
 
 const flat=()=>0,noSample=()=>({});
-export async function createClawAvatar({rigUrl,toon,name='동동이',id='me'}){
+export async function createClawAvatar({rigUrl,toon,name='동동이',id='me',outfit=DEFAULT_CLAW_OUTFIT}){
  const base=await loadRig(rigUrl);
  const hiker=createRealisticHiker(buildToonHikerGltf(base));
- toon.toonify(hiker.scene,{kind:'character'});
- hiker.scene.traverse(o=>{if(o.isMesh){o.castShadow=!o.userData.outline;o.receiveShadow=!o.userData.noReceiveShadow;}});
+ const wear=k=>{const key=applyClawOutfit(hiker,k);toon.toonify(hiker.scene,{kind:'character'});
+  hiker.scene.traverse(o=>{if(o.isMesh){o.castShadow=!o.userData.outline;o.receiveShadow=!o.userData.noReceiveShadow;}});return key;};
+ let worn=wear(outfit);
  const hidePoles=()=>{for(const p of hiker.props?.poles??[])p.group.visible=false;};hidePoles();
  const root=hiker.scene;root.name=`avatar-${id}`;
  let headBone=null,poser=null;
@@ -25,6 +27,7 @@ export async function createClawAvatar({rigUrl,toon,name='동동이',id='me'}){
   cheer(){(poser??=createClawPoser(a)).cheer();},sigh(){(poser??=createClawPoser(a)).sigh();},
   operate(machine){if(!machine&&!poser)return;(poser??=createClawPoser(a)).operate(machine);},
   get pose(){return poser?.state??null;},
+  get outfit(){return worn;},setOutfit(k){worn=wear(k);return worn;},
   update(dt,{moved=0,running=false}={}){
    const scale=hiker.strideScale??{walk:.22/.72,run:.30/.72},stepLength=BASE_STRIDE*(running?scale.run:scale.walk);
    a.moving=moved>1e-4;a.running=running&&a.moving;a.speed=dt>0?moved/dt:0;

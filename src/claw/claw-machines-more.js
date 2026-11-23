@@ -19,7 +19,10 @@ const themeOf=t=>{const M=typeof t==='string'?MACHINES.find(m=>m.id===t):t;if(!M
 export const TIMER=Object.freeze({
  height:1.8,                                   // 이름판 위 끝
  display:Object.freeze({w:CLAW.width*.84,h:CLAW.width*.84*144/384,y:1.46,digitH:CLAW.width*.84*92/384}),   // 숫자판(앞면, 위 간판 상자 자리). 숫자 글자 높이 digitH ≈ 0.19m = 기계 폭 20%
- stage:Object.freeze({x:.12,z:-.04,r:.11,top:CLAW.floorY+.16}), // 인형 올린 단(윗면 높이)
+ stage:Object.freeze({x:0,z:-.06,r:.13,top:CLAW.floorY+.18}), // 인형 올린 단(윗면 높이). 11-23: 집게 없이 문으로 꺼내므로 가운데
+ // 잠금 유리문(11-23 대표 피드백: 10.00이면 문이 열려 인형을 꺼냄). 앞 유리 = 왼쪽 경첩 문, 오른쪽 기둥에 잠금 칸(불빛: 잠김 빨강·아까움 노랑 깜빡·열림 초록)
+ door:Object.freeze({openAngle:1.6,rattle:.09,lockY:.92}),
+ out:Object.freeze([-.24,CLAW.panel.top+.005,CLAW.depth/2+.1]),       // 꺼낸 인형이 놓이는 곳(조작대 위, 문 바로 앞, 큰 단추 왼쪽)
  button:Object.freeze([0,.5,.56]),             // 큰 단추(시작/멈춤) 자리
  // 조작 중 카메라 추천값: 숫자판과 단이 함께 보이게(집게 기계보다 낮고 앞에서)
  camera:Object.freeze({pos:[0,1.65,1.8],look:[0,1.05,0],fov:42,portrait:Object.freeze({pos:[0,1.85,2.2],fov:55})}),
@@ -77,9 +80,9 @@ function machineMats(M){const S=SHOP_COLORS;return {body:std(M.body),top:std(M.b
  bulbA:std(M.light,{emissive:new THREE.Color(M.light),emissiveIntensity:.6}),bulbB:std(M.accent,{emissive:new THREE.Color(M.accent),emissiveIntensity:.6}),
  strip:std('#fffaf0',{emissive:new THREE.Color(M.light),emissiveIntensity:.8}),back:std(M.trim,{emissive:new THREE.Color(M.light),emissiveIntensity:.35})};}
 const glassMat=()=>new THREE.MeshStandardMaterial({color:SHOP_COLORS.glass,roughness:.1,metalness:0,transparent:true,opacity:.1,depthWrite:false,side:THREE.DoubleSide,name:'claw-glass'});
-function glassBox(root,late,{chuteGuard=true,glassTop=CLAW.glassTop}={}){
+function glassBox(root,late,{chuteGuard=true,glassTop=CLAW.glassTop,front=true}={}){
  const C={...CLAW,glassTop},W=C.width,D=C.depth,hw=W/2,hd=D/2,ch=C.chute,gh=C.glassTop-C.floorY,gy=(C.glassTop+C.floorY)/2,g=[];
- g.push(new THREE.PlaneGeometry(W-.05,gh).translate(0,gy,hd-.02));
+ if(front)g.push(new THREE.PlaneGeometry(W-.05,gh).translate(0,gy,hd-.02));
  g.push(new THREE.PlaneGeometry(D-.05,gh).rotateY(Math.PI/2).translate(-hw+.02,gy,0),new THREE.PlaneGeometry(D-.05,gh).rotateY(Math.PI/2).translate(hw-.02,gy,0));
  if(chuteGuard){const gx=(ch.x[0]+ch.x[1])/2,gz=(ch.z[0]+ch.z[1])/2,cw=ch.x[1]-ch.x[0],cd=ch.z[1]-ch.z[0],gy2=C.floorY+ch.guard/2;
   g.push(new THREE.PlaneGeometry(cw,ch.guard).translate(gx,gy2,ch.z[0]),new THREE.PlaneGeometry(cd,ch.guard).rotateY(Math.PI/2).translate(ch.x[1],gy2,gz));}
@@ -105,29 +108,38 @@ function plushAt(id,{toonify,guestObject,scale=1}){
  const m=new THREE.Mesh(geo.color,plushMaterial());m.castShadow=true;m.receiveShadow=true;m.scale.setScalar(s);g.add(m);toonify?.(g,{kind:'character'});
  const l=new THREE.Mesh(geo.line,plushLineMaterial());l.userData.outline=true;l.scale.setScalar(s);l.name='outline';g.add(l);g.userData.plushId=id;return g;}
 
-// ── 타이머 기계. 반환 group.userData: kind 'timer', machine, height, claw(집게 set — 단 위에서 시작), setTimer({ms|text,state,dim}), setBand(conf), setButton('start'|'stop'|'off'),
-//  setPrize(id), prize(지금 단 위 인형), stage(단 윗면 가운데, 기계 좌표), setLights, update(dt), press(k), spots
+// ── 타이머 기계. 반환 group.userData: kind 'timer', machine, height, setTimer({ms|text,state,dim}), setBand(conf), setButton('start'|'stop'|'off'),
+//  setPrize(id), prize(지금 단 위 인형), stage(단 윗면 가운데, 기계 좌표), setDoor({open,rattle,lock}), door(상태), setLights, update(dt), press(k), spots(out = 꺼낸 인형 자리)
+//  11-23(대표 피드백): 집게 없음. 유리 상자 안 = 단 위 인형 + 잠긴 앞 유리문. 성공이면 잠금이 풀리고 문이 열려 인형을 꺼낸다(연출 순서는 claw-play.js).
 export function buildTimerMachine(theme='city',{toonify=null,guestObject=null,prize=null}={}){
  const M=themeOf(theme),C=CLAW,T=TIMER,W=C.width,D=C.depth,hw=W/2,hd=D/2,root=new THREE.Group();root.name=`인형뽑기 기계:${M.id}`;
  const mats=machineMats(M),b=builder(),late=[];
  lowerBody(b,M,{bulbs:'crest'});
  // 위 간판 상자 위 이름판 받침(숫자판이 간판 자리를 쓰므로 이름은 위로)
  b.rbox('dark',W*.78,T.height-C.height,.16,.03,0,(C.height+T.height)/2,.1);
- // 숫자판 테(금색)·안쪽 바닥판·뒷벽·레일
+ // 숫자판 테(금색)·안쪽 바닥판·뒷벽
  b.rbox('gold',T.display.w+.03,T.display.h+.03,.012,.012,0,T.display.y,hd+.002);
  b.box('floor',W-.06,.02,D-.06,0,C.floorY-.005,0);b.box('back',W-.07,C.glassTop-C.floorY-.02,.012,0,(C.glassTop+C.floorY)/2,-hd+.04);
- for(const sx of [-1,1])b.box('metal',.02,.02,D-.08,sx*(hw-.05),C.railY,0);
  // 단: 줄무늬 원기둥 + 윗판(인형이 앉는 곳)
  const st=T.stage;for(let k=0;k<4;k++)b.cyl(k%2?'trim':'accent',st.r,st.r,(st.top-C.floorY)/4,st.x,C.floorY+(k+.5)*(st.top-C.floorY)/4,st.z,{seg:20});
  b.cyl('dark',st.r+.012,st.r+.012,.014,st.x,st.top-.007,st.z,{seg:20});
- // 인형 나가는 구멍
- const ch=C.chute;b.box('chute',ch.x[1]-ch.x[0],.03,ch.z[1]-ch.z[0],(ch.x[0]+ch.x[1])/2,C.floorY+.002,(ch.z[0]+ch.z[1])/2);
+ // 잠금 칸(오른쪽 앞 기둥, 문 걸쇠가 들어가는 곳)
+ const ly=T.door.lockY;b.rbox('dark',.06,.13,.05,.01,hw-.03,ly,hd+.005);b.box('gold',.03,.016,.02,hw-.05,ly+.035,hd+.03);
  b.box('strip',W-.12,.015,.03,0,C.glassTop-.03,-hd+.08);
  b.build(mats,root,{outline:new Set(['body','top','dark'])});
- glassBox(root,late);
- const claw=buildClaw(mats);root.add(claw.root);claw.root.remove(claw.dot);
+ glassBox(root,late,{chuteGuard:false,front:false});
+ // 앞 유리문: 경첩(왼쪽 앞 기둥) 묶음 = 유리 + 테 + 손잡이·걸쇠. 열면 바깥(+Z)으로 돈다
+ const gh=C.glassTop-C.floorY-.02,gw=W-.08,gy=(C.glassTop+C.floorY)/2,hinge=new THREE.Group();hinge.name='잠금 유리문';hinge.position.set(-hw+.04,0,hd-.015);root.add(hinge);
+ const glassD=new THREE.Mesh(new THREE.PlaneGeometry(gw-.03,gh-.03),glassMat());glassD.position.set(gw/2,gy,0);glassD.renderOrder=2;hinge.add(glassD);
+ const fb=builder();fb.box('trim',gw,.022,.022,gw/2,gy+gh/2,0);fb.box('trim',gw,.022,.022,gw/2,gy-gh/2,0);fb.box('trim',.022,gh,.022,0,gy,0);fb.box('trim',.022,gh,.022,gw,gy,0);
+ fb.rbox('gold',.022,.12,.03,.01,gw-.045,ly,.022);fb.box('metal',.05,.014,.014,gw+.005,ly+.035,.008);
+ const frame=new THREE.Group();fb.build(mats,frame,{outline:new Set(['trim'])});hinge.add(frame);
+ // 잠금 불빛(빛 계산 없는 작은 공, 상태 색은 setDoor·update가 바꿈)
+ const led=new THREE.Mesh(new THREE.SphereGeometry(.014,10,8),new THREE.MeshBasicMaterial({color:'#ff4a4a',toneMapped:false}));led.position.set(hw-.03,ly-.03,hd+.033);led.name='잠금 불빛';late.push(led);
  const button=bigButton(root,T.button,'#3fbf6a',.062);button.name='시작 단추';
- finish(root,mats,toonify,late);claw.set({x:st.x,z:st.z,drop:0,open:.21});
+ finish(root,mats,toonify,late);
+ // 유리 반짝임 줄은 문과 같이 돌게 문 묶음으로 옮김
+ for(const o of late)if(o!==led&&o.isMesh&&o.material?.isMeshBasicMaterial&&o.position.z>hd-.03){root.remove(o);o.position.x-=hinge.position.x;o.position.z=.004;hinge.add(o);}
  // 이름판(앞)·숫자판(앞) — 빛나는 판이라 카툰 재질로 바꾸지 않는다
  const sign=timerSign(M);if(sign){const m=new THREE.Mesh(new THREE.PlaneGeometry(W*.72,W*.72/4),new THREE.MeshStandardMaterial({map:sign,emissive:new THREE.Color('#ffffff'),emissiveMap:sign,emissiveIntensity:.25,roughness:.7}));
   m.position.set(0,(C.height+T.height)/2,.181);m.name='기계 간판';root.add(m);}
@@ -149,14 +161,22 @@ export function buildTimerMachine(theme='city',{toonify=null,guestObject=null,pr
  // 단 위 인형
  let prizeObj=null;const stageTop=new THREE.Vector3(st.x,st.top,st.z);
  const setPrize=id=>{if(prizeObj){root.remove(prizeObj);prizeObj=null;}if(!id)return null;prizeObj=plushAt(id,{toonify,guestObject});prizeObj.position.copy(stageTop);prizeObj.rotation.y=-.25;prizeObj.name=`단 위 인형:${id}`;root.add(prizeObj);return prizeObj;};
+ // 꺼낸 인형을 단 인형 자리에서 떼어 냄(물체는 그대로 둠 — 연출 쪽이 조작대 위에 두었다가 치움)
+ const detachPrize=()=>{const o=prizeObj;prizeObj=null;return o;};
  setPrize(prize??resolvePool(M.pool??[],[])[0]??null);
  const lights=lightController(M,mats);
- const update=dt=>{lights.update(dt);if(S.state==='win'&&S.t<1.8){S.t+=dt;redraw();}else S.t+=dt;};
+ // 문: open 0(닫힘)~1(활짝), rattle = 덜컥 흔들림 각(라디안, 닫힌 채), lock = 'locked'|'near'|'open'|'miss'(miss = 빨강 깜빡)
+ const DS={open:0,rattle:0,lock:'locked',t:0},LED={locked:'#ff4a4a',miss:'#ff4a4a',near:'#ffd23a',open:'#3dff7a'};
+ const paintLed=()=>{const blink=(DS.lock==='near'||DS.lock==='miss')&&Math.floor(DS.t/.12)%2===1;led.material.color.set(blink?'#3a2020':LED[DS.lock]??LED.locked);};
+ const setDoor=({open=DS.open,rattle=0,lock=DS.lock}={})=>{if(lock!==DS.lock)DS.t=0;DS.open=open;DS.rattle=rattle;DS.lock=lock;hinge.rotation.y=-(open*T.door.openAngle)-rattle;paintLed();};
+ setDoor({open:0,lock:'locked'});
+ const update=dt=>{lights.update(dt);if(S.state==='win'&&S.t<1.8){S.t+=dt;redraw();}else S.t+=dt;DS.t+=dt;paintLed();};
  const press=(k=1)=>{button.position.y=C.panel.top+.025-.012*k;};
- root.userData={kind:'timer',machine:M,height:T.height,claw,setTimer,setBand,setButton,setPrize,get prize(){return prizeObj;},stage:stageTop,
+ root.userData={kind:'timer',machine:M,height:T.height,setTimer,setBand,setButton,setPrize,detachPrize,get prize(){return prizeObj;},stage:stageTop,setDoor,door:DS,
   setLights:lights.setLights,update,press,mats,camera:T.camera,timer:{get text(){return S.text;},get state(){return S.state;}},
   spots:{stand:new THREE.Vector3(0,0,C.stand.z),button:new THREE.Vector3(T.button[0],C.panel.top+.04,T.button[2]),coin:new THREE.Vector3(...C.panel.coin).setZ(hd+.02),
-   door:new THREE.Vector3(C.door[0],C.door[1],hd+.03),display:new THREE.Vector3(0,T.display.y,hd+.01),sign:new THREE.Vector3(0,T.height+.15,0)},pile:null};
+   door:new THREE.Vector3(C.door[0],C.door[1],hd+.03),display:new THREE.Vector3(0,T.display.y,hd+.01),sign:new THREE.Vector3(0,T.height+.15,0),
+   out:new THREE.Vector3(...T.out),lock:new THREE.Vector3(hw-.03,ly,hd+.03)},pile:null};
  return root;
 }
 

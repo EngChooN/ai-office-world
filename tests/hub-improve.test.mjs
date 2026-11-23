@@ -160,7 +160,7 @@ test('체험 5칸(등산·흡연장·크리스마스·인형뽑기·다음 체�
  assert.deepEqual(all.map(e=>e.id),['hiking','smoking','christmas','claw','next']);
  for(const e of all){assert.ok(ART[e.art],e.id);assert.ok(MAP_POS[e.id],e.id);assert.match(e.color,/^#[0-9a-f]{6}$/);assert.ok(hasIcon(e.icon),e.icon);}
  for(const e of EXPERIENCES){assert.equal(e.feats.length,3);for(const [ic] of e.feats)assert.ok(hasIcon(ic),ic);}
- for(const o of ['hike','office','santa'])assert.match(dongdong({outfit:o}),/^<svg class="dd/);
+ for(const o of ['hike','office','santa','hoodie'])assert.match(dongdong({outfit:o}),/^<svg class="dd/);
  assert.equal(dongdong({outfit:'??'}),dongdong({outfit:'hike'}));
 });
 test('허브 화면에는 이모지·일시정지가 없다', ()=>{

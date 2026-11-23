@@ -16,6 +16,9 @@ export function createClawAudio({muted=false,volume=1,win=globalThis.window}={})
   bump:()=>tone({f:140,f2:90,type:'square',dur:.07,gain:.12}),
   down:()=>tone({f:520,f2:300,type:'sawtooth',dur:1.0,gain:.05,attack:.05}),
   grab:()=>{tone({f:180,f2:120,type:'square',dur:.09,gain:.16});tone({f:90,type:'triangle',dur:.12,gain:.2,at:.04});},
+  // 타이머 문(11-23): 철컥 풀림·덜컥 흔들림
+  unlock:()=>{tone({f:900,f2:600,type:'square',dur:.05,gain:.12});tone({f:420,f2:260,type:'square',dur:.08,gain:.14,at:.07});},
+  rattle:()=>tone({f:160,f2:110,type:'square',dur:.06,gain:.12}),
   slip:()=>tone({f:600,f2:180,type:'triangle',dur:.35,gain:.16}),
   chute:()=>tone({f:300,f2:120,type:'triangle',dur:.25,gain:.18}),
   win:()=>[784,988,1175,1568].forEach((f,i)=>tone({f,type:'triangle',dur:.22,gain:.2,at:i*.11})),

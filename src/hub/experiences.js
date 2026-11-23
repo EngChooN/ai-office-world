@@ -12,7 +12,7 @@ export const EXPERIENCES=[
   color:'#2f7a52',dark:'#1d5536',soft:'#dcebe1',icon:'c-exp-christmas',outfit:'santa',feats:[['x-tree','트리 꾸미기'],['x-sled','눈썰매'],['x-snowball','눈싸움']],record:null},
  // 11-23 온라인 인형뽑기(MVP). 표지·특징 아이콘은 월드아트 인형뽑기 아이콘(c-exp-claw·k-claw·k-dex·k-coin)
  {id:'claw',path:'claw/',title:'온라인 인형뽑기',place:'동동이 인형가게',desc:'매일 받는 무료 코인으로 집게를 움직여 인형을 뽑고 도감을 채워요',tags:['혼자·구경','무료 코인'],art:'arcade',
-  color:'#d94a7c',dark:'#a8325c',soft:'#f9e0ea',icon:'c-exp-claw',outfit:'hike',feats:[['k-claw','집게 뽑기'],['k-dex','인형 도감'],['k-coin','매일 코인']],
+  color:'#d94a7c',dark:'#a8325c',soft:'#f9e0ea',icon:'c-exp-claw',outfit:'hoodie',feats:[['k-claw','집게 뽑기'],['k-dex','인형 도감'],['k-coin','매일 코인']],
   record:storage=>{try{const s=JSON.parse(storage?.getItem('claw-world:v1')??'null');const n=s&&s.dex?Object.keys(s.dex).length:0;return n?`도감 ${n}종`:null;}catch{return null;}}}
 ];
 // 늘 맨 뒤에 남는 「다음 체험 준비 중」 자리. 누르면 의견 보내기(가 보고 싶은 곳)로 이어진다. 체험이 늘면 EXPERIENCES에 한 줄 더하고 이 자리는 그대로.

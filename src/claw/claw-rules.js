@@ -110,8 +110,8 @@ export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.
   if(pityOn('claw',T))pity=`${P}번 연달아 못 뽑으면 다음 한 판은 힘센 집게(꼭 잡히는 건 아니에요)`;}
  else if(kind==='timer'){const c=T.timer,t=c.targetSec.toFixed(2),lo=(c.targetSec-c.nearWinSec).toFixed(2),hi=(c.targetSec+c.nearWinSec).toFixed(2);
   lines.push('「▶ 시작」을 누르면 숫자가 0.01초씩 올라가요. 「✋ 멈춤」을 누른 순간 숫자가 멈춰요',
-   c.okWinSec>0?`${(c.targetSec-c.okWinSec).toFixed(2)}~${(c.targetSec+c.okWinSec).toFixed(2)}에 멈추면 성공`:`화면 숫자가 딱 ${t}일 때만 성공`,
-   `${lo}~${hi}(${t} 빼고)는 들었다 놓치는 아까움, 그 밖이나 ${c.maxSec.toFixed(2)}를 넘기면 실패`);
+   (c.okWinSec>0?`${(c.targetSec-c.okWinSec).toFixed(2)}~${(c.targetSec+c.okWinSec).toFixed(2)}에 멈추면 성공`:`화면 숫자가 딱 ${t}일 때만 성공`)+' — 잠긴 유리문이 열리고 인형을 꺼내요',
+   `${lo}~${hi}(${t} 빼고)는 문이 덜컥하다 닫히는 아까움, 그 밖이나 ${c.maxSec.toFixed(2)}를 넘기면 실패`);
   if(pityOn('timer',T))pity=`${P}번 연달아 실패하면 다음 판은 성공 칸이 ±${c.pityWinSec.toFixed(2)}초 넓어져요`;}
  else{const c=T.key;
   lines.push(`큰 단추를 누르고 있으면 열쇠가 오른쪽으로 가요. 떼면 그 자리에 멈춰요`,`다시 누르고 있으면 위로 가요. 떼면 열쇠를 꽂아요`,

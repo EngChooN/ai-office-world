@@ -29,7 +29,13 @@ test('타이머 기계: 숫자판 = 기계 폭 84%·숫자 ≈ 폭 20%, 판정�
  assert.ok(Math.abs(U.prize.position.y-TIMER.stage.top)<1e-9,'인형이 단 윗면에 앉음');
  const st=TIMER.stage,hw=CLAW.width/2-.05,hd=CLAW.depth/2-.05;assert.ok(Math.abs(st.x)+st.r<hw&&Math.abs(st.z)+st.r<hd,'단이 유리 안');
  const c=CLAW.chute;assert.ok(st.x-st.r>c.x[1]||st.z+st.r<c.z[0],'단이 구멍과 안 겹침');
- assert.ok(Math.abs(U.claw.state.x-st.x)<1e-9&&Math.abs(U.claw.state.z-st.z)<1e-9,'집게가 단 위에서 시작');
+ // 11-23 대표 피드백: 타이머 기계는 집게 없이 잠금 유리문으로 꺼냄
+ assert.equal(U.claw,undefined,'집게 없음');let clawParts=0;m.traverse(o=>{if(/집게/.test(o.name))clawParts++;});assert.equal(clawParts,0);
+ const hinge=m.getObjectByName('잠금 유리문');assert.ok(hinge);assert.equal(U.door.lock,'locked');assert.ok(Math.abs(hinge.rotation.y)<1e-9);
+ U.setDoor({open:1,lock:'open'});assert.ok(hinge.rotation.y<-1.2,'문이 바깥으로 활짝');assert.equal(U.door.lock,'open');
+ U.setDoor({open:0,rattle:.05,lock:'near'});assert.ok(Math.abs(hinge.rotation.y+.05)<1e-9,'덜컥(닫힌 채 살짝)');U.setDoor({open:0,lock:'locked'});
+ assert.ok(U.spots.out.z>CLAW.depth/2&&U.spots.out.y>=CLAW.panel.top,'꺼낸 인형 자리 = 문 밖 조작대 위');
+ const o=U.detachPrize();assert.ok(o);assert.equal(U.prize,null);U.setPrize(MACHINES[1].pool[0]);
  U.setPrize('haechi');assert.equal(U.prize.userData.plushId,'haechi');U.setPrize(null);assert.equal(U.prize,null);
  U.setButton('stop');U.setButton('start');U.setButton('off');U.setBand({targetSec:10,nearWinSec:.1,okWinSec:0});U.update(.1);
 });

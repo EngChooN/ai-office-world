@@ -53,4 +53,10 @@ export const SHOP_COLORS=Object.freeze({
  rug:'#e86a6a',rugEdge:'#ffd36b',door:'#7fc6e8',doorFrame:'#3d6f8f',bench:'#5aa88e',plant:'#5f9e4a',pot:'#d9733e',
  coin:'#f5c33b',coinDark:'#c58f1c',metal:'#c9ced4',metalDark:'#7d848c',glass:'#cfeef8',rubber:'#3a3f45',chute:'#2b2f36',
 });
+// 장식 기계·가운데 섬의 인형 더미 색(우리 인형 8종 몸·귀 색을 줄인 것, 무인 인형뽑기방 꾸밈 claw-arcade-art.js)
+export const PLUSH_COLORS_FOR_PILE=Object.freeze([
+ {body:'#b8835a',ear:'#8a5a3a'},{body:'#f4eee6',ear:'#f3b8c4'},{body:'#2f3640',ear:'#f4f2ee'},{body:'#e9a15f',ear:'#c9773e'},
+ {body:'#f08a3c',ear:'#d9473e'},{body:'#f7d9b8',ear:'#3e4866'},{body:'#7fc7a8',ear:'#f5c33b'},{body:'#e5484d',ear:'#ffffff'},
+ {body:'#ffc6dc'},{body:'#bfe6ff'},{body:'#d8c6ff'},
+].map(Object.freeze));
 export const plushInfo=id=>PLUSH.find(p=>p.id===id)??null;

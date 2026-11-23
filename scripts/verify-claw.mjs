@@ -197,7 +197,8 @@ async function keysRun(){
  await click(p,'.kh-card [data-c=keep]');await sl(700);await p.keyboard.press('Space');await sl(400);s=await st(p);ok('[키] Space = 뽑기',s.mode==='drop');
  // 시간 끝이면 저절로 뽑기(20초)
  await p.waitForFunction(()=>window.claw.hud.card==='result',null,{timeout:40000});await click(p,'.kh-card [data-c=again]');await sl(200);
- await p.waitForFunction(()=>window.claw.play.mode==='drop',null,{timeout:25000});ok('[키] 20초 지나면 저절로 뽑기',true);
+ // 게임 시계는 한 프레임을 최대 0.05초로 잘라 세므로(main.js), 컴퓨터가 바빠 초당 20장 아래로 떨어지면 게임 속 20초가 실제로는 더 길다 → 실제 시간 여유를 넉넉히(11-23 월드아트: 다른 점검과 동시에 돌 때 25초로는 멈춤)
+ await p.waitForFunction(()=>window.claw.play.mode==='drop',null,{timeout:70000});ok('[키] 20초 지나면 저절로 뽑기',true);
  await p.waitForFunction(()=>window.claw.hud.card==='result',null,{timeout:40000});await click(p,'.kh-card [data-c=stop]');
  // 타이머: Space 누른 순간으로 시작·멈춤
  await p.evaluate(()=>claw.goMachine(1));await sl(900);await p.keyboard.press('KeyE');await sl(600);await p.keyboard.press('Space');await sl(800);
