@@ -204,13 +204,25 @@ function updatePlayer(dt){
 const PLAY_CAM=Object.freeze({pos:[0,1.6,1.75],look:[0,.84,0],fov:44,portrait:Object.freeze({pos:[0,1.55,2.25],look:[0,.86,0],fov:58})});
 // 「👁 옆에서」: 기계 옆(이웃 기계·벽과 사이)에서 유리 상자를 본다 — 앞뒤 거리가 보이게. pos는 오른쪽 옆 값, 왼쪽은 x를 뒤집음
 const SIDE_CAM=Object.freeze({pos:[1.5,1.42,.05],look:[0,.86,0],fov:44,fovPortrait:64});
+// 기계 종류별 옆 카메라(11-23 대표 지적 「모든 기계에 옆에서 보기」): 집게·봉 = 같은 몸, 타이머(키 1.8m·단 위 큰 인형)·열쇠는 조금 높게. 열쇠는 칸 묶음이 앞면에 붙은 판이라 바로 옆에서는 판 옆면만 보여 비스듬한 앞옆(칸 앞면·열쇠 꽂힌 깊이가 보이게)
+const SIDE_CAMS=Object.freeze({claw:SIDE_CAM,bridge:SIDE_CAM,timer:Object.freeze({pos:[1.55,1.5,.1],look:[0,.95,.02],fov:46,fovPortrait:66}),key:Object.freeze({pos:[1.5,1.5,.5],look:[0,1.0,.02],fov:46,fovPortrait:66})});
+// 옆에서 보는 동안 카메라와 기계 사이를 막는 옆 기계는 숨김(기계 사이 1.15~1.3m라 옆 카메라 1.5m는 늘 옆 기계 속) — 기계 가운데가 이 거리 안에 들면 막음
+const SIDE_BLOCK_R=.75,sideHidden=new Set();
+function hideSideBlockers(){
+ const i=play.machine,want=new Set();
+ if(side&&play.mode!=='idle'&&i>=0){const M=U.machines[i],ax=wantPos.x,az=wantPos.z,dx=M.x-ax,dz=M.z-az,L2=dx*dx+dz*dz||1;
+  U.machines.forEach((O,j)=>{if(j===i)return;const t=Math.max(0,Math.min(1,((O.x-ax)*dx+(O.z-az)*dz)/L2));if(Math.hypot(O.x-(ax+dx*t),O.z-(az+dz*t))<SIDE_BLOCK_R)want.add(j);});}
+ for(const j of [...sideHidden])if(!want.has(j)){U.machines[j].group.visible=true;sideHidden.delete(j);}
+ for(const j of want)if(!sideHidden.has(j)){U.machines[j].group.visible=false;sideHidden.add(j);}
+}
 const camPos=new THREE.Vector3(),camLook=new THREE.Vector3(),wantPos=new THREE.Vector3(),wantLook=new THREE.Vector3();let camFov=BASE_FOV,camInit=false;
 function updateCamera(dt){
  const i=play.machine;
  if(play.mode!=='idle'&&i>=0){ // 조작 카메라: 기계 정면 고정(월드아트 CLAW.camera, 세로 휴대폰은 portrait). 봉은 집게 기계 몸이라 같은 카메라
   const M=U.machines[i],C=M.kind==='claw'||M.kind==='bridge'?PLAY_CAM:M.group.userData.camera??PLAY_CAM,P=innerWidth<innerHeight?C.portrait:C;
   const at=(v,x,y,z)=>{const [wx,wz]=toShop(M,x,z);return v.set(wx,y,wz);};
-  if(M.kind==='claw'&&side){at(wantPos,side*SIDE_CAM.pos[0],SIDE_CAM.pos[1],SIDE_CAM.pos[2]);at(wantLook,SIDE_CAM.look[0],SIDE_CAM.look[1],SIDE_CAM.look[2]);camFov=innerWidth<innerHeight?SIDE_CAM.fovPortrait:SIDE_CAM.fov;}else{
+  const SC=SIDE_CAMS[M.kind];
+  if(SC&&side){at(wantPos,side*SC.pos[0],SC.pos[1],SC.pos[2]);at(wantLook,SC.look[0],SC.look[1],SC.look[2]);camFov=innerWidth<innerHeight?SC.fovPortrait:SC.fov;}else{
   at(wantPos,P.pos[0],P.pos[1],P.pos[2]);const lk=P.look??C.look;at(wantLook,lk[0],lk[1],lk[2]);camFov=P.fov;}
  }else{
   if(player.moving&&!input.looking()){let d=player.heading-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*1.2));}
@@ -220,6 +232,7 @@ function updateCamera(dt){
   wantPos.x=THREE.MathUtils.clamp(wantPos.x,-SHOP.w/2-1.2,SHOP.w/2+1.2);wantPos.z=THREE.MathUtils.clamp(wantPos.z,-SHOP.d/2-1.2,SHOP.d/2+1.2);wantPos.y=THREE.MathUtils.clamp(wantPos.y,.4,3.6);
   camFov=BASE_FOV;
  }
+ hideSideBlockers();
  const k=camInit?1-Math.exp(-dt*8):1;camInit=true;
  camPos.lerp(wantPos,k);camLook.lerp(wantLook,k);camera.position.copy(camPos);camera.lookAt(camLook);
  if(Math.abs(camera.fov-camFov)>.05){camera.fov+=(camFov-camera.fov)*k;camera.updateProjectionMatrix();}
@@ -231,7 +244,7 @@ const miniCam=new THREE.PerspectiveCamera(38,146/100,.05,1.7),MINI={w:150,h:104}
 const miniFrame=document.createElement('div');miniFrame.className='kh-mini';miniFrame.hidden=true;miniFrame.setAttribute('aria-hidden','true');miniFrame.innerHTML='<span>옆에서</span>';document.body.append(miniFrame);
 {const st=document.createElement('style');st.textContent=`.kh-mini{box-sizing:border-box;position:fixed;left:calc(env(safe-area-inset-left,0px) + 10px);top:calc(env(safe-area-inset-top,0px) + 62px);width:${MINI.w}px;height:${MINI.h}px;border:2px solid #fffaf0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none;z-index:22}.kh-mini span{position:absolute;left:6px;top:4px;padding:1px 6px;border-radius:8px;background:rgba(42,33,60,.8);color:#fffaf0;font:800 11px/1.3 "Apple SD Gothic Neo",Pretendard,sans-serif}`;document.head.append(st);}
 function renderMini(){
- const sub=play.sub,on=play.kind==='bridge'&&(play.mode==='play'&&sub.startsWith('k2')||play.mode==='drop')&&!hud.card;
+ const sub=play.sub,on=play.kind==='bridge'&&!side&&(play.mode==='play'&&sub.startsWith('k2')||play.mode==='drop')&&!hud.card; // 큰 화면이 이미 옆이면 작은 창은 안 띄움
  if(on!==miniOn){miniOn=on;miniFrame.hidden=!on;}
  if(!on)return;
  // 한 줄 안내가 왼쪽 위에 있으면(PC) 그 아래로 내림 — 안내에 가리지 않게

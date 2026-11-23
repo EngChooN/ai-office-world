@@ -28,13 +28,22 @@ export function geomFrom(C){
  // 집게 가운데 높이: 손가락 끝이 CLAW.clawTop에 오게(쉼 자세 끝까지 약 1.84단위)
  const HOME={x:C.home[0]*k,z:C.home[1]*k,y:(C.clawTop-C.floorY)*k+TIP_REST};
  const RANGE={x0:C.play.x[0]*k,x1:C.play.x[1]*k,z0:C.play.z[0]*k,z1:C.play.z[1]*k};
- return {BOX,CHUTE,WALLS,HOME,RANGE,floorY:C.floorY,guard:g};
+ // 그림 집게 치수 → 단위: 머리 배율, 머리 가운데 = 물리 집게 가운데 + (clawTip − 쉼 자세 끝 깊이)
+ return {BOX,CHUTE,WALLS,HOME,RANGE,floorY:C.floorY,guard:g,rig:{scale:C.clawTip/.14*k,headUp:C.clawTip*k-TIP_REST}};
 }
 // 집게 치수(시안 그대로: 손가락 길이 약 0.2m = 그림 CLAW.clawTip과 같음)
 export const CLAW_RIG=Object.freeze({hub:.34,hinge:.28,l1:1.4,l2:.55,bend:.75,rad:.09,open:.6,closed:-.04,rest:.18,minY:1.85,splay:1.0});
 const TIP_REST=CLAW_RIG.l1*Math.cos(CLAW_RIG.rest)+CLAW_RIG.l2*Math.cos(CLAW_RIG.rest-CLAW_RIG.bend);
+// 닿음 판정 = 보이는 손가락 그대로(대표 지적 2026-11-23 「집게가 통과하는 것처럼 보임」): 예전 판정 손가락(0.9cm 막대 두 마디)은 그림(휜 관 반지름 .007·끝 구슬 .011,
+//  머리 배율 clawTip/0.14)보다 가늘고 모양이 달라 인형 속으로 최대 4cm 들어가 보였다. claw-machine-art.js buildClaw 곡선(CatmullRom)을 8토막으로 뽑은 점(손가락 쪽 [y,z], m, 머리 배율 전)
+export const FINGER_CURVE=Object.freeze([[0,0],[-.0143,.0144],[-.0289,.0283],[-.0468,.0375],[-.0701,.0425],[-.0933,.0419],[-.1113,.0331],[-.1258,.0169],[-.14,0]].map(Object.freeze));
+export const FINGER_TUBE=.007,FINGER_TIP=.011,FINGER_PIVOT=.03,HEAD_BALL=.03; // 관 반지름·끝 구슬·손가락 뿌리(머리 가운데에서)·머리 구슬(m, 배율 전)
+export const FINGER_ANGLE_C=Object.freeze({shut:.3,wide:-.57}); // claw-machine-art.js FINGER_ANGLE과 같음
 export const toMachine=(g,x,y,z)=>[x*U,g.floorY+y*U,z*U];
 
+const CLAW_TIP_DEFAULT=.21/.14/.1;
+// 토막이 2개 → 9개(+끝 구슬)로 늘어 같은 깊이에 힘이 여러 번 더해짐: 예전 두 마디와 비슷한 세기가 되게 나눔
+const SEG_SHARE=.35,SINK=1.5,SINK_MAX=.5; // 가라앉기 = 초당 15cm, 조이기 시작에서 5cm까지
 const G=38,SUB=1/240,ITER=6,SLOW2=(.25*SUB)**2,BACK=12,SLEEP_V=.35,NEIGH_V=1.2,WAKE_D=.02,MU_S=.55,MU_K=.4,MU_CLAW_S=.6,MU_CLAW_K=.42;
 function rng(seed){let s=seed>>>0||1;return()=>((s=(s*1664525+1013904223)>>>0)/4294967296);}
 
@@ -67,12 +76,16 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
  for(let i=0;i<count;i++){const [gx,gz]=cells[i%cells.length],layer=Math.floor(i/cells.length);
   addDoll(ids[Math.floor(R()*ids.length)],gx+(R()-.5)*.3,1.1+layer*2.1+R()*.3,gz+(R()-.5)*.3,(R()-.5)*1.6,(R()-.5)*1.2);}
  const claw={x:HOME.x,y:HOME.y,z:HOME.z,th:[CL.rest,CL.rest,CL.rest],ang:[Math.PI/2,Math.PI/2+2.094,Math.PI/2+4.189],
-  state:'idle',t:0,pen:[0,0,0],hubPen:0,power:{...power},strength:0,touched:false,liftFrom:0};
- const buildSegs=out=>{out.length=0;
-  for(let k=0;k<3;k++){const a=claw.ang[k],ux=Math.cos(a),uz=Math.sin(a),th=claw.th[k];
-   const hx=claw.x+CL.hinge*ux,hy=claw.y,hz=claw.z+CL.hinge*uz,s1=Math.sin(th),c1=Math.cos(th),s2=Math.sin(th-CL.bend),c2=Math.cos(th-CL.bend);
-   const kx=hx+CL.l1*s1*ux,ky=hy-CL.l1*c1,kz=hz+CL.l1*s1*uz,tx=kx+CL.l2*s2*ux,ty=ky-CL.l2*c2,tz=kz+CL.l2*s2*uz;
-   out.push([hx,hy,hz,kx,ky,kz,k],[kx,ky,kz,tx,ty,tz,k]);}
+  state:'idle',t:0,pen:[0,0,0],hubPen:0,resid:0,power:{...power},strength:0,touched:false,liftFrom:0};
+ // 손가락 토막(단위): 그림 곡선 8토막 + 끝 구슬. [ax,ay,az, bx,by,bz, 발 k, 반지름, 세기 몫(끝일수록 크게 — 예전 끝 마디 1.3)]
+ // 그림 각도 = FINGER_ANGLE_C.shut + 벌림(0~1, clawPose opens와 같은 식) × (wide − shut). 물리 발 k의 방향 = ang[k](그림 손가락 0·1·2 = 물리 0·2·1)
+ const RG=geom.rig??{scale:CLAW_TIP_DEFAULT,headUp:0},NSEG=FINGER_CURVE.length-1;
+ const buildSegs=out=>{out.length=0;const S=RG.scale,hy=claw.y+RG.headUp;
+  for(let k=0;k<3;k++){const a=claw.ang[k],ux=Math.cos(a),uz=Math.sin(a),o=Math.max(0,Math.min(1,(claw.th[k]-CL.closed)/(CL.splay-CL.closed)));
+   const an=FINGER_ANGLE_C.shut+o*(FINGER_ANGLE_C.wide-FINGER_ANGLE_C.shut),ca=Math.cos(an),sa=Math.sin(an);
+   const W=([y,z])=>{const y1=y*ca-z*sa,z1=y*sa+z*ca+FINGER_PIVOT;return [claw.x+ux*z1*S,hy+y1*S,claw.z+uz*z1*S];};
+   let p=W(FINGER_CURVE[0]);for(let i=1;i<=NSEG;i++){const q=W(FINGER_CURVE[i]);out.push([p[0],p[1],p[2],q[0],q[1],q[2],k,FINGER_TUBE*S,i>NSEG-3?1.3:.4+.6*i/NSEG]);p=q;}
+   out.push([p[0],p[1],p[2],p[0],p[1],p[2],k,FINGER_TIP*S,1.3]);}
   return out;};
  let prevSegs=buildSegs([]),curSegs=[],prevHub=[claw.x,claw.y,claw.z];
  const events=[];
@@ -106,10 +119,12 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
     for(let k=0;k<3;k++)toward(k,CL.open,2.2);
     if(c.t<.45)break;
     c.y-=2.6*h;
-    if(c.hubPen>.012||c.pen[0]+c.pen[1]+c.pen[2]>.09)c.touched=true;
-    if(c.y<=CL.minY||c.touched&&c.t>.6){c.y=Math.max(c.y,CL.minY);c.state='close';c.t=0;c.strength=c.power.grab;events.push({type:'close'});}
+    // 닿으면 멈춤: 누른 힘·머리 닿음·못 밀어낸 겹침(인형이 바닥·벽에 눌려 꼼짝 못 함 — 줄이 느슨해지듯 거기서 멈추고 겹친 만큼 물러남)
+    if(c.hubPen>.012||c.pen[0]+c.pen[1]+c.pen[2]>.09||c.resid>.03)c.touched=true;
+    if(c.y<=CL.minY||c.touched&&c.t>.6){c.y=Math.max(c.y,CL.minY)+c.resid;c.state='close';c.t=0;c.sinkFrom=c.y;c.strength=c.power.grab;events.push({type:'close'});}
     break;
-   case 'close':for(let k=0;k<3;k++)c.th[k]-=1.25*h;if(c.t>1.0){c.state='lift';c.t=0;c.liftFrom=c.y;events.push({type:'lift'});}break;
+   // 조이는 동안 줄이 느슨한 집게가 제 무게로 인형 사이로 가라앉음(초당 SINK, 최대 SINK_MAX, 막히면 멈춤) — 발끝이 인형 밑으로 들어가 걸림
+   case 'close':for(let k=0;k<3;k++)c.th[k]-=1.25*h;if(c.resid<.02&&c.y>CL.minY)c.y=Math.max(CL.minY,c.sinkFrom-SINK_MAX,c.y-SINK*h);if(c.t>1.0){c.state='lift';c.t=0;c.liftFrom=c.y;events.push({type:'lift'});}break;
    case 'lift':for(let k=0;k<3;k++)c.th[k]-=1.25*h;if(c.t>.35)c.y+=2.2*h;if(c.y-c.liftFrom>1.2)c.strength=c.power.carry;if(c.y>=HOME.y){c.y=HOME.y;c.state='carry';c.t=0;}break;
    case 'carry':{for(let k=0;k<3;k++)c.th[k]-=1.25*h;const dx=HOME.x-c.x,dz=HOME.z-c.z,d=Math.hypot(dx,dz),sp=1.5*h;
     if(d<=sp){c.x=HOME.x;c.z=HOME.z;c.state='release';c.t=0;events.push({type:'release'});}else{c.x+=dx/d*sp;c.z+=dz/d*sp;}break;}
@@ -134,7 +149,7 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
    P.ox[i]=P.x[i];P.oy[i]=P.y[i];P.oz[i]=P.z[i];P.x[i]+=vx;P.y[i]+=vy-G*h*h;P.z[i]+=vz;
   }
   for(const D of dolls){D.cx=P.x[D.first];D.cy=P.y[D.first];D.cz=P.z[D.first];}
-  claw.pen[0]=claw.pen[1]=claw.pen[2]=0;claw.hubPen=0;
+  claw.pen[0]=claw.pen[1]=claw.pen[2]=0;claw.hubPen=0;claw.resid=0;
   const hubMv=[claw.x-prevHub[0],claw.y-prevHub[1],claw.z-prevHub[2]];
   for(let it=0;it<ITER;it++){
    for(const [a,b,L] of cons){const dx=P.x[b]-P.x[a],dy=P.y[b]-P.y[a],dz=P.z[b]-P.z[a],l=Math.hypot(dx,dy,dz)||1e-9;if(!P.iw[a])continue;
@@ -163,14 +178,14 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
     if(P.y[i]>BOX.top-r)contact(i,0,-1,0,P.y[i]-(BOX.top-r),0,0,0,0,0);
     for(const W of WALLS){const qx=Math.max(W.x0,Math.min(W.x1,P.x[i])),qy=Math.max(W.y0,Math.min(W.y1,P.y[i])),qz=Math.max(W.z0,Math.min(W.z1,P.z[i]));
      const dx=P.x[i]-qx,dy=P.y[i]-qy,dz=P.z[i]-qz,l=Math.hypot(dx,dy,dz);if(l<r&&l>1e-6)contact(i,dx/l,dy/l,dz/l,r-l,0,0,0,.3,.2);}
-    {const dx=P.x[i]-claw.x,dy=P.y[i]-claw.y,dz=P.z[i]-claw.z,R2=r+CL.hub,l=Math.hypot(dx,dy,dz);
+    {const dx=P.x[i]-claw.x,dy=P.y[i]-claw.y-RG.headUp,dz=P.z[i]-claw.z,R2=r+HEAD_BALL*RG.scale,l=Math.hypot(dx,dy,dz);
      if(l<R2&&l>1e-6){const d=R2-l;if(it===0)claw.hubPen=Math.max(claw.hubPen,d);contact(i,dx/l,dy/l,dz/l,d,hubMv[0],hubMv[1],hubMv[2],MU_CLAW_S,MU_CLAW_K);}}
     for(let s=0;s<curSegs.length;s++){
-     const S=curSegs[s],Q=prevSegs[s]||S,ex=S[3]-S[0],ey=S[4]-S[1],ez=S[5]-S[2],L2=ex*ex+ey*ey+ez*ez;
+     const S=curSegs[s],Q=prevSegs[s]||S,ex=S[3]-S[0],ey=S[4]-S[1],ez=S[5]-S[2],L2=ex*ex+ey*ey+ez*ez||1;
      let t=((P.x[i]-S[0])*ex+(P.y[i]-S[1])*ey+(P.z[i]-S[2])*ez)/L2;t=Math.max(0,Math.min(1,t));
-     const qx=S[0]+ex*t,qy=S[1]+ey*t,qz=S[2]+ez*t,dx=P.x[i]-qx,dy=P.y[i]-qy,dz=P.z[i]-qz,l=Math.hypot(dx,dy,dz),R2=r+CL.rad;
-     if(l>=R2||l<1e-6)continue;const d=R2-l;
-     if(it===0)claw.pen[S[6]]+=d/(P.w[i]*2)*(s&1?1.3:.4+t*.6);
+     const qx=S[0]+ex*t,qy=S[1]+ey*t,qz=S[2]+ez*t,dx=P.x[i]-qx,dy=P.y[i]-qy,dz=P.z[i]-qz,l=Math.hypot(dx,dy,dz),R2=r+S[7];
+     if(l>=R2||l<1e-6)continue;const d=R2-l;if(it===ITER-1&&d>claw.resid)claw.resid=d;
+     if(it===0)claw.pen[S[6]]+=d/(P.w[i]*2)*S[8]*SEG_SHARE;
      contact(i,dx/l,dy/l,dz/l,d,qx-(Q[0]+(Q[3]-Q[0])*t),qy-(Q[1]+(Q[4]-Q[1])*t),qz-(Q[2]+(Q[5]-Q[2])*t),MU_CLAW_S,MU_CLAW_K);
     }
    }

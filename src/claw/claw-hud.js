@@ -267,14 +267,16 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
    pill.setAttribute('aria-label',`${sv.text} · 코인 ${v.coins}개`);}
   if(playing&&kind==='claw'){const t=Math.ceil(v.timeLeft??0);const tb=timer.querySelector('[data-t]');if(tb.textContent!==String(t))tb.textContent=String(t);timer.classList.toggle('hurry',mode==='play'&&t<=5);}
   // 한 줄 안내(집게를 옆에서 보는 중이면 「옆에서 보면…」 안내는 끔: 칩 두 개와 겹치고 이미 한 일)
-  const h=playing?(mode==='drop'?'':kind==='claw'?(v.side?'':HINT.claw):(kind==='bridge'?HINT_BRIDGE:HINT)[(v.sub??'').replace('-hold','')]??''):'';
+  const h=playing&&!v.side?(mode==='drop'?'':kind==='claw'?HINT.claw:(kind==='bridge'?HINT_BRIDGE:HINT)[(v.sub??'').replace('-hold','')]??''):'';
   if(hint.textContent!==h)hint.textContent=h;hint.hidden=!h||!!cardKind;
   // 행동 단추
   const sub=v.sub??'';
   if(playing){
-   if(kind==='claw')setActions({id:'press',ic:IC.claw[0],fb:IC.claw[1],label:'뽑기',short:'뽑기',key:'Space',dim:mode==='drop'||!v.armed,ring:true,hold:true},mode==='play'?[{id:'side',ic:IC.side[0],fb:IC.side[1],label:v.side?'정면으로 보기':'옆에서 보기'},...(v.side?[{id:'flip',ic:IC.side[0],fb:IC.side[1],label:v.side>0?'왼쪽 옆에서 보기':'오른쪽 옆에서 보기'}]:[])]:[]); // 👁는 할 일 칩 자리(오른쪽 위로 쌓임): 작은 단추 원 자리는 좁은 화면에서 십자 단추와 겹쳤다
-   else if(kind==='timer'){const run=sub==='run';setActions({id:'press',ic:(run?IC.stop:IC.start)[0],fb:(run?IC.stop:IC.start)[1],label:run?'멈춤':'시작',short:run?'멈춤':'시작',key:'Space',dim:mode==='drop',hold:true,tone:run?'':'green'},[]);}
-   else{const up=sub.startsWith('k2'),gap=sub==='gap';setActions({id:'press',ic:(up?IC.up:IC.right)[0],fb:(up?IC.up:IC.right)[1],label:gap?'잠깐':up?(kind==='bridge'?'안쪽':'위로'):'오른쪽',short:gap?'잠깐':'누르고 있기',key:'Space',dim:mode==='drop'||gap,hold:true},[]);}
+   // 👁 옆에서 보기(모든 기계, 11-23 대표 지적): 조작 중·집게가 내려가 결과가 나오기 전까지. 할 일 칩 자리(오른쪽 위로 쌓임)
+   const sideChips=mode==='play'||mode==='drop'?[{id:'side',ic:IC.side[0],fb:IC.side[1],label:v.side?'정면으로 보기':'옆에서 보기'},...(v.side?[{id:'flip',ic:IC.side[0],fb:IC.side[1],label:v.side>0?'왼쪽 옆에서 보기':'오른쪽 옆에서 보기'}]:[])]:[];
+   if(kind==='claw')setActions({id:'press',ic:IC.claw[0],fb:IC.claw[1],label:'뽑기',short:'뽑기',key:'Space',dim:mode==='drop'||!v.armed,ring:true,hold:true},sideChips); // 👁는 할 일 칩 자리(오른쪽 위로 쌓임): 작은 단추 원 자리는 좁은 화면에서 십자 단추와 겹쳤다
+   else if(kind==='timer'){const run=sub==='run';setActions({id:'press',ic:(run?IC.stop:IC.start)[0],fb:(run?IC.stop:IC.start)[1],label:run?'멈춤':'시작',short:run?'멈춤':'시작',key:'Space',dim:mode==='drop',hold:true,tone:run?'':'green'},sideChips);}
+   else{const up=sub.startsWith('k2'),gap=sub==='gap';setActions({id:'press',ic:(up?IC.up:IC.right)[0],fb:(up?IC.up:IC.right)[1],label:gap?'잠깐':up?(kind==='bridge'?'안쪽':'위로'):'오른쪽',short:gap?'잠깐':'누르고 있기',key:'Space',dim:mode==='drop'||gap,hold:true},sideChips);}
   }
   else if(mode==='result'||cardKind)setActions(null,[]);
   else if(v.near>=0){const M=MACHINES[v.near],busy=v.busy?.[v.near];

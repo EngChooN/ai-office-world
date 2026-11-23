@@ -1,0 +1,56 @@
+{
+ "at": "2026-11-23T11:19:57.748Z",
+ "SIZE": "pc",
+ "out": [
+  {
+   "id": "claw-3",
+   "side": true,
+   "hiddenRight": [
+    3
+   ],
+   "hiddenLeft": [
+    1
+   ],
+   "restored": true,
+   "pass": true
+  },
+  {
+   "id": "bridge-2",
+   "side": true,
+   "hiddenRight": [
+    6
+   ],
+   "hiddenLeft": [
+    8
+   ],
+   "restored": true,
+   "pass": true
+  },
+  {
+   "id": "timer-2",
+   "side": true,
+   "hiddenRight": [
+    12
+   ],
+   "hiddenLeft": [
+    10
+   ],
+   "restored": true,
+   "pass": true
+  },
+  {
+   "id": "key-2",
+   "side": true,
+   "hiddenRight": [
+    13
+   ],
+   "hiddenLeft": [
+    15
+   ],
+   "restored": true,
+   "pass": true
+  }
+ ],
+ "errs": [],
+ "fails": 0
+}

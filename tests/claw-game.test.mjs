@@ -5,11 +5,12 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {CLAW_TUNING as T,seoulDate,msToNextGrant,freshState,sanitizeState,grantDaily,grantedToday,canPlay,spendCoin,recordResult,rulesFor,pityLeft,pityOn,kindOf,
  judgeTimer,fmtTimer,judgeKey,keyMissText,timerDiffText,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,ACT_PHASES,dexCount,isRefillLog,levelOf,hideAfterOf,pityNow,
- machStateToday,saveMachState,sanitizeMachState} from '../src/claw/claw-rules.js';
-import {createBridgeSim,bridgeGeom,runBridgeDrop,startPose,nearState,bridgeSnap,noProgress,boxParts,bridgeOutcome,offRails} from '../src/claw/claw-bridge-physics.js';
-import {geomFrom,createClawSim,runDrop,BODY_TYPES,PLUSH_BODY,CLAW_RIG,U} from '../src/claw/claw-physics.js';
+  machStateToday,saveMachState,sanitizeMachState,MACH_PV} from '../src/claw/claw-rules.js';
+import {createBridgeSim,bridgeGeom,runBridgeDrop,startPose,nearState,bridgeSnap,noProgress,boxParts,bridgeOutcome,offRails,FINGER_PLATES,HEAD_PLATE,FINGER_ANGLE_B,FINGER_PIVOT_Z,plateBox} from '../src/claw/claw-bridge-physics.js';
+import {geomFrom,createClawSim,runDrop,BODY_TYPES,PLUSH_BODY,CLAW_RIG,U,FINGER_CURVE,FINGER_TUBE,FINGER_TIP,FINGER_PIVOT,FINGER_ANGLE_C} from '../src/claw/claw-physics.js';
+import * as THREE from 'three';
 const CLAW_RIG_TIP=th=>(CLAW_RIG.hinge+CLAW_RIG.l1*Math.sin(th)+CLAW_RIG.l2*Math.sin(th-CLAW_RIG.bend))*U; // 물리 집게발 끝이 가운데에서 떨어진 거리(m, 겹치면 −)
-import {CLAW} from '../src/claw/claw-machine-art.js';
+import {CLAW,FINGER_ANGLE} from '../src/claw/claw-machine-art.js';
 import {KEY} from '../src/claw/claw-machines-more.js';
 import {plushSize} from '../src/claw/claw-plush.js';
 import {PLUSH,MACHINES,BIG_PLUSH,BOX_PLUSH,GUEST_SLOTS} from '../src/claw/claw-palette.js';
@@ -100,6 +101,25 @@ test('열쇠 판정(설계 v3 §7-3): 구멍 가운데 성공·0.2칸 아까움�
  // 그림 좌표 = 판정 좌표(월드아트 KEY)
  assert.equal(KEY.cols,c.cols);assert.equal(KEY.rows,c.rows);assert.equal(KEY.cellH,c.cellH);assert.equal(KEY.holeY,c.holeY);
 });
+test('집게 물리: 보이는 손가락(휜 관·끝 구슬)이 인형을 뚫지 않음(무작위 판, 0.5cm 넘게 들어간 장면 0), 판정 손가락 = 그림 곡선', ()=>{
+ assert.deepEqual({...FINGER_ANGLE_C},{...FINGER_ANGLE});
+ const art=read('src/claw/claw-machine-art.js');for(const n of ['new THREE.Vector3(0,-.04,.035),new THREE.Vector3(0,-.1,.04),new THREE.Vector3(0,-.14,.0)','TubeGeometry(new THREE.CatmullRomCurve3(pts),10,.007,6,false)','SphereGeometry(.011,8,6).translate(0,-.14,0)','f.position.set(0,0,.03)'])assert.ok(art.includes(n),'그림 치수 그대로: '+n);
+ assert.ok(FINGER_TUBE===.007&&FINGER_TIP===.011&&FINGER_PIVOT===.03);
+ const cv=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(0,-.04,.035),new THREE.Vector3(0,-.1,.04),new THREE.Vector3(0,-.14,0)]).getPoints(FINGER_CURVE.length-1);
+ cv.forEach((v,i)=>assert.ok(Math.abs(v.y-FINGER_CURVE[i][0])<2e-4&&Math.abs(v.z-FINGER_CURVE[i][1])<2e-4,'곡선 점 '+i));
+ const g=geomFrom(CLAW),C=T.claw,S=CLAW.clawTip/.14/U,TIP=CLAW_RIG.l1*Math.cos(CLAW_RIG.rest)+CLAW_RIG.l2*Math.cos(CLAW_RIG.rest-CLAW_RIG.bend),UP=CLAW.clawTip/U-TIP;
+ const dense=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(0,-.04,.035),new THREE.Vector3(0,-.1,.04),new THREE.Vector3(0,-.14,0)]).getPoints(24).map(v=>[v.y,v.z]);
+ const pts=c=>{const out=[],o=k=>Math.max(0,Math.min(1,(c.th[k]-CLAW_RIG.closed)/(CLAW_RIG.splay-CLAW_RIG.closed)));
+  for(let i=0;i<3;i++){const p=[0,2,1][i],th=i/3*Math.PI*2,an=FINGER_ANGLE.shut+o(p)*(FINGER_ANGLE.wide-FINGER_ANGLE.shut);
+   dense.forEach(([y,z],j)=>{const y1=y*Math.cos(an)-z*Math.sin(an),z1=y*Math.sin(an)+z*Math.cos(an)+.03;out.push([c.x+Math.sin(th)*z1*S,c.y+UP+y1*S,c.z+Math.cos(th)*z1*S,(j===dense.length-1?.011:.007)*S]);});}return out;};
+ let worst=0,plays=0;
+ for(let t=0;t<3;t++){let q=t*13+5;const R=()=>((q=(q*1664525+1013904223)>>>0)/4294967296);
+  const s=createClawSim({geom:g,ids:PLUSH.map(p=>p.id),sizeOf:plushSize,massOf:id=>C.mass[PLUSH.find(p=>p.id===id).rarity]??1,seed:t+3,count:C.dolls,power:C.power});
+  for(let k=0;k<2;k++){plays++;const Rg=g.RANGE;s.start();s.setPos(Rg.x0+R()*(Rg.x1-Rg.x0),Rg.z0+R()*(Rg.z1-Rg.z0));s.drop();
+   for(let tt=0;tt<14&&s.claw.state!=='done';tt+=1/60){s.step(1/60);const Q=s.P;for(const [x,y,z,r] of pts(s.claw))for(let i=0;i<Q.x.length;i++){if(s.dolls[Q.d[i]].gone)continue;worst=Math.max(worst,r+Q.r[i]-Math.hypot(x-Q.x[i],y-Q.y[i],z-Q.z[i]));}}
+   for(let tt=0;tt<1;tt+=1/30)s.step(1/30);}}
+ assert.ok(worst*U<.005,`손가락이 인형에 ${(worst*10).toFixed(2)}cm 들어감`);assert.equal(plays,6);
+});
 test('집게 물리: 기계 치수에서 만든 상자·구멍, 인형 8종 몸, 판이 끝나고 결과가 나옴', ()=>{
  const g=geomFrom(CLAW);
  assert.ok(g.CHUTE.x1<0&&g.CHUTE.z0>0,'구멍은 왼쪽 앞');assert.ok(Math.abs(g.HOME.x-CLAW.home[0]*10)<1e-9);assert.ok(g.RANGE.x1<g.BOX.x1);
@@ -123,7 +143,7 @@ test('집게 순서(대표 피드백 11-23): 벌리고 내려감 → 벌린 채 
  assert.ok(firstMove&&firstMove.open>rest+.3,`내려가기 시작할 때 이미 벌림(${firstMove?.open.toFixed(2)} > 쉼 ${rest.toFixed(2)})`);
  const down=log.filter(p=>p.s==='drop'&&p.drop>.002);assert.ok(down.length>10&&down.every(p=>p.open>.55),'벌린 채 내려감');
  const bottom=Math.max(...log.map(p=>p.drop)),closeAt=log.findIndex(p=>p.s==='close');
- assert.ok(Math.abs(log[closeAt].drop-bottom)<.005,'조이기는 바닥(가장 깊은 곳)에서 시작');
+ assert.ok(bottom-log[closeAt].drop<.051,'조이기는 바닥에서 시작(조이면서 인형 사이로 5cm까지만 가라앉음, 11-23 통과 수정)');
  const lift=log.filter(p=>p.s==='lift'||p.s==='carry');assert.ok(lift.length&&lift.every(p=>p.open<log[closeAt].open),'조인 채 올라오고 옮김');
  const rel=log.findIndex(p=>p.s==='release');assert.ok(rel>0&&Math.abs(log[rel].x-CLAW.home[0])<1e-6&&Math.abs(log[rel].z-CLAW.home[1])<1e-6,'출구 위에서 놓음');
  assert.ok(log.at(-1).open>lift.at(-1).open,'놓을 때 벌림');
@@ -147,7 +167,7 @@ test('규칙 안내: 조절값에서 만든 글(값을 바꾸면 글도 바뀜)'
  assert.match(rulesFor('key-1',MACHINES[13].cells).lines.join(' '),/0\.14칸.*0\.08칸/);assert.match(rulesFor('claw-1',MACHINES[0].pool).pity,/힘센 집게/);
  assert.ok(rulesFor('timer-3',MACHINES[12].pool).lines.some(l=>/3\.00초부터 숫자가 어두워져요/.test(l)),'타이머 3만 보이는 차이');assert.ok(!rulesFor('timer-1',MACHINES[10].pool).lines.some(l=>/어두워져요/.test(l)));
  // 봉 규칙 글(v4.1 §7-7): 혼자 = 오늘 안에 이어서, 가게 공유(3단계) = 모두 같음·30분
- const b=rulesFor('bridge-3',MACHINES[8].pool);assert.equal(b.kind,'bridge');assert.match(b.lines.join(' '),/들지 못해요.*봉 사이로 떨어뜨리면 성공/);assert.match(b.lines.join(' '),/팔\(八\) 자.*12\.5cm.*15cm/);assert.match(b.lines.join(' '),/오늘 안에 이어서/);
+ const b=rulesFor('bridge-3',MACHINES[8].pool);assert.equal(b.kind,'bridge');assert.match(b.lines.join(' '),/들고 오지 못해요.*봉 사이로 떨어뜨리면 성공/);assert.match(b.lines.join(' '),/팔\(八\) 자.*15cm.*17\.5cm/);assert.match(b.lines.join(' '),/오늘 안에 이어서/);
  assert.match(rulesFor('bridge-1',MACHINES[6].pool,T,undefined,undefined,{shared:true}).lines.join(' '),/상자 자리는 모두 같아요.*30분/);
  for(const M of MACHINES){const n=rulesFor(M.id,M.pool).note;assert.match(n,/사는 곳·바꾸는 곳은 없어요/);assert.match(n,/15개/);assert.match(n,/넘어가지 않아요/);}
 });
@@ -227,32 +247,32 @@ test('화면 규칙: 모든 조작이 화면 단추로(키는 덧붙임)·일시
 });
 
 // ── 봉 기계(설계 v4.1 §7, 다리 걸치기) ──
-const bridgeSim=(bars={gap:.13},o={})=>createBridgeSim({geom:bridgeGeom(CLAW,bars,T.bridge),box:T.bridge.box,power:{grab:T.bridge.clawGrab,carry:T.bridge.clawGrab*.8},friction:T.bridge.barFriction,openTo:T.bridge.clawOpen,...o});
+const bridgeSim=(bars={gap:.16},o={})=>createBridgeSim({geom:bridgeGeom(CLAW,bars,T.bridge),box:T.bridge.box,power:{grab:T.bridge.clawGrab,carry:T.bridge.clawGrab*.8},friction:T.bridge.barFriction,openTo:T.bridge.clawOpen,...o});
 test('봉 물리: 상자가 가운데 받침 봉 둘에 걸쳐 쉼(기울기 0·양쪽 받침), 봉 4개·구멍 = 받침 봉 사이뿐, 상자 크기 = 조절값, 처음 자리 흔들림은 공정 범위 안', ()=>{
- {const g=bridgeGeom(CLAW,{gap:.13},T.bridge);assert.equal(g.rods.length,4);assert.deepEqual(g.rods.map(r=>r.kind).sort(),['guard','guard','support','support']);
+ {const g=bridgeGeom(CLAW,{gap:.16},T.bridge);assert.equal(g.rods.length,4);assert.deepEqual(g.rods.map(r=>r.kind).sort(),['guard','guard','support','support']);
   assert.ok(g.inGap(0,0)&&!g.inGap(0,1.0)&&!g.inGap(0,-1.0),'구멍 = 받침 봉 사이(바깥은 아님)');}
  const B=T.bridge,s=bridgeSim();
- assert.ok(s.sleeping,'가만히 두면 잠듦');assert.ok(s.tilt()<1,`기울기 ${s.tilt()}`);assert.ok(s.support()>.03,`받침 여유 ${s.support()}`);assert.ok(!nearState(s,B),'새 상자는 아슬아슬 아님');
+ assert.ok(s.sleeping,'가만히 두면 잠듦');assert.ok(s.tilt()<1,`기울기 ${s.tilt()}`);assert.ok(s.support()>.025,`받침 여유 ${s.support()}`);assert.ok(!nearState(s,B),'새 상자는 아슬아슬 아님');
  const bp=boxParts(B.box);assert.ok(Math.abs(bp.half[0]*2*U-B.box[2])<1e-9&&Math.abs(bp.half[1]*2*U-B.box[1])<1e-9&&Math.abs(bp.half[2]*2*U-B.box[0])<1e-9,'그림 크기 = 판정 크기');
  for(let i=0;i<20;i++){const p=startPose(B);assert.ok(Math.abs(p.x*U)<=B.startJitterM+1e-12&&Math.abs(p.yaw-Math.PI/2)<=B.startJitterDeg*Math.PI/180+1e-12,'긴 쪽이 앞뒤(90°) ± 8°');}
  // 八자: 앞 11cm → 뒤 15cm
  const g=bridgeGeom(CLAW,{near:.11,far:.15},B);assert.ok(Math.abs(g.barZ(1,g.xl)*2*U-.11)<1e-9&&Math.abs(g.barZ(1,g.xr)*2*U-.15)<1e-9,'八자: 왼쪽 11 → 오른쪽 15cm');
 });
-test('봉 물리: 집게는 상자를 들지 못함(약한 집게), 판이 끝나고 결과가 나옴, 모서리를 여러 번 밀면 떨어짐(성공)', ()=>{
+test('봉 물리: 약한 집게는 조이면 상자가 걸려 조금 들려도 끝까지 들고 가지 못함, 판이 끝나고 결과가 나옴, 모서리를 여러 번 밀면 떨어짐(성공)', ()=>{
  const B=T.bridge,s=bridgeSim();const c=s.center();
- // 가운데를 눌러도 들리지 않음: 판 도중 상자가 처음 높이보다 3cm 넘게 뜨지 않음
+ // 가운데를 조이면 닿은 곳이 걸려 조금 들리지만(현실처럼, 11-23 대표 지적) 약한 집게라 8cm 넘게 못 들고 결국 빠짐(성공 아님)
  const y0=c[1];s.start();s.setPos(c[0],c[2]);s.drop();let maxY=y0;for(let t=0;t<14&&s.claw.state!=='done';t+=1/30){s.step(1/30);maxY=Math.max(maxY,s.center()[1]);}
- assert.equal(s.claw.state,'done');assert.ok((maxY-y0)*U<.03,`들림 ${((maxY-y0)*U).toFixed(3)}m`);
+ assert.equal(s.claw.state,'done');assert.ok((maxY-y0)*U<.08,`들림 ${((maxY-y0)*U).toFixed(3)}m`);assert.ok(!s.won,'집게가 들고 가서 성공하지 않음');
  // 정해 둔 순서(모서리 노리기)로 몇 판 안에 떨어짐
  // 봉 4개(11-23 대표 사진): 상자 긴 쪽이 앞뒤로 받침 봉을 건넘. 모서리(앞뒤 끝)를 번갈아 누르는 정해 둔 순서로 몇 판 안에 받침 봉 사이로 떨어짐
- let won=false,n=0;const s2=bridgeSim({gap:.13},{seed:3,pose:{x:0,z:0,yaw:Math.PI/2}});
+ let won=false,n=0;const s2=bridgeSim({gap:.16},{seed:3,pose:{x:0,z:0,yaw:Math.PI/2}});
  while(!won&&n<25){n++;const k=s2.center();won=runBridgeDrop(s2,k[0]+(n%2?.5:-.5),k[2]+(n%3?.9:-.9),B).won;}
- if(!won){for(let seed=4;seed<10&&!won;seed++){const s3=bridgeSim({gap:.13},{seed,pose:{x:0,z:0,yaw:Math.PI/2+seed*.02}});for(let m=0;m<25&&!won;m++){const k=s3.center();won=runBridgeDrop(s3,k[0]+(m%2?.5:-.5),k[2]+(m%3?.9:-.9),B).won;}}}
+ if(!won){for(let seed=4;seed<10&&!won;seed++){const s3=bridgeSim({gap:.16},{seed,pose:{x:0,z:0,yaw:Math.PI/2+seed*.02}});for(let m=0;m<25&&!won;m++){const k=s3.center();won=runBridgeDrop(s3,k[0]+(m%2?.5:-.5),k[2]+(m%3?.9:-.9),B).won;}}}
  assert.ok(won,'정해 둔 순서로 25판 안에 성공하는 상자가 있음');
 });
 test('봉 상태 저장(혼자 뽑기 v4.1 §3): 상자 자리를 그대로 다시 놓음·오늘까지·새날은 처음 자리, 진척 없음 판정', ()=>{
  const B=T.bridge,s=bridgeSim();const k=s.center();runBridgeDrop(s,k[0]+.9,k[2]+.6,B);
- const st=s.boxState(),s2=bridgeSim({gap:.13},{st});
+ const st=s.boxState(),s2=bridgeSim({gap:.16},{st});
  assert.ok(Math.hypot(...s.center().map((v,i)=>v-s2.center()[i]))*U<.004,'다시 놓은 상자 자리 4mm 안');assert.ok(Math.abs(s.tilt()-s2.tilt())<2);
  const save=freshState(),now=KST-5000;saveMachState(save,'bridge-1',{st,id:'box-hare',mv:3,still:1},now);
  const re=sanitizeState(JSON.parse(JSON.stringify(save)));assert.deepEqual(machStateToday(re,'bridge-1',now).st,st);assert.equal(machStateToday(re,'bridge-1',now).id,'box-hare');
@@ -262,14 +282,47 @@ test('봉 상태 저장(혼자 뽑기 v4.1 §3): 상자 자리를 그대로 다�
  const s3=bridgeSim(),b3=bridgeSnap(s3);assert.ok(noProgress(s3,b3,T.share),'안 움직이면 진척 없음');
 });
 
-test('봉 손맛(11-23 대표 결정): 아슬아슬 = 받침 여유 2cm 이하만, 아까움 = 이번 판에 2cm 이하로 들어감, 막이 봉 밖·봉 아래 = 다시 놓기, 봉 4 = 13cm',()=>{
+// ── 통과 없음(11-23 대표 지적 「봉 게임에서 집게가 올라갈 때 상자를 통과하는 것처럼 보임」): 보이는 집게(팔·발끝·머리)·봉이 상자(직육면체)에 0.5cm 넘게 안 파고듦
+test('봉 물리: 보이는 집게·봉이 상자를 뚫지 않음(무작위 판, 0.5cm 넘게 파고든 장면 0), 집게 판정 치수 = 그림 치수', ()=>{
+ assert.deepEqual({...FINGER_ANGLE_B},{...FINGER_ANGLE},'손가락 각 = 그림');
+ const art=read('src/claw/claw-bridge.js');
+ for(const n of ['new THREE.Vector3(0,-.012,.034)','new THREE.Vector3(0,-.11,.036)','new THREE.Vector3(0,-.14,0)','TubeGeometry(path,12,.008,4,false).scale(2.4,1,1)','RoundedBoxGeometry(.04,.012,.026,2,.005).translate(0,-.142,-.004)','f.position.set(0,0,.03)','RoundedBoxGeometry(.1,.045,.05,2,.012).translate(0,.022,0)'])assert.ok(art.includes(n),'그림 치수 그대로: '+n);
+ assert.equal(FINGER_PIVOT_Z,.03);assert.equal(FINGER_PLATES[1].r,.008);assert.ok(Math.abs(FINGER_PLATES[1].side+FINGER_PLATES[1].r-.008*2.4)<1e-9,'팔 반폭 = 관 반지름 × 2.4');assert.equal(HEAD_PLATE.c[1],.022);
+ // 판정 도우미: 상자 가운데 판은 겹침, 멀리 있으면 아님, 위에서 누르면 상자를 아래로
+ {const h=[1.1,.5,.8];assert.equal(plateBox([0,2,0],[0,3,0],[0,0,0],.1,h),null);const H=plateBox([0,.45,-.3],[0,.45,.3],[0,0,0],.1,h);assert.ok(H&&H.u[1]>.9&&Math.abs(H.d-.15)<1e-9,'위에서 닿으면 상자를 아래로');}
+ const B=T.bridge,g=bridgeGeom(CLAW,{gap:.16},B),S=CLAW.clawTip/.14/U;
+ const nrm=a=>{const l=Math.hypot(...a)||1;return a.map(v=>v/l);},dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+ const obb=s=>{const Q=s.P,c=[Q.x[0],Q.y[0],Q.z[0]],L=nrm([Q.x[3]-Q.x[2],Q.y[3]-Q.y[2],Q.z[3]-Q.z[2]]);let H=[Q.x[1]-Q.x[0],Q.y[1]-Q.y[0],Q.z[1]-Q.z[0]];const k=dot(H,L);H=nrm(H.map((v,i)=>v-k*L[i]));
+  return {c,ax:[L,H,[L[1]*H[2]-L[2]*H[1],L[2]*H[0]-L[0]*H[2],L[0]*H[1]-L[1]*H[0]]],h:s.half};};
+ const depth=(O,p)=>{const d=[p[0]-O.c[0],p[1]-O.c[1],p[2]-O.c[2]];let m=Infinity;for(let k=0;k<3;k++){const e=O.h[k]-Math.abs(dot(d,O.ax[k]));if(e<0)return -1;m=Math.min(m,e);}return m;};
+ const plateDepth=(O,a,b,sd,r)=>{let m=-1;for(let i=0;i<=12;i++)for(let j=-1;j<=1;j++){const t=i/12;m=Math.max(m,depth(O,[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t+sd*j])+r);}return m;};
+ const TIP=CLAW_RIG.l1*Math.cos(CLAW_RIG.rest)+CLAW_RIG.l2*Math.cos(CLAW_RIG.rest-CLAW_RIG.bend);
+ const seen=c0=>{const o=c0.sway,x=c0.x+o[0],y=c0.y+o[1]+CLAW.clawTip/U-TIP,z=c0.z+o[2],out=[];
+  for(let k=0;k<2;k++){const sg=k?-1:1,op=Math.max(0,Math.min(1,(c0.th[k]-CLAW_RIG.closed)/(CLAW_RIG.splay-CLAW_RIG.closed))),an=FINGER_ANGLE.shut+op*(FINGER_ANGLE.wide-FINGER_ANGLE.shut);
+   const W=([,py,pz])=>[x+sg*(py*Math.sin(an)+pz*Math.cos(an)+.03)*S,y+(py*Math.cos(an)-pz*Math.sin(an))*S,z];for(const F of FINGER_PLATES)out.push([W(F.a),W(F.b),F.side*S,F.r*S]);}
+  out.push([[x-HEAD_PLATE.half*S,y+HEAD_PLATE.c[1]*S,z],[x+HEAD_PLATE.half*S,y+HEAD_PLATE.c[1]*S,z],HEAD_PLATE.side*S,HEAD_PLATE.r*S]);return out;};
+ let worst=0,worstBar=0,plays=0,lifted=0;
+ for(let t=0;t<6;t++){let q=t*7+1;const R=()=>((q=(q*1664525+1013904223)>>>0)/4294967296);const s=bridgeSim({gap:.16},{seed:t+1,pose:startPose(B,R)});
+  for(let k=0;k<3;k++){plays++;const c=s.center(),y0=c[1];s.start();s.setPos(c[0]+(R()*2-1)*1.0,c[2]+(R()*2-1)*.9);s.drop();
+   for(let tt=0;tt<14&&s.claw.state!=='done';tt+=1/60){s.step(1/60);const O=obb(s);for(const [a,b,sd,r] of seen(s.claw))worst=Math.max(worst,plateDepth(O,a,b,sd,r));
+    for(const R2 of g.rods)worstBar=Math.max(worstBar,plateDepth(O,[g.xl,R2.y,R2.z(g.xl)],[g.xr,R2.y,R2.z(g.xr)],0,g.barR));if(s.center()[1]-y0>.15)lifted++;}
+   if(s.won)break;for(let tt=0;tt<1;tt+=1/30)s.step(1/30);}}
+ assert.ok(worst*U<.005,`집게가 상자에 ${(worst*10).toFixed(2)}cm 파고듦`);assert.ok(worstBar*U<.005,`봉이 상자에 ${(worstBar*10).toFixed(2)}cm 파고듦`);assert.ok(plays>=12);
+});
+test('봉 상태 저장: 옛 판정(상자 박힘·옛 봉 간격) 자리는 버리고 처음 자리로, 경품·판 수는 이어 받음', ()=>{
+ const old=sanitizeMachState({day:'2026-11-23',st:[1,2,3,4,5,6],id:'box-hare',mv:3},'bridge');assert.equal(old.st,null);assert.equal(old.id,'box-hare');assert.equal(old.mv,3);
+ assert.deepEqual(sanitizeMachState({day:'2026-11-23',pv:MACH_PV,st:[1,2,3,4,5,6]},'bridge').st,[1,2,3,4,5,6]);
+ const save=freshState();saveMachState(save,'bridge-2',{st:[1,2,3,4,5,6],id:'box-cat',mv:0,still:0},KST-5000);assert.equal(save.mach['bridge-2'].pv,MACH_PV);
+});
+
+test('봉 손맛(11-23 대표 결정): 아슬아슬 = 받침 여유 2cm 이하만, 아까움 = 이번 판에 2cm 이하로 들어감, 막이 봉 밖·봉 아래 = 다시 놓기, 봉 간격 16cm(11-23 통과 수정)',()=>{
  const B=T.bridge,fake=(sup,tilt,c=[0,3,0],won=false)=>({won,support:()=>sup,tilt:()=>tilt,center:()=>c});
  assert.ok(!nearState(fake(.04,60),B),'많이 기울어도 받침 여유가 크면 아님');assert.ok(nearState(fake(.015,0),B));assert.ok(!nearState(fake(.01,0,[0,3,0],true),B),'떨어진 상자는 아님');
  assert.equal(bridgeOutcome(fake(.015,0),{support:.03},B),'near');assert.equal(bridgeOutcome(fake(.015,0),{support:.018},B),'miss','이미 아슬아슬하던 상자는 아까움 아님');
  assert.equal(bridgeOutcome(fake(.04,40,[2,3,0]),{support:.04,tilt:0,c:[0,3,0]},B),'miss','기울기·움직임만으로는 아까움 아님');
- const g=bridgeGeom(CLAW,{gap:.13},B),gz=g.layout.guardZ;
+ const g=bridgeGeom(CLAW,{gap:.16},B),gz=g.layout.guardZ;
  assert.ok(!offRails(fake(.03,0,[0,3,gz-.1]),g));assert.ok(offRails(fake(.03,0,[0,3,gz+.1]),g));assert.ok(offRails(fake(.03,0,[0,3,-gz-.1]),g));assert.ok(offRails(fake(.03,0,[0,g.barY-1.2,0]),g),'봉 아래로 끼임');
  assert.ok(g.rods[0].y>g.rods[1].y&&Math.abs(g.rods[0].y-g.rods[1].y-.3)<1e-9,'막이 봉 3cm 위');
- assert.deepEqual({...MACHINES.find(m=>m.id==='bridge-4').bars},{gap:.13});assert.deepEqual({...MACHINES.find(m=>m.id==='bridge-3').bars},{near:.125,far:.15});
+ assert.deepEqual({...MACHINES.find(m=>m.id==='bridge-4').bars},{gap:.16});assert.deepEqual({...MACHINES.find(m=>m.id==='bridge-3').bars},{near:.15,far:.175});assert.deepEqual({...MACHINES.find(m=>m.id==='bridge-1').bars},{gap:.16});
  assert.ok(B.pityAfter===8&&B.lieDeg===45&&B.liePlays===3&&!('pityPower' in B));
 });

@@ -1,0 +1,54 @@
+{
+ "at": "2026-11-23T11:06:00.258Z",
+ "out": [
+  {
+   "id": "claw-1",
+   "name": "집게1",
+   "shot": true,
+   "info": {
+    "left": 14
+   }
+  },
+  {
+   "id": "bridge-1",
+   "name": "봉1",
+   "shot": true,
+   "info": {
+    "support": 0.029,
+    "tilt": 15,
+    "y": 3.21
+   }
+  },
+  {
+   "id": "bridge-2",
+   "name": "봉2",
+   "shot": true,
+   "info": {
+    "support": 0.026,
+    "tilt": 31.9,
+    "y": 3.37
+   }
+  },
+  {
+   "id": "bridge-3",
+   "name": "봉3",
+   "shot": true,
+   "info": {
+    "support": -0.016,
+    "tilt": 85.8,
+    "y": 2.36
+   }
+  },
+  {
+   "id": "bridge-4",
+   "name": "봉4",
+   "shot": true,
+   "info": {
+    "support": 0.04,
+    "tilt": 25.9,
+    "y": 3.32
+   }
+  }
+ ],
+ "errs": []
+}
