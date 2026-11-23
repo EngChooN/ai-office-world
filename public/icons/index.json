@@ -612,6 +612,15 @@
   "color": false
  },
  {
+  "name": "c-exp-claw",
+  "group": "common",
+  "file": "icons/common/c-exp-claw.svg",
+  "symbol": "ic-c-exp-claw",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
   "name": "x-tree",
   "group": "christmas",
   "file": "icons/christmas/x-tree.svg",
@@ -1831,6 +1840,114 @@
   "group": "smoking",
   "file": "icons/smoking/s-lean-rail.svg",
   "symbol": "ic-s-lean-rail",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-claw",
+  "group": "claw",
+  "file": "icons/claw/k-claw.svg",
+  "symbol": "ic-k-claw",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-dex",
+  "group": "claw",
+  "file": "icons/claw/k-dex.svg",
+  "symbol": "ic-k-dex",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-coin",
+  "group": "claw",
+  "file": "icons/claw/k-coin.svg",
+  "symbol": "ic-k-coin",
+  "off": false,
+  "spin": false,
+  "color": true
+ },
+ {
+  "name": "k-timer",
+  "group": "claw",
+  "file": "icons/claw/k-timer.svg",
+  "symbol": "ic-k-timer",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-odds",
+  "group": "claw",
+  "file": "icons/claw/k-odds.svg",
+  "symbol": "ic-k-odds",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-machine",
+  "group": "claw",
+  "file": "icons/claw/k-machine.svg",
+  "symbol": "ic-k-machine",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-start",
+  "group": "claw",
+  "file": "icons/claw/k-start.svg",
+  "symbol": "ic-k-start",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-stop",
+  "group": "claw",
+  "file": "icons/claw/k-stop.svg",
+  "symbol": "ic-k-stop",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-key",
+  "group": "claw",
+  "file": "icons/claw/k-key.svg",
+  "symbol": "ic-k-key",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-right",
+  "group": "claw",
+  "file": "icons/claw/k-right.svg",
+  "symbol": "ic-k-right",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-up",
+  "group": "claw",
+  "file": "icons/claw/k-up.svg",
+  "symbol": "ic-k-up",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
+  "name": "k-side",
+  "group": "claw",
+  "file": "icons/claw/k-side.svg",
+  "symbol": "ic-k-side",
   "off": false,
   "spin": false,
   "color": false

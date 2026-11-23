@@ -104,7 +104,7 @@ test('담배 상태 허용 목록 = src/lounge/smoke.js가 내는 상태 이름(
  assert.equal(sanitizeSmoke({state:'done',lit:false}).state,'done');assert.equal(sanitizeSmoke(null),null);
 });
 test('체험별 익명 이름: 등산 등산객XXXX, 흡연장 손님XXXX(이름을 비우거나 신고로 숨겨졌을 때)',()=>{
- assert.deepEqual(ANON_PREFIX,{hiking:'등산객',smoking:'손님',christmas:'눈송이'});
+ assert.deepEqual(ANON_PREFIX,{hiking:'등산객',smoking:'손님',christmas:'눈송이',claw:'뽑기손님'});
  assert.equal(anonymousName('ab12cd34'),'등산객CD34');assert.equal(anonymousName('ab12cd34','smoking'),'손님CD34');assert.equal(anonymousName('x9','golf'),'등산객X9');
  const {join}=setup();
  assert.equal(join('','옥상',{experience:'smoking'}).name,'손님P1');assert.equal(join('','산').name,'등산객P2');

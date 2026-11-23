@@ -30,7 +30,9 @@ export const PICK_LABELS=Object.freeze({
  hiking:Object.freeze({art:'mountain',title:'함께 걷기 서버',icon:'👋',ic:'c-exp-hiking',solo:'혼자 걷기',soloIcon:'🥾',leave:'나가서 혼자 걷기',anon:'등산객XXXX'}),
  smoking:Object.freeze({art:'rooftop',title:'같이 피우기 서버',icon:'👥',ic:'c-exp-smoking',solo:'혼자 피우기',soloIcon:'🚬',leave:'나가서 혼자 피우기',anon:'손님XXXX'}),
  // 크리스마스(11-16, 체험설계 §3-1): 혼자일 때 트리 장식은 내 화면에만 남는다는 안내를 혼자 둘러보기 단추 아래 한 줄로(soloNote)
- christmas:Object.freeze({art:'village',title:'눈마을 광장 서버',icon:'🎄',ic:'c-exp-christmas',solo:'혼자 둘러보기',soloIcon:'⛄',leave:'나가서 혼자 둘러보기',anon:'눈송이XXXX',soloNote:'혼자 둘러보면 트리 장식은 내 화면에만 남고, 새로고침하면 사라져요'})
+ christmas:Object.freeze({art:'village',title:'눈마을 광장 서버',icon:'🎄',ic:'c-exp-christmas',solo:'혼자 둘러보기',soloIcon:'⛄',leave:'나가서 혼자 둘러보기',anon:'눈송이XXXX',soloNote:'혼자 둘러보면 트리 장식은 내 화면에만 남고, 새로고침하면 사라져요'}),
+ // 인형뽑기(11-23): 혼자 뽑아도 코인·도감은 똑같이 이 기기에 남는다
+ claw:Object.freeze({art:'arcade',title:'인형가게 서버',icon:'🧸',ic:'c-exp-claw',solo:'혼자 뽑기',soloIcon:'🧸',leave:'나가서 혼자 뽑기',anon:'뽑기손님XXXX',soloNote:'혼자 뽑아도 코인·도감은 이 기기에 그대로 남아요'})
 });
 const clean=s=>String(s??'').normalize('NFC').replace(/[\u0000-\u001f\u007f-\u009f]/g,'').replace(/\s+/g,' ').trim();
 export const cleanPickName=raw=>[...clean(raw)].slice(0,NET.nameMax).join('').trim();

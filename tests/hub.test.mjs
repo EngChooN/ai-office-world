@@ -7,7 +7,7 @@ import {hubTime,ART,enterHTML,statusHTML} from '../src/hub/hub.js';
 import {hubServerView} from '../src/hub/hub-servers.js';
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
 test('카드는 등산·흡연장·크리스마스 3개, id가 겹치지 않는다',()=>{
- assert.deepEqual(EXPERIENCES.map(e=>e.id),['hiking','smoking','christmas']);
+ assert.deepEqual(EXPERIENCES.map(e=>e.id),['hiking','smoking','christmas','claw']); // 11-23 인형뽑기
  assert.equal(new Set(EXPERIENCES.map(e=>e.id)).size,EXPERIENCES.length);
  for(const e of EXPERIENCES){assert.ok(e.title&&e.place&&e.desc);assert.ok(ART[e.art],e.id);}
 });

@@ -33,3 +33,5 @@ svg.ic-off{--ic-point:transparent;background:linear-gradient(to bottom right,tra
 :root[data-ic-exp=smoking][data-hud-time=night]{--ic-point:#eb9a62}
 :root[data-ic-exp=christmas]{--ic-point:#2f7a52}
 :root[data-ic-exp=christmas][data-hud-time=night]{--ic-point:#6fbf8f}
+/* 인형뽑기(11-23): 늘 밝은 실내라 밤 색 없음. 허브 카드 색과 같음 */
+:root[data-ic-exp=claw]{--ic-point:#d94a7c}

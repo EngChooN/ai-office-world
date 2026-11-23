@@ -6,8 +6,8 @@ import path from 'node:path';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const OUT = path.join(ROOT, 'public/icons');
-const POINT = { common: '#b9472f', christmas: '#2f7a52', hiking: '#5f8f3e', smoking: '#c8682f' };
-const ORDER = ['common', 'christmas', 'hiking', 'smoking'];
+const POINT = { common: '#b9472f', christmas: '#2f7a52', hiking: '#5f8f3e', smoking: '#c8682f', claw: '#d94a7c' };
+const ORDER = ['common', 'christmas', 'hiking', 'smoking', 'claw'];
 const INK = '#4a3618';
 
 const groups = [];

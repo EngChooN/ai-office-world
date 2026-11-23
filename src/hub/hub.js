@@ -24,7 +24,8 @@ const ALL=()=>[...EXPERIENCES,NEXT_SLOT];
 const byId=id=>ALL().find(e=>e.id===id)??EXPERIENCES[0];
 const isNext=e=>e.id===NEXT_SLOT.id;
 // 지도 위 자리(%, 지도 칸 기준): 왼위·오른위·왼아래·오른아래. 체험이 4개를 넘으면 지도를 다시 그려야 한다(시안 B 단점).
-export const MAP_POS=Object.freeze({hiking:[24,31],smoking:[76,31],christmas:[24,75],next:[76,75]});
+// 11-23 인형뽑기(다섯째 칸): 오른아래를 인형가게가 쓰고 「다음 체험 준비 중」은 아래 가운데 작은 팻말로(hub.css .hb-place.next)
+export const MAP_POS=Object.freeze({hiking:[24,31],smoking:[76,31],christmas:[24,75],claw:[76,75],next:[50,90]});
 const posOf=(e,i)=>MAP_POS[e.id]??[[24,31],[76,31],[24,75],[76,75]][i%4];
 
 /** 시간대: forced(?hubtime) → 설정(auto 아니면) → 해 높이 */

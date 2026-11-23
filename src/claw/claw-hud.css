@@ -1,0 +1,164 @@
+/* 온라인 인형뽑기 화면(월드개발, 2026-11-23). 크기·자리는 월드디자인 설계 v1 §3(십자 60/56px·뽑기 76px·할 일 칩 44px·카드 단추 48px), 색은 공통 틀 변수. */
+.kh{font-family:var(--uf-font);color:var(--uf-ink)}
+.kh button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.kh kbd{display:none}
+@media (hover:hover) and (pointer:fine){.kh:not(.touch) kbd{display:inline-block;font:700 9px/1 var(--uf-font);padding:2px 4px;border-radius:4px;background:rgba(58,43,34,.12);color:var(--uf-ink2)}}
+
+/* 위 왼쪽 알약 */
+.kh-pill{cursor:pointer;min-height:44px!important;max-width:calc(100vw - 190px - var(--uf-sl) - var(--uf-sr))}
+.kh-pill em{display:grid;place-items:center;font-style:normal}
+.kh-pill-t{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.kh-coins{display:inline-flex;align-items:center;gap:2px;margin-left:2px;padding:2px 8px 2px 6px;border-radius:12px;background:#fff1c2;color:#7a5200;font-weight:900}
+.kh-pill[data-tone=bad] em{color:var(--uf-red)}
+.kh-pill[data-tone=ok] em{color:var(--uf-grn)}
+
+/* 조작 중 위 오른쪽: ⏱ 칩 + ✕. 💬·☰·🧸은 숨김(설계 ③) */
+.kh-timer{display:flex;align-items:center;gap:4px;height:44px;min-width:64px;box-sizing:border-box;padding:0 12px;border-radius:22px;background:var(--uf-cream);box-shadow:var(--uf-shadow);font:900 18px/1 var(--uf-font);color:var(--uf-ink);justify-content:center}
+.kh-timer[hidden]{display:none}
+.kh-timer.hurry{background:#ffe1dc;color:var(--uf-red);animation:kh-blink .5s steps(2) infinite}
+@keyframes kh-blink{50%{opacity:.6}}
+.kh-quit[hidden]{display:none}
+:root[data-claw-mode=play] .uf-tr .uf-extra,:root[data-claw-mode=play] .uf-tr .uf-chat-btn,:root[data-claw-mode=play] .uf-tr .uf-menu-btn,
+:root[data-claw-mode=drop] .uf-tr .uf-extra,:root[data-claw-mode=drop] .uf-tr .uf-chat-btn,:root[data-claw-mode=drop] .uf-tr .uf-menu-btn,
+:root[data-claw-mode=result] .uf-tr .uf-chat-btn{display:none!important}
+/* 조작 중에는 게임 화면을 끌어도 시점·조이스틱이 안 생김(카메라는 기계 정면 고정) */
+:root[data-claw-mode=play] canvas#scene,:root[data-claw-mode=drop] canvas#scene{pointer-events:none}
+:root[data-claw-mode=play] .joy,:root[data-claw-mode=drop] .joy{display:none!important}
+:root[data-claw-mode=play] .hc-panel,:root[data-claw-mode=drop] .hc-panel{display:none!important}
+
+/* 큰 단추(공통 data-uf=big 76px 빨강) + 남은 시간 고리 */
+.kh-big{display:flex;cursor:pointer}
+.kh-big em{font-style:normal;display:grid;place-items:center;line-height:1}
+.kh-big kbd{position:absolute;bottom:-18px}
+.kh-ringsvg{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);pointer-events:none;transform:rotate(-90deg)}
+.kh-ringsvg circle{fill:none;stroke:#ffd36b;stroke-width:4;stroke-dasharray:295.3;stroke-linecap:round;transition:stroke-dashoffset .1s linear}
+.kh-ringsvg.hurry circle{stroke:#ff5a4a;animation:kh-blink .5s steps(2) infinite}
+:root.uf .kh-big[data-dim]{opacity:.55!important;filter:saturate(.6)}
+.kh-todo{display:flex;cursor:pointer}
+.kh-todo em{font-style:normal;display:grid;place-items:center}
+.kh-todo span{overflow:hidden;text-overflow:ellipsis}
+.kh-todo kbd{margin-left:2px}
+
+/* 십자 단추(조작 중만, 걷기 조이스틱 자리) */
+.kh-pad{position:fixed;z-index:31;display:grid;grid-template-columns:repeat(3,var(--kp));grid-template-rows:repeat(3,var(--kp));gap:6px;
+ --kp:60px;left:calc(var(--uf-sl) + 16px);bottom:calc(var(--uf-sb) + 20px);touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.kh-pad[hidden]{display:none}
+.kh-pad[data-lock]{opacity:.55;pointer-events:none}
+.kh-dir{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;width:var(--kp);height:var(--kp);padding:0;border:0;border-radius:16px;
+ background:var(--uf-cream2);color:var(--uf-ink);box-shadow:var(--uf-shadow);cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:transform .05s}
+.kh-dir i{font-style:normal;font-size:24px;line-height:1;pointer-events:none}
+.kh-dir small{font:800 9px/1 var(--uf-font);color:var(--uf-ink2);pointer-events:none}
+.kh-dir kbd{position:absolute;right:4px;bottom:3px;pointer-events:none}
+.kh-dir.on{background:var(--uf-ink);color:#fff;transform:translateY(2px)}
+.kh-dir.on small{color:#f0e6d6}
+.kh-dir[data-dir=up]{grid-column:2;grid-row:1}.kh-dir[data-dir=left]{grid-column:1;grid-row:2}.kh-mid{grid-column:2;grid-row:2}.kh-dir[data-dir=right]{grid-column:3;grid-row:2}.kh-dir[data-dir=down]{grid-column:2;grid-row:3}
+@media (orientation:landscape) and (max-height:540px){.kh-pad{--kp:56px;left:max(16px,var(--uf-sl));bottom:calc(var(--uf-sb) + 12px)}}
+@media (min-width:900px) and (min-height:541px){.kh-pad{--kp:56px;left:32px;bottom:32px}}
+/* 처음 몇 판 뒤 「안·밖」 글은 숨김(선택) */
+:root[data-claw-old] .kh-dir small{display:none}
+
+/* 알림: 위 단추 줄 바로 아래, 위 단추(46)보다 위 z 50(설계 §4) */
+.kh-toast{position:fixed;z-index:50;left:50%;top:calc(var(--uf-st) + 62px);transform:translateX(-50%);width:max-content;max-width:min(560px,calc(100vw - 24px));box-sizing:border-box;padding:9px 16px;border-radius:18px;
+ background:rgba(58,43,34,.92);color:#fffaf0;font:700 14px/1.35 var(--uf-font);text-align:center;box-shadow:0 4px 14px rgba(40,25,10,.3);pointer-events:none;
+ display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;transition:opacity .25s}
+.kh-toast[hidden]{display:none}
+.kh-toast.out{opacity:0}
+
+/* 카드(결과·코인 없음·그만두기·확률): z 55, ☰ 창(60) 아래 */
+.kh-card{position:fixed;z-index:55;left:50%;top:50%;transform:translate(-50%,-50%);width:min(360px,calc(100vw - 24px - var(--uf-sl) - var(--uf-sr)));max-height:calc(100dvh - 24px - var(--uf-st) - var(--uf-sb));overflow:auto;box-sizing:border-box;
+ padding:16px 16px 14px;border-radius:22px;background:rgba(255,250,238,.98);box-shadow:0 10px 34px rgba(40,25,10,.35);text-align:center}
+.kh-card[hidden]{display:none}
+.kh-card[data-kind=odds]{width:min(420px,calc(100vw - 24px));text-align:left}
+.kh-card h2{margin:6px 0 4px;font:900 20px/1.25 var(--uf-font)}
+.kh-card p{margin:4px 0;font:600 14px/1.45 var(--uf-font);color:var(--uf-ink2)}
+.kh-band{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 auto 4px;padding:6px 12px;border-radius:12px;background:var(--rc);color:#fff;font:900 14px/1 var(--uf-font);width:max-content;max-width:100%}
+.kh-band span{padding:2px 6px;border-radius:8px;background:rgba(255,255,255,.3);font-size:12px}
+.kh-win{display:flex;flex-direction:column;align-items:center;gap:2px}
+.kh-new{color:var(--uf-grn)!important;font-weight:900!important}
+.kh-pity{font-weight:800!important;color:var(--uf-ink)!important}
+.kh-img{display:block;object-fit:contain;-webkit-user-drag:none}
+.kh-img.sil{filter:brightness(0) opacity(.28)}
+.kh-noimg{display:grid;place-items:center;border-radius:12px;background:#efe4cf;font-size:28px;color:var(--uf-ink2)}
+.kh-row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
+.kh-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;min-width:88px;padding:0 16px;box-sizing:border-box;border:2px solid var(--uf-line);border-radius:14px;background:#fffaf0;color:var(--uf-ink);font:800 15px/1 var(--uf-font);cursor:pointer;text-decoration:none}
+.kh-btn.kh-red{background:var(--uf-red);border-color:var(--uf-red);color:#fff;--ic-point:#ffd36b}
+.kh-btn.kh-mini{min-height:44px;min-width:44px;padding:0 10px;font-size:13px}
+.kh-btn:focus-visible,.kh-cell:focus-visible,.kh-chip:focus-visible,.kh-dir:focus-visible{outline:3px solid var(--uf-red);outline-offset:2px}
+.kh-sub{font:600 12.5px/1.45 var(--uf-font)!important;color:var(--uf-ink2)!important;margin:6px 0!important}
+.kh-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.kh-head b{font:900 17px/1.2 var(--uf-font)}
+.kh-x{width:44px;height:44px;border:0;border-radius:50%;background:#efe4cf;cursor:pointer;display:grid;place-items:center}
+.kh-odds{width:100%;border-collapse:collapse;margin:8px 0;font:700 13px/1.3 var(--uf-font)}
+.kh-odds th{font-size:11.5px;color:var(--uf-ink2);text-align:left;padding:4px;border-bottom:1.5px solid var(--uf-line)}
+.kh-odds td{padding:5px 4px;border-bottom:1px solid #efe4cf;vertical-align:middle}
+.kh-odds td:first-child{display:flex;align-items:center;gap:6px}
+.kh-odds td:last-child,.kh-odds th:last-child{text-align:right}
+.kh-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--rc);margin-right:4px}
+.kh-rule{font-weight:800!important;color:var(--uf-ink)!important}
+
+/* ☰ 탭 안 */
+.kh-tab-h{display:flex;align-items:center;gap:8px;margin:2px 0 8px;font:900 17px/1.2 var(--uf-font)}
+.kh-count{margin-left:auto;font-size:14px;color:var(--uf-ink2)}
+.kh-h3{margin:12px 0 4px;font:900 14px/1.2 var(--uf-font)}
+.kh-mlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.kh-mlist li{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;border-radius:14px;background:#fffaf0;border-left:6px solid var(--mc)}
+.kh-mname{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.kh-mname b{font:900 15px/1.2 var(--uf-font)}
+.kh-mname small{font:600 12px/1.3 var(--uf-font);color:var(--uf-ink2)}
+.kh-mpool{display:flex;gap:2px;margin-top:2px}
+.kh-mbtn{display:flex;gap:6px;flex:none}
+.kh-go{min-width:64px}
+.kh-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.kh-chip{min-height:44px;padding:0 12px;border:2px solid var(--uf-line);border-radius:22px;background:#fffaf0;font:800 13px/1 var(--uf-font);cursor:pointer}
+.kh-chip[aria-pressed=true]{background:var(--uf-ink);border-color:var(--uf-ink);color:#fff}
+.kh-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.kh-cell{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;min-height:116px;padding:8px 4px 6px;border:2px solid var(--rc);border-radius:14px;background:#fffaf0;cursor:pointer}
+.kh-cell.none{border-color:var(--uf-line);border-style:dashed}
+.kh-cell span{font:800 12px/1.2 var(--uf-font)}
+.kh-cell b{position:absolute;right:6px;top:4px;font:900 11px/1 var(--uf-font);color:var(--uf-ink2)}
+.kh-back{margin-bottom:6px}
+.kh-detail{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.kh-detail h2{margin:4px 0 0;font:900 18px/1.2 var(--uf-font)}
+.kh-detail dl{display:grid;grid-template-columns:auto auto;gap:4px 12px;margin:8px 0;font:700 13px/1.3 var(--uf-font);text-align:left}
+.kh-detail dt{color:var(--uf-ink2)}.kh-detail dd{margin:0}
+.kh-coinbig{display:flex;align-items:baseline;justify-content:center;gap:8px;margin:6px 0}
+.kh-coinbig b{font:900 44px/1 var(--uf-font)}
+.kh-coinbig span{font:700 14px/1 var(--uf-font);color:var(--uf-ink2)}
+.kh-today{text-align:center;font:800 14px/1.4 var(--uf-font);margin:2px 0 6px}
+.kh-log{list-style:none;margin:0;padding:0;font:700 13px/1.3 var(--uf-font)}
+.kh-log li{display:flex;justify-content:space-between;gap:8px;padding:6px 2px;border-bottom:1px solid #efe4cf}
+.kh-log b.up{color:var(--uf-grn)}.kh-log b.down{color:var(--uf-red)}
+.kh-st{display:flex;align-items:center;flex-wrap:wrap;gap:6px;font:800 14px/1.3 var(--uf-font);margin:4px 0}
+.kh-st small{flex-basis:100%;font:600 12px/1.3 var(--uf-font);color:var(--uf-ink2)}
+.kh-people{list-style:none;margin:0;padding:0}
+.kh-people li{display:flex;align-items:center;gap:6px;padding:4px 0;font:700 13px/1.3 var(--uf-font)}
+.kh-people li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── 설계 v3: 기계 3종 ── */
+/* 타이머 「▶ 시작」만 초록(빨강은 멈춤·뽑기 몫) */
+:root.uf .kh-big.kh-green{background:#2f9a55!important;box-shadow:0 4px 12px rgba(20,90,40,.35),inset 0 0 0 3px rgba(255,255,255,.25)!important}
+:root.uf .kh-big.on{transform:translateY(2px)!important;filter:brightness(.92)}
+.kh-big[data-hold]{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.kh-small{display:flex;cursor:pointer}
+.kh-small em{font-style:normal;display:grid;place-items:center}
+/* 한 줄 안내: 세로 = 아래 가운데(집게는 십자 위), 가로·PC = 왼쪽 위(알약 아래) */
+.kh-hint{position:fixed;z-index:29;left:50%;transform:translateX(-50%);bottom:calc(var(--uf-sb) + 124px);width:max-content;max-width:min(320px,calc(100vw - 48px));box-sizing:border-box;min-height:32px;padding:7px 12px;border-radius:14px;
+ background:rgba(255,250,238,.9);color:var(--uf-ink);box-shadow:var(--uf-shadow);font:700 12.5px/1.35 var(--uf-font);text-align:center;pointer-events:none}
+.kh-hint[hidden]{display:none}
+:root[data-claw-kind=claw] .kh-hint{bottom:calc(var(--uf-sb) + 256px)} /* 십자(212)·할 일 칩 「👁」(242) 위 */
+@media (orientation:landscape) and (max-height:540px){.kh-hint,:root[data-claw-kind=claw] .kh-hint{left:calc(var(--uf-sl) + 12px);transform:none;top:calc(var(--uf-st) + 62px);bottom:auto;max-width:240px;text-align:left}}
+@media (min-width:900px) and (min-height:541px){.kh-hint,:root[data-claw-kind=claw] .kh-hint{left:calc(var(--uf-sl) + 12px);transform:none;top:calc(var(--uf-st) + 62px);bottom:auto;max-width:280px;text-align:left}}
+/* 결과 카드 멈춘 숫자(고정 폭) */
+.kh-num{font:900 34px/1.1 ui-monospace,"SF Mono",Menlo,monospace!important;font-variant-numeric:tabular-nums;color:var(--uf-ink)!important;margin:6px 0 0!important;letter-spacing:.02em}
+.kh-num.ok{color:var(--uf-grn)!important}
+/* 규칙 카드 */
+.kh-card[data-kind=rules]{width:min(420px,calc(100vw - 24px));text-align:left}
+.kh-level{font:800 13px/1.2 var(--uf-font)!important;color:var(--uf-ink2)!important}
+.kh-rules{margin:6px 0;padding-left:20px;font:600 13.5px/1.5 var(--uf-font);color:var(--uf-ink)}
+.kh-rules li{margin:3px 0}
+.kh-prizes{display:flex;flex-wrap:wrap;gap:6px 10px;margin:8px 0;font:700 12px/1.2 var(--uf-font)}
+.kh-prizes span{display:inline-flex;align-items:center;gap:3px}
+.kh-dots{font-size:11px;color:var(--uf-ink2);letter-spacing:-1px;margin-left:4px}
+/* 카드가 화면보다 길면(가로 휴대폰 규칙 카드) 아래 단추 줄은 카드 아래에 붙어 늘 보임 */
+.kh-card>.kh-row:last-child{position:sticky;bottom:-14px;margin:10px -16px -14px;padding:10px 16px 14px;background:linear-gradient(rgba(255,250,238,0),rgba(255,250,238,.98) 30%)}
+@media (orientation:landscape) and (max-height:540px){.kh-card{padding:12px 14px 12px}.kh-rules{font-size:12.5px}.kh-prizes{margin:4px 0}}

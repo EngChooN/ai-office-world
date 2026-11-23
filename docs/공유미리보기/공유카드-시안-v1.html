@@ -233,7 +233,35 @@ ${dd('santa',770,190,380,true)}
 ${T(70,180,'온라인',72,'#fdf3dc','#14203d',14)}
 ${T(60,350,'크리스마스',136,'#fdf3dc','#14203d',22)}
 ${chips(70,410,[['트리 꾸미기','#2f7a52','#fff'],['썰매 경주','#c8352e','#fff'],['눈싸움','#fdf6e3','#1d2a4a']])}
-${T(72,555,'친구와 노는 눈 오는 밤 광장',36,'#1d2a4a','#e6edf9',8,-0.02)}`}
+${T(72,555,'친구와 노는 눈 오는 밤 광장',36,'#1d2a4a','#e6edf9',8,-0.02)}`},
+
+/* 11-23 온라인 인형뽑기(월드아트): 기계 셋 = 게임 색(claw-palette.js MACHINES) — 숲속 집게·도시 타이머 10.00·별빛 열쇠 칸. 인형은 우리 곰 인형만(치이카와 없음) */
+claw:()=>{
+ const O='#3a2a16',plush=['#7cc56a','#56aef0','#a978f0','#f5c33b','#ff8fb6'];
+ const bear=(x,y,r,c)=>`<g stroke="${O}" stroke-width="3"><circle cx="${x-r*.78}" cy="${y-r*.78}" r="${r*.4}" fill="${c}"/><circle cx="${x+r*.78}" cy="${y-r*.78}" r="${r*.4}" fill="${c}"/><circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/></g><circle cx="${x-r*.33}" cy="${y-r*.08}" r="${r*.11}" fill="${O}"/><circle cx="${x+r*.33}" cy="${y-r*.08}" r="${r*.11}" fill="${O}"/><ellipse cx="${x}" cy="${y+r*.32}" rx="${r*.3}" ry="${r*.2}" fill="#fff6e6"/>`;
+ const mach=(x,body,dark,inside,stick=false)=>`<g><rect x="${x}" y="150" width="150" height="390" rx="16" fill="${body}" stroke="${O}" stroke-width="6"/><rect x="${x+10}" y="160" width="130" height="44" rx="9" fill="${dark}"/>
+<rect x="${x+14}" y="214" width="122" height="176" rx="6" fill="#dff4fb" stroke="${O}" stroke-width="4"/><path d="M${x+24} 226 l18 0" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".9"/>${inside}
+<rect x="${x-6}" y="404" width="162" height="34" rx="9" fill="${dark}" stroke="${O}" stroke-width="5"/><circle cx="${stick?x+118:x+75}" cy="404" r="${stick?13:16}" fill="#e8443a" stroke="${O}" stroke-width="4"/>${stick?`<path d="M${x+36} 404 v-9" stroke="${O}" stroke-width="6" stroke-linecap="round"/><circle cx="${x+36}" cy="394" r="8" fill="#2e2420"/>`:''}
+<rect x="${x+50}" y="462" width="50" height="40" rx="6" fill="${dark}" stroke="${O}" stroke-width="4"/></g>`;
+ // 숲속 = 집게가 인형 더미 위
+ const forest=`<path d="M767 214 v50" stroke="#7d8a92" stroke-width="4"/><rect x="755" y="262" width="24" height="12" rx="3" fill="#c9d3d9" stroke="${O}" stroke-width="3"/><path d="M759 274 q-12 14 -4 30 M775 274 q12 14 4 30" fill="none" stroke="${O}" stroke-width="5" stroke-linecap="round"/>${bear(728,360,16,plush[0])}${bear(768,364,15,plush[1])}${bear(806,358,16,plush[4])}${bear(748,334,13,plush[3])}${bear(788,332,13,plush[2])}`;
+ // 도시 = 타이머 숫자판 + 단 위 인형 하나
+ const city=`<rect x="868" y="218" width="114" height="52" rx="6" fill="#1f1a17" stroke="${O}" stroke-width="3"/><text x="925" y="258" text-anchor="middle" font-family="Menlo, monospace" font-size="38" font-weight="800" fill="#ffb347">10.00</text><rect x="895" y="350" width="60" height="38" rx="4" fill="#f4ead6" stroke="${O}" stroke-width="3"/><path d="M895 362h60M895 374h60" stroke="#e8443a" stroke-width="5"/>${bear(925,326,19,plush[2])}`;
+ // 별빛 = 칸 2줄×4칸 + 열쇠 구멍
+ let cells='';for(let j=0;j<2;j++)for(let i=0;i<4;i++){const cx=1040+i*28,cy=262+j*70;cells+=`<rect x="${cx-12}" y="${cy-20}" width="24" height="56" rx="3" fill="${j?'#fff8d6':'#eef3ff'}" stroke="${O}" stroke-width="2.5"/>${bear(cx,cy-2,8,plush[(i+j*2)%5])}<rect x="${cx-4}" y="${cy+20}" width="8" height="8" fill="#2e2420" stroke="#e3b23c" stroke-width="2"/>`;}
+ const star=`<path d="M1132 170 l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z" fill="#ffd76a"/>`;
+ return `
+<defs><linearGradient id="clBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fde8ef"/><stop offset="1" stop-color="#f7cfdd"/></linearGradient></defs>
+<rect width="1200" height="630" fill="url(#clBg)"/>
+<g fill="#fff" opacity=".55">${[[640,70,5],[700,120,3],[1150,90,4],[600,150,3],[1180,200,3]].map(([x,y,r])=>`<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>
+<rect y="534" width="1200" height="96" fill="#f4ead6"/>${Array.from({length:30},(_,i)=>`<rect x="${(i%15)*80+(i<15?0:40)}" y="${i<15?534:582}" width="40" height="48" fill="#e6d6b8"/>`).join('')}
+<rect y="530" width="1200" height="8" fill="#e3b8c8"/>
+<g transform="translate(-26 0)">${mach(692,'#4fae7a','#2f7f58',forest,true)}${mach(850,'#f08a3c','#c0612a',city)}${star}${mach(1008,'#5b5fc4','#3a3d8f',cells)}
+${dd('hike',760,268,300,true)}</g>
+${T(70,170,'온라인',72,'#a8325c','#fff6f9',14)}
+${T(62,340,'인형뽑기',146,'#a8325c','#fff6f9',22)}
+${chips(70,402,[['매일 무료 코인','#d94a7c','#fff'],['인형 도감','#fff6f9','#a8325c']])}
+${T(72,516,'집게로 쏙! 동동이 인형가게',38,'#7a2448','none',0,-0.02)}`}
 };
 const SAFE=`<svg class="safe" viewBox="0 0 1200 630"><rect x="0" y="0" width="1200" height="30" fill="rgba(220,40,40,.35)"/><rect x="0" y="600" width="1200" height="30" fill="rgba(220,40,40,.35)"/><rect x="60" y="30" width="1080" height="570" fill="none" stroke="rgba(220,40,40,.8)" stroke-width="4"/><rect x="285" y="0" width="630" height="630" fill="none" stroke="#2b6fd6" stroke-width="5" stroke-dasharray="18 12"/></svg>`;
 const og=(id,extra='')=>`<div class="og" ${extra}><svg viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">${CARDS[id]()}</svg>${SAFE}</div>`;
@@ -253,8 +281,11 @@ const PAGES=[
  {id:'christmas',name:'온라인 크리스마스',path:'christmas/',title:'온라인 크리스마스 — 눈마을 광장',
   desc:'다 같이 트리를 꾸미고 눈싸움·썰매 경주·루돌프 하늘 썰매까지. 친구와 노는 눈 오는 밤 광장이에요.',
   alt:'눈 오는 밤 트리 앞에서 손을 흔드는 산타 옷 동동이와 「온라인 크리스마스」 글자',theme:'#1d2a4a',icon:'christmas'},
+ {id:'claw',name:'온라인 인형뽑기',path:'claw/',title:'온라인 인형뽑기 — 동동이 인형가게',
+  desc:'매일 받는 무료 코인으로 집게를 움직여 우리 캐릭터 인형을 뽑고 도감을 채워요. 다른 손님이 뽑는 모습도 구경해요.',
+  alt:'인형뽑기 기계 세 대 앞에서 손을 흔드는 등산복 동동이와 「온라인 인형뽑기」 글자',theme:'#d94a7c',icon:'claw'},
 ];
-const NOW_TITLE={hub:'온라인 메타버스',hiking:'산길 · 관악산 온라인 등반',smoking:'온라인 흡연장 — 온라인 시리즈',christmas:'온라인 크리스마스 — 눈마을 광장'};
+const NOW_TITLE={hub:'온라인 메타버스',hiking:'산길 · 관악산 온라인 등반',smoking:'온라인 흡연장 — 온라인 시리즈',christmas:'온라인 크리스마스 — 눈마을 광장',claw:'온라인 인형뽑기 — 동동이 인형가게'};
 
 /* ── 아이콘 ── */
 const ICON={
@@ -262,6 +293,7 @@ const ICON={
  hiking:(s)=>`<svg width="${s}" height="${s}" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#173f36"/><path d="M3 26 12 11l4 6 4-7 9 16z" fill="#cfd8c4"/><path d="M12 11l2.4 3.6L12 16l-1.6-2.2zM20 10l2.6 4.6-2 1.2-1.8-2.4z" fill="#fff"/></svg>`,
  smoking:(s)=>`<svg width="${s}" height="${s}" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#2a2f45"/><circle cx="23" cy="8" r="3" fill="#fdf3dc"/><path d="M5 27V14h6v-4h6v17zM19 27V17h8v10z" fill="#d98a5f"/><path d="M7 17h2v2H7zM13 13h2v2h-2zM13 19h2v2h-2zM21 20h2v2h-2z" fill="#f6d27a"/><rect x="3" y="26" width="26" height="3" rx="1" fill="#9ba1bd"/></svg>`,
  christmas:(s)=>`<svg width="${s}" height="${s}" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#1d2a4a"/><path d="M16 5l6 9h-3l5 7h-3l5 7H6l5-7H8l5-7h-3z" fill="#4fb06a"/><path d="M16 2.5l1.3 2.6 2.8.4-2 2 .5 2.8L16 9l-2.6 1.3.5-2.8-2-2 2.8-.4z" fill="#ffd76a"/><circle cx="14" cy="17" r="1.4" fill="#e2453c"/><circle cx="19" cy="22" r="1.4" fill="#ffd76a"/><circle cx="12" cy="24" r="1.4" fill="#5aa8e6"/></svg>`,
+ claw:(s)=>`<svg width="${s}" height="${s}" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#d94a7c"/><path d="M7 5h18M16 5v3.5" stroke="#fdf6e3" stroke-width="2.4" stroke-linecap="round"/><rect x="12.2" y="8" width="7.6" height="4.4" rx="1.3" fill="#fdf6e3"/><path d="M13.4 12.4 8.6 17.4l1.4 4.6M18.6 12.4l4.8 5-1.4 4.6" fill="none" stroke="#fdf6e3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="24" r="3.9" fill="#f5c33b"/><circle cx="13.1" cy="21" r="1.5" fill="#f5c33b"/><circle cx="18.9" cy="21" r="1.5" fill="#f5c33b"/></svg>`,
 };
 
 /* ── 그리기 ── */

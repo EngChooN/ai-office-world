@@ -155,9 +155,9 @@ test('들어가기 단추: 켜짐 = 고른 서버로·혼자, 확인 중 = 들�
  assert.match(statusHTML(on),/45명/);assert.match(statusHTML(hubServerView('smoking',{net:'ok',health:health()})),/첫 번째로 들어가 보세요/);
  assert.match(statusHTML(hubServerView('hiking',{net:'checking'})),/인원 확인 중/);
 });
-test('체험 4칸(등산·흡연장·크리스마스·다음 체험), 지도 자리·그림·색·아이콘이 모두 있다', ()=>{
+test('체험 5칸(등산·흡연장·크리스마스·인형뽑기·다음 체험), 지도 자리·그림·색·아이콘이 모두 있다', ()=>{
  const all=[...EXPERIENCES,NEXT_SLOT];
- assert.deepEqual(all.map(e=>e.id),['hiking','smoking','christmas','next']);
+ assert.deepEqual(all.map(e=>e.id),['hiking','smoking','christmas','claw','next']);
  for(const e of all){assert.ok(ART[e.art],e.id);assert.ok(MAP_POS[e.id],e.id);assert.match(e.color,/^#[0-9a-f]{6}$/);assert.ok(hasIcon(e.icon),e.icon);}
  for(const e of EXPERIENCES){assert.equal(e.feats.length,3);for(const [ic] of e.feats)assert.ok(hasIcon(ic),ic);}
  for(const o of ['hike','office','santa'])assert.match(dongdong({outfit:o}),/^<svg class="dd/);

@@ -43,7 +43,7 @@ export function sanitizeName(raw,fallback='등산객',banned=[]){
  return s||fallback;
 }
 // 익명 이름: 체험별 접두어 + ID 끝 4자리(등산 `등산객XXXX`, 흡연장 `손님XXXX`). 체험을 안 주면 등산.
-export const ANON_PREFIX=Object.freeze({hiking:'등산객',smoking:'손님',christmas:'눈송이'});
+export const ANON_PREFIX=Object.freeze({hiking:'등산객',smoking:'손님',christmas:'눈송이',claw:'뽑기손님'});
 export const anonymousName=(id,experience='hiking')=>`${ANON_PREFIX[experience]??ANON_PREFIX.hiking}${String(id).replace(/[^0-9a-z]/gi,'').slice(-4).toUpperCase()}`;
 // 채팅(두 체험 공통 `c`, 2026-11-08). 보내기 {t:'c',text} → 서버가 정리해 같은 방 모두(보낸 사람 포함)에게 {t:'c',id,text}.
 // 80자, 제어·방향 문자 제거, 금칙어는 ***로 가림, 2초에 1번·10초에 4번(넘으면 {t:'c-limit'}). 내용은 디스크에 쓰지 않는다(신고 기록에만 대상의 최근 3줄).
@@ -114,7 +114,10 @@ export const ACT_SCHEMA=Object.freeze({
   //   + 11-17 3차: mg 회전목마 자리(0 없음·1~4 루돌프·5~8 썰매 의자, festive-layout.js CAROUSEL_SEATS 번호+1. 시안 B ?look=festive-b에서만 보냄 — 받는 쪽은 자기 화면의 같은 번호 자리 위에 그림)
   mg:Object.freeze(Array.from({length:CAROUSEL_SEATS.length+1},(_,i)=>i)),
   //   + 11-18: hs 하늘 썰매(0 없음·1 땅·2 날아오르기·3 비행·4 내려앉기, src/christmas/sky-rules.js HS). 언덕 눈썰매 sl과 따로. 높이는 위치 메시지 s의 a칸
-  hs:Object.freeze([0,1,2,3,4])}) // 자리 수는 레이아웃을 따름(월드아트가 자리를 늘리면 같이 늘어남)
+  hs:Object.freeze([0,1,2,3,4])}), // 자리 수는 레이아웃을 따름(월드아트가 자리를 늘리면 같이 늘어남)
+ //  인형뽑기(11-23): m 쓰는 기계(0 없음·1~3) · ph 단계(''·play 조작·drop 판정 연출·win 성공·lose 실패) · cx,cz 집게 자리(cm, 기계 좌표 +50)·열쇠 자리(칸×100)
+ //   · r 이번 판 인형 id · k 결과(0 아직·1 성공·2 아까움·3 실패) · n 판 번호 · v 타이머 멈춘 숫자(0.01초). 규칙은 src/claw/claw-rules.js(결과는 뽑는 사람 화면이 정하고 구경하는 화면은 그대로 그림)
+ claw:Object.freeze({m:Object.freeze([0,1,2,3]),ph:Object.freeze(['','play','drop','win','lose']),cx:'int',cz:'int',r:'id',k:Object.freeze([0,1,2,3]),n:'int',v:'int'})
 });
 export function sanitizeAct(exp,a){
  const sc=ACT_SCHEMA[exp];if(!sc||!a||typeof a!=='object'||Array.isArray(a))return null;
@@ -256,7 +259,7 @@ export function createSocial({id:idArg,send,position,mine,blocked=()=>false}){
 }
 // 체험 구분(2026-11-08 메타버스 통합). 서버 하나를 체험 여러 개가 같이 쓰고, 방은 `체험:방이름`으로 나뉜다.
 // hello의 exp가 없으면(옛 클라이언트) 등산으로 본다. 목록 밖 값은 서버가 거절한다.
-export const EXPERIENCES=Object.freeze(['hiking','smoking','christmas']);
+export const EXPERIENCES=Object.freeze(['hiking','smoking','christmas','claw']); // claw = 온라인 인형뽑기(11-23)
 export const DEFAULT_EXPERIENCE='hiking';
 // exp 값 → 체험 id. 비었으면 기본(등산), 목록 밖이면 null.
 export function parseExperience(raw){
@@ -274,7 +277,9 @@ export const EXPERIENCE_MESSAGES=Object.freeze({
  // 크리스마스(11-16): 위치 s + 트리 장식(달기·되돌리기·꼭대기 별). 트리 규칙은 src/christmas/tree-state.js(서버·화면 공용)
  //  + 놀이(11-16 2차): 선물·눈사람·눈싸움·썰매 같이 타기 요청. 판정은 src/christmas/room-play.js(XMAS_PLAY_MESSAGES와 같은 목록, 테스트가 맞춰 봄)
  christmas:Object.freeze([...COMMON_MESSAGES,'s','tree:put','tree:undo','tree:star','gift:send','snow:make','snow:push','snow:stack','snow:deco','snow:finish','sb:throw','sled:ask','sled:ok','sled:no',
-  'sr:open','sr:join','sr:go','sr:more','sr:solo','sr:quit','sr:fin','sr:rec','sc:new','sbm:join','sbm:leave','sbm:go'])
+  'sr:open','sr:join','sr:go','sr:more','sr:solo','sr:quit','sr:fin','sr:rec','sc:new','sbm:join','sbm:leave','sbm:go']),
+ // 인형뽑기(11-23): 위치 s + 공통(채팅·act). 한 판 판정은 뽑는 사람 화면(claw-rules.js judgeGrab), 서버는 act만 중계·기억한다
+ claw:Object.freeze([...COMMON_MESSAGES,'s'])
 });
 export const messageAllowed=(exp,type)=>EXPERIENCE_MESSAGES[exp]?.includes(type)??false;
 // 서버 목록(2026-11-08 서버 고르기, 11-13 대표 지시로 체험마다 3서버·정원 30). 줄 하나 = 서버 하나 = 서버 쪽 방 하나. 줄을 더하면 서버 고르기 창에 서버가 늘어난다.
@@ -288,7 +293,9 @@ export const SERVERS=Object.freeze({
  // 등산(11-21 대표 지시): 산마다 서버 3개. 관악산 id '1'·'2'·'3'(옛 값 그대로), 남산 id 'n1'·'n2'·'n3'. 산 고르기 뒤에 그 산의 서버만 보여 준다(mountainServers)
  hiking:Object.freeze([...['1','2','3'].map(id=>Object.freeze({id,name:`관악산 ${id}서버`,room:`관악산-${id}`,mountain:'gwanak'})),...['1','2','3'].map(n=>Object.freeze({id:`n${n}`,name:`남산 ${n}서버`,room:`남산-${n}`,mountain:'namsan'}))]),
  smoking:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`옥상 ${id}서버`,room:`옥상-${id}`}))),
- christmas:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`눈마을 광장 ${id}서버`,room:`눈마을-${id}`})))
+ christmas:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`눈마을 광장 ${id}서버`,room:`눈마을-${id}`}))),
+ // 인형뽑기(11-23): 서버 규모·비용은 대표 미결정이라 가게 1서버만(기존 정원 30 그대로, 기획서 MVP §6 「기존 수준 이상 확장 안 함」)
+ claw:Object.freeze([Object.freeze({id:'1',name:'인형가게 1서버',room:'인형가게-1'})])
 });
 /** 산 하나의 서버 줄만 담은 표({hiking:[…]}). 서버 고르기 창(createServerPick servers)에 넘긴다 */
 export const mountainServers=mountain=>Object.freeze({...SERVERS,hiking:Object.freeze(SERVERS.hiking.filter(s=>s.mountain===mountain))});

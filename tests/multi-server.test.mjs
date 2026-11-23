@@ -152,7 +152,7 @@ test('체험 구분: 같은 방 이름이라도 등산·흡연장은 다른 방,
   assert.ok(!smoke.got.some(m=>(m.t==='j'&&m.id!==smoke.welcome.id)||(m.t==='snap'&&m.p.length)),'흡연장에는 등산 이름·위치가 오지 않음');
   const bad=await client(url,{room:'옥상',exp:'golf'});assert.equal(bad.reject.reason,'experience');await until(()=>bad.closed);
   const h=await (await fetch(`http://127.0.0.1:${port}/health`)).json();
-  assert.deepEqual([h.rooms,h.clients],[2,3]);assert.deepEqual(h.experiences,{hiking:{rooms:1,clients:2},smoking:{rooms:1,clients:1},christmas:{rooms:0,clients:0}});
+  assert.deepEqual([h.rooms,h.clients],[2,3]);assert.deepEqual(h.experiences,{hiking:{rooms:1,clients:2},smoking:{rooms:1,clients:1},christmas:{rooms:0,clients:0},claw:{rooms:0,clients:0}});
   for(const c of [old,hike,smoke])c.w.close();
  }finally{await s.close();}
 });
@@ -226,7 +226,7 @@ test('서버 고르기: /health에 서버별 인원·정원과 total, 정원 2(M
  try{
   let h=await health();
   const rows=(n,c1=0)=>['1','2','3'].map(id=>({id,name:`${n} ${id}서버`,count:id==='1'?c1:0,max:2}));
-  assert.deepEqual(h.servers,{hiking:[...rows('관악산'),...[1,2,3].map(i=>({id:`n${i}`,name:`남산 ${i}서버`,count:0,max:2}))],smoking:rows('옥상'),christmas:rows('눈마을 광장').map(r=>({...r,max:30}))});assert.equal(h.total,0);
+  assert.deepEqual(h.servers,{hiking:[...rows('관악산'),...[1,2,3].map(i=>({id:`n${i}`,name:`남산 ${i}서버`,count:0,max:2}))],smoking:rows('옥상'),christmas:rows('눈마을 광장').map(r=>({...r,max:30})),claw:[{id:'1',name:'인형가게 1서버',count:0,max:2}]});assert.equal(h.total,0);
   const a=await client(url,{room:'관악산-1',name:'하나',exp:'hiking'}),b=await client(url,{room:'관악산-1',name:'둘',exp:'hiking'});
   assert.equal(a.welcome.server,'1');assert.equal(b.welcome.room,'관악산');
   const c=await client(url,{room:'관악산-1',name:'셋',exp:'hiking'});

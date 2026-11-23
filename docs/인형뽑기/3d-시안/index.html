@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>온라인 인형뽑기 — 3D 손맛 시안 v2 (월드디자인)</title>
+<style>
+:root{--cream:rgba(255,250,238,.88);--cream2:rgba(255,250,238,.95);--ink:#3a2b22;--ink2:#6b5a4c;--line:#e2d4b8;--red:#c8382d;--grn:#3f9a62;--gold:#ffd36b;
+ --shadow:0 2px 8px rgba(40,25,10,.18);--font:"Apple SD Gothic Neo","Pretendard",-apple-system,"Malgun Gothic",sans-serif;
+ --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#f3d5df;font:15px/1.4 var(--font);color:var(--ink);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+canvas{display:block;touch-action:none}
+.pill{position:fixed;left:calc(var(--sl) + 10px);top:calc(var(--st) + 10px);height:44px;padding:0 14px;border-radius:22px;background:var(--cream);box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px;z-index:45;max-width:calc(100vw - 140px);white-space:nowrap}
+.pill small{font-weight:600;color:var(--ink2)}
+.tr{position:fixed;right:calc(var(--sr) + 10px);top:calc(var(--st) + 10px);display:flex;gap:8px;z-index:46}
+.rb{min-width:44px;height:44px;border-radius:22px;border:0;background:var(--cream2);box-shadow:var(--shadow);font:800 15px var(--font);color:var(--ink);padding:0 12px;cursor:pointer}
+.rb.timer{min-width:64px}.rb.timer.low{background:#ffe1dc;color:var(--red)}
+.mach{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--st) + 62px);display:flex;gap:6px;z-index:44}
+.mach button{height:44px;padding:0 12px;border-radius:22px;border:2px solid transparent;background:var(--cream);box-shadow:var(--shadow);font:800 13px var(--font);color:var(--ink);cursor:pointer}
+.mach button[aria-pressed=true]{border-color:var(--grn);background:var(--cream2)}
+/* 십자 단추: 걷기 조이스틱 자리 */
+.pad{position:fixed;left:calc(var(--sl) + 16px);bottom:calc(var(--sb) + 20px);width:192px;height:192px;display:grid;grid-template:repeat(3,60px)/repeat(3,60px);gap:6px;z-index:40;touch-action:none}
+.pad button{border:0;border-radius:16px;background:var(--cream2);box-shadow:var(--shadow);font:800 26px var(--font);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;touch-action:none;cursor:pointer}
+.pad button small{font-size:10px;font-weight:700;color:var(--ink2);margin-top:2px}
+.pad button.on{background:var(--ink);color:#fff;transform:translateY(2px)}.pad button.on small{color:#e9dccb}
+.pad .u{grid-area:1/2}.pad .l{grid-area:2/1}.pad .r{grid-area:2/3}.pad .d{grid-area:3/2}
+.pad.off{opacity:.45;pointer-events:none}
+/* 큰 빨강 단추 + 남은 시간 고리 */
+.big{position:fixed;right:calc(var(--sr) + 16px + 0px);bottom:calc(var(--sb) + 28px);width:76px;height:76px;border-radius:50%;border:0;background:var(--red);color:#fff;font:800 14px var(--font);
+ box-shadow:0 4px 12px rgba(120,30,20,.35),inset 0 0 0 3px rgba(255,255,255,.25);z-index:41;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.big .ic{font-size:22px;line-height:1}
+.big svg{position:absolute;inset:-7px;width:90px;height:90px;pointer-events:none;transform:rotate(-90deg)}
+.big.off{opacity:.55;pointer-events:none}
+.big.blink svg circle{stroke:#ff6b5b;animation:bl .5s steps(2) infinite}@keyframes bl{50%{opacity:.2}}
+.sm{position:fixed;width:52px;height:52px;border-radius:50%;border:0;background:var(--cream2);box-shadow:var(--shadow);font:800 11px var(--font);color:var(--ink);z-index:41;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.sm .ic{font-size:18px;line-height:1}
+.view{right:calc(var(--sr) + 108px);bottom:calc(var(--sb) + 40px)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--st) + 116px);max-width:calc(100vw - 24px);padding:9px 16px;border-radius:20px;background:rgba(58,43,34,.9);color:#fff;font-weight:700;font-size:14px;z-index:50;opacity:0;transition:opacity .25s;pointer-events:none;text-align:center}
+.toast.show{opacity:1}
+.card{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(330px,calc(100vw - 32px));background:#fffaf0;border-radius:20px;box-shadow:0 10px 30px rgba(40,25,10,.3);padding:18px 18px 16px;z-index:55;text-align:center;display:none}
+.card.show{display:block}
+.card h2{margin:4px 0 6px;font-size:21px}.card p{margin:4px 0;color:var(--ink2);font-size:14px}
+.card .art{font-size:64px;line-height:1.1}
+.card .row{display:flex;gap:8px;margin-top:14px}
+.card .row button{flex:1;height:48px;border-radius:24px;border:0;font:800 15px var(--font);background:#efe5d2;color:var(--ink);cursor:pointer}
+.card .row button.main{background:var(--red);color:#fff}
+.hint{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 226px);padding:6px 12px;border-radius:14px;background:var(--cream);font-size:12.5px;font-weight:700;color:var(--ink2);z-index:39;white-space:nowrap;pointer-events:none}
+kbd{display:none;font:700 9px var(--font);opacity:.7}
+@media (hover:hover) and (pointer:fine){kbd{display:block}}
+/* 가로 휴대폰 */
+@media (max-height:540px){.pad{grid-template:repeat(3,56px)/repeat(3,56px);width:180px;height:180px;left:max(16px,var(--sl));bottom:calc(var(--sb) + 12px)}
+ .mach{top:auto;bottom:calc(var(--sb) + 14px)}.hint{display:none}.toast{top:calc(var(--st) + 62px)}}
+@media (min-width:900px) and (min-height:541px){.pad{grid-template:repeat(3,56px)/repeat(3,56px);width:180px;height:180px;left:32px;bottom:32px}.big{right:32px;bottom:36px}.view{right:124px;bottom:48px}.hint{bottom:auto;top:calc(var(--st) + 64px)}}
+#load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#f3d5df;z-index:70;font-weight:800;font-size:16px}
+</style></head>
+<body>
+<div id="load">인형 쌓는 중…</div>
+<div class="pill" id="pill">🧸 <span id="mname">곰토끼 기계</span> <small>·</small> 🪙 <span id="coin">10</span></div>
+<div class="tr"><button class="rb timer" id="timer" hidden>⏱ 20</button><button class="rb" id="quit" hidden aria-label="그만두기">✕</button><button class="rb" id="info" aria-label="기계 설명">ⓘ</button></div>
+<div class="mach" id="mach"></div>
+<div class="pad off" id="pad">
+ <button class="u" data-d="u">▲<small>안쪽</small><kbd>W ↑</kbd></button>
+ <button class="l" data-d="l">◀<kbd>A ←</kbd></button>
+ <button class="r" data-d="r">▶<kbd>D →</kbd></button>
+ <button class="d" data-d="d">▼<small>앞쪽</small><kbd>S ↓</kbd></button>
+</div>
+<button class="sm view" id="view"><span class="ic">👁</span><span id="viewt">옆에서</span></button>
+<button class="big" id="big"><svg viewBox="0 0 90 90"><circle cx="45" cy="45" r="41" fill="none" stroke="#ffd36b" stroke-width="5" stroke-linecap="round" id="ring" stroke-dasharray="258" stroke-dashoffset="0" opacity="0"/></svg><span class="ic" id="bigic">🪙</span><span id="bigt">한 판</span><kbd>Space</kbd></button>
+<div class="hint" id="hint">옆에서 보면 집게가 앞뒤 어디 있는지 보여요 · 화면을 끌어도 돌아가요</div>
+<div class="toast" id="toast"></div>
+<div class="card" id="card"><div class="art" id="cart"></div><h2 id="ctitle"></h2><p id="cdesc"></p><p id="cpity"></p>
+ <div class="row" id="crow"></div></div>
+<script type="module" src="./claw3d.js"></script>
+</body></html>

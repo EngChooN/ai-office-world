@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>온라인 인형뽑기 — 화면·조작 시안 v1 (월드디자인)</title>
+<style>
+:root{--cream:rgba(255,250,238,.88);--cream2:rgba(255,250,238,.95);--ink:#3a2b22;--ink2:#6b5a4c;--line:#e2d4b8;--red:#c8382d;--grn:#3f9a62;--gold:#ffd36b;
+ --shadow:0 2px 8px rgba(40,25,10,.16);--font:"Apple SD Gothic Neo","Pretendard",-apple-system,"Malgun Gothic",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#efe7d6;color:var(--ink);font:15px/1.55 var(--font)}
+header,section{max-width:1500px;margin:0 auto;padding:18px 24px}
+h1{font-size:24px;margin:8px 0 4px}h2{font-size:19px;margin:26px 0 10px;border-bottom:2px solid var(--line);padding-bottom:6px}
+.note{color:var(--ink2);font-size:13.5px}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;background:#fff3cf;border:1px solid #e8cf86;font-size:12px;font-weight:700}
+/* 흐름도 */
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.flow .n{background:#fffaf0;border:2px solid var(--line);border-radius:12px;padding:6px 10px;font-weight:700;font-size:13.5px}
+.flow .n.k{border-color:var(--red)}.flow .n.g{border-color:var(--grn)}
+.flow .a{color:var(--ink2);font-weight:800}
+.flow small{display:block;font-weight:500;color:var(--ink2);font-size:11.5px}
+.row{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start}
+figure{margin:0}figcaption{font-weight:800;font-size:14px;margin:6px 0 2px}figcaption small{display:block;font-weight:500;color:var(--ink2);font-size:12px;max-width:260px}
+/* 기기 틀 */
+.dev{position:relative;overflow:hidden;border-radius:26px;box-shadow:0 0 0 8px #2c2420,0 8px 24px rgba(0,0,0,.25);font-family:var(--font);user-select:none;-webkit-user-select:none}
+.p{width:390px;height:844px;zoom:.62}.l{width:844px;height:390px;zoom:.62}.pc{width:1280px;height:720px;zoom:.5;border-radius:10px}
+/* 가게 배경(그림은 월드아트 몫 — 자리 잡기용) */
+.shop{position:absolute;inset:0;background:linear-gradient(#f6d9e6 0 38%,#e9c3a4 38% 39%,#f1d2b2 39% 100%)}
+.shop::before{content:"";position:absolute;left:0;right:0;top:0;height:38%;background:repeating-linear-gradient(90deg,transparent 0 46px,rgba(255,255,255,.35) 46px 50px)}
+.shop::after{content:"";position:absolute;left:0;right:0;bottom:0;height:61%;background:repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 2px,transparent 2px 60px),repeating-linear-gradient(0deg,rgba(255,255,255,.18) 0 2px,transparent 2px 60px);opacity:.7}
+.mc{position:absolute;width:110px;height:200px;border-radius:14px 14px 8px 8px;background:linear-gradient(#ff8fb1,#e8668f);box-shadow:0 6px 0 #b84d70,0 10px 16px rgba(0,0,0,.18);z-index:1}
+.mc .gl{position:absolute;left:9px;right:9px;top:26px;height:110px;border-radius:6px;background:linear-gradient(160deg,rgba(255,255,255,.75),rgba(200,235,255,.55));overflow:hidden}
+.mc .tt{position:absolute;left:0;right:0;top:4px;text-align:center;color:#fff;font:800 11px var(--font)}
+.mc.b{background:linear-gradient(#8fd3ff,#5aa8e0);box-shadow:0 6px 0 #3e7fb0,0 10px 16px rgba(0,0,0,.18)}
+.mc.c{background:linear-gradient(#ffd27a,#f0a93c);box-shadow:0 6px 0 #c07d22,0 10px 16px rgba(0,0,0,.18)}
+.doll{position:absolute;width:26px;height:24px;border-radius:50% 50% 45% 45%;box-shadow:inset -3px -3px 0 rgba(0,0,0,.12)}
+.doll::before,.doll::after{content:"";position:absolute;top:8px;width:3px;height:3px;border-radius:50%;background:#3a2b22}.doll::before{left:8px}.doll::after{right:8px}
+.d1{background:#fff}.d2{background:#ffd0dd}.d3{background:#c9f0d6}.d4{background:#ffe9a8}.d5{background:#d9ccff}
+/* 동동이 자리 표시(실제는 3D 동동이) */
+.dd{position:absolute;width:44px;height:64px;z-index:3}
+.dd i{position:absolute;display:block}
+.dd .hd{left:4px;top:4px;width:36px;height:32px;border-radius:50%;background:#ffe2c6;box-shadow:inset 0 -2px 0 rgba(0,0,0,.08)}
+.dd .ht{left:0;top:0;width:44px;height:14px;border-radius:22px 22px 6px 6px;background:#c9a46a}
+.dd .sc{left:8px;top:34px;width:28px;height:7px;border-radius:4px;background:#d8342a}
+.dd .bd{left:9px;top:39px;width:26px;height:20px;border-radius:8px;background:#f08a2c}
+.dd .bp{left:2px;top:38px;width:10px;height:18px;border-radius:5px;background:#1c9a96}
+.dd .lg{left:12px;top:57px;width:20px;height:7px;border-radius:3px;background:#6b4e2e}
+.nm{position:absolute;padding:1px 7px;border-radius:9px;background:rgba(30,20,12,.55);color:#fff;font:700 11px var(--font);white-space:nowrap;z-index:4}
+/* 공통 틀 흉내(src/ui-frame.css 값) */
+.pill{position:absolute;left:12px;top:10px;min-height:40px;padding:0 14px 0 10px;border-radius:20px;background:var(--cream);box-shadow:var(--shadow);display:flex;align-items:center;gap:6px;font:700 13px var(--font);white-space:nowrap;z-index:45}
+.tr{position:absolute;right:12px;top:10px;display:flex;gap:8px;z-index:46}
+.rb{width:44px;height:44px;border-radius:50%;background:var(--cream);box-shadow:var(--shadow);display:grid;place-items:center;font-size:19px;border:0}
+.rb.dark{background:var(--ink);color:#fff}
+.tm{height:44px;min-width:64px;padding:0 12px;border-radius:22px;background:var(--cream);box-shadow:var(--shadow);display:flex;align-items:center;gap:4px;font:800 15px var(--font)}
+.tm.warn{background:#ffe3df;color:var(--red)}
+.big{position:absolute;right:16px;bottom:28px;width:76px;height:76px;border-radius:50%;background:var(--red);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font:800 11.5px var(--font);box-shadow:0 4px 12px rgba(120,30,20,.35),inset 0 0 0 3px rgba(255,255,255,.25);z-index:30;border:0}
+.big b{font-size:26px;line-height:1}
+.big.ring::before{content:"";position:absolute;inset:-7px;border-radius:50%;background:conic-gradient(var(--gold) 0 var(--left,75%),rgba(0,0,0,.12) 0);-webkit-mask:radial-gradient(circle,transparent 41px,#000 42px);mask:radial-gradient(circle,transparent 41px,#000 42px)}
+.dim{opacity:.55}
+.sm{position:absolute;width:52px;height:52px;border-radius:50%;background:var(--cream2);box-shadow:0 2px 8px rgba(40,25,10,.18);display:flex;flex-direction:column;align-items:center;justify-content:center;font:800 10px var(--font);z-index:30}
+.sm b{font-size:20px;line-height:1}
+.todo{position:absolute;right:12px;height:44px;padding:0 14px 0 10px;border-radius:21px;background:#fffaf0;border:2px solid var(--grn);box-shadow:0 3px 10px rgba(40,25,10,.2);display:flex;align-items:center;gap:6px;font:800 13px var(--font);white-space:nowrap;z-index:30}
+.joy{position:absolute;left:94px;bottom:74px;width:112px;height:112px;margin:-56px 0 0 -56px;border:2px dashed #ffffffbf;border-radius:50%;background:#ffffff14;display:grid;place-items:center;z-index:5}
+.joy span{width:46px;height:46px;border-radius:50%;background:#ffffff8c}
+.toast{position:absolute;left:50%;top:62px;transform:translateX(-50%);max-width:calc(100% - 24px);padding:10px 16px;border-radius:14px;background:rgba(255,250,238,.97);box-shadow:0 4px 14px rgba(40,25,10,.25);font:800 13.5px var(--font);white-space:nowrap;z-index:50;display:flex;gap:6px;align-items:center}
+.toast.gold{background:#fff3cf;border:2px solid #e8b93c}
+/* 십자 단추 */
+.pad{position:absolute;left:16px;bottom:20px;width:192px;height:192px;z-index:30;touch-action:none}
+.pad button{position:absolute;width:60px;height:60px;border-radius:16px;border:0;background:var(--cream2);box-shadow:0 2px 8px rgba(40,25,10,.2);color:var(--ink);font:800 26px/1 var(--font);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;touch-action:none;padding:0}
+.pad button small{font:700 9px var(--font);color:var(--ink2)}
+.pad button.on{background:var(--ink);color:#fff;transform:translateY(2px)}.pad button.on small{color:#e9dcc6}
+.pad .u{left:66px;top:0}.pad .lf{left:0;top:66px}.pad .rt{left:132px;top:66px}.pad .dn{left:66px;top:132px}
+.pad .c{position:absolute;left:66px;top:66px;width:60px;height:60px;border-radius:50%;border:2px dashed rgba(255,255,255,.7)}
+.pad kbd,.big kbd{display:none}
+.pcmode .pad kbd,.pcmode .big kbd{display:block;font:700 9px var(--font);opacity:.7}
+/* 조작 화면(기계 정면) */
+.front{position:absolute;inset:0;background:radial-gradient(circle at 50% 30%,#ffd1e0,#e48aa9 70%)}
+.cab{position:absolute;left:50%;top:84px;transform:translateX(-50%);width:330px;height:470px;border-radius:24px 24px 12px 12px;background:linear-gradient(#ff9dbb,#e8668f);box-shadow:0 10px 0 #b84d70,0 18px 30px rgba(0,0,0,.25)}
+.cab .gl{position:absolute;left:16px;right:16px;top:54px;bottom:70px;border-radius:10px;background:linear-gradient(170deg,rgba(255,255,255,.8),rgba(190,230,255,.6));overflow:hidden}
+.cab .tt{position:absolute;left:0;right:0;top:12px;text-align:center;color:#fff;font:800 20px var(--font);text-shadow:0 2px 0 rgba(0,0,0,.15)}
+.cab .hole{position:absolute;left:12px;bottom:8px;width:70px;height:56px;border-radius:6px;background:#5a2a3a;box-shadow:inset 0 6px 10px rgba(0,0,0,.5)}
+.cab .hole::after{content:"나오는 곳";position:absolute;left:0;right:0;bottom:-18px;text-align:center;color:#fff;font:700 10px var(--font)}
+.rail{position:absolute;left:0;right:0;top:10px;height:6px;background:#8a8a95}
+.claw{position:absolute;top:10px;width:4px;background:#8a8a95;transition:none}
+.claw::after{content:"";position:absolute;left:-16px;bottom:-22px;width:36px;height:24px;border:5px solid #9aa0ad;border-top:8px solid #9aa0ad;border-radius:6px 6px 18px 18px;border-bottom-color:transparent}
+.shadow-dot{position:absolute;width:30px;height:10px;border-radius:50%;background:rgba(60,20,40,.35);transform:translate(-50%,-50%)}
+.pile{position:absolute;left:0;right:0;bottom:0;height:150px}
+.pile .doll{width:44px;height:40px}.pile .doll::before{top:14px;left:13px}.pile .doll::after{top:14px;right:13px}
+/* 카드·창 */
+.veil{position:absolute;inset:0;background:rgba(40,25,10,.35);z-index:54}
+.card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(320px,calc(100% - 32px));padding:18px 16px 14px;border-radius:22px;background:rgba(255,250,238,.98);box-shadow:0 10px 30px rgba(40,25,10,.35);z-index:55;text-align:center}
+.card h3{margin:6px 0 2px;font-size:20px}.card p{margin:4px 0;color:var(--ink2);font-size:13.5px}
+.rar{display:inline-block;padding:2px 10px;border-radius:10px;font:800 12px var(--font);color:#fff}
+.r1{background:#9a8f80}.r2{background:#3f8fd0}.r3{background:#9b5bd6}.r4{background:linear-gradient(90deg,#e8a21c,#e85c8a)}
+.btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btns button{flex:1;min-width:96px;height:48px;border-radius:24px;border:0;background:#efe4cc;color:var(--ink);font:800 14.5px var(--font)}
+.btns button.main{background:var(--red);color:#fff}
+.bigdoll{width:120px;height:110px;margin:6px auto 4px;position:relative;border-radius:50% 50% 45% 45%;box-shadow:inset -8px -8px 0 rgba(0,0,0,.08),0 6px 0 rgba(0,0,0,.08)}
+.bigdoll::before,.bigdoll::after{content:"";position:absolute;top:44px;width:9px;height:9px;border-radius:50%;background:#3a2b22}.bigdoll::before{left:36px}.bigdoll::after{right:36px}
+.confetti{position:absolute;inset:0;z-index:53;pointer-events:none;background:
+ radial-gradient(circle,#ffd36b 3px,transparent 4px) 0 0/60px 70px,radial-gradient(circle,#ff8fb1 3px,transparent 4px) 30px 30px/70px 60px,radial-gradient(circle,#8fd3ff 3px,transparent 4px) 15px 50px/80px 90px}
+.sheet{position:absolute;left:0;right:0;bottom:0;max-height:50%;height:50%;border-radius:22px 22px 0 0;background:rgba(255,250,238,.97);box-shadow:0 -6px 20px rgba(40,25,10,.22);padding:6px 14px 12px;z-index:60;display:flex;flex-direction:column}
+.sheet.tall{height:50%}
+.grip{width:40px;height:5px;margin:2px auto 8px;border-radius:3px;background:#d3c4a6}
+.tabs{display:flex;gap:4px;border-bottom:1.5px solid #eadfc8;padding-bottom:6px;margin-bottom:8px}
+.tab{flex:1;min-height:48px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font:700 11px var(--font);color:var(--ink2);gap:2px}
+.tab b{font-size:18px}.tab.on{background:var(--ink);color:#fff}
+.x{width:44px;height:44px;border-radius:50%;background:#efe6d2;display:grid;place-items:center;align-self:center;font-weight:800}
+.body{flex:1;overflow:hidden}
+.hrow{display:flex;justify-content:space-between;align-items:center;margin:0 0 8px;font-weight:800}
+.chips{display:flex;gap:6px;margin-bottom:8px}
+.chip{height:36px;padding:0 12px;border-radius:18px;background:#efe4cc;display:flex;align-items:center;font:700 12.5px var(--font)}.chip.on{background:var(--ink);color:#fff}
+.body{overflow:auto}.grid{display:grid;grid-template-columns:repeat(3,96px);gap:8px;justify-content:center}
+.cell{height:116px;border-radius:14px;background:#fff;border:1.5px solid #eadfc8;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font:700 11.5px var(--font);position:relative}
+.cell .doll{position:relative;width:56px;height:52px}.cell .doll::before{top:18px;left:16px}.cell .doll::after{top:18px;right:16px}
+.cell.no .doll{background:#d8cfc0!important;box-shadow:none}.cell.no .doll::before,.cell.no .doll::after{display:none}
+.cell.no{color:#a8977f}
+.cell .new{position:absolute;right:6px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--red)}
+.cell .cnt{position:absolute;left:6px;top:4px;font:800 10px var(--font);color:var(--ink2)}
+.cell .bar{position:absolute;left:0;right:0;bottom:0;height:5px;border-radius:0 0 12px 12px}
+.list .it{display:flex;align-items:center;gap:10px;min-height:56px;padding:6px 8px;border-bottom:1px solid #eadfc8}
+.list .it .go{margin-left:auto;height:48px;padding:0 16px;border-radius:24px;background:var(--ink);color:#fff;display:flex;align-items:center;font:800 13.5px var(--font)}
+.coinbig{font:900 44px var(--font);text-align:center;margin:4px 0}
+.odds td,.odds th{padding:6px 6px;border-bottom:1px solid #eadfc8;font-size:12.5px;text-align:left}.odds{width:100%;border-collapse:collapse}
+/* 표시선(크기 주석) */
+.mk{position:absolute;border:1.5px dashed #1a7fd6;z-index:90;pointer-events:none}
+.mk span{position:absolute;left:0;top:-17px;background:#1a7fd6;color:#fff;font:700 10px var(--font);padding:1px 5px;border-radius:4px;white-space:nowrap}
+.mk.bt span{top:auto;bottom:-17px}
+.safe{position:absolute;left:0;right:0;top:0;height:0;border-top:1.5px dotted #888;z-index:91}
+table.spec{border-collapse:collapse;background:#fffaf0;font-size:13.5px}
+table.spec th,table.spec td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+table.spec th{background:#f4e9d2}
+.toggle{margin:6px 0 12px}.toggle label{font-weight:700;font-size:13px;cursor:pointer}
+body:not(.showmk) .mk{display:none}
+</style></head>
+<body class="showmk">
+<header>
+ <h1>온라인 인형뽑기 — 화면·조작 시안 v1</h1>
+ <div class="note">월드디자인 · 2026-11-23 · <span class="tag">추천안(대표 미확인)</span> · 공통 틀(<code>src/ui-frame.css</code>) 값 그대로 · 가게·기계·인형 그림은 자리 표시(월드아트 몫) · 치이카와 인형은 시안에 넣지 않음 · 숫자(코인 10개·20초·확률)는 임시값</div>
+ <div class="toggle"><label><input type="checkbox" checked onchange="document.body.classList.toggle('showmk',this.checked)"> 크기 표시선 보기(파란 점선)</label> · <b>③ 조작 화면의 십자 단추는 실제로 누르고 있으면 집게가 움직입니다</b>(옆 단추로 미끄러지면 방향이 바뀜).</div>
+</header>
+
+<section>
+<h2>1. 화면 흐름</h2>
+<div class="flow">
+ <div class="n">허브 카드<small>「온라인 인형뽑기」</small></div><span class="a">→</span>
+ <div class="n">서버 고르기<small>기존 공용 창</small></div><span class="a">→</span>
+ <div class="n g">① 가게 걷기<small>오늘의 코인 +10 알림</small></div><span class="a">→</span>
+ <div class="n g">② 기계 앞<small>2m 안 · 또는 ☰ 기계 「가기」</small></div><span class="a">→</span>
+ <div class="n k">③ 조작 20초<small>🪙 −1 · 십자 누르고 있기</small></div><span class="a">→</span>
+ <div class="n">④ 집게 내려감<small>입력 잠금 약 4초</small></div><span class="a">→</span>
+ <div class="n g">⑤ 성공 / ⑥ 실패<small>한 판 더 · 그만 · 도감</small></div><span class="a">→</span>
+ <div class="n">⑦ 도감 → ⑧ 자세히</div>
+</div>
+<div class="flow" style="margin-top:8px">
+ <div class="n">코인 0개에서 「한 판」</div><span class="a">→</span><div class="n">⑩ 코인 없음 카드<small>내일 0시 지급 안내 · 사는 단추 없음</small></div>
+ <span class="a" style="margin-left:18px">·</span><div class="n">☰ 「코인」 탭 = ⑨</div>
+ <span class="a">·</span><div class="n">기계 앞 ⓘ = ⑪ 확률 안내</div>
+ <span class="a">·</span><div class="n">③ 중 ✕ = 「그만두기」 확인</div>
+</div>
+</section>
+
+<section>
+<h2>2. 휴대폰 세로 (390×844 기준, 62% 크기로 보임)</h2>
+<div class="row">
+
+<!-- ① 가게 걷기 -->
+<figure><div class="dev p"><div class="shop"></div>
+ <div class="mc" style="left:22px;top:170px"><div class="tt">토끼 기계</div><div class="gl"><i class="doll d1" style="left:10px;bottom:6px"></i><i class="doll d2" style="left:40px;bottom:4px"></i><i class="doll d1" style="left:66px;bottom:10px"></i></div></div>
+ <div class="mc b" style="left:140px;top:150px"><div class="tt">동동이 기계</div><div class="gl"><i class="doll d4" style="left:12px;bottom:6px"></i><i class="doll d3" style="left:44px;bottom:8px"></i><i class="doll d5" style="left:62px;bottom:4px"></i></div></div>
+ <div class="mc c" style="left:258px;top:170px"><div class="tt">초보 기계</div><div class="gl"><i class="doll d4" style="left:14px;bottom:6px"></i><i class="doll d2" style="left:48px;bottom:6px"></i></div></div>
+ <div class="dd" style="left:300px;top:430px"><i class="bp"></i><i class="hd"></i><i class="ht"></i><i class="sc"></i><i class="bd"></i><i class="lg"></i></div><div class="nm" style="left:294px;top:410px">하늘</div>
+ <div class="nm" style="left:164px;top:380px">💭 민지 뽑는 중</div>
+ <div class="dd" style="left:174px;top:400px"><i class="bp"></i><i class="hd"></i><i class="ht"></i><i class="sc"></i><i class="bd"></i><i class="lg"></i></div>
+ <div class="dd" style="left:170px;top:600px;zoom:1.5"><i class="bp"></i><i class="hd"></i><i class="ht"></i><i class="sc"></i><i class="bd"></i><i class="lg"></i></div>
+ <div class="pill">🧸 인형가게 1서버 · 👥 3 · 🪙 10</div>
+ <div class="tr"><div class="rb">🧸</div><div class="rb">💬</div><div class="rb">☰</div></div>
+ <div class="toast gold">🪙 오늘의 코인 +10 <small style="font-weight:600;color:var(--ink2)">내일 또 받아요</small></div>
+ <div class="joy"><span></span></div>
+ <div class="big"><b>🏃</b>달리기</div>
+ <div class="mk" style="right:12px;top:10px;width:148px;height:44px"><span>위 단추 44px · 사이 8px</span></div>
+ <div class="mk bt" style="left:40px;top:62px;width:310px;height:40px"><span>알림: 위 줄 아래 62px · z 50(HUD 46 위)</span></div>
+</div><figcaption>① 가게 걷기<small>기계 2~3대가 한눈에. 다른 손님 이름표 + 「뽑는 중」. 첫 접속이면 코인 알림 4초.</small></figcaption></figure>
+
+<!-- ② 기계 앞 -->
+<figure><div class="dev p"><div class="shop"></div>
+ <div class="mc" style="left:110px;top:140px;width:170px;height:300px"><div class="tt" style="font-size:15px">토끼 기계</div><div class="gl" style="height:170px;top:34px"><i class="doll d1" style="left:14px;bottom:8px;zoom:1.4"></i><i class="doll d2" style="left:60px;bottom:4px;zoom:1.4"></i><i class="doll d5" style="left:90px;bottom:12px;zoom:1.4"></i></div></div>
+ <div class="nm" style="left:150px;top:116px">🪙1 · 토끼 인형 4종</div>
+ <div class="dd" style="left:162px;top:520px;zoom:1.6"><i class="bp"></i><i class="hd"></i><i class="ht"></i><i class="sc"></i><i class="bd"></i><i class="lg"></i></div>
+ <div class="pill">🧸 인형가게 1서버 · 👥 3 · 🪙 10</div>
+ <div class="tr"><div class="rb">🧸</div><div class="rb">💬</div><div class="rb">☰</div></div>
+ <div class="todo" style="bottom:198px">🕹 토끼 기계 한 판 · 🪙1</div>
+ <div class="todo" style="bottom:248px">ⓘ 확률 보기</div>
+ <div class="joy"><span></span></div>
+ <div class="big"><b>🕹</b>한 판</div>
+ <div class="mk" style="right:12px;bottom:198px;width:200px;height:44px"><span>할 일 칩 44px · 위로 50px씩</span></div>
+ <div class="mk bt" style="right:16px;bottom:28px;width:76px;height:76px"><span>큰 단추 76 · 오른쪽 16 · 아래 28</span></div>
+</div><figcaption>② 기계 앞(2m 안)<small>할 일 칩과 큰 단추가 같은 일(「한 판」). ⓘ 확률은 늘 같이 보임. 남이 쓰는 기계면 칩이 「다른 사람이 쓰는 중」(흐림).</small></figcaption></figure>
+
+<!-- ③ 조작 -->
+<figure><div class="dev p" id="play"><div class="front"></div>
+ <div class="cab"><div class="tt">토끼 기계</div><div class="gl" id="glass"><div class="rail"></div><div class="claw" id="claw" style="left:140px;height:70px"></div><div class="shadow-dot" id="sdot" style="left:142px;top:260px"></div>
+  <div class="pile"><i class="doll d1" style="left:20px;bottom:10px"></i><i class="doll d2" style="left:70px;bottom:24px"></i><i class="doll d5" style="left:120px;bottom:6px"></i><i class="doll d1" style="left:170px;bottom:20px"></i><i class="doll d2" style="left:220px;bottom:8px"></i><i class="doll d3" style="left:150px;bottom:44px"></i></div></div><div class="hole"></div></div>
+ <div class="pill">🐰 토끼 기계 · 🪙 9</div>
+ <div class="tr"><div class="tm">⏱ <span id="sec">18</span></div><div class="rb">✕</div></div>
+ <div class="pad" id="pad"><div class="c"></div>
+  <button class="u" data-d="u">▲<small>안</small><kbd>W ↑</kbd></button><button class="lf" data-d="l">◀<kbd>A ←</kbd></button><button class="rt" data-d="r">▶<kbd>D →</kbd></button><button class="dn" data-d="d">▼<small>밖</small><kbd>S ↓</kbd></button></div>
+ <button class="big ring" style="--left:90%"><b>🪝</b>뽑기<kbd>Space</kbd></button>
+ <div class="mk" style="left:16px;bottom:20px;width:192px;height:192px"><span>십자 192 · 단추 60 · 사이 6 · 왼 16 아래 20</span></div>
+ <div class="mk" style="right:12px;top:10px;width:116px;height:44px"><span>⏱ 칩 64 + ✕ 44</span></div>
+</div><figcaption>③ 조작(20초)<small>카메라는 기계 정면 고정. 💬·☰·조이스틱 숨김. 바닥 그림자 점으로 앞뒤 위치를 알 수 있게. 뽑기 둘레 고리 = 남은 시간.</small></figcaption></figure>
+
+<!-- ④ 내려감 -->
+<figure><div class="dev p"><div class="front"></div>
+ <div class="cab"><div class="tt">토끼 기계</div><div class="gl"><div class="rail"></div><div class="claw" style="left:170px;height:250px"></div>
+  <div class="pile"><i class="doll d1" style="left:20px;bottom:10px"></i><i class="doll d2" style="left:70px;bottom:24px"></i><i class="doll d5" style="left:120px;bottom:6px"></i><i class="doll d1" style="left:170px;bottom:20px"></i><i class="doll d2" style="left:220px;bottom:8px"></i></div></div><div class="hole"></div></div>
+ <div class="pill">🐰 토끼 기계 · 🪙 9</div>
+ <div class="toast">🪝 집게 내려가는 중…</div>
+ <div class="pad dim"><div class="c"></div><button class="u">▲<small>안</small></button><button class="lf">◀</button><button class="rt">▶</button><button class="dn">▼<small>밖</small></button></div>
+ <button class="big dim"><b>🪝</b>뽑기</button>
+</div><figcaption>④ 집게 내려감(약 4초)<small>단추는 흐리게만(사라지면 손가락이 허공을 누름). ✕도 숨김. 소리 「지이잉 → 덜컥」.</small></figcaption></figure>
+
+<!-- ⑤ 성공 -->
+<figure><div class="dev p"><div class="front"></div><div class="cab"><div class="tt">토끼 기계</div><div class="gl"></div><div class="hole"></div></div>
+ <div class="pill">🐰 토끼 기계 · 🪙 9</div>
+ <div class="veil"></div><div class="confetti"></div>
+ <div class="card"><span class="rar r3">★★★ 희귀</span><div class="bigdoll" style="background:#d9ccff"></div><h3>보라 토끼 인형</h3><p><b style="color:var(--red)">새 인형!</b> 도감에 넣었어요 · 6 / 8</p>
+  <div class="btns"><button>📖 도감 보기</button><button class="main">한 판 더 · 🪙1</button></div><div class="btns" style="margin-top:6px"><button style="background:transparent;height:44px">그만</button></div></div>
+ <div class="mk" style="left:35px;top:610px;width:320px;height:48px"><span>카드 단추 48px · 빨강은 「한 판 더」 하나</span></div>
+</div><figcaption>⑤ 성공<small>무거운 창(행동 단추 숨김). 이미 있으면 「3개째」. 같은 가게 사람에게는 희귀 이상만 알림.</small></figcaption></figure>
+
+<!-- ⑥ 실패 -->
+<figure><div class="dev p"><div class="front"></div><div class="cab"><div class="tt">토끼 기계</div><div class="gl"></div><div class="hole"></div></div>
+ <div class="pill">🐰 토끼 기계 · 🪙 8</div>
+ <div class="veil" style="background:rgba(40,25,10,.2)"></div>
+ <div class="card" style="top:auto;bottom:40px;transform:translateX(-50%)"><h3>아까워요! 거의 잡았어요</h3><p>집게가 귀를 스쳤어요</p><p style="margin-top:8px"><span class="chip" style="display:inline-flex;height:30px">🎁 보장까지 2번</span></p>
+  <div class="btns"><button>그만</button><button class="main">한 판 더 · 🪙1</button></div></div>
+</div><figcaption>⑥ 실패<small>기계가 보이게 카드를 아래로. 「거의 잡았어요」는 실제로 닿았을 때만(가짜 아까움 금지). 보장 규칙은 공개.</small></figcaption></figure>
+
+<!-- ⑦ 도감 -->
+<figure><div class="dev p"><div class="shop"></div>
+ <div class="pill">🧸 인형가게 1서버 · 👥 3 · 🪙 8</div><div class="tr"><div class="rb dark">🧸</div><div class="rb">💬</div><div class="rb">☰</div></div>
+ <div class="sheet"><div class="grip"></div>
+  <div class="tabs"><div class="tab"><b>🕹</b>기계</div><div class="tab on"><b>📖</b>도감</div><div class="tab"><b>🪙</b>코인</div><div class="tab"><b>🔊</b>소리</div><div class="tab"><b>⚙️</b>설정</div><div class="x">✕</div></div>
+  <div class="body"><div class="hrow"><span>내 도감 6 / 8</span><span class="note">★ 희귀도</span></div>
+   <div class="chips"><span class="chip on">전체</span><span class="chip">토끼</span><span class="chip">동동이</span><span class="chip">초보</span></div>
+   <div class="grid">
+    <div class="cell"><span class="cnt">×3</span><i class="doll d1"></i>흰 토끼<i class="bar r1"></i></div>
+    <div class="cell"><span class="cnt">×1</span><i class="doll d2"></i>분홍 토끼<i class="bar r2"></i></div>
+    <div class="cell"><span class="new"></span><span class="cnt">×1</span><i class="doll d5"></i>보라 토끼<i class="bar r3"></i></div>
+    <div class="cell"><span class="cnt">×2</span><i class="doll d4"></i>동동이<i class="bar r1"></i></div>
+    <div class="cell"><span class="cnt">×1</span><i class="doll d3"></i>숲 동동이<i class="bar r2"></i></div>
+    <div class="cell no"><i class="doll"></i>?<i class="bar r4"></i></div>
+   </div></div></div>
+ <div class="mk" style="left:47px;top:470px;width:96px;height:116px"><span>칸 96×116</span></div>
+</div><figcaption>⑦ 도감(☰ 「도감」 탭 · 🧸)<small>못 뽑은 인형 = 회색 실루엣 「?」(희귀도 띠는 보임). 새로 뽑은 것 빨간 점. 이름은 임시(인형 목록은 기획·아트 몫).</small><small>공통 틀대로 세로 50% 창 — 칸 2줄이 보이고 나머지는 밀어서 봄. 가로·PC는 오른쪽 340·380px 창에 3칸.</small></figcaption></figure>
+
+<!-- ⑧ 자세히 -->
+<figure><div class="dev p"><div class="shop"></div>
+ <div class="pill">🧸 인형가게 1서버 · 👥 3 · 🪙 8</div><div class="tr"><div class="rb dark">🧸</div><div class="rb">💬</div><div class="rb">☰</div></div>
+ <div class="sheet"><div class="grip"></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div class="x">‹</div><b style="font-size:16px">보라 토끼 인형</b><div class="x" style="margin-left:auto">✕</div></div>
+  <div style="display:flex;gap:14px;align-items:center"><div class="bigdoll" style="background:#d9ccff;width:140px;height:130px;margin:0"></div>
+   <div style="font-size:13.5px;line-height:1.9"><span class="rar r3">★★★ 희귀</span><br>나온 곳 <b>토끼 기계</b><br>처음 뽑은 날 <b>11월 23일</b><br>모은 수 <b>1개</b></div></div>
+  <div class="btns"><button class="main" style="background:var(--ink)">🕹 토끼 기계로 가기</button></div></div>
+</div><figcaption>⑧ 인형 자세히<small>「기계로 가기」 = 그 기계 앞으로 바로(☰ 기계 「가기」와 같음). 교환·선물 단추 없음(범위 밖).</small></figcaption></figure>
+
+<!-- ⑨ 코인 -->
+<figure><div class="dev p"><div class="shop"></div>
+ <div class="pill">🧸 인형가게 1서버 · 👥 3 · 🪙 8</div><div class="tr"><div class="rb">🧸</div><div class="rb">💬</div><div class="rb dark">☰</div></div>
+ <div class="sheet"><div class="grip"></div>
+  <div class="tabs"><div class="tab"><b>🕹</b>기계</div><div class="tab"><b>📖</b>도감</div><div class="tab on"><b>🪙</b>코인</div><div class="tab"><b>🔊</b>소리</div><div class="tab"><b>⚙️</b>설정</div><div class="x">✕</div></div>
+  <div class="body"><div class="coinbig">🪙 8</div><p class="note" style="text-align:center;margin:0 0 8px">오늘 받음 ✓ · 다음 10개까지 <b>9시간 12분</b> (매일 0시)</p>
+   <div class="list" style="font-size:13px"><div class="it">🪙 +10 오늘의 코인<span class="note" style="margin-left:auto">오늘 09:31</span></div><div class="it">🐰 −1 토끼 기계 · 보라 토끼<span class="note" style="margin-left:auto">09:40</span></div><div class="it">🐰 −1 토끼 기계 · 실패<span class="note" style="margin-left:auto">09:42</span></div></div>
+   <p class="note" style="font-size:12px">게임 속 무료 코인이에요. 돈으로 사거나 바꿀 수 없어요.</p></div></div>
+</div><figcaption>⑨ 코인(☰ 「코인」 탭)<small>사는 단추 없음(무료 코인만 — 확률 공개 의무 대상 밖을 유지). 기록 최근 5줄.</small></figcaption></figure>
+
+<!-- ⑩ 코인 없음 -->
+<figure><div class="dev p"><div class="shop"></div>
+ <div class="pill">🧸 인형가게 1서버 · 👥 3 · 🪙 0</div>
+ <div class="veil"></div>
+ <div class="card"><div style="font-size:44px">🪙</div><h3>코인이 없어요</h3><p>내일 0시에 10개를 또 받아요<br>(9시간 12분 남음)</p><p>그동안 다른 손님이 뽑는 걸 구경해 보세요</p>
+  <div class="btns"><button>📖 도감 보기</button><button class="main" style="background:var(--ink)">닫기</button></div></div>
+</div><figcaption>⑩ 코인 없음<small>「한 판」을 눌렀을 때만(미리 칩을 흐리게 하고 🪙0 표시). 사는 길 안내 없음.</small></figcaption></figure>
+
+<!-- ⑪ 확률 -->
+<figure><div class="dev p"><div class="shop"></div>
+ <div class="pill">🧸 인형가게 1서버 · 👥 3 · 🪙 8</div><div class="tr"><div class="rb">🧸</div><div class="rb">💬</div><div class="rb">☰</div></div>
+ <div class="sheet"><div class="grip"></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><b style="font-size:16px">ⓘ 토끼 기계 확률</b><div class="x" style="margin-left:auto">✕</div></div>
+  <table class="odds"><tr><th>인형</th><th>희귀도</th><th>잡혔을 때 나올 확률</th></tr>
+   <tr><td>흰 토끼</td><td>★</td><td>45%</td></tr><tr><td>분홍 토끼</td><td>★★</td><td>35%</td></tr><tr><td>보라 토끼</td><td>★★★</td><td>15%</td></tr><tr><td>무지개 토끼</td><td>★★★★</td><td>5%</td></tr></table>
+  <p class="note" style="font-size:12.5px;margin:8px 0 0">· 한 판에 잡힐 확률(집게 힘): 약 25%<br>· <b>5번 연속 실패하면 다음 판은 꼭 잡혀요</b> (기계마다 따로 셈)<br>· 숫자는 임시값이에요</p></div>
+</div><figcaption>⑪ 확률 안내(기계 앞 ⓘ)<small>조사 제안대로 기계마다 확률·보장 규칙 공개. 숫자는 기획 확정 전 임시.</small></figcaption></figure>
+
+</div>
+</section>
+
+<section>
+<h2>3. 휴대폰 가로 · PC (조작 화면)</h2>
+<div class="row">
+<figure><div class="dev l"><div class="front"></div>
+ <div class="cab" style="top:20px;width:260px;height:340px"><div class="tt">토끼 기계</div><div class="gl" style="top:44px;bottom:60px"><div class="rail"></div><div class="claw" style="left:90px;height:60px"></div><div class="pile" style="height:90px"><i class="doll d1" style="left:20px;bottom:6px"></i><i class="doll d2" style="left:80px;bottom:16px"></i><i class="doll d5" style="left:140px;bottom:4px"></i></div></div><div class="hole" style="height:44px"></div></div>
+ <div class="pill">🐰 토끼 기계 · 🪙 9</div><div class="tr"><div class="tm">⏱ 18</div><div class="rb">✕</div></div>
+ <div class="pad" style="left:16px;bottom:12px;width:180px;height:180px;zoom:.9375"><div class="c"></div><button class="u">▲<small>안</small></button><button class="lf">◀</button><button class="rt">▶</button><button class="dn">▼<small>밖</small></button></div>
+ <button class="big ring" style="bottom:16px;--left:90%"><b>🪝</b>뽑기</button>
+ <div class="mk" style="left:16px;bottom:12px;width:180px;height:180px"><span>십자 180 · 단추 56 · 아래 12</span></div>
+</div><figcaption>휴대폰 가로 844×390<small>기계가 가운데, 양손 엄지가 양쪽 아래. 큰 단추 아래 16px(공통 가로 값).</small></figcaption></figure>
+
+<figure><div class="dev pc pcmode"><div class="front"></div>
+ <div class="cab" style="top:60px;width:420px;height:560px"><div class="tt">토끼 기계</div><div class="gl"><div class="rail"></div><div class="claw" style="left:180px;height:90px"></div><div class="pile" style="height:180px"><i class="doll d1" style="left:40px;bottom:10px"></i><i class="doll d2" style="left:120px;bottom:24px"></i><i class="doll d5" style="left:200px;bottom:6px"></i><i class="doll d3" style="left:280px;bottom:16px"></i></div></div><div class="hole"></div></div>
+ <div class="pill">🐰 토끼 기계 · 🪙 9</div><div class="tr"><div class="tm">⏱ 18</div><div class="rb">✕</div></div>
+ <div class="pad" style="left:32px;bottom:32px;zoom:.9375"><div class="c"></div><button class="u">▲<small>안</small><kbd>W ↑</kbd></button><button class="lf">◀<kbd>A ←</kbd></button><button class="rt">▶<kbd>D →</kbd></button><button class="dn">▼<small>밖</small><kbd>S ↓</kbd></button></div>
+ <button class="big ring" style="right:32px;bottom:32px;--left:90%"><b>🪝</b>뽑기<kbd>Space</kbd></button>
+</div><figcaption>PC 1280×720<small>단추는 늘 보이고 마우스로 누르고 있어도 됨. 키 이름은 PC에서만 단추 안에 작게.</small></figcaption></figure>
+</div>
+</section>
+
+<section>
+<h2>4. 버튼 크기·위치 기준 (월드개발 인계)</h2>
+<table class="spec">
+<tr><th>요소</th><th>세로</th><th>가로(높이 ≤540)</th><th>PC</th><th>메모</th></tr>
+<tr><td>십자 단추(하나)</td><td>60×60, 모서리 16</td><td>56×56</td><td>56×56</td><td>사이 6px, 가운데 칸 비움. 크림·갈색 화살표, 누르면 갈색 바탕</td></tr>
+<tr><td>십자 묶음 자리</td><td>왼 sl+16 · 아래 sb+20</td><td>왼 max(16,sl) · 아래 sb+12</td><td>왼 32 · 아래 32</td><td>조작 중에만, 걷기 조이스틱 대신</td></tr>
+<tr><td>뽑기(큰 단추)</td><td colspan="3">공통 <code>data-uf="big"</code> 76px 빨강 그대로 + 바깥 4px 시간 고리</td><td>시작 0.6초 잠금, 한 판 1번, 시간 끝이면 자동</td></tr>
+<tr><td>⏱ 칩 · ✕</td><td colspan="3">위 오른쪽 콘텐츠 1칸: 높이 44 · 폭 64 / ✕ 44 동그라미</td><td>5초 남으면 ⏱ 빨강</td></tr>
+<tr><td>할 일 칩</td><td colspan="3">공통 <code>todo</code> 44px</td><td>「한 판 · 🪙1」 위에 「ⓘ 확률 보기」</td></tr>
+<tr><td>결과·안내 카드 단추</td><td colspan="3">높이 48, 폭 ≥96, 빨강은 한 개(한 판 더)</td><td>카드 z 55 · 무거운 창</td></tr>
+<tr><td>알림</td><td colspan="3">top st+62 · 가운데 · 폭 ≤100%−24 · z 50 · 한 번에 하나</td><td>기존 multi-toast(z 40)보다 위</td></tr>
+<tr><td>도감 칸</td><td colspan="3">96×116, 3칸, 사이 8</td><td>칸 전체가 누름 영역</td></tr>
+<tr><td>☰ 「기계」 탭 「가기」</td><td colspan="3">줄 높이 56 · 단추 48</td><td>마우스만으로도 기계 앞까지</td></tr>
+</table>
+<p class="note">누르고 있기: pointerdown~up/cancel/leave 동안 움직임 · 옆 단추로 미끄러지면 방향 바뀜(pointer capture 대신 elementFromPoint) · 두 손가락 대각선 허용 · <code>touch-action:none</code>, 글 선택·길게 누르기 메뉴 막기 · 집게 초당 기계 폭 35%, 0.1초 가속(임시).</p>
+</section>
+
+<script>
+// ③ 조작 화면: 누르고 있기 시험(시안용). 옆 단추로 미끄러지면 방향이 바뀌는 것까지 흉내.
+(()=>{const pad=document.getElementById('pad'),claw=document.getElementById('claw'),dot=document.getElementById('sdot'),gl=document.getElementById('glass');
+ let x=140,z=.5,held=new Map(),last=0;const W=()=>gl.clientWidth-10;
+ const dirAt=(e)=>{const el=document.elementFromPoint(e.clientX,e.clientY)?.closest('#pad button');return el?el.dataset.d:null};
+ const paint=()=>{pad.querySelectorAll('button').forEach(b=>b.classList.toggle('on',[...held.values()].includes(b.dataset.d)))};
+ pad.addEventListener('pointerdown',e=>{const d=dirAt(e);if(!d)return;e.preventDefault();held.set(e.pointerId,d);paint()});
+ addEventListener('pointermove',e=>{if(!held.has(e.pointerId))return;const d=dirAt(e);held.set(e.pointerId,d);paint()});
+ const up=e=>{held.delete(e.pointerId);paint()};addEventListener('pointerup',up);addEventListener('pointercancel',up);
+ const tick=t=>{const dt=Math.min(.05,(t-last)/1000||0);last=t;const s=[...held.values()];
+  if(s.includes('l'))x-=W()*.35*dt;if(s.includes('r'))x+=W()*.35*dt;if(s.includes('u'))z+=.35*dt;if(s.includes('d'))z-=.35*dt;
+  x=Math.max(10,Math.min(W(),x));z=Math.max(0,Math.min(1,z));
+  claw.style.left=x+'px';dot.style.left=(x+2)+'px';dot.style.top=(300-z*80)+'px';dot.style.width=(30-z*10)+'px';requestAnimationFrame(tick)};
+ requestAnimationFrame(tick);
+ let s=20;setInterval(()=>{s=s<=1?20:s-1;document.getElementById('sec').textContent=s;const tm=document.querySelector('#play .tm');tm.classList.toggle('warn',s<=5);document.querySelector('#play .big').style.setProperty('--left',(s/20*100)+'%')},1000);
+})();
+</script>
+</body></html>

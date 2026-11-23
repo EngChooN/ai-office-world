@@ -84,6 +84,8 @@ export const ICONS = {
   'c-exp-hiking': { f: '<path d="M2.5 19.5 9 8l3.5 5.5L15 10l6.5 9.5z"/>', s: '<path d="M2.5 19.5 9 8l3.5 5.5L15 10l6.5 9.5z"/><path d="M7.3 11 9 12.3l1.6-1.3M15 4v6M15 4h3.5l-1 1.3 1 1.2H15"/>' },
   'c-exp-smoking': { f: '<path d="M3 20.5V11h7v9.5zM10 20.5V7h8v13.5z"/>', s: '<path d="M2 20.5h20M3 20.5V11h7M10 20.5V7h8v13.5M13 10v.1M15.5 10v.1M13 13.5v.1M15.5 13.5v.1M6 4.5c1-1 0-2 1-3M8.5 6c1-1 0-2 1-3"/><path d="M5 8.5h3"/>' },
   'c-exp-christmas': { f: '<path d="M12 3.5 6.5 12h3l-4 6h13l-4-6h3z"/>', s: '<path d="M12 3.5 6.5 12h3l-4 6h13l-4-6h3zM12 18v2.5M3 20.5h18"/>' },
+  // 11-23 인형뽑기(월드아트): 기계 정면 — 유리 안 곰 인형을 집게가 잡음, 아래 조작대
+  'c-exp-claw': { f: '<rect x="6.5" y="4.5" width="11" height="9" rx="1" style="fill:var(--ic-glass,#dff4fb)"/>' + head(12, 11.2, 1.9), s: '<rect x="4" y="2" width="16" height="19.5" rx="2"/><rect x="6.5" y="4.5" width="11" height="9" rx="1"/><path d="M12 4.5v2.2M10.3 8.6c-.6.6-.7 1.3-.4 2M13.7 8.6c.6.6.7 1.3.4 2"/>' + head(12, 11.2, 1.9) + '<path d="M4 16h16M7.5 18.8h3M15.5 18.8v.1"/>' },
 };
 
 // 꺼짐 = 같은 그림 + 사선(면 빼고 선만). 규칙 §5.

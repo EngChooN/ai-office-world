@@ -23,3 +23,6 @@ artifacts/multi-server/data/
 # 서버 고르기 캡처가 띄운 서버의 신고 기록(임시)
 artifacts/server-pick/data/
 artifacts/server-pick/data-s/
+
+# 인형뽑기 손님 인형(다른 회사 캐릭터, 사용 허락 전) — 개발용 비공개 자료. 커밋·배포 금지(src/claw/claw-guest.js)
+private/

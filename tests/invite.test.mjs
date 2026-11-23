@@ -49,7 +49,7 @@ test('① 보내기: 공유 창 → 닫으면 cancel → 없으면 복사 → �
 });
 test('① 메뉴: 세 체험 공용 틀 맨 위 한 줄, 손가락 크기',()=>{
  const js=read('../src/ui-frame.js'),css=read('../src/ui-frame.css');
- assert.match(js,/invite=\['hiking','smoking','christmas'\]\.includes\(exp\)/);assert.match(js,/class="uf-invite"/);
+ assert.match(js,/invite=\['hiking','smoking','christmas','claw'\]\.includes\(exp\)/);assert.match(js,/class="uf-invite"/);
  assert.match(css,/\.uf-invite\{[^}]*min-height:48px/);
 });
 test('③ 장면 바로가기: ?spot=sled·fight·rink·tree·sky → 그 시설 앞, 모르는 값·꺼진 시설은 null',()=>{

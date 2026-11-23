@@ -9,6 +9,7 @@ const PAGES = [
   { file: 'hiking/index.html', path: 'hiking/', key: 'hiking', icon: '/og/favicon-hiking.svg' },
   { file: 'smoking/index.html', path: 'smoking/', key: 'smoking', icon: '/og/favicon-smoking.svg' },
   { file: 'christmas/index.html', path: 'christmas/', key: 'christmas', icon: '/og/favicon-christmas.svg' },
+  { file: 'claw/index.html', path: 'claw/', key: 'claw', icon: '/og/favicon-claw.svg' },
 ];
 
 const head = (file) => readFileSync(file, 'utf8').split('</head>')[0];

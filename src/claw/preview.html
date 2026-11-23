@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko" data-style="toon">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>인형뽑기 그림 미리보기 (월드아트)</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#f6e6cf}canvas{display:block;touch-action:none}
+#panel{position:fixed;left:10px;top:10px;max-width:calc(100vw - 20px);padding:7px 9px;border-radius:10px;background:rgba(24,36,44,.72);color:#f4efe6;font:12px system-ui,'Apple SD Gothic Neo',sans-serif;z-index:5}
+#panel button{margin:2px;border:0;border-radius:6px;padding:4px 7px;background:#f4efe6;color:#1d2a44;cursor:pointer;font:inherit}
+#panel b{display:inline-block;min-width:36px;color:#ffd98a}#info{margin-top:4px;opacity:.85;white-space:pre-line}</style>
+</head>
+<body>
+<div id="panel">
+ <div><b>장면</b><button data-view="shop">가게</button><button data-view="entry">입구에서</button><button data-view="machines">기계 셋</button><button data-view="play">조작 화면</button><button data-view="pile">더미 확대</button><button data-view="front">기계 비스듬히</button><button data-view="plush">인형 8종</button><button data-view="showcase">진열장</button><button data-view="pose">동동이 자세</button></div>
+ <div><b>불빛</b><button data-lights="idle">기본</button><button data-lights="play">조작</button><button data-lights="win">성공</button><button data-lights="rainbow">무지개</button></div>
+ <div id="info">불러오는 중…</div>
+</div>
+<script type="module" src="./preview.js"></script>
+</body>
+</html>

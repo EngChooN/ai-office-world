@@ -11,13 +11,16 @@ import {readPublished,FILE as SERVER_FILE} from './multi-publish.mjs';
 const dry=process.argv.includes('--dry'),BASE='/ai-office-world/',LIMIT=100*1024*1024;
 const run=(cmd,args,opts={})=>execFileSync(cmd,args,{stdio:'inherit',...opts});
 const out=(cmd,args,opts={})=>execFileSync(cmd,args,{encoding:'utf8',...opts}).trim();
-run('npm',['run','build'],{env:{...process.env,BASE_PATH:BASE}});
+// 인형뽑기 손님 인형(다른 회사 캐릭터, 사용 허락 전)은 공개 배포 금지: 개발용 설정이 켜진 채로는 빌드하지 않고, 빌드 뒤 섞였는지 검사한다(11-23)
+if(process.env.VITE_CLAW_PRIVATE){console.error('VITE_CLAW_PRIVATE가 켜져 있어 배포하지 않습니다(손님 인형은 개발용 비공개).');process.exit(1);}
+run('npm',['run','build'],{env:{...process.env,BASE_PATH:BASE,VITE_CLAW_PRIVATE:''}});
+run('node',['scripts/check-claw-private.mjs','dist']);
 const files=[];(function walk(d){for(const n of readdirSync(d)){const p=join(d,n),s=statSync(p);s.isDirectory()?walk(p):files.push([p,s.size]);}})('dist');
 const total=files.reduce((a,[,s])=>a+s,0),big=files.filter(([,s])=>s>LIMIT);
 console.log(`dist ${files.length}개 파일, ${(total/1048576).toFixed(1)}MB`);
-const missing=['index.html','hiking/index.html','smoking/index.html','christmas/index.html'].filter(p=>!existsSync(join('dist',p)));
+const missing=['index.html','hiking/index.html','smoking/index.html','christmas/index.html','claw/index.html'].filter(p=>!existsSync(join('dist',p)));
 if(missing.length){console.error('빌드 결과에 페이지가 없음:',missing.join(', '));process.exit(1);}
-console.log('페이지 4개 확인: / (허브) · /hiking/ · /smoking/ · /christmas/');
+console.log('페이지 5개 확인: / (허브) · /hiking/ · /smoking/ · /christmas/ · /claw/');
 if(big.length){console.error('100MB 초과 파일:',big.map(([p,s])=>`${p} ${(s/1048576).toFixed(1)}MB`).join(', '));process.exit(1);}
 if(dry){console.log('--dry: push 하지 않고 끝냅니다.');process.exit(0);}
 const remote=out('git',['remote','get-url','origin']),tmp=mkdtempSync(join(tmpdir(),'gwanak-pages-'));

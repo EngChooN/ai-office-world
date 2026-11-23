@@ -85,12 +85,12 @@ export function createChatBar({doc=document,win=window,onSay=()=>false,onClose=(
 }
 
 // ── 틀 만들기 ──
-// exp: 'smoking'|'hiking'|'christmas'
+// exp: 'smoking'|'hiking'|'christmas'|'claw'
 // extra: 콘텐츠 전용 위 단추 [{id,ic,label,onClick}] (💬 앞에 놓임, 크리스마스 🗺 지도)
 // tabs: ☰ 메뉴 탭 [{id,label,ic,render(body),onOpen?(body),onClose?()}]. render는 처음 열 때 한 번, onOpen은 열 때마다
 // quick: 메뉴 맨 위 빠른 줄(등산 소리·라디오·시각) render(el) — 없으면 안 그림
 // invite: 메뉴 맨 위 「친구 부르기」 한 줄(11-19 접속 유도 ①, src/invite.js). 세 체험은 기본으로 켜짐, false면 안 그림
-export function createUiFrame({doc=document,win=window,exp='',extra=[],tabs=[],quick=null,menuLabel='메뉴',invite=['hiking','smoking','christmas'].includes(exp)}={}){
+export function createUiFrame({doc=document,win=window,exp='',extra=[],tabs=[],quick=null,menuLabel='메뉴',invite=['hiking','smoking','christmas','claw'].includes(exp)}={}){
  loadCss();
  const root=doc.documentElement;root.classList.add('uf');if(exp)root.dataset.ufExp=exp;
  const mk=(tag,cls,html='')=>{const e=doc.createElement(tag);if(cls)e.className=cls;if(html)e.innerHTML=html;return e;};

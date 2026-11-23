@@ -32,14 +32,14 @@ if (PART.has('shots')) {
       const tiles = [...document.querySelectorAll('[id^="hub-"]')].map(e => { const r = e.getBoundingClientRect(); return { id: e.id, top: Math.round(r.top), bottom: Math.round(r.bottom), left: Math.round(r.left), right: Math.round(r.right) }; });
       const small = [...document.querySelectorAll('#hub button, #hub a')].filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && (r.height < 44 || r.width < 44) && !e.closest('[hidden]'); }).map(e => `${e.className||e.tagName}:${Math.round(e.getBoundingClientRect().width)}x${Math.round(e.getBoundingClientRect().height)}`);
       const emoji = document.querySelectorAll('#hub .ic-emoji').length;
-      return { layout: window.hub.state.layout, net: window.hub.state.net, overflowX: de.scrollWidth - vw, docH: de.scrollHeight, vh, tiles, allVisible: tiles.length === 4 && tiles.every(t => t.top >= 0 && t.bottom <= vh + 1 && t.left >= 0 && t.right <= vw + 1), small, emoji };
+      return { layout: window.hub.state.layout, net: window.hub.state.net, overflowX: de.scrollWidth - vw, docH: de.scrollHeight, vh, tiles, allVisible: tiles.length === 5 && tiles.every(t => t.top >= 0 && t.bottom <= vh + 1 && t.left >= 0 && t.right <= vw + 1), small, emoji };
     });
     await page.screenshot({ path: `${OUT}/${name}-${time}.png` });
     const r = { name, time, ...m, errors };
     report.shots.push(r);
     console.log(`${name}/${time}: ${m.layout} 서버=${m.net} 옆넘침=${m.overflowX} 4칸한화면=${m.allVisible} 작은단추=${m.small.length} 이모지=${m.emoji} 오류=${errors.length}`);
     if (m.overflowX > 0) bad(`${name} 옆 넘침 ${m.overflowX}px`);
-    if (!m.allVisible) bad(`${name} 4칸이 한 화면에 다 안 보임 ${JSON.stringify(m.tiles)}`);
+    if (!m.allVisible) bad(`${name} 5칸(체험 4 + 다음 체험)이 한 화면에 다 안 보임 ${JSON.stringify(m.tiles)}`);
     if (m.small.length) bad(`${name} 44px 안 되는 단추 ${m.small.join(', ')}`);
     if (m.emoji) bad(`${name} 이모지 대신 ${m.emoji}`);
     if (errors.length) bad(`${name} 콘솔 오류 ${errors.join(' | ')}`);

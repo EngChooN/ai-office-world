@@ -176,3 +176,6 @@ html.hb-modal,html.hb-modal body{overflow:hidden}
 @media (min-width:761px) and (max-height:760px){.hb-map>.hb-panel .hb-p-art{display:none}.hb-more{display:none}}
 @media (min-width:761px) and (max-width:1100px){.hb.hb-map{grid-template-columns:minmax(0,1fr) 340px}.hb-place{width:clamp(150px,24vw,260px)}.hb-flag>b{font-size:13px}.hb-map .hb-top .hb-btn .lbl{display:none}.hb-online .hb-st i{display:none}}
 @media (prefers-reduced-motion:reduce){.hb-place,.hb-card{transition:none}.hb-me .dd{animation:none}}
+/* 11-23 인형뽑기(다섯째 칸): 「다음 체험 준비 중」은 지도 아래 가운데 작은 팻말(hub.js MAP_POS next) — 아래 두 장소 사이에 들어가게 */
+.hb-map .hb-place.next{width:clamp(110px,11vw,180px)}
+.hb-map .hb-place.next .hb-flag>b{font-size:12px}
