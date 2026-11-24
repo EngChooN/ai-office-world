@@ -12,6 +12,7 @@ import './travel-ui.css';
 import {icon} from '../icons/icon.js';
 import {openWin,closeWin,onWin} from '../ui-frame.js';
 import {mapBounds,mapShapes,toMap,TRAVEL,placeRun,RUN_HOLD_MS} from './travel.js';
+import {attachSheet} from '../ui-sheet.js';
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const pct=t=>`${(t*100).toFixed(2)}%`;
@@ -44,7 +45,7 @@ export function createTravelUi({spots,shapes=mapShapes(),mobile=false,onRun=()=>
 </section>
 <div class="xt-fade" aria-hidden="true"></div>`;
  doc.body.appendChild(root);doc.documentElement.classList.add('xt-on'); // 가로 휴대폰 위 칩 줄 왼쪽 붙이기(travel-ui.css)는 이 화면만
- const boardEl=root.querySelector('.xt-board');boardEl.style.aspectRatio=`${W} / ${D}`;
+ const boardEl=root.querySelector('.xt-board');boardEl.style.aspectRatio=`${W} / ${D}`;boardEl.style.setProperty('--xt-ar',String(W/D));
  // 바탕 그림(월드아트 public/christmas/map/plaza-map-b.svg, 범위 = mapBounds()). 그림이 없으면 아래 SVG(.xt-art)를 다시 보이게 하면 됨
  boardEl.style.backgroundImage=`url(${import.meta.env?.BASE_URL??'/'}christmas/map/plaza-map-b.svg)`;
  const run=root.querySelector('.xt-run'),map=root.querySelector('.xt-map'),board=root.querySelector('.xt-board'),dots=root.querySelector('.xt-dots'),me=root.querySelector('.xt-me'),meRing=root.querySelector('.xt-me-ring'),fade=root.querySelector('.xt-fade');
@@ -85,11 +86,12 @@ export function createTravelUi({spots,shapes=mapShapes(),mobile=false,onRun=()=>
  }
  addEventListener('resize',()=>{placeT=0;});
  const open=on=>{const was=!map.hidden;map.hidden=!on;mapBtn.setAttribute('aria-pressed',String(on));mapBtn.classList.toggle('on',!!on);if(on){othersT=0;draw(0);onOpen();if(!was&&ufTr)openWin('map',{doc});}else if(was&&ufTr)closeWin('map',{doc});};
+ // 공통 틀이면 공통 바텀시트(11-24): 세로 = 위 64px만 남기고 크게·쓸어내려 닫기(지도 판 위는 쓸기 제외), 가로 = 오른쪽 판·오른쪽으로 밀어 닫기, 바깥 누름·Esc
  if(ufTr){onWin('map',()=>{if(!map.hidden)open(false);});
-  doc.addEventListener('pointerdown',e=>{if(map.hidden||e.target.closest?.('.xt-map,.uf-tr'))return;open(false);},true);} // 시트 바깥 게임을 누르면 닫힘
+  attachSheet(map,{doc,win:doc.defaultView??globalThis,close:()=>open(false),tall:true,handle:'header',noSwipe:'.xt-board',closeBtn:'.xt-x',toggle:mapBtn,ignore:'.uf-tr'});}
+ else doc.addEventListener('keydown',e=>{if(e.key==='Escape'&&!map.hidden)open(false);});
  mapBtn.addEventListener('click',()=>open(map.hidden));
  map.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b){open(false);onGo(b.dataset.go);return;}if(e.target.closest('[data-x="close"]'))open(false);});
- doc.addEventListener('keydown',e=>{if(e.key==='Escape'&&!map.hidden)open(false);});
  function draw(dt){
   const p=where(),m=toMap(p.x,p.z,B);me.style.left=meRing.style.left=pct(m.u);me.style.top=meRing.style.top=pct(m.v);me.style.transform=`translate(-50%,-50%) rotate(${(-p.heading).toFixed(3)}rad)`;me.classList.toggle('xt-edge',m.edge);
   othersT-=dt;if(othersT>0)return;othersT=1/TRAVEL.othersHz;

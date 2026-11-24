@@ -7,6 +7,7 @@
 import {GIFT_ITEMS,GIFT_INFO,CARD_DESIGNS,CARD_INFO,CARD_PRESETS,GIFT_RULES,cleanCardText,sanitizeGift,giftDeniedText,GIFT_TEXT} from './gift-state.js';
 import {MAILBOX} from './layout.js';
 import {icon,iconText} from '../icons/icon.js';
+import {attachSheet} from '../ui-sheet.js';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // 선물·카드 그림 아이콘(아이콘-규칙-v1 §7-4). gift-state.js의 ic 글자는 서버 공용 자료라 그대로 두고 화면은 이 표를 씀
@@ -30,6 +31,8 @@ export function createGifts({doc=document,win=window,root,net,multi,player,mobil
  function closeAll(){sheet.hidden=true;inbox.hidden=true;cardEl.hidden=true;openG=null;}
  function claim(){hud?.closeSheet?.();win.dispatchEvent(new CustomEvent('xmas:sheet',{detail:{id:'gift'}}));}
  win.addEventListener('xmas:sheet',e=>{if(e.detail?.id!=='gift')closeAll();});
+ // 공통 바텀시트(11-24): 세로 = 아래에서·쓸어내려 닫기, 가로 = 오른쪽 판, PC = 가운데 카드 그대로 + Esc·바깥 누름. 안은 단계마다 다시 그려도 손잡이를 다시 붙임
+ for(const s of [sheet,inbox])attachSheet(s,{doc,win,close:closeAll,handle:'header',closeBtn:'header [data-g=close]',ignore:'.xg-open,.uf-tr'});
 
  // ── 보내기 창
  function people(){

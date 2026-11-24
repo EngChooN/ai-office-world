@@ -1,3 +1,4 @@
+@import '../ui-sheet.css';
 /* 허브 — 등산 수첩 종이 톤. 낮·노을·밤 변수는 hud-notebook.css와 같은 값.
    11-17 허브 개선: PC = 시안 B 동동이 마을 지도(.hb-map), 휴대폰 = 시안 A 책갈피 카드(.hb-list). 단추는 손가락 크기(44px 이상), 안전 영역 안. */
 :root{--paper:#fbf3df;--paper2:#f4e7c8;--ink:#4a3618;--ink2:#7a5f3a;--edge:#b49563;--rule:#d9c79d;--accent:#b8452e;--shadow:rgba(60,40,10,.25);--ok:#5f8f3e;--full:#b8452e;
@@ -136,6 +137,7 @@ html.hb-modal,html.hb-modal body{overflow:hidden}
 .hb-sheet-back,.hb-set-back{position:fixed;inset:0;z-index:50;background:rgba(40,25,10,.45);display:flex}
 .hb-sheet-back[hidden],.hb-set-back[hidden]{display:none}
 .hb-sheet-back{align-items:flex-end;justify-content:center}
+.hb-sheet-back[data-ufs-mode=bottom]{background:rgba(40,25,10,.4)}.hb-sheet-back[data-ufs-mode=side]{background:rgba(40,25,10,.15)} /* 공통 바텀시트 뒤 어둡게(11-24): 세로 40%·가로 15% */
 .hb-sheet{width:min(560px,100%);max-height:88dvh;overflow:auto;border:2px solid var(--ink);border-bottom:0;border-radius:20px 20px 0 0;box-shadow:0 -6px 20px var(--shadow);padding:6px 16px max(16px,env(safe-area-inset-bottom))}
 .hb-sheet-in{padding-top:44px} /* 닫기 단추 줄(그림을 가리지 않게) */
 .hb-grip{width:44px;height:5px;border-radius:9px;background:var(--rule);margin:2px auto 8px}

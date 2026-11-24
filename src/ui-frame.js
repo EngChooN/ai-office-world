@@ -2,12 +2,14 @@
 // 자리: 위 = 상태 알약(왼쪽)·공통 단추(오른쪽: 콘텐츠 1칸 · 💬 · ☰) / 왼쪽 아래 = 걷기(비워 둠) / 오른쪽 아래 = 할 일(큰 단추 1 + 작은 단추, 할 일 칩).
 // 이 파일이 맡는 것(콘텐츠와 상관없는 틀):
 //  - 위 오른쪽 단추 줄 .uf-tr (콘텐츠 전용 칸 → 💬 자리 → ☰)
-//  - ☰ 메뉴 창 .uf-sheet: 세로는 아래에서 올라오는 창(화면 절반 이하), 가로는 오른쪽 창(340px). 안에 탭. 바깥 게임을 누르면 닫힘
+//  - ☰ 메뉴 창 .uf-sheet: 공통 바텀시트 부품(ui-sheet.js, 11-24) — 세로는 위 64px만 남기고 크게(탭을 바꿔도 같은 높이)·쓸어내려 닫기, 가로는 오른쪽 창(340px)·오른쪽으로 밀어 닫기.
+//    안에 탭. 바깥 게임을 누르면 닫힘·Esc. 인형뽑기 판 진행 중(<html data-claw-mode=play|drop>)에는 열리지 않음
 //  - 창은 한 번에 하나: 창을 여는 모듈은 openWin(이름)으로 알리고, onWin(이름, 닫기)로 다른 창이 열릴 때 스스로 닫는다('uf:win' 이벤트)
 //    <html data-uf-win="이름" data-uf-heavy> → 무거운 창(메뉴·지도·사람 목록 등)이면 행동 단추·할 일 칩을 숨기고, 채팅(가벼운 창)이면 큰 단추만 작게 남긴다(ui-frame.css)
 //  - 휴대폰 키보드: visualViewport로 높이를 재서 <html data-uf-kb>·--uf-kb. 말하기 줄만 키보드 위에 붙고 나머지는 숨김
 //  - 행동 단추 자리 매기기 ufPlace(): 단추에 data-uf="big|s1..s5|todo"를 달면 CSS가 오른쪽 아래 원 둘레에 놓는다
 // 콘텐츠별 규칙(무슨 단추·무슨 탭인지)은 각 콘텐츠가 정한다. 이 틀은 자리와 열림·닫힘만 안다.
+import {attachSheet} from './ui-sheet.js';
 import {icon} from './icons/icon.js';
 import {trackInviteRoom,inviteUrl,inviteText,shareInvite} from './invite.js';
 // CSS는 브라우저에서만(노드 테스트가 이 파일을 읽을 수 있게 — hiking-chat-ui 등과 같은 방식)
@@ -135,6 +137,7 @@ export function createUiFrame({doc=document,win=window,exp='',extra=[],tabs=[],q
   body.scrollTop=0;
  }
  function setOpen(on,id=null){
+  if(on&&/^(play|drop)$/.test(root.dataset.clawMode??''))return; // 인형뽑기 판 진행 중엔 시트를 안 엶(아래 조작판과 동시에 안 나옴, 11-24 바텀시트 공통 규칙)
   if(on){if(id)tab=id;if(!open){open=true;sheet.hidden=false;paintInvite();quick?.(quickEl);openWin('menu',{doc,win});}showTab(tab);}
   else if(open){open=false;sheet.hidden=true;panels.get(tab)?.t.onClose?.();closeWin('menu',{doc,win});}
   menuBtn.classList.toggle('on',open);menuBtn.setAttribute('aria-expanded',String(open));
@@ -143,9 +146,8 @@ export function createUiFrame({doc=document,win=window,exp='',extra=[],tabs=[],q
  menuBtn.addEventListener('click',()=>setOpen(!open));
  x.addEventListener('click',()=>setOpen(false));
  tabBar.addEventListener('click',e=>{const b=e.target.closest('[data-uf-tab]');if(b)showTab(b.dataset.ufTab);});
- // 바깥 게임을 누르면 닫힘(위 단추 줄·메뉴 안·다른 대화창은 그대로)
- doc.addEventListener('pointerdown',e=>{if(!open)return;const t=e.target;if(t.closest?.('.uf-sheet,.uf-tr,dialog,[role=dialog],.fb-card,.sp-card'))return;setOpen(false);},true);
- win.addEventListener('keydown',e=>{if(e.code==='Escape'&&open){e.stopPropagation();setOpen(false);}},true);
+ // 공통 바텀시트: 자리·쓸어 닫기·뒤 어둡게·바깥 누름(위 단추 줄·다른 대화창은 그대로)·Esc·PC 초점(ui-sheet.js)
+ const sheetApi=attachSheet(sheet,{doc,win,close:()=>setOpen(false),tall:true,grip:'.uf-grip',handle:'.uf-invite,.uf-quick,.uf-tabs',closeBtn:x,toggle:menuBtn,ignore:'.uf-tr'});
 
  // ── 휴대폰 키보드 ──
  const vv=win.visualViewport;
@@ -166,7 +168,7 @@ export function createUiFrame({doc=document,win=window,exp='',extra=[],tabs=[],q
  }
 
  return {
-  root:tr,sheet,menuBtn,chatSlot,
+  root:tr,sheet,menuBtn,chatSlot,sheetApi,
   extra:id=>extraBtns.get(id)??null,
   panel:id=>panels.get(id)?.p??null,
   open:(id=null)=>setOpen(true,id),close:()=>setOpen(false),toggle:(id=null)=>open&&(!id||id===tab)?setOpen(false):setOpen(true,id),

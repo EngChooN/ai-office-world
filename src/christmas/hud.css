@@ -335,6 +335,8 @@ html.uf .xt-map.uf-mapsheet .xt-board{width:auto;height:calc(52dvh - 80px);max-h
  html.uf .xt-map.uf-mapsheet{left:auto;top:0;bottom:0;right:0;width:calc(340px + var(--sr));max-height:none;border-radius:22px 0 0 22px;padding:calc(var(--st) + 10px) calc(var(--sr) + 12px) calc(var(--sb) + 10px) 12px;box-shadow:-6px 0 20px rgba(40,25,10,.22)}
  html.uf .xt-map.uf-mapsheet .xt-board{width:auto;height:calc(100dvh - var(--st) - var(--sb) - 76px)}
 }
+/* 공통 바텀시트(11-24): 세로는 창이 위 64px까지 커져 지도도 폭에 맞춰 크게(판 비율 --xt-ar = 폭/높이) */
+html.uf .xt-map.uf-mapsheet.ufs[data-ufs-mode=bottom] .xt-board{height:auto;width:min(100%,calc((100dvh - var(--ufs-top) - 100px) * var(--xt-ar,.88)))}
 /* ☰ 탭 안 */
 .uf-panel .xh-sheet.uf-moved{display:flex;flex-direction:column;gap:8px;padding:0 2px 6px;overflow:visible;color:var(--uf-ink)}
 .uf-panel .xh-sheet.uf-moved>header .xh-x{display:none}

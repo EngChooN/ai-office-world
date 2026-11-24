@@ -1,0 +1,42 @@
+/* 온라인 시리즈 공통 바텀시트(ui-sheet.js attachSheet, 11-24 대표 결정 · 시안 docs/UI-개선/바텀시트-개선-시안-v1.html).
+   자리는 JS가 단 data-ufs-mode로: bottom = 휴대폰 세로·좁고 긴 창, side = 휴대폰 가로, pc = 각 창 원래 모양(여기서 안 건드림).
+   창마다의 색·글·안쪽 모양은 각 CSS 그대로, 여기는 자리·크기·손잡이·뒤 막·움직임만(!important로 덮음). 쌓임: 시트 60 > 알림 50 > 조작판 31 */
+.ufs{--ufs-top:calc(env(safe-area-inset-top,0px) + 64px)}
+.ufs[hidden]{display:none!important}
+/* 뒤 막: 세로 40%·가로 15%·PC 0. 누름은 받지 않음(바깥 누름은 문서에서 처리) */
+.ufs-scrim{position:fixed;inset:0;z-index:59;pointer-events:none;background:rgb(40,25,10);opacity:0;visibility:hidden;transition:opacity .2s}
+.ufs-scrim[data-on]{visibility:visible;opacity:var(--ufs-dim,0)}
+.ufs-scrim[data-ufs-mode=bottom]{--ufs-dim:.4}.ufs-scrim[data-ufs-mode=side]{--ufs-dim:.15}.ufs-scrim[data-ufs-mode=pc]{--ufs-dim:0}
+
+/* 휴대폰 세로: 아래에서, 위 64px(+ 안전영역)만 남김. 폭 600 이상이면 560px 가운데 */
+.ufs[data-ufs-mode=bottom]{position:fixed!important;z-index:60!important;left:0!important;right:0!important;top:auto!important;bottom:0!important;width:auto!important;max-width:560px!important;margin:0 auto!important;transform:none!important;
+ max-height:calc(100dvh - var(--ufs-top))!important;box-sizing:border-box!important;border-radius:22px 22px 0 0!important;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px)!important;overflow:auto;overscroll-behavior:contain}
+.ufs[data-ufs-mode=bottom]:not([data-ufs-short]){height:calc(100dvh - var(--ufs-top))!important}
+.ufs[data-ufs-mode=bottom][data-ufs-measure]{height:auto!important}
+/* 휴대폰 가로: 오른쪽 판 340px 위아래 꽉, 왼쪽 세로 손잡이 */
+.ufs[data-ufs-mode=side]{position:fixed!important;z-index:60!important;left:auto!important;right:0!important;top:0!important;bottom:0!important;width:calc(340px + env(safe-area-inset-right,0px))!important;max-width:calc(100vw - 40px)!important;height:auto!important;max-height:none!important;margin:0!important;transform:none!important;
+ box-sizing:border-box!important;border-radius:22px 0 0 22px!important;padding-top:calc(env(safe-area-inset-top,0px) + 10px)!important;padding-right:calc(env(safe-area-inset-right,0px) + 12px)!important;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px)!important;padding-left:24px!important;overflow:auto;overscroll-behavior:contain;box-shadow:-6px 0 20px rgba(40,25,10,.22)!important}
+
+/* 손잡이: 세로 44×5 막대(둘레 26px 줄 = 잡는 곳), 가로 = 왼쪽 세로 막대, PC = 없음 */
+.ufs .ufs-grip{display:none!important}
+.ufs[data-ufs-mode=bottom]>.ufs-grip{display:block!important;position:relative;flex:none;width:44px!important;height:5px!important;margin:4px auto 10px!important;border-radius:3px!important;background:#c9b896!important;cursor:grab;touch-action:none}
+.ufs[data-ufs-mode=bottom]>.ufs-grip::before{content:'';position:absolute;left:-80px;right:-80px;top:-10px;bottom:-11px}
+.ufs[data-ufs-mode=side]>.ufs-grip{display:block!important;position:absolute!important;left:8px;top:50%;width:5px!important;height:44px!important;margin:-22px 0 0!important;border-radius:3px!important;background:#c9b896!important;touch-action:none}
+.ufs[data-ufs-mode=side]>.ufs-grip::before{content:'';position:absolute;left:-8px;right:-10px;top:-60px;bottom:-60px}
+
+/* 끄는 동안: 손가락을 1:1로(글 고르기 막음) */
+.ufs.ufs-drag{user-select:none;-webkit-user-select:none}
+/* 열 때: 아래(가로는 오른쪽)에서 0.26초 미끄러져 옴, 움직임 줄이기면 0.12초 흐려짐만 */
+@media (prefers-reduced-motion:no-preference){
+ .ufs.ufs-anim[data-ufs-mode=bottom]{animation:ufs-up .26s cubic-bezier(.2,.8,.2,1)}
+ .ufs.ufs-anim[data-ufs-mode=side]{animation:ufs-in .26s cubic-bezier(.2,.8,.2,1)}
+ .ufs.ufs-anim[data-ufs-mode=pc]{animation:ufs-fade .18s ease-out}
+}
+@media (prefers-reduced-motion:reduce){.ufs.ufs-anim{animation:ufs-fade .12s}}
+@keyframes ufs-up{from{translate:0 100%}}
+@keyframes ufs-in{from{translate:100% 0}}
+@keyframes ufs-fade{from{opacity:0}}
+
+/* PC(마우스): ✕ 옆 「Esc」 표시 */
+.ufs-esc{display:none}
+@media (hover:hover) and (pointer:fine){.ufs[data-ufs-mode=pc] .ufs-esc{display:inline-flex;align-items:center;align-self:center;flex:none;height:22px;margin:0 4px 0 auto;padding:0 6px;border-radius:5px;border:1.5px solid currentColor;font:800 11px/1 system-ui,sans-serif;opacity:.6;background:none;box-shadow:none}}

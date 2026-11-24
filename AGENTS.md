@@ -107,6 +107,7 @@ npm run deploy         # gh-pages 브랜치에 강제 push (대표 지시가 있
 | 카툰 그래픽 | `src/toon/**` (재질·하늘·물·풀·도시·동동이 `link-hiker.js`) |
 | 캐릭터 동작 | `src/realistic-hiker.js`(이름만 옛것. 동동이·흡연장·크리스마스·멀티가 쓰는 뼈대 코드), `src/hiker-*.js` |
 | 서울 도심 원경 | `src/city-grid.js`(2km 칸, 지연 생성·해제), `src/city-facade.js`, `src/city-landmarks.js` |
+| 공통 바텀시트(11-24) | `src/ui-sheet.js/.css` `attachSheet(el,{close,tall,handle,noSwipe,closeBtn,toggle,ignore,backdrop})`: 세로 = 위 64px만 남기고(짧은 창은 내용 높이)·쓸어내려 닫기 25%/초당 600px, 가로 = 오른쪽 판 340·오른쪽으로 밀어 닫기, 뒤 어둡게 40·15·0%, 바깥 누름·Esc·PC Esc 표시·초점. 쓰는 곳 ui-frame ☰·pair-ui·christmas gift-ui·travel-ui·hub. 점검 `scripts/verify-bottom-sheet.mjs` |
 | 세 콘텐츠 공통 화면 틀(11-18) | `src/ui-frame.js/.css`(위 알약·💬·☰ 메뉴 창·말하기 줄 `createChatBar`(11-19: 입력칸·보내기·✕만, 지난 말 3줄)·머리 위 말풍선 `.uf-bub`·창 하나만 `openWin/onWin`·키보드·행동 원 `ufPlace` data-uf). 등산 연결 `src/hiking-frame.js/.css`, 흡연장 `lounge/hud.js`·`spots.js`·`multi-ui.js`, 크리스마스 `christmas/hud.js`·`travel-ui.js`·`main.js`, 채팅 `hiking-chat-ui.js`(frame 옵션). 점검 `scripts/verify-ui-frame.mjs`·채팅 `scripts/verify-chat-unify.mjs` |
 | HUD (등산 수첩) | `src/hud-notebook.js/.css`. main.js와는 `hiking:*` window 이벤트로만 주고받음. 11-18부터 시트는 ☰ 메뉴 탭 안(`win.hikingFrame`) |
 | 의견 보내기 | `src/feedback.js/.css`(등산·흡연장 공용 카드·GitHub 이슈 주소·복사), 등산은 `hud-notebook.js`, 흡연장은 `lounge/hud.js`가 설치. 검사 `tests/feedback-issue.test.mjs` |
@@ -171,6 +172,7 @@ npm run deploy         # gh-pages 브랜치에 강제 push (대표 지시가 있
 
 | 날짜 | 결정 | 근거 문서 |
 |---|---|---|
+| 11-24 | 바텀시트 공통 부품 구현(월드기획 지시, 위 대표 결정 + 시안 추천안 그대로): `src/ui-sheet.js` `attachSheet` + `ui-sheet.css`(자리 `data-ufs-mode` bottom·side·pc). ☰ 메뉴(크리스마스 사람 목록·옷은 ☰ 탭 안)·크리스마스 선물·바로가기 지도·등산 사람 목록·허브 체험 판 7종이 같은 부품. 인형뽑기 판 진행 중엔 ☰가 안 열림(`ui-frame.js` setOpen). PC 선물·사람 목록은 원래 카드 모양 + Esc·바깥 클릭(개발 결정·대표 미확인). 점검 `scripts/verify-bottom-sheet.mjs`, 시험 `tests/ui-sheet.test.mjs` | 변경기록-2026-11-24-바텀시트-공통.md |
 | 11-24 | 온라인 시리즈 바텀시트 공통 규칙(대표 결정, 월드디자인 시안 `docs/UI-개선/바텀시트-개선-시안-v1.html`): 휴대폰 세로는 위 단추 줄 한 줄(안전영역 위 + 64px)만 남기고 크게 열림, 탭을 바꿔도 높이 고정, 화면 절반보다 짧은 창만 내용 높이. 쓸어내려 닫기 = 시트 높이 25% 이상 또는 빠르게 튕김, 덜 내리면 제자리, ✕ 단추 유지. 뒤 어둡게 세로 40%·가로 15%·PC 없음, 바깥 누르면 닫힘. 나머지 세부값(스크롤 충돌·가로 오른쪽 밀어 닫기·PC Esc 표시·인형뽑기 판 진행 중 시트 안 열림)은 시안 추천안 그대로·대표 미확인. 코드는 아직 안 고침(월드개발 몫) | docs/UI-개선/바텀시트-개선-시안-v1.html |
 | 11-24 | 인형뽑기 조작 단추 = 아래 가운데 넓은 판(대표 승인 시안 B, PC·휴대폰 공통, 공통 틀 「큰 단추 = 오른쪽 아래 원」의 **인형뽑기 조작 중만** 예외): 마우스 기기 520×84 + 「스페이스」 키캡, 손가락 기기 화면 폭 판·키/마우스 안내 없음·집게는 십자 판 오른쪽, 기계 그림 단추를 누르면 「아래 … 눌러요」 알림, 판이 그림 단추·인형을 가리는 화면(가로로 긴 PC·휴대폰 가로)만 게임 그림을 판 높이만큼 위로(`main.js` `barReserve`, 개발 결정·대표 미확인). 점검 `verify-claw.mjs` `PART=bar` | 변경기록-2026-11-24-인형뽑기-조작단추-판.md |
 | 11-24 | 인형뽑기 하루 무료 코인 15 → 30개(대표 요청, 월드기획 해석·지시): `CLAW_TUNING.coin.daily` 30, 남은 코인 이월 없음 그대로, 저장 판 `COIN_V` 3(15개 시절 저장도 처음 읽는 날 30개로 채움). 다른 15(타이머 15초·위치 초당 15회 등)는 코인 아님이라 그대로 | 변경기록-2026-11-24-인형뽑기-코인-하루30.md |

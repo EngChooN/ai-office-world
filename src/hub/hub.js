@@ -8,6 +8,7 @@ import {ART,hubTime} from './art.js';
 import {dongdong} from './dongdong.js';
 import {hubServerView,hubTotal} from './hub-servers.js';
 import {writeHubPick} from './handoff.js';
+import {attachSheet} from '../ui-sheet.js';
 import {sunPosition} from '../daytime.js';
 import {icon,iconText} from '../icons/icon.js';
 import {PICK_LABELS,NAME_KEY,loadPickName,savePickName} from '../server-pick.js';
@@ -150,12 +151,17 @@ ${l?`<button type="button" class="hb-cont" data-open="${l.id}" style="--c:${l.co
  }
 
  // ── 그리기
+ let sheetWas=false; // 판이 막 열릴 때만 올라오는 움직임(다시 그릴 때마다 새 판이라)
  function render(){
   const focusSel=doc.activeElement?.closest?.('[data-sel],[data-open],[data-jump]')?.id||null;
   root.dataset.layout=st.layout;
   root.innerHTML=`<div class="hb hb-${st.layout}">${st.layout==='map'?mapHTML():listHTML()}</div>${settingsHTML()}`;
   const panel=root.querySelector('.hb-panel');if(panel)paintPanel(panel,byId(st.sel));
   html.classList.toggle('hb-modal',st.sheet||st.settings);
+  // 체험 판(휴대폰 카드 목록): 공통 바텀시트(11-24) — 세로 = 위 64px만 남기고·쓸어내려 닫기, 가로 = 오른쪽 판. 뒤 막·Esc·바깥 누름은 허브 것 그대로
+  const sh=st.sheet&&root.querySelector('.hb-sheet');
+  if(sh)attachSheet(sh,{doc,win,close:closeSheet,tall:true,grip:'.hb-grip',handle:'.hb-x',closeBtn:'.hb-x',backdrop:root.querySelector('.hb-sheet-back'),outside:false,esc:false,focus:false,animate:!sheetWas});
+  sheetWas=!!sh;
   if(focusSel)doc.getElementById(focusSel)?.focus({preventScroll:true});
  }
  // 5초마다 인원만 바꿀 때: 화면 전체를 다시 그리지 않고 글자 자리만(동동이 깡충·포커스·입력 칸 유지)

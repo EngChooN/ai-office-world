@@ -4,6 +4,7 @@
 //  - 보냄: hiking:pair-offer {to} · hiking:pair-accept · hiking:pair-decline · hiking:pair-cancel · hiking:pair-end
 //  - 받음: hiking:pair-state · hiking:pair-note · hiking:pair-people · hiking:pair-pick · hiking:multi-status · hiking:multi-leave
 // 모양은 등산 수첩 톤(hud-notebook.css 토큰: 낮·노을·밤)으로 산개발이 먼저 만들었고, 산디자인이 다듬는다(pair-ui.css).
+import {attachSheet} from './ui-sheet.js';
 import {icon,iconText} from './icons/icon.js';
 export const WALK_TEXT=Object.freeze({side:'나란히 걷는 중',file:'앞뒤로 걷는 중',far:'조금 떨어져 있어요'});
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -66,6 +67,8 @@ export function installPairUI({doc=document,win=window,now=()=>Date.now()}={}){
  }
  btn.addEventListener('click',()=>setSheet(!sheetOpen));
  sheet.querySelector('.pw-x').addEventListener('click',()=>setSheet(false));
+ // 공통 바텀시트(11-24): 세로 = 아래에서 크게·쓸어내려 닫기, 가로 = 오른쪽 판, PC = 오른쪽 위 카드 그대로 + Esc·바깥 누름
+ attachSheet(sheet,{doc,win,close:()=>setSheet(false),handle:'h4,.pw-help',closeBtn:'.pw-x',toggle:btn,ignore:'.pw-pick,.pw-offer,.pw-chip'});
 
  // ── 목록
  function renderList(){

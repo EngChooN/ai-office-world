@@ -48,9 +48,12 @@ const measure=()=>{const W=innerWidth,H=innerHeight,S=4;const cols=Math.ceil(W/S
  for(let j=0;j<rows;j++){for(let i=0;i<cols;i++)h[i]=grid[j*cols+i]?0:h[i]+1;const st=[];for(let i=0;i<=cols;i++){const cur=i<cols?h[i]:0;let s0=i;while(st.length&&st[st.length-1][1]>=cur){const [si,sh]=st.pop();const a=sh*(i-si);if(a>best)best=a;s0=si;}st.push([s0,cur]);}}
  const vis=b=>{const r=b.getBoundingClientRect();if(r.width<2||r.height<2)return false;const cs=getComputedStyle(b);return cs.visibility!=='hidden'&&+cs.opacity>0.05&&r.right>0&&r.bottom>0&&r.x<W&&r.y<H;};
  const inSheet=b=>!!b.closest('.uf-sheet,.uf-chatbar,.xt-map,.xg-sheet,.xh-card,.lg-modal,.uf-panel,.ix-book');
- const btns=[...document.querySelectorAll('button,input')].filter(vis).filter(b=>!worldy(b)).map(b=>{const r=b.getBoundingClientRect();const cx=Math.min(W-1,Math.max(0,r.x+r.width/2)),cy=Math.min(H-1,Math.max(0,r.y+r.height/2));const top=document.elementFromPoint(cx,cy);
+ let btns=[...document.querySelectorAll('button,input')].filter(vis).filter(b=>!worldy(b)).map(b=>{const r=b.getBoundingClientRect();const cx=Math.min(W-1,Math.max(0,r.x+r.width/2)),cy=Math.min(H-1,Math.max(0,r.y+r.height/2));const top=document.elementFromPoint(cx,cy);
   const covered=top&&!b.contains(top)&&top.tagName!=='CANVAS'&&!worldy(top)?(top.closest('[class]')?.className?.toString().slice(0,40)||top.tagName):null;
-  return {t:(b.getAttribute('aria-label')||b.dataset.ufT||b.textContent||b.placeholder||'').trim().replace(/\s+/g,' ').slice(0,20),uf:b.dataset.uf||'',sheet:inSheet(b),x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),covered};});
+  const under=!!top&&!b.closest('.ufs')&&!!top.closest?.('.ufs');
+  return {under,t:(b.getAttribute('aria-label')||b.dataset.ufT||b.textContent||b.placeholder||'').trim().replace(/\s+/g,' ').slice(0,20),uf:b.dataset.uf||'',sheet:inSheet(b),x:Math.round(r.x),y:Math.round(r.y),w:Math.round(r.width),h:Math.round(r.height),covered};});
+ // 11-24 공통 바텀시트: 세로 메뉴는 위 64px만 남기고 덮음(대표 결정) → 시트 뒤로 들어간 바깥 단추(둘째 줄 칩 등)는 겹침·가림에서 뺌
+ btns=btns.filter(b=>!b.under);
  const ov=[];for(let i=0;i<btns.length;i++)for(let j=i+1;j<btns.length;j++){const a=btns[i],b=btns[j];if(a.sheet&&b.sheet)continue;const ix=Math.min(a.x+a.w,b.x+b.w)-Math.max(a.x,b.x),iy=Math.min(a.y+a.h,b.y+b.h)-Math.max(a.y,b.y);if(ix>2&&iy>2)ov.push([a.t,b.t]);}
  const wins=[...document.querySelectorAll('.uf-sheet,.uf-chatbar,.xt-map,.xg-sheet,.xh-card,.ix-book')].filter(e=>!e.hidden&&!e.closest('[hidden]')&&e.getBoundingClientRect().width>2&&!e.closest('.uf-panel')).map(e=>e.className.toString().split(' ')[0]);
  return {W,H,uiPct:+(ui/(cols*rows)*100).toFixed(1),visiblePct:+(100-ui/(cols*rows)*100).toFixed(1),freePct:+(best/(cols*rows)*100).toFixed(1),btnCount:btns.length,overlaps:ov,covered:btns.filter(b=>b.covered&&!b.sheet).map(b=>[b.t,b.covered]),wins,big:btns.find(b=>b.uf==='big')??null,btns};};
