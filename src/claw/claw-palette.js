@@ -73,8 +73,9 @@ export const MACHINES=Object.freeze([
  mk('bridge-3','bridge','봉 3','동동이 상자(八자)',B1,{level:2,bars:Object.freeze({near:.15,far:.175}),pool:['box-dongdong','box-dongdong-office']}),
  mk('bridge-4','bridge','봉 4','해치 상자',B2,{level:3,bars:Object.freeze({gap:.16}),pool:['box-haechi','box-dongdong-santa']}),
  mk('timer-1','timer','타이머 1','큰 다람쥐',T1,{level:3,pool:['big-squirrel']}),
- mk('timer-2','timer','타이머 2','큰 등산 동동이',T2,{level:3,pool:['big-dongdong']}),
- mk('timer-3','timer','타이머 3','큰 해치',T1,{level:4,hideAfterSec:3,pool:['big-haechi']}),
+ // 타이머는 번호가 클수록 어려움(11-24 대표 지적 「기기별로 난이도가 점점 올라감」): 1 = 끝까지 보임 · 2 = 7초부터 · 3 = 3초부터 숫자가 어두워짐. 초는 추천안·대표 미확인
+ mk('timer-2','timer','타이머 2','큰 등산 동동이',T2,{level:4,hideAfterSec:7,pool:['big-dongdong']}),
+ mk('timer-3','timer','타이머 3','큰 해치',T1,{level:5,hideAfterSec:3,pool:['big-haechi']}),
  mk('key-1','key','열쇠 1','별빛',K1,{level:2,pool:['haechi','dongdong-santa','cat','guest-1'],cells:['squirrel','hare','cat','dongdong','dongdong-office','haechi','dongdong-santa','guest-1']}),
  mk('key-2','key','열쇠 2','달빛',K2,{level:2,pool:['haechi','dongdong-santa','dongdong-office','guest-2'],cells:['magpie','squirrel','dongdong','cat','haechi','dongdong-santa','dongdong-office','guest-2']}),
  mk('key-3','key','열쇠 3','반짝 칸',K1,{level:3,pool:['haechi','dongdong-santa','dongdong-office'],cells:['cat','dongdong-office','squirrel','haechi','dongdong-santa','haechi','dongdong-office','dongdong-santa']}),

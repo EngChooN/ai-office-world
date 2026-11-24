@@ -5,7 +5,7 @@
 // 그림 방향: &look=neon(기본)|pastel(대안)
 // 가게 옷: &outfit=hoodie|jacket|tee(자세 동동이 옷) · view=outfits(세 벌 나란히, &side=1이면 옆모습)
 // 동동이 자세: &pose=operate|cheer|droop(&at=초, 그 순간에 멈춤) — 게임과 같은 claw-avatar.js(claw-poses.js) 동동이, view=pose(옆 앞에서)
-// 타이머 기계(machine=1): &timer=09.87,run(상태 ready·run·win·near·miss) · 열쇠 기계(machine=2): &key=x,y,push(판정 좌표) &mark=i,j,ok|near|miss &open=i,j &pity=1
+// 타이머 기계(machine=1): &timer=09.87,run(상태 ready·run·win·near·miss) &dim=1(도는 숫자 어둡게) · 열쇠 기계(machine=2): &key=x,y,push(판정 좌표) &mark=i,j,ok|near|miss &open=i,j &pity=1
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {createToonStyle} from '../toon/index.js';
@@ -60,7 +60,7 @@ const lights=q.get('lights')??'idle';for(const m of U.machines)m.group.userData.
 const MU=M.group.userData;
 if(M.kind==='claw'){if(q.get('claw')){const [x,z,drop,open]=q.get('claw').split(',').map(Number);MU.claw.set({x,z,drop,open,dotY:MU.pile.topAt(x,z)});}
  else MU.claw.set({x:.05,z:-.05,drop:0,open:.6,dotY:MU.pile.topAt(.05,-.05)});}
-if(M.kind==='timer'){const [text,state]=(q.get('timer')??'09.87,run').split(',');MU.setTimer({text,state});MU.setButton(state==='run'?'stop':state==='ready'?'start':'off');}
+if(M.kind==='timer'){const [text,state]=(q.get('timer')??'09.87,run').split(',');MU.setTimer({text,state,dim:q.get('dim')==='1'});MU.setButton(state==='run'?'stop':state==='ready'?'start':'off');}
 if(M.kind==='key'){if(q.get('pity'))MU.setHoles({pity:true,pityBonus:.05});
  if(q.get('key')){const [x,y,push]=q.get('key').split(',').map(Number);MU.key.set({x,y,push:push||0});}
  if(q.get('mark')){const [i,j,m]=q.get('mark').split(',');MU.markCell(+i,+j,m);}
