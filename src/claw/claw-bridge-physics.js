@@ -10,9 +10,19 @@ import {CLAW_RIG,U,fingerReach,clawRange} from './claw-physics.js';
 import {bridgeLayout,BAR_Y as LAYOUT_BAR_Y,DECK_DROP as LAYOUT_DECK_DROP} from './claw-bridge-layout.js';
 export {U};
 
-const G=38,SUB=1/240,ITER=6,SWAY_MAX=.6,SWAY_BACK=.985,SLOW2=(.25*SUB)**2,BACK=12,MU_CLAW_S=.6,MU_CLAW_K=.42;
+const G=38,SUB=1/240,ITER=6,SWAY_MAX=.6,SWAY_UP=1.5,SWAY_BACK=.985,SLOW2=(.25*SUB)**2,BACK=12,MU_CLAW_S=.6,MU_CLAW_K=.42;
 let SLACK=.6; // 발이 상자에 닿은 뒤 더 내려가는 길이(단위 = 6cm, 11-24 깊이). 시험용 setBridgeSlack
 export const setBridgeSlack=v=>{SLACK=v;};
+// 바닥 제한(11-24 깊이 2차, 대표 「아직도 별로 안 내려옴」): 곧게 선 발끝이 봉 윗면(= 상자 바닥) + BOTTOM보다 안 내려감. 0.35(3.5cm) → 0 = 하강 8.9 → 12.4cm.
+//  대신 약한 집게 미끄러짐 SLIP: 올라가는 동안 상자가 내려가기 전보다 SLIP(3cm) 넘게 들리면 두 발이 풀림(깊은 발끝이 상자 밑 모서리를 받쳐 들고 가지 않게). 시험용 setBridgeBottom·setBridgeSlip
+let BOTTOM=0,SLIP=.3;
+export const setBridgeBottom=v=>{BOTTOM=v;};
+export const setBridgeSlip=v=>{SLIP=v;};
+// 날아감 막기(11-24): 집게 판 하나가 한 칸(1/240초)에 상자를 미는 가장 큰 깊이 — 조이기·들기·옮기기·놓기 PUSH_MAX(3mm = 초속 0.72m), 그 밖(옮겨 겨누기·내려가기) PRESS(0.5mm = 초속 0.12m,
+//  줄에 매달린 집게는 무게만큼만 누름). VMAX = 상자 점 속도 상한(초속 2m), UPMAX = 상자 가운데가 위로 가는 속도 상한(초속 0.8m), JAM = 끼임으로 보는 봉 겹침(2mm). 시험용 setBridgePushMax·setBridgeGuard
+let PUSH_MAX=.03,PRESS=.005,VMAX=20,UPMAX=8,JAM=.02;
+export const setBridgePushMax=(v,p=v)=>{PUSH_MAX=v;PRESS=p;};
+export const setBridgeGuard=(v,u=UPMAX,j=JAM)=>{VMAX=v;UPMAX=u;JAM=j;};
 const TIP_REST=CLAW_RIG.l1*Math.cos(CLAW_RIG.rest)+CLAW_RIG.l2*Math.cos(CLAW_RIG.rest-CLAW_RIG.bend);
 // ── 닿음 판정 = 보이는 모양 그대로(대표 지적 2026-11-23 「집게가 상자를 통과」): 예전에는 상자 = 모서리 공 16개라 가운데(폭 약 6cm)가 비어
 //  집게발·봉이 상자 속으로 최대 6cm 들어갔다. 이제 상자 = 진짜 직육면체, 집게 = claw-bridge.js buildClaw2가 그리는 납작한 팔·고무 발끝·머리 상자.
@@ -90,11 +100,12 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
   parts.forEach(([lx,ly,lz],i)=>{P.x[i]=P.ox[i]=x+lx*c+lz*s;P.y[i]=P.oy[i]=y+ly;P.z[i]=P.oz[i]=z-lx*s+lz*c;});};
  place(pose??{});
  for(let i=0;i<N;i++)for(let j=i+1;j<N;j++)cons.push([i,j,Math.hypot(parts[i][0]-parts[j][0],parts[i][1]-parts[j][1],parts[i][2]-parts[j][2])]);
- // 가장 낮은 높이(11-24): 내려가며 벌린 발끝(FINGER_PLATES 고무 끝)이 봉 위 상자 바닥 + 3.5cm보다 내려가지 않음(2cm면 아직 7판 중 1~3판 들고 감). 커진 집게(0.24m·넓게 벌림)는 예전 높이(봉 + 1.35)면
+ // 가장 낮은 높이(11-24): 내려가며 벌린 발끝(FINGER_PLATES 고무 끝)이 봉 위 상자 바닥 + BOTTOM보다 내려가지 않음. 커진 집게(0.24m·넓게 벌림)는 예전 높이(봉 + 1.35)면
  //  발끝이 상자 바닥 4cm 아래까지 내려가 상자 밑을 받쳐 들었다(약한 집게 규칙이 깨짐). 실제 기계도 봉 위 상자 밑으로는 발이 못 들어감
+ //  처음 3.5cm(2cm면 7판 중 1~3판 들고 감) → 깊이 2차에 0(봉 윗면, 들고 감은 SLIP 미끄러짐이 막음)
  //  조이는 동안 발끝은 호를 그리며 손가락이 곧게 설 때(각 0) 가장 낮아짐 → 그 높이 기준
  const bottomStop=()=>{const S=geom.rig.scale,F=FINGER_PLATES[3],tipY=-(Math.hypot(F.a[1],F.a[2])+F.r)*S; // 머리 가운데 기준 발끝 아래 끝이 가장 낮을 때(단위)
-  return barY+barR+.35-geom.rig.headUp-tipY;};
+  return barY+barR+BOTTOM-geom.rig.headUp-tipY;};
  const prongs=2,claw={x:HOME.x,y:HOME.y,z:HOME.z,th:[CL.rest,CL.rest],ang:[0,Math.PI],state:'idle',t:0,pen:[0,0],hubPen:0,resid:0,sway:[0,0,0],power:{...power},strength:0,touched:false,liftFrom:0,
   minY:Math.max(barY+1.35,bottomStop()),openTo}; // openTo = 내려갈 때 벌림(물리 각, T.bridge.clawOpen. 11-24부터 각 그대로 — 전에는 0.9 = CL.open 0.6)
  // 집게 판들(단위, 세계 좌표): 손가락 k마다 FINGER_PLATES 4장 + 머리 1장. [ax,ay,az, bx,by,bz, sx,sy,sz, r, k(머리 −1), f]
@@ -109,6 +120,7 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
   const H=HEAD_PLATE;out.push([hx-H.half*S,hy+H.c[1]*S,hz,hx+H.half*S,hy+H.c[1]*S,hz,0,0,H.side*S,H.r*S,-1,0]);
   return out;};
  let prevSegs=buildPlates([]),curSegs=[],prevHub=[claw.x,claw.y,claw.z],sleep=false,still=0,won=false,gone=false;
+ const pushLeft=new Float64Array(prevSegs.length); // 판마다 이번 칸에 상자를 밀 수 있는 남은 깊이(PUSH_MAX·PRESS, 11-24 날아감)
  const events=[];
  const center=()=>{let x=0,y=0,z=0;for(let i=4;i<N;i++){x+=P.x[i];y+=P.y[i];z+=P.z[i];}const n=N-4;return [x/n,y/n,z/n];};
  // 봉 4개(x 방향 선분 + 반지름): 집게발 끝이 봉에 닿았나(내려가기 멈춤)
@@ -143,12 +155,14 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
   for(let i=0;i<N;i++){const X=P.x[i]-cm[0],Y=P.y[i]-cm[1],Z=P.z[i]-cm[2];P.x[i]+=dc[0]+dt[1]*Z-dt[2]*Y;P.y[i]+=dc[1]+dt[2]*X-dt[0]*Z;P.z[i]+=dc[2]+dt[0]*Y-dt[1]*X;}
   cm=[cm[0]+dc[0],cm[1]+dc[1],cm[2]+dc[2]];}
  // 판 하나와 상자: 겹치면 상자를 밀어내고 마찰(mvOf(p) = 판의 그 점이 이번 칸에 움직인 양). 밀어낸 깊이를 돌려줌(probe면 밀지 않고 깊이만)
- function hitPlate(A,B,S,r,mvOf,muS,muK,probe=false){
+ // maxD(11-24 날아감): 이번에 밀 수 있는 가장 큰 깊이 — 집게가 깊이 겹친 채 닿기 시작하면(아래 sub의 pushLeft) 한 칸에 다 밀지 않고 나눠 밂. 돌려주는 값은 그대로 겹친 깊이
+ function hitPlate(A,B,S,r,mvOf,muS,muK,probe=false,maxD=Infinity){
   const F=frameOf(P.x,P.y,P.z),H=plateBox(toLoc(F,A),toLoc(F,B),dirLoc(F,S),r,half);if(!H)return 0;if(probe){lastN=dirW(F,[-H.u[0],-H.u[1],-H.u[2]]);return H.d;}
-  const n=dirW(F,[-H.u[0],-H.u[1],-H.u[2]]),p=toW(F,H.p);rigid(p,n,H.d);
+  const d=Math.min(H.d,maxD);if(d<=0)return H.d;
+  const n=dirW(F,[-H.u[0],-H.u[1],-H.u[2]]),p=toW(F,H.p);rigid(p,n,d);
   const pn=toW(frameOf(P.x,P.y,P.z),H.p),pp=toW(oldF,H.p),mv=mvOf(p);
   let rx=pn[0]-pp[0]-mv[0],ry=pn[1]-pp[1]-mv[1],rz=pn[2]-pp[2]-mv[2];const rn=rx*n[0]+ry*n[1]+rz*n[2];rx-=rn*n[0];ry-=rn*n[1];rz-=rn*n[2];
-  const rt=Math.hypot(rx,ry,rz);if(rt>1e-9){const k=rt<muS*H.d?1:Math.min(1,muK*H.d/rt);rigid(pn,[-rx/rt,-ry/rt,-rz/rt],rt*k);}
+  const rt=Math.hypot(rx,ry,rz);if(rt>1e-9){const k=rt<muS*d?1:Math.min(1,muK*d/rt);rigid(pn,[-rx/rt,-ry/rt,-rz/rt],rt*k);}
   return H.d;}
  const ZERO=[0,0,0],still0=()=>ZERO;
  // 판 S의 점 p 근처가 이번 칸에 움직인 양(이전 판 Q의 같은 자리 비율)
@@ -197,14 +211,20 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
    let vx=P.x[i]-P.ox[i],vy=P.y[i]-P.oy[i],vz=P.z[i]-P.oz[i];const v2=vx*vx+vy*vy+vz*vz,damp=v2<SLOW2?.6:.998;vx*=damp;vy*=damp;vz*=damp;
    P.ox[i]=P.x[i];P.oy[i]=P.y[i];P.oz[i]=P.z[i];P.x[i]+=vx;P.y[i]+=vy-G*h*h;P.z[i]+=vz;}
   claw.pen[0]=claw.pen[1]=0;claw.hubPen=0;
-  oldF=frameOf(P.ox,P.oy,P.oz);
+  oldF=frameOf(P.ox,P.oy,P.oz);pushLeft.fill(claw.state==='close'||claw.state==='lift'||claw.state==='carry'||claw.state==='release'?PUSH_MAX:PRESS);
   for(let it=0;it<ITER;it++){
    if(!sleep)for(const [a,b,L] of cons){const dx=P.x[b]-P.x[a],dy=P.y[b]-P.y[a],dz=P.z[b]-P.z[a],l=Math.hypot(dx,dy,dz)||1e-9,s=(l-L)/l/2;
     P.x[a]+=dx*s;P.y[a]+=dy*s;P.z[a]+=dz*s;P.x[b]-=dx*s;P.y[b]-=dy*s;P.z[b]-=dz*s;}
    if(!sleep)for(let i=4;i<N;i++){const r=parts[i][3];
     if(P.y[i]<r)contact(i,0,1,0,r-P.y[i],0,0,0,.55,.4);
     // 받침판(구덩이 밖): deckY가 바닥. 구덩이(봉 아래 뚫린 곳) 안은 구덩이 바닥(y 0)까지
-    if(!inPit(P.x[i],P.z[i])&&P.y[i]<deckY+r&&P.y[i]>deckY-1.2)contact(i,0,1,0,deckY+r-P.y[i],0,0,0,.55,.4);
+    //  11-24 날아감: 받침판 앞·뒤 끝은 구덩이 벽 — 구덩이 안(받침판 윗면 아래)에 있던 공이 옆으로 받침판 밑에 들어가면 예전에는 윗면으로 한 칸에 최대 12cm 들어 올려져
+    //  떨어진 상자가 초속 20~36m로 튀어 나왔다(성공한 판 끝에 상자가 구덩이에서 날아감). 이제 아래에서 온 공은 벽처럼 옆으로만 막아 구덩이 안에 둠
+    //  (벽 = 구덩이 끝 − 공 반지름, 이미 그 너머에 있던 공은 지난 자리에서 더 못 나감 — 한 칸에 크게 밀지 않게)
+    if(P.y[i]<deckY+r&&P.y[i]>deckY-1.2){const pz=geom.layout.pit;
+     if(P.oy[i]<deckY+r-.05&&P.oz[i]>pz.z0&&P.oz[i]<pz.z1){const hi=Math.max(pz.z1-r,P.oz[i]),lo=Math.min(pz.z0+r,P.oz[i]);
+      if(P.z[i]>hi)contact(i,0,0,-1,P.z[i]-hi,0,0,0,.3,.2);else if(P.z[i]<lo)contact(i,0,0,1,lo-P.z[i],0,0,0,.3,.2);}
+     else if(!inPit(P.x[i],P.z[i]))contact(i,0,1,0,deckY+r-P.y[i],0,0,0,.55,.4);}
     if(P.x[i]<BOX.x0+r)contact(i,1,0,0,BOX.x0+r-P.x[i],0,0,0,.3,.2);
     if(P.x[i]>BOX.x1-r)contact(i,-1,0,0,P.x[i]-(BOX.x1-r),0,0,0,.3,.2);
     if(P.z[i]<BOX.z0+r)contact(i,0,0,1,BOX.z0+r-P.z[i],0,0,0,.3,.2);
@@ -213,19 +233,32 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
    // 집게(머리·팔·발끝): 닿으면 상자를 밀고 끌고(마찰), 미는 깊이 = 집게가 받는 힘(약한 집게는 힘이 넘으면 벌어짐)
    for(let s=0;s<curSegs.length;s++){const S=curSegs[s];
     if(sleep&&hitPlate([S[0],S[1],S[2]],[S[3],S[4],S[5]],[S[6],S[7],S[8]],S[9],still0,0,0,true)>0)wake();
-    const d=hitPlate([S[0],S[1],S[2]],[S[3],S[4],S[5]],[S[6],S[7],S[8]],S[9],plateMv(S,prevSegs[s]||S),MU_CLAW_S,MU_CLAW_K);
+    const d=hitPlate([S[0],S[1],S[2]],[S[3],S[4],S[5]],[S[6],S[7],S[8]],S[9],plateMv(S,prevSegs[s]||S),MU_CLAW_S,MU_CLAW_K,false,pushLeft[s]);pushLeft[s]=Math.max(0,pushLeft[s]-d);
     if(it===0&&d>0){if(S[10]<0)claw.hubPen=Math.max(claw.hubPen,d);else claw.pen[S[10]]+=d/(w*2)*S[11];}}
    // 봉(마지막 = 상자가 봉을 뚫지 않는 것이 우선)
    if(!sleep)for(const R2 of rods)hitPlate(R2.a,R2.b,ZERO,barR,still0,friction,friction*.8);
   }
   // 봉을 한 번 더(집게와 봉 사이에 끼면 봉이 이김 — 상자는 봉을 뚫지 않고, 남은 겹침은 집게가 물러나서 푼다)
   if(!sleep)for(let j=0;j<6;j++){massProps();for(const R2 of rods)hitPlate(R2.a,R2.b,ZERO,barR,still0,0,0);}
+  // ── 날아감 막기(11-24 대표 지적 「튕겨 나가면서 상자가 날아감」, 원인 재현 artifacts/claw-design/fly/ — 위치로 푸는 물리라 한 칸에 밀어낸 거리가 그대로 다음 칸 속도가 됨):
+  //  · 받침판 끝(위 바닥 판정) · 집게가 깊이 겹친 채 닿기 시작(hitPlate maxD·PRESS)은 각 자리에서 막음. 여기서는 그 밖의 두 가지:
+  //  ① 끼임: 선 상자가 막이 봉 둘(또는 받침·막이 봉) 사이에 안 들어가 양쪽 봉에 5mm씩 겹친 채 남으면, 봉마다 번갈아 밀어낸 만큼이 다음 칸 속도가 되어
+  //   (닿는 점이 좌우로 어긋나 돌림까지) 상자가 초속 3~5m로 돌며 미끄러져 나갔다. 봉 겹침이 남은 칸은 끼인 것 → 움직임을 거의 지움(실제로 끼인 상자는 마찰로 붙잡힘)
+  //  ② 속도 상한(남은 드문 경우의 안전망): 상자 어느 점도 초속 VMAX(봉 위에서 구덩이 바닥까지 떨어져도 약 1.4m/s), 가운데가 위로 초속 UPMAX(집게가 드는 속도 0.22m/s)를
+  //   넘지 않게. 자리는 그대로 두고 다음 칸 속도만 줄임
+  if(!sleep){let jam=0;for(const R2 of rods)jam=Math.max(jam,hitPlate(R2.a,R2.b,ZERO,barR,still0,0,0,true));
+   let k=jam>JAM?.2:1,m=0,up=0;for(let i=0;i<N;i++){m=Math.max(m,Math.hypot(P.x[i]-P.ox[i],P.y[i]-P.oy[i],P.z[i]-P.oz[i])*k);up+=P.y[i]-P.oy[i];}if(m>VMAX*SUB)k*=VMAX*SUB/m;
+   if(k<1)for(let i=0;i<N;i++){P.ox[i]=P.x[i]-(P.x[i]-P.ox[i])*k;P.oy[i]=P.y[i]-(P.y[i]-P.oy[i])*k;P.oz[i]=P.z[i]-(P.z[i]-P.oz[i])*k;}
+   up=up/N*k-UPMAX*SUB;if(up>0)for(let i=0;i<N;i++)P.oy[i]+=up;}
   // 못 밀어낸 겹침(상자가 봉에 끼어 집게를 못 피함): 내려가기 멈춤·그 발 벌어짐에 씀
   claw.resid=0;const rk=[0,0],nk=[[0,0,0],[0,0,0]];if(touch)for(const S of curSegs){const d=hitPlate([S[0],S[1],S[2]],[S[3],S[4],S[5]],[S[6],S[7],S[8]],S[9],still0,0,0,true);claw.resid=Math.max(claw.resid,d);if(S[10]>=0&&d>rk[S[10]]){rk[S[10]]=d;nk[S[10]]=lastN;}}
   if(claw.state==='close'||claw.state==='lift'||claw.state==='carry')for(let k=0;k<prongs;k++){
    // 힘이 넘거나(상자가 무거움·꽉 막힘) 봉에 걸리면 그 발이 벌어짐
    let bite=0;for(let s=k*FINGER_PLATES.length;s<(k+1)*FINGER_PLATES.length;s++)bite=Math.max(bite,rodBite(curSegs[s]));
    const over=claw.pen[k]-claw.strength+bite*4;if(over>0)claw.th[k]=Math.min(CL.splay,claw.th[k]+Math.min(1.25*SUB*4,over*BACK));}
+  // 약한 집게 미끄러짐(11-24 깊이 2차): 깊이 내려간 발끝은 상자 밑 모서리를 받쳐 들 수 있음(바닥 제한을 봉 윗면까지 내리면 26판 중 18~19판 들고 감) →
+  //  올라가는 동안 상자가 내려가기 전보다 SLIP 넘게 들리면 두 발이 풀려 벌어짐(실제 약한 집게처럼 들었다 놓침)
+  if((claw.state==='lift'||claw.state==='carry')&&claw.boxY0!=null&&center()[1]-claw.boxY0>SLIP)for(let k=0;k<prongs;k++)claw.th[k]=Math.min(CL.splay,claw.th[k]+1.25*SUB*3);
   // 끼어서 못 밀어낸 발은 경첩이라 밀리는 쪽으로 젖혀짐: 상자가 발 바깥에 끼었으면 안으로(오므림), 안쪽·위에서 누르면 밖으로(벌어짐) — 상자를 뚫지 않게
   if(busy)for(let k=0;k<prongs;k++){if(rk[k]<.003)continue;const out=(k===0?1:-1)*nk[k][0],stp=Math.min(1.25*SUB*6,rk[k]*.6);
    claw.th[k]=Math.max(CL.closed,Math.min(CL.splay,claw.th[k]+(out>.3?-stp:stp)));}
@@ -236,10 +269,11 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
   // 두 받침 봉 사이(가운데가 받침 봉 둘 사이)로 빠진 것만 — 받침·막이 봉 사이 좁은 틈으로 끼어 내려간 것은 성공 아님(막힘으로 처리)
   if(!won&&y<barY-half[1]*2-barR){const c=center();if(c[2]>barZ(-1,c[0])&&c[2]<barZ(1,c[0])){won=true;events.push({type:'won'});}}
   if(won&&y<half[1]+.3&&!gone){still+=SUB;if(still>.5)gone=true;}
-  // 그래도 남은 겹침은 줄에 매달린 집게가 상자에 밀려 살짝 비켜 흔들림(최대 SWAY_MAX, 닿지 않으면 천천히 제자리로)
+  // 그래도 남은 겹침은 줄에 매달린 집게가 상자에 밀려 살짝 비켜 흔들림(옆 최대 SWAY_MAX, 닿지 않으면 천천히 제자리로).
+  //  위로는 SWAY_UP(15cm)까지(11-24 깊이 2차): 줄은 당기기만 하니 밀려 올라가는 건 막지 않음 — 깊이 내려간 발이 다 벌어진 채 상자·봉 사이에 끼면 옆 6cm로는 못 빠져 0.5cm 파고들었음
   {const o=claw.sway;let pushed=false;
    if(touch)for(let pass=0;pass<3;pass++){let dm=0,nm=null;curSegs=buildPlates(curSegs);for(const S of curSegs){const d=hitPlate([S[0],S[1],S[2]],[S[3],S[4],S[5]],[S[6],S[7],S[8]],S[9],still0,0,0,true);if(d>dm){dm=d;nm=lastN;}}
-    if(dm<.002)break;pushed=true;o[0]-=nm[0]*dm;o[1]-=nm[1]*dm;o[2]-=nm[2]*dm;const l=Math.hypot(o[0],o[1],o[2]);if(l>SWAY_MAX){o[0]*=SWAY_MAX/l;o[1]*=SWAY_MAX/l;o[2]*=SWAY_MAX/l;}}
+    if(dm<.002)break;pushed=true;o[0]-=nm[0]*dm;o[1]-=nm[1]*dm;o[2]-=nm[2]*dm;const l=Math.hypot(o[0],o[2]);if(l>SWAY_MAX){o[0]*=SWAY_MAX/l;o[2]*=SWAY_MAX/l;}o[1]=Math.max(-SWAY_MAX,Math.min(SWAY_UP,o[1]));}
    if(!pushed){o[0]*=SWAY_BACK;o[1]*=SWAY_BACK;o[2]*=SWAY_BACK;}}
   // 다음 칸 마찰은 집게가 스스로 움직인 만큼만(상자에 밀려 벌어지거나 젖혀진 발은 상자를 끌고 가지 않음)
   prevSegs=buildPlates(prevSegs);
@@ -248,7 +282,7 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
  const sim={P,parts,claw,events,geom,half,
   setPos(x,z){claw.x=Math.max(RANGE.x0,Math.min(RANGE.x1,x));claw.z=Math.max(RANGE.z0,Math.min(RANGE.z1,z));},
   start(){claw.state='move';claw.t=0;sim.setPos(HOME.x,HOME.z);claw.y=HOME.y;}, // 처음 자리 = 구멍 위를 범위 안으로(11-24)
-  drop(){if(claw.state!=='move')return false;claw.state='drop';claw.t=0;claw.touched=false;claw.touchY=null;return true;},
+  drop(){if(claw.state!=='move')return false;claw.state='drop';claw.t=0;claw.touched=false;claw.touchY=null;claw.boxY0=center()[1];return true;},
   step(dt){const n=Math.min(12,Math.round(dt/SUB));for(let i=0;i<n;i++)sub();},
   settle(sec){for(let i=0;i<sec/SUB;i++)sub();},
   get won(){return won;},get gone(){return gone;},get sleeping(){return sleep;},
@@ -269,9 +303,13 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
   /** 집게가 닿는 범위 밖(막힘 판정): 상자 가운데가 집게 범위 + 상자 반 길이 밖 */
   outOfReach(){const [x,,z]=center();return x<RANGE.x0-half[0]||x>RANGE.x1+half[0]||z<RANGE.z0-half[0]||z>RANGE.z1+half[0];},
   /** 저장·공유용 상태: 공 자리(mm 정수, x·y·z 차례) */
-  boxState(){const out=[];for(let i=0;i<N;i++)out.push(Math.round(P.x[i]*100),Math.round(P.y[i]*100),Math.round(P.z[i]*100));return out;},
+  boxState(){const out=[],r=v=>Math.round(v*100)+0;for(let i=0;i<N;i++)out.push(r(P.x[i]),r(P.y[i]),r(P.z[i]));return out;}, // +0: −0을 0으로(저장 JSON을 거치면 0이 되어 같은지 비교가 어긋남)
   /** 저장해 둔 상태로 놓기(멈춘 채, 작은 어긋남은 제약이 다시 맞춤). 모양이 다르면 false */
   setBox(s){if(!Array.isArray(s)||s.length!==N*3)return false;for(let i=0;i<N;i++){P.x[i]=P.ox[i]=s[i*3]/100;P.y[i]=P.oy[i]=s[i*3+1]/100;P.z[i]=P.oz[i]=s[i*3+2]/100;}
+   // 모양 되맞춤(11-24): 저장 자리는 mm 정수라 공 사이 거리가 최대 1mm 어긋나 상자가 살짝 일그러진 채 놓임 → 첫 칸 제약 풀이가 그 어긋남을 속도로 바꿔
+   //  봉 끝에 아슬아슬 걸친 상자는 새로고침 뒤 1.5~17cm 미끄러졌다(무작위 저장 100여 개 중 약 15%, 11-24 전에도 비슷). 놓기 전에 모양만 먼저 60번 맞춤
+   for(let it=0;it<60;it++)for(const [a,b,L] of cons){const dx=P.x[b]-P.x[a],dy=P.y[b]-P.y[a],dz=P.z[b]-P.z[a],l=Math.hypot(dx,dy,dz)||1e-9,q=(l-L)/l/2;P.x[a]+=dx*q;P.y[a]+=dy*q;P.z[a]+=dz*q;P.x[b]-=dx*q;P.y[b]-=dy*q;P.z[b]-=dz*q;}
+   for(let i=0;i<N;i++){P.ox[i]=P.x[i];P.oy[i]=P.y[i];P.oz[i]=P.z[i];}
    won=false;gone=false;wake();sim.settle(.4);return true;},
  };
  if(st&&sim.setBox(st)){}else sim.settle(prewarm);

@@ -287,11 +287,52 @@ test('봉 물리: 약한 집게는 조이면 상자가 걸려 조금 들려도 �
  if(!won){for(let seed=4;seed<10&&!won;seed++){const s3=bridgeSim({gap:.16},{seed,pose:{x:0,z:0,yaw:Math.PI/2+seed*.02}});for(let m=0;m<25&&!won;m++){const k=s3.center();won=runBridgeDrop(s3,k[0]+(m%2?.5:-.5),k[2]+(m%3?.9:-.9),B).won;}}}
  assert.ok(won,'정해 둔 순서로 25판 안에 성공하는 상자가 있음');
 });
-test('봉 깊이(11-24 대표 지적 「별로 안 내려옴」): 발 하나가 상자 윗면에 닿아도 바로 멈추지 않고 더 내려감(가장자리 겨눔 7cm 넘게), 가장 낮은 곳은 바닥 제한 그대로', ()=>{
+// 봉 집게 그림 발끝(고무 끝 아래)의 가장 낮은 높이(단위) — claw-bridge.js 그림 치수 그대로(FINGER_PLATES)
+const bridgeTipLow=s=>{const g=s.geom,S=g.rig.scale,c=s.claw;let lo=99;for(let k=0;k<2;k++){const o=Math.max(0,Math.min(1,(c.th[k]-CLAW_RIG.closed)/(CLAW_RIG.splay-CLAW_RIG.closed))),an=FINGER_ANGLE_B.shut+o*(FINGER_ANGLE_B.wide-FINGER_ANGLE_B.shut);
+ for(const F of FINGER_PLATES)for(const p of [F.a,F.b])lo=Math.min(lo,c.y+g.rig.headUp+c.sway[1]+(p[1]*Math.cos(an)-p[2]*Math.sin(an)-F.r)*S);}return lo;};
+test('봉 깊이(11-24 대표 지적 「별로 안 내려옴」 → 2차 「아직도」): 12cm 가까이 내려가 멈출 때 발끝이 상자 윗면 7cm 넘게 아래(상자 10cm의 아래쪽), 조일 때 발끝은 봉 윗면까지만', ()=>{
+ for(const [ox,oz] of [[.56,.66],[-.56,-.66],[.56,0],[0,.66],[0,0]]){const s=bridgeSim();const c=s.center(),top=c[1]+s.half[1],barTop=s.geom.barY+s.geom.barR;s.start();s.setPos(c[0]+ox,c[2]+oz);s.drop();let low=99,at=null,tipLow=99;
+  for(let t=0;t<6&&s.claw.state!=='lift';t+=1/240){s.step(1/240);low=Math.min(low,s.claw.y);if(s.claw.state==='close'){at??=bridgeTipLow(s);tipLow=Math.min(tipLow,bridgeTipLow(s));}}
+  const drop=(s.geom.HOME.y-low)*U,tip=(top-at)*U;
+  assert.ok(drop>.11,`겨눔 (${ox},${oz}) 하강 ${(drop*100).toFixed(1)}cm(1차 8.7cm)`);assert.ok(tip>.07,`멈출 때 발끝이 상자 윗면 ${(tip*100).toFixed(1)}cm 아래(1차 4.9cm)`);
+  assert.ok(low>=s.claw.minY-1e-6,'바닥 제한 아래로 안 내려감');assert.ok(tipLow>=barTop-.03,`발끝이 봉 윗면 ${((barTop-tipLow)*10).toFixed(2)}cm 아래로(상자 밑으로) 안 들어감`);}
+});
+test('봉 약한 집게(11-24 깊이 2차): 깊이 내려가도 상자를 들고 가지 못함 — 봉 4대 × 가운데·가장자리 겨눔, 15cm 넘게 들린 판 0(올라가며 3cm 넘게 들리면 발이 풀림)', ()=>{
  const B=T.bridge;
- for(const [ox,oz] of [[.56,.66],[-.56,-.66],[.56,0],[0,.66],[0,0]]){const s=bridgeSim();const c=s.center();s.start();s.setPos(c[0]+ox,c[2]+oz);s.drop();let low=99;
-  for(let t=0;t<6&&s.claw.state!=='lift';t+=1/240){s.step(1/240);low=Math.min(low,s.claw.y);}
-  const drop=(s.geom.HOME.y-low)*U;assert.ok(drop>.07,`겨눔 (${ox},${oz}) 하강 ${(drop*100).toFixed(1)}cm`);assert.ok(low>=s.claw.minY-1e-6,'바닥 제한(발끝 상자 바닥 + 3.5cm) 아래로 안 내려감');}
+ for(const M of MACHINES.filter(m=>m.kind==='bridge'))for(const [dx,dz] of [[0,0],[0,-.2],[-.5,0],[.5,.6]]){
+  const s=createBridgeSim({geom:bridgeGeom(CLAW,M.bars,B),box:B.box,mass:M.id==='bridge-4'?B.boxMassRare:B.boxMass,power:{grab:B.clawGrab,carry:B.clawGrab*.8},friction:B.barFriction,openTo:B.clawOpen,pose:{x:0,z:0}});
+  const c=s.center(),y0=c[1];s.start();s.setPos(c[0]+dx,c[2]+dz);s.drop();let maxY=y0;
+  for(let t=0;t<14&&s.claw.state!=='done';t+=1/30){s.step(1/30);maxY=Math.max(maxY,s.center()[1]);}
+  assert.ok((maxY-y0)*U<.15,`${M.id} (${dx},${dz}) 들림 ${((maxY-y0)*100*U).toFixed(1)}cm`);}
+});
+// ── 날아감 없음(11-24 대표 지적 「튕겨 나가면서 상자가 날아감」): 날아감 = 상자 점이 초속 2m 넘게, 가운데가 위로 초속 1m 넘게(0.05초 평균), 판 시작보다 15cm 넘게 솟음, 유리 상자 밖
+const flyWatch=(s,g)=>{const y0=s.center()[1],ring=[];const w={v:0,up:0,rise:0,out:false};
+ w.tick=()=>{const Q=s.P;for(let i=4;i<Q.x.length;i++)w.v=Math.max(w.v,Math.hypot(Q.x[i]-Q.ox[i],Q.y[i]-Q.oy[i],Q.z[i]-Q.oz[i])*U*240);const c=s.center();w.rise=Math.max(w.rise,(c[1]-y0)*U);
+  ring.push(c[1]);if(ring.length>13)ring.shift();if(ring.length===13)w.up=Math.max(w.up,(ring[12]-ring[0])*U*20);
+  if(c[0]<g.BOX.x0||c[0]>g.BOX.x1||c[2]<g.BOX.z0||c[2]>g.BOX.z1||c[1]>g.BOX.top)w.out=true;};
+ w.check=msg=>{assert.ok(w.v<=2.001,`${msg}: 점 속도 ${w.v.toFixed(2)}m/s`);assert.ok(w.up<1,`${msg}: 위로 ${w.up.toFixed(2)}m/s`);assert.ok(w.rise<.15,`${msg}: ${(w.rise*100).toFixed(1)}cm 솟음`);assert.ok(!w.out,`${msg}: 유리 밖`);};return w;};
+test('봉 날아감 원인 3가지 재현이 이제 안 남: ① 구덩이에 떨어진 상자가 받침판 밑으로 밀려도 위로 안 튐 ② 집게가 상자에 4cm 겹친 채 닿기 시작해도 안 튐 ③ 저장 자리(mm)로 다시 놓아도 모양이 맞음', ()=>{
+ const B=T.bridge,g=bridgeGeom(CLAW,{gap:.16},B),pz=g.layout.pit;
+ // ① 성공한 상자가 구덩이 바닥에서 받침판 쪽(+z)으로 초속 0.5m로 미끄러짐 — 예전에는 받침판 밑에 든 공을 윗면으로 한 칸에 최대 12cm 들어 올려 초속 20~36m로 튀어 나옴
+ {const s=bridgeSim({gap:.16},{prewarm:0,pose:{x:0,z:pz.z1-.95,yaw:0,y:.52}});const Q=s.P;for(let i=0;i<Q.x.length;i++)Q.oz[i]=Q.z[i]-.5/U/240;
+  const w=flyWatch(s,g);for(let i=0;i<480;i++){s.step(1/240);w.tick();}w.check('구덩이 끝');assert.ok(s.center()[1]<g.deckY,'상자가 받침판 위로 안 올라옴');}
+ // ② 기운 상자 위에 집게를 바로 옮겨(콘솔 claw.aim 같은 순간 이동) 4cm 겹친 채 내림 — 예전에는 겹침을 한 칸에 다 밀어내 초속 10~24m
+ {const s=bridgeSim();const c=s.center();s.start();s.setPos(c[0],c[2]);s.claw.y=c[1]+s.half[1]-g.rig.headUp+.4;const w=flyWatch(s,g);s.drop();for(let i=0;i<240;i++){s.step(1/240);w.tick();}w.check('겹친 채 내림');}
+ // ③ 저장 자리는 mm 정수(공 사이 거리 최대 1mm 어긋남) — 다시 놓을 때 모양부터 맞춰 봉 끝에 걸친 상자도 제자리(예전 1.5~17cm 미끄러짐)
+ for(const [dx,dz] of [[-.6,.6],[.6,-.6],[.6,0]]){const s=bridgeSim();const k=s.center();runBridgeDrop(s,k[0]+dx,k[2]+dz,B);for(let t=0;t<8&&!s.sleeping;t+=1/30)s.step(1/30);
+  const s2=bridgeSim({gap:.16},{st:s.boxState()});assert.ok(Math.hypot(...s.center().map((v,i)=>v-s2.center()[i]))*U<.004,`(${dx},${dz}) 다시 놓은 상자 4mm 안`);}
+});
+test('봉 날아감 없음(무작위 반복, 정해 둔 씨앗): 봉 4대 × 게임처럼 옮겨 겨누고 내림·가끔 0.05~0.25초 멈칫한 프레임 — 날아간 판 0', ()=>{
+ const B=T.bridge;let plays=0;
+ for(const M of MACHINES.filter(m=>m.kind==='bridge')){const g=bridgeGeom(CLAW,M.bars,B);let q=M.id.charCodeAt(7)*977+11;const R=()=>((q=(q*1664525+1013904223)>>>0)/4294967296);
+  let s=createBridgeSim({geom:g,box:B.box,mass:M.id==='bridge-4'?B.boxMassRare:B.boxMass,power:{grab:B.clawGrab,carry:B.clawGrab*.8},friction:B.barFriction,openTo:B.clawOpen,seed:3,pose:startPose(B,R)});
+  for(let k=0;k<5;k++){plays++;const c=s.center(),x=c[0]+(R()*2-1)*1.2,z=c[2]+(R()*2-1)*1.0,w=flyWatch(s,g),sp=B.moveSpeed/U/60;s.start();
+   for(let i=0;i<300&&Math.abs(s.claw.x-x)>1e-6;i++){s.setPos(s.claw.x+Math.sign(x-s.claw.x)*Math.min(sp,Math.abs(x-s.claw.x)),s.claw.z);for(let j=0;j<4;j++){s.step(1/240);w.tick();}if(s.claw.x<=g.RANGE.x0||s.claw.x>=g.RANGE.x1)break;}
+   for(let i=0;i<300&&Math.abs(s.claw.z-z)>1e-6;i++){s.setPos(s.claw.x,s.claw.z+Math.sign(z-s.claw.z)*Math.min(sp,Math.abs(z-s.claw.z)));for(let j=0;j<4;j++){s.step(1/240);w.tick();}if(s.claw.z<=g.RANGE.z0||s.claw.z>=g.RANGE.z1)break;}
+   s.drop();for(let t=0;t<16&&s.claw.state!=='done';){const n=R()<.05?Math.round((.05+R()*.2)*240):4;for(let j=0;j<n;j++){s.step(1/240);w.tick();}t+=n/240;}
+   for(let j=0;j<240;j++){s.step(1/240);w.tick();}
+   w.check(`${M.id} 판 ${k+1}`);if(s.won||offRails(s,g)||s.outOfReach())s=createBridgeSim({geom:g,box:B.box,power:{grab:B.clawGrab,carry:B.clawGrab*.8},friction:B.barFriction,openTo:B.clawOpen,seed:k+5,pose:startPose(B,R)});}}
+ assert.equal(plays,20);
 });
 test('봉 상태 저장(혼자 뽑기 v4.1 §3): 상자 자리를 그대로 다시 놓음·오늘까지·새날은 처음 자리, 진척 없음 판정', ()=>{
  // 11-24 집게 키움 뒤: 예전 겨눔(+0.9, +0.6)은 상자가 막이 봉 끝에 기울어 걸린 채 멈춰(드묾) 다시 열면 2cm 미끄러짐 → 상자가 16cm 움직이는 (−0.6, +0.6)으로
