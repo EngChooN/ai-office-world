@@ -27,16 +27,29 @@ export function geomFrom(C){
  const WALLS=[{x0:CHUTE.x1-t/2,x1:CHUTE.x1+t/2,y0:0,y1:g,z0:CHUTE.z0,z1:BOX.z1},{x0:BOX.x0,x1:CHUTE.x1+t/2,y0:0,y1:g,z0:CHUTE.z0-t/2,z1:CHUTE.z0+t/2}];
  // 집게 가운데 높이: 손가락 끝이 CLAW.clawTop에 오게(쉼 자세 끝까지 약 1.84단위)
  const HOME={x:C.home[0]*k,z:C.home[1]*k,y:(C.clawTop-C.floorY)*k+TIP_REST};
- const RANGE={x0:C.play.x[0]*k,x1:C.play.x[1]*k,z0:C.play.z[0]*k,z1:C.play.z[1]*k};
+ const RANGE=clawRange(C,BOX,fingerReach(C,CLAW_RIG.drop),'claw');
  // 그림 집게 치수 → 단위: 머리 배율, 머리 가운데 = 물리 집게 가운데 + (clawTip − 쉼 자세 끝 깊이)
  return {BOX,CHUTE,WALLS,HOME,RANGE,floorY:C.floorY,guard:g,rig:{scale:C.clawTip/.14*k,headUp:C.clawTip*k-TIP_REST}};
 }
 // 집게 치수(시안 그대로: 손가락 길이 약 0.2m = 그림 CLAW.clawTip과 같음)
-export const CLAW_RIG=Object.freeze({hub:.34,hinge:.28,l1:1.4,l2:.55,bend:.75,rad:.09,open:.6,closed:-.04,rest:.18,minY:1.85,splay:1.0});
+// 11-24 대표 지적 「집게가 작고 벌어지는 각도가 좁아 큰 인형이 안 잡힘」: 내려갈 때 벌림 drop 0.6 → 0.82(발끝 사이 약 19 → 30cm, 집게 크기 CLAW.clawTip 0.21 → 0.24와 함께).
+//  open = 구멍 위에서 놓을 때 벌림 0.6 → 0.7(커진 집게 안에 낀 인형이 빠지게. 구멍 위 자리 CLAW.home을 (−0.28, 0.2)로 옮겨 발끝 0.189m가 앞·옆 유리 안: z 0.389 < 0.395, x 0.444 < 0.445)
+export const CLAW_RIG=Object.freeze({hub:.34,hinge:.28,l1:1.4,l2:.55,bend:.75,rad:.09,open:.7,drop:.82,closed:-.04,rest:.18,minY:1.85,splay:1.0});
 const TIP_REST=CLAW_RIG.l1*Math.cos(CLAW_RIG.rest)+CLAW_RIG.l2*Math.cos(CLAW_RIG.rest-CLAW_RIG.bend);
 // 닿음 판정 = 보이는 손가락 그대로(대표 지적 2026-11-23 「집게가 통과하는 것처럼 보임」): 예전 판정 손가락(0.9cm 막대 두 마디)은 그림(휜 관 반지름 .007·끝 구슬 .011,
 //  머리 배율 clawTip/0.14)보다 가늘고 모양이 달라 인형 속으로 최대 4cm 들어가 보였다. claw-machine-art.js buildClaw 곡선(CatmullRom)을 8토막으로 뽑은 점(손가락 쪽 [y,z], m, 머리 배율 전)
 export const FINGER_CURVE=Object.freeze([[0,0],[-.0143,.0144],[-.0289,.0283],[-.0468,.0375],[-.0701,.0425],[-.0933,.0419],[-.1113,.0331],[-.1258,.0169],[-.14,0]].map(Object.freeze));
+/** 벌림 th(물리 각)에서 손가락이 머리 가운데에서 바깥으로 가장 멀리 나간 거리(m, 관 굵기 포함) — 그림 곡선 그대로 */
+export function fingerReach(C,th){const CL=CLAW_RIG,o=Math.max(0,Math.min(1,(th-CL.closed)/(CL.splay-CL.closed))),an=FINGER_ANGLE_C.shut+o*(FINGER_ANGLE_C.wide-FINGER_ANGLE_C.shut),ca=Math.cos(an),sa=Math.sin(an);
+ let m=0;for(const [y,z] of FINGER_CURVE)m=Math.max(m,y*sa+z*ca+FINGER_PIVOT);return (m+FINGER_TIP)*C.clawTip/.14;}
+/**
+ * 집게 가운데가 갈 수 있는 범위(단위) = 기계 조작 범위 C.play ∩ 내려가며 벌린 발끝이 유리 안쪽 면 안에 머무는 곳(11-24: 집게를 키우며 유리를 뚫지 않게).
+ * kind 'claw' = 손가락 셋(앞 +z 1개, 뒤 좌우 2개: x 쪽 0.866·뒤 0.5배), 'bridge' = 손가락 둘(±x)
+ */
+export const GLASS_IN=Object.freeze({side:.02,front:.02,back:.04}); // 유리판 = 기계 반폭·반깊이에서 이만큼 안(claw-machine-art.js 옆·앞 유리 hw−0.02·hd−0.02, 뒤 판 −hd+0.04)
+export function clawRange(C,BOX,reach,kind){const k=1/U,r=reach*k,m=.01*k,gx=(C.width/2-GLASS_IN.side)*k,gf=(C.depth/2-GLASS_IN.front)*k,gb=(C.depth/2-GLASS_IN.back)*k;
+ const ex=kind==='bridge'?r:r*.866,ef=kind==='bridge'?.02*k:r,eb=kind==='bridge'?.02*k:r*.5;
+ return {x0:Math.max(C.play.x[0]*k,-gx+ex+m),x1:Math.min(C.play.x[1]*k,gx-ex-m),z0:Math.max(C.play.z[0]*k,-gb+eb+m),z1:Math.min(C.play.z[1]*k,gf-ef-m)};}
 export const FINGER_TUBE=.007,FINGER_TIP=.011,FINGER_PIVOT=.03,HEAD_BALL=.03; // 관 반지름·끝 구슬·손가락 뿌리(머리 가운데에서)·머리 구슬(m, 배율 전)
 export const FINGER_ANGLE_C=Object.freeze({shut:.3,wide:-.57}); // claw-machine-art.js FINGER_ANGLE과 같음
 export const toMachine=(g,x,y,z)=>[x*U,g.floorY+y*U,z*U];
@@ -44,7 +57,8 @@ export const toMachine=(g,x,y,z)=>[x*U,g.floorY+y*U,z*U];
 const CLAW_TIP_DEFAULT=.21/.14/.1;
 // 토막이 2개 → 9개(+끝 구슬)로 늘어 같은 깊이에 힘이 여러 번 더해짐: 예전 두 마디와 비슷한 세기가 되게 나눔
 const SEG_SHARE=.35,SINK=1.5,SINK_MAX=.5; // 가라앉기 = 초당 15cm, 조이기 시작에서 5cm까지
-const G=38,SUB=1/240,ITER=6,SLOW2=(.25*SUB)**2,BACK=12,SLEEP_V=.35,NEIGH_V=1.2,WAKE_D=.02,MU_S=.55,MU_K=.4,MU_CLAW_S=.6,MU_CLAW_K=.42;
+// RK_BACK(11-24): 손가락 하나에 남은 겹침이 3mm를 넘으면(바닥·벽에 막힌 인형을 조임) 세기와 상관없이 그 손가락이 벌어짐 — 커진 집게가 누운 인형에 0.9cm 파고들어 보였음
+const RK_BACK=.03,G=38,SUB=1/240,ITER=6,SLOW2=(.25*SUB)**2,BACK=12,SLEEP_V=.35,NEIGH_V=1.2,WAKE_D=.02,MU_S=.55,MU_K=.4,MU_CLAW_S=.6,MU_CLAW_K=.42;
 function rng(seed){let s=seed>>>0||1;return()=>((s=(s*1664525+1013904223)>>>0)/4294967296);}
 
 /**
@@ -76,7 +90,7 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
  for(let i=0;i<count;i++){const [gx,gz]=cells[i%cells.length],layer=Math.floor(i/cells.length);
   addDoll(ids[Math.floor(R()*ids.length)],gx+(R()-.5)*.3,1.1+layer*2.1+R()*.3,gz+(R()-.5)*.3,(R()-.5)*1.6,(R()-.5)*1.2);}
  const claw={x:HOME.x,y:HOME.y,z:HOME.z,th:[CL.rest,CL.rest,CL.rest],ang:[Math.PI/2,Math.PI/2+2.094,Math.PI/2+4.189],
-  state:'idle',t:0,pen:[0,0,0],hubPen:0,resid:0,power:{...power},strength:0,touched:false,liftFrom:0};
+  state:'idle',t:0,pen:[0,0,0],hubPen:0,resid:0,rk:[0,0,0],power:{...power},strength:0,touched:false,liftFrom:0};
  // 손가락 토막(단위): 그림 곡선 8토막 + 끝 구슬. [ax,ay,az, bx,by,bz, 발 k, 반지름, 세기 몫(끝일수록 크게 — 예전 끝 마디 1.3)]
  // 그림 각도 = FINGER_ANGLE_C.shut + 벌림(0~1, clawPose opens와 같은 식) × (wide − shut). 물리 발 k의 방향 = ang[k](그림 손가락 0·1·2 = 물리 0·2·1)
  const RG=geom.rig??{scale:CLAW_TIP_DEFAULT,headUp:0},NSEG=FINGER_CURVE.length-1;
@@ -92,7 +106,7 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
  const sim={P,dolls,claw,events,geom,
   /** 조작 중 집게 자리(단위, 범위 안으로 자름) */
   setPos(x,z){claw.x=Math.max(RANGE.x0,Math.min(RANGE.x1,x));claw.z=Math.max(RANGE.z0,Math.min(RANGE.z1,z));},
-  start(){claw.state='move';claw.t=0;claw.x=HOME.x;claw.z=HOME.z;claw.y=HOME.y;for(const D of dolls)D.lifted=0;},
+  start(){claw.state='move';claw.t=0;sim.setPos(HOME.x,HOME.z);claw.y=HOME.y;for(const D of dolls)D.lifted=0;},
   drop(){if(claw.state!=='move')return false;claw.state='drop';claw.t=0;claw.touched=false;return true;},
   step(dt){const n=Math.min(12,Math.round(dt/SUB));for(let i=0;i<n;i++)sub();},
   settle(sec){for(let i=0;i<sec/SUB;i++)sub();},
@@ -107,6 +121,12 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
   /** 집게 바로 아래 더미 윗면 높이(단위, 그림자 점) */
   topAt(x,z){let y=0;for(const D of dolls){if(D.gone)continue;for(let i=D.first;i<D.first+D.n;i++){const dx=P.x[i]-x,dz=P.z[i]-z,r=P.r[i];if(dx*dx+dz*dz<r*r)y=Math.max(y,P.y[i]+Math.sqrt(r*r-dx*dx-dz*dz));}}return y;},
   left:()=>dolls.filter(D=>!D.gone&&!D.won).length,
+  /** 직원 도움(11-24 대표 결정: 집게 기계 보장 = 힘센 집게 → 직원 도움): 인형 di를 (x,z)(단위) 바닥에 똑바로 세워 둠(멈춘 채, 그 자리 더미 위면 그 위). 판 시작 전에만 부름 */
+  staffPlace(di,x,z,yaw=0){const D=dolls[di];if(!D||D.gone||D.won)return false;
+   let base=0;for(const E of dolls){if(E===D||E.gone)continue;for(let i=E.first;i<E.first+E.n;i++){const dx=P.x[i]-x,dz=P.z[i]-z,r=P.r[i]+D.br*.6;if(dx*dx+dz*dz<r*r)base=Math.max(base,P.y[i]+P.r[i]);}}
+   const cy=Math.cos(yaw),sy=Math.sin(yaw),y=base+D.bottom+.02;
+   D.parts.forEach(([lx,ly,lz],k)=>{const i=D.first+k;P.x[i]=P.ox[i]=x+lx*cy+lz*sy;P.y[i]=P.oy[i]=y+ly;P.z[i]=P.oz[i]=z-lx*sy+lz*cy;});
+   wake(D);D.cx=x;D.cy=y;D.cz=z;D.lifted=0;return true;},
  };
  sim.settle(prewarm);events.length=0;for(const D of dolls)if(D.won){D.gone=true;D.won=false;}
 
@@ -116,7 +136,7 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
   switch(c.state){
    case 'idle':case 'done':case 'move':for(let k=0;k<3;k++)toward(k,CL.rest,1.5);break;
    case 'drop':
-    for(let k=0;k<3;k++)toward(k,CL.open,2.2);
+    for(let k=0;k<3;k++)toward(k,CL.drop,2.2);
     if(c.t<.45)break;
     c.y-=2.6*h;
     // 닿으면 멈춤: 누른 힘·머리 닿음·못 밀어낸 겹침(인형이 바닥·벽에 눌려 꼼짝 못 함 — 줄이 느슨해지듯 거기서 멈추고 겹친 만큼 물러남)
@@ -130,7 +150,8 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
     if(d<=sp){c.x=HOME.x;c.z=HOME.z;c.state='release';c.t=0;events.push({type:'release'});}else{c.x+=dx/d*sp;c.z+=dz/d*sp;}break;}
    case 'release':for(let k=0;k<3;k++)toward(k,CL.open,2.5);if(c.t>1.6){c.state='done';c.t=0;events.push({type:'done'});}break;
   }
-  for(let k=0;k<3;k++)c.th[k]=Math.max(CL.closed,Math.min(c.state==='close'||c.state==='lift'||c.state==='carry'?CL.splay:CL.open,c.th[k]));
+  for(let k=0;k<3;k++)c.th[k]=Math.max(c.power.closeMin??CL.closed,Math.min( // power.closeMin = 덜 오므라짐(T.claw.power)
+  c.state==='close'||c.state==='lift'||c.state==='carry'?CL.splay:c.state==='drop'?CL.drop:CL.open,c.th[k]));
  }
  function wake(D){D.sleep=false;D.still=0;for(let i=D.first;i<D.first+D.n;i++)P.iw[i]=P.w[i];}
  function contact(i,nx,ny,nz,d,mvx,mvy,mvz,muS,muK){
@@ -149,7 +170,7 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
    P.ox[i]=P.x[i];P.oy[i]=P.y[i];P.oz[i]=P.z[i];P.x[i]+=vx;P.y[i]+=vy-G*h*h;P.z[i]+=vz;
   }
   for(const D of dolls){D.cx=P.x[D.first];D.cy=P.y[D.first];D.cz=P.z[D.first];}
-  claw.pen[0]=claw.pen[1]=claw.pen[2]=0;claw.hubPen=0;claw.resid=0;
+  claw.pen[0]=claw.pen[1]=claw.pen[2]=0;claw.rk[0]=claw.rk[1]=claw.rk[2]=0;claw.hubPen=0;claw.resid=0;
   const hubMv=[claw.x-prevHub[0],claw.y-prevHub[1],claw.z-prevHub[2]];
   for(let it=0;it<ITER;it++){
    for(const [a,b,L] of cons){const dx=P.x[b]-P.x[a],dy=P.y[b]-P.y[a],dz=P.z[b]-P.z[a],l=Math.hypot(dx,dy,dz)||1e-9;if(!P.iw[a])continue;
@@ -184,13 +205,13 @@ export function createClawSim({geom,ids,sizeOf,massOf=()=>1,seed=7,count=14,powe
      const S=curSegs[s],Q=prevSegs[s]||S,ex=S[3]-S[0],ey=S[4]-S[1],ez=S[5]-S[2],L2=ex*ex+ey*ey+ez*ez||1;
      let t=((P.x[i]-S[0])*ex+(P.y[i]-S[1])*ey+(P.z[i]-S[2])*ez)/L2;t=Math.max(0,Math.min(1,t));
      const qx=S[0]+ex*t,qy=S[1]+ey*t,qz=S[2]+ez*t,dx=P.x[i]-qx,dy=P.y[i]-qy,dz=P.z[i]-qz,l=Math.hypot(dx,dy,dz),R2=r+S[7];
-     if(l>=R2||l<1e-6)continue;const d=R2-l;if(it===ITER-1&&d>claw.resid)claw.resid=d;
+     if(l>=R2||l<1e-6)continue;const d=R2-l;if(it===ITER-1){if(d>claw.resid)claw.resid=d;if(d>claw.rk[S[6]])claw.rk[S[6]]=d;}
      if(it===0)claw.pen[S[6]]+=d/(P.w[i]*2)*S[8]*SEG_SHARE;
      contact(i,dx/l,dy/l,dz/l,d,qx-(Q[0]+(Q[3]-Q[0])*t),qy-(Q[1]+(Q[4]-Q[1])*t),qz-(Q[2]+(Q[5]-Q[2])*t),MU_CLAW_S,MU_CLAW_K);
     }
    }
   }
-  if(claw.state==='close'||claw.state==='lift'||claw.state==='carry')for(let k=0;k<3;k++){const over=claw.pen[k]-claw.strength;if(over>0)claw.th[k]=Math.min(CL.splay,claw.th[k]+Math.min(1.25*SUB*4,over*BACK));}
+  if(claw.state==='close'||claw.state==='lift'||claw.state==='carry')for(let k=0;k<3;k++){const over=Math.max(claw.pen[k]-claw.strength,claw.rk[k]>RK_BACK?claw.rk[k]:0);if(over>0)claw.th[k]=Math.min(CL.splay,claw.th[k]+Math.min(1.25*SUB*4,over*BACK));}
   for(const D of dolls){if(D.gone||D.sleep)continue;
    let m=0;for(let i=D.first;i<D.first+D.n;i++)m=Math.max(m,Math.abs(P.x[i]-P.ox[i])+Math.abs(P.y[i]-P.oy[i])+Math.abs(P.z[i]-P.oz[i]));
    if(m<SLEEP_V*SUB&&!busy){D.still+=SUB;if(D.still>.6){D.sleep=true;for(let i=D.first;i<D.first+D.n;i++)P.iw[i]=0;}}
@@ -213,4 +234,16 @@ export function runDrop(sim,x,z,maxSec=14){
  for(let t=0;t<maxSec&&sim.claw.state!=='done';t+=1/30){sim.step(1/30);for(const e of sim.events.splice(0))if(e.type==='won')won.push(e.id);}
  for(let t=0;t<1;t+=1/30){sim.step(1/30);for(const e of sim.events.splice(0))if(e.type==='won')won.push(e.id);}
  return {won,lifted:sim.liftedAny()};
+}
+
+/**
+ * 직원 도움 계획·실행(집게 기계 보장 판 시작 때, 11-24 대표 결정): 구멍 뒤 턱 바로 뒤(구멍 가운데 줄, 턱에서 0.85단위 = 8.5cm, 집게가 닿는 범위 안)에
+ * 그 자리에 가장 가까운 인형 하나를 세워 두고 잠깐 가라앉힘 — 들기만 하면 구멍이 바로 앞. 자리 고르기 시험: 구멍 옆 빈 바닥 22%·더미 가운데 20%(40더미×2), 턱 뒤 5.5·7·8.5·10cm = 37·42·45·43%(120더미).
+ * 반환 {di,x,z}(단위) 또는 null
+ */
+export function staffHelp(sim,settleSec=.8,yaw=Math.PI/2,back=.85){
+ const {CHUTE,RANGE}=sim.geom,x=Math.max(RANGE.x0+.2,(CHUTE.x0+CHUTE.x1)/2),z=Math.max(RANGE.z0+.2,CHUTE.z0-back);
+ let di=-1,bd=Infinity;sim.dolls.forEach((D,i)=>{if(D.gone||D.won)return;const d=Math.hypot(D.cx-x,D.cz-z);if(d<bd){bd=d;di=i;}});
+ if(di<0||!sim.staffPlace(di,x,z,yaw))return null;
+ sim.settle(settleSec);return {di,x,z};
 }

@@ -15,6 +15,12 @@
 /* 조작 중 위 오른쪽: ⏱ 칩 + ✕. 💬·☰·🧸은 숨김(설계 ③) */
 .kh-timer{display:flex;align-items:center;gap:4px;height:44px;min-width:64px;box-sizing:border-box;padding:0 12px;border-radius:22px;background:var(--uf-cream);box-shadow:var(--uf-shadow);font:900 18px/1 var(--uf-font);color:var(--uf-ink);justify-content:center}
 .kh-timer[hidden]{display:none}
+/* 타이머 옆에서 보기: 화면 위 가운데 작은 숫자판(기계 숫자판 따라 함). 위 알약 줄 아래, 손가락 닿는 곳 아님 */
+.kh-tnum{position:fixed;z-index:24;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 62px);transition:top .2s;display:flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:12px;background:rgba(30,22,44,.86);box-shadow:var(--uf-shadow);color:#ffe9a8;font:900 22px/1 ui-monospace,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums;letter-spacing:.02em;pointer-events:none}
+.kh-tnum[hidden]{display:none}
+:root:has(.kh-toast:not([hidden]):not(.out)) .kh-tnum{top:calc(env(safe-area-inset-top,0px) + 122px)} /* 알림(같은 자리, 두 줄까지)이 떠 있으면 그 아래로 */
+.kh-tnum[data-state=dim] b{opacity:.18}
+.kh-tnum[data-state=win]{color:#8ff0a8}.kh-tnum[data-state=near]{color:#ffd36b}.kh-tnum[data-state=miss]{color:#ff9d8f}
 .kh-timer.hurry{background:#ffe1dc;color:var(--uf-red);animation:kh-blink .5s steps(2) infinite}
 @keyframes kh-blink{50%{opacity:.6}}
 .kh-quit[hidden]{display:none}

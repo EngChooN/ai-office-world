@@ -66,6 +66,8 @@ export function createClawHud({doc=document,win=window,mobile=false,catalog,pool
  // 조작 중 위 오른쪽: ⏱ 칩 + ✕(💬·☰·🧸 자리는 CSS가 숨김)
  const timer=doc.createElement('div');timer.className='kh-timer';timer.hidden=true;timer.setAttribute('role','timer');timer.innerHTML=`${ic('timer','s')}<b data-t>20</b>`;
  const quitBtn=doc.createElement('button');quitBtn.type='button';quitBtn.className='uf-rb kh-quit';quitBtn.hidden=true;quitBtn.setAttribute('aria-label','그만두기');quitBtn.innerHTML=icon('c-close',{size:'m',fallback:'✕'});
+ // 타이머 기계를 옆에서 볼 때 숫자판이 가려짐(11-23 월드디자인 검토): 화면 위 가운데 작은 숫자 — 기계 숫자판 글·어두워짐을 그대로 따라 함(숨는 기계는 화면에서도 흐림)
+ const tnum=doc.createElement('div');tnum.className='kh-tnum';tnum.hidden=true;tnum.setAttribute('aria-live','off');tnum.innerHTML=`${ic('timer','s')}<b data-tn></b>`;doc.body.append(tnum);
  frame.root.prepend(timer);frame.root.insertBefore(quitBtn,frame.menuBtn);
  quitBtn.addEventListener('click',()=>confirmQuit());
  pill.addEventListener('click',()=>frame.toggle('set'));
@@ -266,6 +268,8 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
   if(sig!==pillSig){pillSig=sig;pill.dataset.tone=sv.tone;pill.querySelector('em').innerHTML=icon(sv.ic,{size:'s'});pill.querySelector('.kh-pill-t').innerHTML=esc(txt).replace('👥 ',icon('c-people',{size:'xs'})+' ');pill.querySelector('[data-coins]').textContent=v.coins;
    pill.setAttribute('aria-label',`${sv.text} · 코인 ${v.coins}개`);}
   if(playing&&kind==='claw'){const t=Math.ceil(v.timeLeft??0);const tb=timer.querySelector('[data-t]');if(tb.textContent!==String(t))tb.textContent=String(t);timer.classList.toggle('hurry',mode==='play'&&t<=5);}
+  {const tv=v.timerView,on=!!tv&&playing;if(tnum.hidden===on)tnum.hidden=!on;
+   if(on){const b=tnum.querySelector('[data-tn]');if(b.textContent!==tv.text)b.textContent=tv.text;const st=tv.dim?'dim':tv.state;if(tnum.dataset.state!==st)tnum.dataset.state=st;}}
   // 한 줄 안내(집게를 옆에서 보는 중이면 「옆에서 보면…」 안내는 끔: 칩 두 개와 겹치고 이미 한 일)
   const h=playing&&!v.side?(mode==='drop'?'':kind==='claw'?HINT.claw:(kind==='bridge'?HINT_BRIDGE:HINT)[(v.sub??'').replace('-hold','')]??''):'';
   if(hint.textContent!==h)hint.textContent=h;hint.hidden=!h||!!cardKind;

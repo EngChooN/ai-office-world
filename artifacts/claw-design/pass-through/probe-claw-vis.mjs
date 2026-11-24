@@ -19,11 +19,12 @@ function fingerPts(c){const out=[],hy=c.y+UP,o=k=>Math.max(0,Math.min(1,(c.th[k]
 const TH=.05,stat={plays:0,badPlays:0,max:0,byState:{},wins:0};
 for(let t=0;t<N;t++){const R=rng(300+t*131),ids=PLUSH.map(p=>p.id);
  const s=P.createClawSim({geom:g,ids,sizeOf:id=>RARITY[rar(id)].size,massOf:id=>C.mass[rar(id)]??1,seed:t+3,count:C.dolls,power:C.power});
+ if(process.env.PITY)s.claw.power={...C.pityPower,...(process.env.PW?JSON.parse(process.env.PW):{}),...(process.env.STALL?{stallAt:+process.env.STALL}:{}),...(process.env.BACK?{backAt:+process.env.BACK}:{})}; // PITY=1: 보장 판 세기로(11-23 보장 다시 맞춤)
  for(let k=0;k<3;k++){stat.plays++;const Rg=g.RANGE,x=Rg.x0+R()*(Rg.x1-Rg.x0),z=Rg.z0+R()*(Rg.z1-Rg.z0);
-  s.start();s.setPos(x,z);s.drop();let mx=0,st='';
+  s.start();s.setPos(x,z);s.drop();let mx=0,st='',wi=null;
   for(let tt=0;tt<16&&s.claw.state!=='done';tt+=1/60){s.step(1/60);const Q=s.P;
-   for(const [fx,fy,fz,fr] of fingerPts(s.claw))for(let i=0;i<Q.x.length;i++){if(s.dolls[Q.d[i]].gone)continue;const d=fr+Q.r[i]-Math.hypot(fx-Q.x[i],fy-Q.y[i],fz-Q.z[i]);if(d>mx){mx=d;st=s.claw.state;}}}
+   for(const [fx,fy,fz,fr] of fingerPts(s.claw))for(let i=0;i<Q.x.length;i++){if(s.dolls[Q.d[i]].gone)continue;const d=fr+Q.r[i]-Math.hypot(fx-Q.x[i],fy-Q.y[i],fz-Q.z[i]);if(d>mx){mx=d;st=s.claw.state;wi={id:s.dolls[Q.d[i]].id,th:s.claw.th.map(v=>+v.toFixed(2)),cy:+s.claw.y.toFixed(2),py:+Q.y[i].toFixed(2),px:+Q.x[i].toFixed(2),pz:+Q.z[i].toFixed(2)};}}}
   for(const e of s.events.splice(0))if(e.type==='won')stat.wins++;
-  if(mx>TH){stat.badPlays++;stat.byState[st]=(stat.byState[st]||0)+1;}stat.max=Math.max(stat.max,mx);
+  if(mx>TH){stat.badPlays++;stat.byState[st]=(stat.byState[st]||0)+1;(stat.bad??=[]).push({t,k,x:+x.toFixed(2),z:+z.toFixed(2),mx:+(mx*10).toFixed(2),st,who:wi});}stat.max=Math.max(stat.max,mx);
   for(let tt=0;tt<1;tt+=1/30)s.step(1/30);s.events.length=0;}}
-stat.max=+(stat.max*10).toFixed(2)+'cm';console.log(JSON.stringify(stat));
+stat.max=+(stat.max*10).toFixed(2)+'cm';console.log(JSON.stringify({PW:process.env.PW,...stat}));

@@ -8,16 +8,17 @@ import {PLUSH,RARITY,RARITY_ORDER,MACHINES,plushInfo} from './claw-palette.js';
 export const CLAW_TUNING=Object.freeze({
  coin:Object.freeze({daily:15,cost:1}),               // 하루 코인(서울 날짜가 바뀌면 이 개수로 다시 채움, 남은 코인은 넘어가지 않음) · 한 판 값  [대표 결정 11-23]
  pity:Object.freeze({after:5}),                       // 같은 기계에서 연달아 n번 실패하면 다음 판 도움(기계 종류마다 다름, 0이면 끔)  [임시값]
- // 집게(설계 v2·v3 §3-1): 물리 판정. 세기 = 집게발이 버티는 힘(잡기/들고 가기), 힘센 집게 = 보장 판(꼭 성공은 아님)
+ // 집게(설계 v2·v3 §3-1): 물리 판정. 세기 = 집게발이 버티는 힘(잡기/들고 가기). 보장 판 = 직원 도움(11-24 대표 결정: 힘센 집게는 그림 모양 판정 뒤 22%로 보통 판과 같아 바꿈 —
+ //  구멍 뒤 턱 바로 뒤에 인형 하나를 세워 줌. claw-physics.js staffHelp)
  claw:Object.freeze({timeSec:20,dropLockSec:.6,moveSpeed:.35,ramp:.1,dolls:14,
-  power:Object.freeze({grab:.002,carry:.0015}),pityPower:Object.freeze({grab:.012,carry:.012}),
+  power:Object.freeze({grab:.002,carry:.0015,closeMin:.1}), // closeMin(11-24): 약한 집게는 끝까지 다 오므라지지 않음(물리 각 0.1) — 커진 집게가 인형을 우리처럼 가둬 판당 24%였음 → 약 21%, 큰 인형도 잡힘
   mass:Object.freeze({common:1,uncommon:1.15,rare:1.35,special:1.6})}),   // 희귀할수록 무거워 잘 안 잡힘(크기는 그림대로)
  // 타이머(설계 v3 §3-2): 화면에 멈춘 숫자로만 판정. 10.00 = 성공, ±0.10 = 아까움, 15.00 넘김·그 밖 = 실패. 보장 기본 끔(pityWinSec 0)
  timer:Object.freeze({targetSec:10,okWinSec:0,nearWinSec:.1,maxSec:15,startLockSec:.5,readyLimitSec:20,hideAfterSec:0,pityWinSec:0}),
  // 열쇠(설계 v3 §3-3): 칸 2×4, 누르고 있기 → 오른쪽(떼면 고정) → 0.3초 → 누르고 있기 → 위(떼면 밀어 넣음). 단위 = 칸 폭
  key:Object.freeze({cols:4,rows:2,cellH:1.4,holeY:.32,startX:.15,startY:-.3,speed:1.4,fit:.14,fitRare:.08,nearMul:2,pityFitBonus:.05,holdLimitSec:10,gapSec:.3}),
  // 봉(월드디자인 설계 v4.1 §7, 다리 걸치기): 2발 약한 집게로 봉 두 개 위 상자를 밀어 봉 사이로 떨어뜨림. 판정 = 물리(claw-bridge-physics.js). 모두 임시값
- bridge:Object.freeze({gap:.16,barR:.012,barLen:.55,barFriction:.35,box:Object.freeze([.16,.10,.22]),boxMass:1.0,boxMassRare:1.2,prongs:2,clawGrab:.0012,clawOpen:.9,
+ bridge:Object.freeze({gap:.16,barR:.012,barLen:.55,barFriction:.35,box:Object.freeze([.16,.10,.22]),boxMass:1.0,boxMassRare:1.2,prongs:2,clawGrab:.0012,clawOpen:.82,
   moveSpeed:.30,holdLimitSec:10,gapSec:.3,nearSupportM:.02,refillSec:2.5,startJitterM:.004,startJitterDeg:8,pityAfter:8,lieDeg:45,liePlays:3}),
  // ↑ pityAfter판 연달아 실패 → 직원 도움(상자를 처음 자리에 다시 놓음, 대표 2026-11-23: 힘센 집게는 상자를 밀기만 해 효과 없음). 아슬아슬한 상자면 건너뜀
  //   lieDeg 넘게 누운 채 liePlays판이면 다시 놓음(막이 봉 밖·봉 아래 끼임은 판 끝나면 바로, 대표 2026-11-23)
@@ -89,7 +90,7 @@ export function pityOn(kind,T=CLAW_TUNING){if(kind==='bridge')return T.bridge.pi
 export const pityAfter=(kind,T=CLAW_TUNING)=>kind==='bridge'?T.bridge.pityAfter:T.pity.after; // 봉은 8판(v4.1 §7-5), 나머지는 pity.after
 export const pityLeft=(s,machineId,T=CLAW_TUNING)=>{const k=kindOf(machineId);return pityOn(k,T)?Math.max(0,pityAfter(k,T)-(s.pity[machineId]??0)):null;};
 export const pityNow=(s,machineId,T=CLAW_TUNING)=>pityLeft(s,machineId,T)===0;
-export const PITY_NAME=Object.freeze({claw:'힘센 집게',bridge:'직원 도움',timer:'넓은 성공 칸',key:'넓은 구멍'});
+export const PITY_NAME=Object.freeze({claw:'직원 도움',bridge:'직원 도움',timer:'넓은 성공 칸',key:'넓은 구멍'});
 
 // ── 타이머 판정(설계 v3 §3-2, 시안 함수 그대로): 화면 숫자 = 0.01초 아래 버림, 판정은 그 숫자로만 ──
 export const hund=ms=>Math.floor(ms/10+1e-9);
@@ -136,7 +137,7 @@ export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.
  if(kind==='claw'){const C=T.claw;
   lines.push(`십자 단추를 누르고 있으면 집게가 움직여요(${C.timeSec}초). 「뽑기」를 누르면 내려가요`,'집게는 실제로 인형을 조여서 들어 올려요. 무거운 인형·눌린 인형은 미끄러지기 쉬워요','「👁 옆에서」로 보면 집게가 앞뒤 어디 있는지 보여요');
   if(shared)lines.push('인형 자리는 모두 같아요 · 걸쳐 있는 인형은 다음 사람이 가져갈 수도 있어요');
-  if(pityOn('claw',T))pity=`${P}번 연달아 못 뽑으면 다음 한 판은 힘센 집게(꼭 잡히는 건 아니에요)`;}
+  if(pityOn('claw',T))pity=`${P}번 연달아 못 뽑으면 직원이 인형 하나를 구멍 뒤 턱 바로 뒤에 세워 줘요(뽑을 때까지 판마다, 꼭 뽑히는 건 아니에요)`;}
  else if(kind==='timer'){const c=T.timer,t=c.targetSec.toFixed(2),lo=(c.targetSec-c.nearWinSec).toFixed(2),hi=(c.targetSec+c.nearWinSec).toFixed(2);
   lines.push('「▶ 시작」을 누르면 숫자가 0.01초씩 올라가요. 「✋ 멈춤」을 누른 순간 숫자가 멈춰요',
    (c.okWinSec>0?`${(c.targetSec-c.okWinSec).toFixed(2)}~${(c.targetSec+c.okWinSec).toFixed(2)}에 멈추면 성공`:`화면 숫자가 딱 ${t}일 때만 성공`)+' — 잠긴 유리문이 열리고 큰 인형을 꺼내요',

@@ -131,8 +131,9 @@ const play=createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf,toonify:toon.
   else if(type==='mach'){saveMachState(state,MACHINES[d.machine].id,d.st);saveState(state);}
   else if(type==='reset')hud?.toast(`${MACHINES[d.machine].name} 상자를 다시 놓았어요`,{sec:2.6});
   else if(type==='drop'&&d.res?.kind==='pending'){hud?.toast(d.auto?'시간 끝! 집게 내려가는 중…':'집게 내려가는 중…',{sec:2,urgent:true});}
+  else if(type==='start'&&d.staff&&d.kind==='claw'){hud?.toast('직원이 인형 하나를 구멍 바로 뒤에 세워 줬어요!',{sec:2.6,urgent:true});} // 집게 직원 도움: 뽑을 때까지 판마다
   else if(type==='start'&&d.staff){state.pity[MACHINES[d.machine].id]=0;saveState(state);hud?.toast('직원이 상자를 처음 자리에 다시 놓아 줬어요!',{sec:2.6,urgent:true});} // 봉 직원 도움: 다시 놓으면 실패 수를 처음부터
-  else if(type==='start'&&d.pity&&d.kind!=='bridge'){hud?.toast(`이번 판은 ${({claw:'힘센 집게',timer:'넓은 성공 칸',key:'넓은 구멍'})[d.kind]}예요!`,{sec:2.6,urgent:true});}
+  else if(type==='start'&&d.pity&&d.kind!=='bridge'&&d.kind!=='claw'){hud?.toast(`이번 판은 ${({timer:'넓은 성공 칸',key:'넓은 구멍'})[d.kind]}예요!`,{sec:2.6,urgent:true});}
   else if(type==='result'){
    const M=MACHINES[d.machine],res=d.res,rec=recordResult(state,M.id,res);saveState(state);
    if(res.kind==='win'){syncShowcase();player.cheer();vibrate(40);}else player.sigh();
@@ -202,16 +203,28 @@ function updatePlayer(dt){
 //  조작·결과를 보는 동안만 내 화면에서 내 동동이를 숨긴다(다른 손님 화면에는 기계 앞에 선 모습 그대로 보임)
 //  높이는 월드아트 값(1.9·세로 2.2)보다 낮춤: 높으면 위 간판 상자가 레일 쪽 집게를 가린다(특히 세로 화면)
 const PLAY_CAM=Object.freeze({pos:[0,1.6,1.75],look:[0,.84,0],fov:44,portrait:Object.freeze({pos:[0,1.55,2.25],look:[0,.86,0],fov:58})});
-// 「👁 옆에서」: 기계 옆(이웃 기계·벽과 사이)에서 유리 상자를 본다 — 앞뒤 거리가 보이게. pos는 오른쪽 옆 값, 왼쪽은 x를 뒤집음
-const SIDE_CAM=Object.freeze({pos:[1.5,1.42,.05],look:[0,.86,0],fov:44,fovPortrait:64});
+// 「👁 옆에서」: 기계 옆에서 유리 상자를 본다 — 앞뒤 거리가 보이게. pos는 오른쪽 옆 값, 왼쪽은 x를 뒤집음. portrait = 세로 화면 값(없으면 pos·look 그대로)
+// 11-23 월드디자인 검토: 옆 기계를 숨기므로 카메라를 1.5 → 2.6m로 빼고 시야를 좁힘 — 카메라 쪽 끝에 온 집게가 덜 커져 회색 덩어리로 안 보임(가까운/먼 끝 크기 비 1.57 → 1.29배).
+//  세로 화면은 폭이 좁아 기계 깊이(0.85m)를 다 넣으면 위 간판·아래 몸통이 화면 절반 넘게 참 → 폭에 집게 움직이는 범위(±0.28m)만 넣고 유리 상자 가운데를 봄(간판·몸통 합쳐 화면 절반 아래)
+//  세로 시야 34°: 카메라 쪽 끝(x 0.33)·옆 끝(z 0.28)에 온 집게 팔까지 화면 안(29°는 집게가 왼쪽 가장자리에 반쯤 잘림), 간판·몸통은 화면의 약 47%
+const SIDE_CAM=Object.freeze({pos:[2.6,1.5,.05],look:[0,.9,0],fov:26,portrait:Object.freeze({pos:[2.6,1.42,.05],look:[0,.93,0],fov:34})});
+// 봉: 2발 집게의 두 팔이 기계 x(= 옆 카메라 쪽)로 벌어져 바로 옆에서는 앞 팔이 뒤 팔을 가림 → 앞쪽으로 약 9° 비스듬히(22°는 앞 기둥·네온이 유리 안을 가로지름, 월드아트 추천 8~10°)
+const BRIDGE_SIDE=Object.freeze({pos:[2.57,1.5,.45],look:[0,.9,.04],fov:26,portrait:Object.freeze({pos:[2.57,1.42,.45],look:[0,.93,.04],fov:34})});
 // 기계 종류별 옆 카메라(11-23 대표 지적 「모든 기계에 옆에서 보기」): 집게·봉 = 같은 몸, 타이머(키 1.8m·단 위 큰 인형)·열쇠는 조금 높게. 열쇠는 칸 묶음이 앞면에 붙은 판이라 바로 옆에서는 판 옆면만 보여 비스듬한 앞옆(칸 앞면·열쇠 꽂힌 깊이가 보이게)
-const SIDE_CAMS=Object.freeze({claw:SIDE_CAM,bridge:SIDE_CAM,timer:Object.freeze({pos:[1.55,1.5,.1],look:[0,.95,.02],fov:46,fovPortrait:66}),key:Object.freeze({pos:[1.5,1.5,.5],look:[0,1.0,.02],fov:46,fovPortrait:66})});
-// 옆에서 보는 동안 카메라와 기계 사이를 막는 옆 기계는 숨김(기계 사이 1.15~1.3m라 옆 카메라 1.5m는 늘 옆 기계 속) — 기계 가운데가 이 거리 안에 들면 막음
-const SIDE_BLOCK_R=.75,sideHidden=new Set();
+const SIDE_CAMS=Object.freeze({claw:SIDE_CAM,bridge:BRIDGE_SIDE,
+ timer:Object.freeze({pos:[2.65,1.55,.1],look:[0,.95,.02],fov:27,portrait:Object.freeze({pos:[2.65,1.5,.1],look:[0,.97,.02],fov:34})}),
+ key:Object.freeze({pos:[2.47,1.6,.85],look:[0,1.0,.02],fov:27,portrait:Object.freeze({pos:[2.47,1.55,.85],look:[0,1.02,.02],fov:34})})});
+// 옆에서 보는 동안 보는 기계 말고 화면에 들어오는 기계는 모두 숨김(11-23 월드아트 확인): 카메라 앞을 막는 옆 기계(기계 사이 1.15~1.3m라 옆 카메라 1.5m는 늘 옆 기계 속),
+//  뒤 유리 너머로 비치는 같은 줄 기계(봉 상자가 2개처럼 읽힘), 화면 가장자리를 가리는 옆 기계 모서리. 판정 = 가려는 카메라 자리·시야(세로 화면 넓은 시야 포함)와 기계 상자가 겹치는지, 거리 제한 없음(가게 14m — 반대편 봉 줄도 유리 너머로 비침)
+const SIDE_FAR=30,sideHidden=new Set(),sideBox=[],sideCam=new THREE.PerspectiveCamera(),sideFrustum=new THREE.Frustum(),sideMat=new THREE.Matrix4();
+const machineBox=j=>sideBox[j]??=new THREE.Box3().setFromObject(U.machines[j].group); // 기계는 움직이지 않음(처음 한 번, 보이는 동안 잼)
 function hideSideBlockers(){
  const i=play.machine,want=new Set();
- if(side&&play.mode!=='idle'&&i>=0){const M=U.machines[i],ax=wantPos.x,az=wantPos.z,dx=M.x-ax,dz=M.z-az,L2=dx*dx+dz*dz||1;
-  U.machines.forEach((O,j)=>{if(j===i)return;const t=Math.max(0,Math.min(1,((O.x-ax)*dx+(O.z-az)*dz)/L2));if(Math.hypot(O.x-(ax+dx*t),O.z-(az+dz*t))<SIDE_BLOCK_R)want.add(j);});}
+ if(side&&play.mode!=='idle'&&i>=0){
+  sideCam.fov=camFov;sideCam.aspect=camera.aspect;sideCam.near=.05;sideCam.far=SIDE_FAR;sideCam.updateProjectionMatrix();
+  sideCam.position.copy(wantPos);sideCam.lookAt(wantLook);sideCam.updateMatrixWorld();
+  sideFrustum.setFromProjectionMatrix(sideMat.multiplyMatrices(sideCam.projectionMatrix,sideCam.matrixWorldInverse));
+  U.machines.forEach((O,j)=>{if(j!==i&&sideFrustum.intersectsBox(machineBox(j)))want.add(j);});}
  for(const j of [...sideHidden])if(!want.has(j)){U.machines[j].group.visible=true;sideHidden.delete(j);}
  for(const j of want)if(!sideHidden.has(j)){U.machines[j].group.visible=false;sideHidden.add(j);}
 }
@@ -222,7 +235,7 @@ function updateCamera(dt){
   const M=U.machines[i],C=M.kind==='claw'||M.kind==='bridge'?PLAY_CAM:M.group.userData.camera??PLAY_CAM,P=innerWidth<innerHeight?C.portrait:C;
   const at=(v,x,y,z)=>{const [wx,wz]=toShop(M,x,z);return v.set(wx,y,wz);};
   const SC=SIDE_CAMS[M.kind];
-  if(SC&&side){at(wantPos,side*SC.pos[0],SC.pos[1],SC.pos[2]);at(wantLook,SC.look[0],SC.look[1],SC.look[2]);camFov=innerWidth<innerHeight?SC.fovPortrait:SC.fov;}else{
+  if(SC&&side){const Q=innerWidth<innerHeight?SC.portrait??SC:SC;at(wantPos,side*Q.pos[0],Q.pos[1],Q.pos[2]);at(wantLook,side*Q.look[0],Q.look[1],Q.look[2]);camFov=Q.fov;}else{
   at(wantPos,P.pos[0],P.pos[1],P.pos[2]);const lk=P.look??C.look;at(wantLook,lk[0],lk[1],lk[2]);camFov=P.fov;}
  }else{
   if(player.moving&&!input.looking()){let d=player.heading-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*1.2));}
@@ -353,7 +366,7 @@ renderer.setAnimationLoop(()=>{
  key.target.position.set(0,0,0);
  const near=play.mode==='idle'?nearMachine():-1,busy=U.machines.map((_,i)=>{const id=play.busy(i);return id?multi.nameOf(id):null;});
  const freeKind=Object.fromEntries(Object.keys(KIND_INFO).map(k=>[k,nearestFree(k,near)]));
- hud.update(dt,{mode:play.mode,machine:play.machine,kind:play.kind,sub:play.sub,side,near,coins:state.coins,timeLeft:play.timeLeft,armed:play.armed,running:runOn,busy,busySig:busy.join('|'),freeKind});
+ hud.update(dt,{mode:play.mode,machine:play.machine,kind:play.kind,sub:play.sub,side,near,coins:state.coins,timeLeft:play.timeLeft,armed:play.armed,timerView:side&&play.kind==='timer'?play.timerView:null,running:runOn,busy,busySig:busy.join('|'),freeKind});
  updateTags();
  renderer.info.reset();toon.pipeline.render(dt);
  renderMini();

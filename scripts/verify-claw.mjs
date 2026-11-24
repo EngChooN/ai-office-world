@@ -84,7 +84,7 @@ async function sizeRun(size){
  await checkButtons(p,`${tag} 기계 앞`,['.kh-pill','.uf-tr > button:not([hidden])','[data-uf]']);
  ok(`${tag} 할 일 칩 「한 판 · 🪙1」·「규칙」`,(await p.evaluate(()=>[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|'))).match(/집게 1 한 판.*규칙/));
  await click(p,'.kh-todo[data-act=rules]');await sl(250);
- ok(`${tag} 규칙 카드(조절값 글·보장 글·인형)`,await p.evaluate(()=>{const c=document.querySelector('.kh-card');return !c.hidden&&/20초/.test(c.textContent)&&/힘센 집게/.test(c.textContent)&&c.querySelectorAll('.kh-prizes span').length>=3;}));
+ ok(`${tag} 규칙 카드(조절값 글·보장 글·인형)`,await p.evaluate(()=>{const c=document.querySelector('.kh-card');return !c.hidden&&/20초/.test(c.textContent)&&/직원이 인형 하나를/.test(c.textContent)&&c.querySelectorAll('.kh-prizes span').length>=3;}));
  await click(p,'.kh-card [data-c=close]');
  // ── 집게(물리)
  await firstPlay(p,tag,'집게');
@@ -130,7 +130,8 @@ async function sizeRun(size){
   const rest=L[0].ang,down=L.filter(x=>x.st==='drop'&&x.drop>.01),ci=L.findIndex(x=>x.st==='close'),deep=Math.max(...L.map(x=>x.drop)),up=L.filter(x=>x.st==='lift'&&x.drop<deep-.02);
   // 손가락 각: 작을수록(−쪽) 벌어짐
   ok(`${tag} 그림 집게: 벌린 채 내려감`,down.length>3&&down.every(x=>x.ang<rest-.25),`쉼 ${rest.toFixed(2)} 내려갈 때 ${down.length?Math.max(...down.map(x=>x.ang)).toFixed(2):'-'}`);
-  ok(`${tag} 그림 집게: 바닥에서 조이기 시작`,ci>0&&Math.abs(L[ci].drop-deep)<.01,`조임 시작 깊이 ${L[ci]?.drop.toFixed(3)} 가장 깊이 ${deep.toFixed(3)}`);
+  // 11-24: 내려가다 멈춘 곳에서 조이기 시작하고, 조이는 동안 줄이 느슨해 5cm까지 가라앉음(11-23 물리, 집게가 커져 자주 보임)
+  {const downDeep=Math.max(...L.slice(0,ci).map(x=>x.drop));ok(`${tag} 그림 집게: 바닥에서 조이기 시작`,ci>0&&Math.abs(L[ci].drop-downDeep)<.01&&deep-L[ci].drop<=.052,`조임 시작 깊이 ${L[ci]?.drop.toFixed(3)} 내려간 깊이 ${downDeep.toFixed(3)} 가장 깊이 ${deep.toFixed(3)}`);}
   ok(`${tag} 그림 집게: 조인 채 올라옴`,up.length>3&&up.every(x=>x.ang>L[ci].ang+.05),`조임 시작 ${L[ci]?.ang.toFixed(2)} 올라올 때 ${up.length?Math.min(...up.map(x=>x.ang)).toFixed(2):'-'}`);}
  await p.screenshot({path:`${OUT}/${size}-6drop.png`}); // 옆 보기는 다음 기계로 가면 저절로 꺼짐
  await waitResult(p);s=await st(p);ok(`${tag} 집게 결과(물리): ${s.play.result?.kind}`,['win','near','miss'].includes(s.play.result?.kind),JSON.stringify(s.play.result));
@@ -206,9 +207,10 @@ async function sizeRun(size){
  await p.reload();await p.waitForFunction(()=>window.claw&&window.claw.fps>0,null,{timeout:180000});await sl(400);
  s=await st(p);ok(`${tag} 이어하기: 새로고침 뒤 코인 0·도감 ${dexN}종(같은 날 다시 안 줌)`,s.coins===0&&Object.keys(s.dex).length===dexN,`${s.coins} ${JSON.stringify(s.dex)}`);
  {const b2=await p.evaluate(()=>claw.play.bridge(6)),b1=bs.b;
-  // 저장한 상자 자리(공 자리 mm)와 새로고침 뒤 자리를 비교: 공마다 8mm 안(다시 놓을 때 0.4초 굳힘으로 생기는 어긋남 허용)
+  // 저장한 상자 자리(공 자리 mm)와 새로고침 뒤 자리를 비교: 공마다 8mm 안(다시 놓을 때 0.4초 굳힘으로 생기는 어긋남 허용).
+  // 봉 밖으로 떨어진 상자(받침 여유 −)는 다시 놓는 규칙(11-23)이라 처음 자리면 맞음(11-24: 커진 집게로 이 판에서 자주 떨어짐)
   const diff=bs.st&&b2.st&&bs.st.length===b2.st.length?Math.max(...bs.st.map((v,i)=>Math.abs(v-b2.st[i]))):null;
-  ok(`${tag} 봉: 새로고침해도 상자가 그 자리(저장한 자리와 공마다 8mm 안)`,b1.won||b1.refill?b2.support>.03:diff!==null&&diff<=8,`최대 어긋남 ${diff}mm · ${b1.support}/${b1.tilt} → ${b2.support}/${b2.tilt}`);}
+  ok(`${tag} 봉: 새로고침해도 상자가 그 자리(저장한 자리와 공마다 8mm 안)`,b1.won||b1.refill?b2.support>.03:diff!==null&&diff<=8||b1.support<0&&b2.support>.03,`최대 어긋남 ${diff}mm · ${b1.support}/${b1.tilt} → ${b2.support}/${b2.tilt}`);}
  // 다음 날(11-23 대표 결정): 남은 개수와 상관없이 15로 — 어제 받은 것으로 바꾸고 새로고침
  const dayShift=async(patch)=>{await p.evaluate(patch=>{const k='claw-world:v1',v=JSON.parse(localStorage.getItem(k));const y=new Date(Date.now()+9*3600e3-86400e3).toISOString().slice(0,10);
    Object.assign(v,patch);if(v.lastGrant==='Y')v.lastGrant=y;if(v.lastGrant==='T')v.lastGrant=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);if(patch.coinV===null)delete v.coinV;localStorage.setItem(k,JSON.stringify(v));},patch);

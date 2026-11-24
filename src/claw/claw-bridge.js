@@ -57,6 +57,11 @@ export function makeBoxPrize(id,{toonify=null,box=[.16,.10,.22]}={}){
  g.userData.plushId=id;g.userData.size=h;return g;
 }
 
+// 2발 집게 색(11-23 옆에서 보기 검토 ③): 연보라 금속 팔이 유리·바닥과 섞여 옆에서 회색 덩어리로 읽힘 → 팔 짙은 파랑 + 바깥면 노란 띠,
+//  팔꿈치 노랑, 발끝 산호색 고무, 모터 머리 짙은 띠. 치수·자리는 그대로(판정 FINGER_PLATES·HEAD_PLATE와 대조됨), 띠는 표면에 붙인 얇은 장식
+export const CLAW2_COLORS=Object.freeze({arm:'#3f6aa8',stripe:'#ffd23f',joint:'#ffd23f',toe:'#ff6b4a',band:'#2c3343'});
+function claw2Mats(){const K=CLAW2_COLORS;return {clawArm:std(K.arm,{roughness:.45,metalness:.25}),clawStripe:std(K.stripe,{roughness:.5}),clawJoint:std(K.joint,{roughness:.45}),clawToe:std(K.toe,{roughness:.8}),clawBand:std(K.band,{roughness:.6})};}
+
 // ── 2발 집게. 집게 기계 buildClaw와 같은 꼴({root,set,state,fingers,head,cart,dot,tipWorld}), 손가락 자리·각도 식도 같다.
 // floorAt(x,z) = 그 자리 바닥 높이(받침판 또는 구멍 바닥). 그림자 점 높이를 안 주거나 기계 바닥(floorY)으로 주면 이것을 씀
 function buildClaw2(mats,floorAt){
@@ -70,7 +75,9 @@ function buildClaw2(mats,floorAt){
  // 가로로 긴 모터 머리(팔 둘이 좌우 끝에 달림) + 가운데 작은 위 덮개
  head.add(new THREE.Mesh(new RoundedBoxGeometry(.1,.045,.05,2,.012).translate(0,.022,0),mats.accent));
  head.add(new THREE.Mesh(new THREE.CylinderGeometry(.02,.026,.03,10).translate(0,.055,0),mats.metal));
- const fingers=[],armMat=mats.metal,toeMat=mats.rubber;
+ // 머리 허리 짙은 띠(머리 겉면에서 2mm만 나옴 — 밝은 머리가 네온·유리와 섞이지 않게)
+ head.add(new THREE.Mesh(new RoundedBoxGeometry(.104,.014,.054,2,.006).translate(0,.02,0),mats.clawBand??mats.dark));
+ const fingers=[],armMat=mats.clawArm??mats.metal,toeMat=mats.clawToe??mats.rubber;
  for(const yaw of [Math.PI/2,-Math.PI/2]){const pivot=new THREE.Group();pivot.rotation.y=yaw;head.add(pivot);
   const f=new THREE.Group();f.position.set(0,0,.03);pivot.add(f);
   // 집게 기계 손가락과 같은 길(끝 = (0,−0.14,0))을 납작하고 넓은 팔로: 사각 단면 관을 옆(x)으로 3배
@@ -78,7 +85,9 @@ function buildClaw2(mats,floorAt){
   const pts=[new THREE.Vector3(0,0,0),new THREE.Vector3(0,-.012,.034),new THREE.Vector3(0,-.11,.036),new THREE.Vector3(0,-.14,0)];
   const path=new THREE.CurvePath();for(let i=0;i<3;i++)path.add(new THREE.LineCurve3(pts[i],pts[i+1]));
   const arm=new THREE.TubeGeometry(path,12,.008,4,false).scale(2.4,1,1);f.add(new THREE.Mesh(arm,armMat));
-  const elbow=new THREE.Mesh(new THREE.SphereGeometry(.011,8,6).translate(0,-.11,.036),mats.accent);f.add(elbow);
+  // 바깥면 노란 띠(곧은 부분, 팔 바깥 꼭짓점에 3mm 덧댐) — 옆에서 넓은 팔 면이 「팔」로 읽히게
+  f.add(new THREE.Mesh(new THREE.BoxGeometry(.012,.088,.005).translate(0,-.06,.0425),mats.clawStripe??mats.accent));
+  const elbow=new THREE.Mesh(new THREE.SphereGeometry(.011,8,6).translate(0,-.11,.036),mats.clawJoint??mats.accent);f.add(elbow);
   // 안으로 꺾인 고무 발끝(넓적한 받침)
   const toe=new THREE.Mesh(new RoundedBoxGeometry(.04,.012,.026,2,.005).translate(0,-.142,-.004),toeMat);toe.rotation.x=0;f.add(toe);
   fingers.push(f);}
@@ -107,7 +116,8 @@ export function buildBridgeMachine(theme,{toonify=null,T=CLAW_TUNING}={}){
  const M=typeof theme==='string'?MACHINES.find(m=>m.id===theme):theme;if(!M)throw new Error(`기계 없음: ${theme}`);
  const C=CLAW,B=T.bridge,W=C.width,D=C.depth,hw=W/2,hd=D/2,bars=M.bars??{gap:B.gap},geom=bridgeGeom(C,bars,B),L=bridgeLayout(C,bars,B);
  const root=new THREE.Group();root.name=`봉 기계:${M.id}`;
- const mats={...bodyKit.machineMats(M),pit:std('#8a8f99',{roughness:.9}),pitWall:std('#c4c8cf',{roughness:.85}),exit:std('#0c0d10',{roughness:1}),deck:std(pale(M.accent,.72),{roughness:.7}),post:std('#dfe3e8',{roughness:.35,metalness:.2}),bar:std('#b7c0cb',{roughness:.28,metalness:.4}),grip:std('#8f98a3',{roughness:.4,metalness:.3})};
+ const mats={...bodyKit.machineMats(M),pit:std('#8a8f99',{roughness:.9}),pitWall:std('#c4c8cf',{roughness:.85}),exit:std('#0c0d10',{roughness:1}),deck:std(pale(M.accent,.72),{roughness:.7}),post:std('#dfe3e8',{roughness:.35,metalness:.2}),bar:std('#b7c0cb',{roughness:.28,metalness:.4}),grip:std('#8f98a3',{roughness:.4,metalness:.3}),
+  ...claw2Mats()};
  const b=builder(),late=[];
  bodyKit.lowerBody(b,M);
  // 조작대: 손잡이 + 뽑기 단추 받침(집게 기계와 같은 자리)

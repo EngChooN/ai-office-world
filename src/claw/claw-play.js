@@ -12,7 +12,7 @@ import {CLAW} from './claw-machine-art.js';
 import {TIMER} from './claw-machines-more.js';
 const TIMER_RATTLE=TIMER.door.rattle;
 import {plushGeometry,plushMaterial,plushLineMaterial} from './claw-plush.js';
-import {geomFrom,createClawSim,toMachine,U} from './claw-physics.js';
+import {geomFrom,createClawSim,toMachine,U,staffHelp} from './claw-physics.js';
 import {CLAW_TUNING,judgeTimer,judgeKey,fmtTimer,hund,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,hideAfterOf} from './claw-rules.js';
 import {createBridgeSim,startPose,nearState,bridgeOutcome,bridgeSnap,noProgress,offRails} from './claw-bridge-physics.js';
 import {MACHINES} from './claw-palette.js';
@@ -24,7 +24,7 @@ export const DOOR_TIMES=Object.freeze({unlock:.45,open:.6,take:1.0,hold:.35,shut
 const DOOR_SEQ=Object.freeze({win:['unlock','open','take','hold'],near:['rattle'],miss:['blink']});
 const SEQ=['down','close','up','carry','release','fall','settle'];
 // 집게 벌림(그림 open). play = 물리 쉼 자세(CLAW_RIG.rest)와 같게, down = 물리 내려가기(CLAW_RIG.open)와 같게 — 내 판·구경·타이머가 같은 모양
-const OPEN={play:.21,down:.62,grab:.32,shut:0,release:.75};
+const OPEN={play:.21,down:.83,grab:.32,shut:0,release:.71}; // 11-24: down = 물리 CLAW_RIG.drop 0.82, release = 물리 open 0.7 → 그림 벌림 (th+0.04)/1.04
 const clamp=(v,lo,hi)=>Math.min(hi,Math.max(lo,v));
 const ease=t=>t<.5?2*t*t:1-(-2*t+2)**2/2;
 const GEOM=geomFrom(CLAW);
@@ -38,12 +38,14 @@ const idOfObj=o=>o?.userData?.plushId??(o?.name?.includes(':')?o.name.split(':')
  */
 export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'common',toonify=null,audio=null,pityFor=()=>false,onEvent=()=>{},rareOf=()=>false,T=CLAW_TUNING,seed=7,machState=()=>null}){
  const rigs=shop.userData.machines.map((M,i)=>{const U2=M.group.userData,kind=U2.kind??M.kind??'claw';
-  const rest=kind==='timer'?[U2.stage.x,U2.stage.z]:[CLAW.home[0],CLAW.home[1]];
-  return {i,M,U:U2,kind,rest,x:rest[0],z:rest[1],tx:rest[0],tz:rest[1],drop:0,open:OPEN.play,seq:null,owner:null,ownerAct:null,lightT:0,lightMode:'idle',
+  // 집게·봉이 갈 수 있는 범위(m) = 물리 RANGE(벌린 발끝이 유리 안, 11-24). 쉬는 자리 = 구멍 위(home)를 이 범위 안으로 자른 곳
+  const G=kind==='bridge'?U2.geom:GEOM,range=G?{x:[G.RANGE.x0*U,G.RANGE.x1*U],z:[G.RANGE.z0*U,G.RANGE.z1*U]}:CLAW.play;
+  const rest=kind==='timer'?[U2.stage.x,U2.stage.z]:[clamp(CLAW.home[0],range.x[0],range.x[1]),clamp(CLAW.home[1],range.z[0],range.z[1])];
+  return {i,M,U:U2,kind,rest,range,x:rest[0],z:rest[1],tx:rest[0],tz:rest[1],drop:0,open:OPEN.play,seq:null,owner:null,ownerAct:null,lightT:0,lightMode:'idle',
    sim:null,views:null,timer:null,key:null,keyFx:null,door:null,dseq:null,taken:null,shut:null,wakeT:0,
    bsim:null,bk:null,box:null,before:null,refillT:0,mv:0,still:0,lay:0};});
  let mode='idle',cur=null,elapsed=0,clock=0,armedOnce=false,result=null,playN=0,phase='',hold={x:0,z:0},bumpX=0,bumpZ=0,pityNow=false,clawWon=[],doneAt=0,lastV=0,refills=0;
- const P=CLAW.play,W=CLAW.width;
+ const W=CLAW.width;
 
  // ── 집게 기계: 물리 더미(그림 쪽 fillPile 대신, 같은 인형 형상을 물리 자리로 그린다)
  const _m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_s=new THREE.Vector3(),_p=new THREE.Vector3(),zero=new THREE.Matrix4().makeScale(0,0,0);
@@ -179,7 +181,10 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   const r=rigs[i];if(mode!=='idle'||r.owner||r.seq||r.dseq)return false;clearTaken(r,{now:true});
   cur=r;mode='play';elapsed=0;armedOnce=false;result=null;playN=(playN+1)&0xffff;phase='play';hold={x:0,z:0};pityNow=!!pityFor(i);lastV=0;
   setLights(r,'play');audio?.play('coin');let staff=false;
-  if(r.kind==='claw'){r.sim.claw.power={...(pityNow?T.claw.pityPower:T.claw.power)};r.sim.start();clawWon=[];doneAt=0;r.dropAt=null;r.x=r.rest[0];r.z=r.rest[1];}
+  if(r.kind==='claw'){r.sim.claw.power={...T.claw.power};
+   // 직원 도움(보장 판, 11-24 대표 결정 — 힘센 집게는 그림 모양 판정 뒤 효과가 없음): 구멍 뒤 턱 바로 뒤에 인형 하나를 세워 둠. 실패 수는 뽑을 때까지 그대로(다음 판도 도움)
+   if(pityNow){if(staffHelp(r.sim))staff=true;else pityNow=false;}
+   r.sim.start();clawWon=[];doneAt=0;r.dropAt=null;r.x=r.rest[0];r.z=r.rest[1];}
   else if(r.kind==='bridge'){
    if(!r.bsim||r.bsim.won||r.refillT>0){r.refillT=0;buildBridge(r,{fresh:true,not:r.box});}
    // 직원 도움(보장 판): 상자를 처음 자리에 다시 놓음. 떨어지기 직전(아슬아슬)이면 그대로 두고 다음 판으로 미룸
@@ -259,7 +264,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
     const sp=T.claw.moveSpeed*W,moving=!!(dir.x||dir.z);
     hold.x=dir.x?Math.min(T.claw.ramp,hold.x+dt):0;hold.z=dir.z?Math.min(T.claw.ramp,hold.z+dt):0;
     const kx=T.claw.ramp>0?Math.max(.25,hold.x/T.claw.ramp):1,kz=T.claw.ramp>0?Math.max(.25,hold.z/T.claw.ramp):1;
-    const nx=r.x+Math.sign(dir.x)*sp*kx*dt,nz=r.z+Math.sign(dir.z)*sp*kz*dt,cx=clamp(nx,P.x[0],P.x[1]),cz=clamp(nz,P.z[0],P.z[1]);
+    const nx=r.x+Math.sign(dir.x)*sp*kx*dt,nz=r.z+Math.sign(dir.z)*sp*kz*dt,cx=clamp(nx,r.range.x[0],r.range.x[1]),cz=clamp(nz,r.range.z[0],r.range.z[1]);
     if(dir.x&&cx!==nx){if(!bumpX){bumpX=1;audio?.play('bump');onEvent('bump',{});}}else bumpX=0;
     if(dir.z&&cz!==nz){if(!bumpZ){bumpZ=1;audio?.play('bump');onEvent('bump',{});}}else bumpZ=0;
     const moved=moving&&(Math.abs(cx-r.x)>1e-6||Math.abs(cz-r.z)>1e-6);r.x=r.tx=cx;r.z=r.tz=cz;r.sim.setPos(cx/U,cz/U);
@@ -271,7 +276,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
      if(ms>=T.timer.maxSec*1000)stopTimer(T.timer.maxSec*1000);
      else{const hide=hideAfterOf(MACHINES[r.i]?.id,T);r.U.setTimer?.({text:fmtTimer(ms),state:'run',dim:hide>0&&ms>=hide*1000});}}
    }else if(r.kind==='bridge'){const k=r.bk,sp=B.moveSpeed*W;
-    if(k.holding){k.holdT+=dt;if(k.phase==='k1')r.x=Math.min(P.x[1],r.x+sp*dt);else r.z=Math.max(P.z[0],r.z-sp*dt);r.tx=r.x;r.tz=r.z;r.bsim.setPos(r.x/U,r.z/U);if(k.holdT>=B.holdLimitSec)bigUp();}
+    if(k.holding){k.holdT+=dt;if(k.phase==='k1')r.x=Math.min(r.range.x[1],r.x+sp*dt);else r.z=Math.max(r.range.z[0],r.z-sp*dt);r.tx=r.x;r.tz=r.z;r.bsim.setPos(r.x/U,r.z/U);if(k.holdT>=B.holdLimitSec)bigUp();}
     if(k.phase==='gap'){k.gapT+=dt;if(k.gapT>=B.gapSec){k.phase='k2';onEvent('phase',{phase:'k2'});}}
    }else{const k=r.key,c=T.key;
     if(k.holding){k.holdT+=dt;if(k.phase==='k1')k.x=Math.min(c.cols,k.x+c.speed*dt);else k.y=Math.min(c.rows*c.cellH,k.y+c.speed*dt);if(k.holdT>=c.holdLimitSec)bigUp();}
@@ -367,10 +372,12 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   /** 점검용: 조작 중 집게를 그 자리로(기계 좌표 m, 범위 안으로 자름) */
   // 점검·촬영용: 타이머를 ms에서 멈춘 것으로(판정은 judgeTimer 그대로). 시작 전이면 시작한 뒤 멈춤
   stopAt(ms){if(mode!=='play'||cur?.kind!=='timer')return false;const t=cur.timer;if(t.phase==='ready'){t.phase='run';t.t0=0;}if(t.phase!=='run')return false;stopTimer(ms);return true;},
-  aim(x,z){if(mode!=='play'||(cur?.kind!=='claw'&&cur?.kind!=='bridge'))return false;cur.x=cur.tx=clamp(x,P.x[0],P.x[1]);cur.z=cur.tz=clamp(z,P.z[0],P.z[1]);(cur.sim??cur.bsim).setPos(cur.x/U,cur.z/U);if(cur.bk&&cur.bk.phase==='k1'){cur.bk.phase='k2';}return true;},
+  aim(x,z){if(mode!=='play'||(cur?.kind!=='claw'&&cur?.kind!=='bridge'))return false;cur.x=cur.tx=clamp(x,cur.range.x[0],cur.range.x[1]);cur.z=cur.tz=clamp(z,cur.range.z[0],cur.range.z[1]);(cur.sim??cur.bsim).setPos(cur.x/U,cur.z/U);if(cur.bk&&cur.bk.phase==='k1'){cur.bk.phase='k2';}return true;},
   /** 점검용: 열쇠를 그 자리로(칸 단위) */
   keyTo(x,y){if(mode!=='play'||cur?.kind!=='key')return false;cur.key.x=x;cur.key.y=y;return true;},
   get mode(){return mode;},get machine(){return cur?.i??-1;},get kind(){return cur?.kind??null;},get armed(){return armed();},get result(){return result;},get pity(){return pityNow;},
+  /** 타이머 기계 숫자판 지금 글·상태(옆에서 볼 때 화면 위 작은 숫자, 11-23) — 기계 그림과 같은 값 */
+  get timerView(){const t=cur?.kind==='timer'?cur.U.timer:null;return t?{text:t.text,state:t.state,dim:!!t.dim}:null;},
   get timeLeft(){return cur?.kind==='claw'?Math.max(0,T.claw.timeSec-elapsed):0;},
   /** 큰 단추 상태: 'claw' · timer 'ready'|'run' · key 'k1'|'k1-hold'|'gap'|'k2'|'k2-hold' · 'drop' */
   get sub(){if(!cur)return '';if(mode==='drop')return 'drop';if(cur.kind==='timer')return cur.timer?.phase??'';if(cur.kind==='key'||cur.kind==='bridge'){const k=holdState(cur);return k?.holding?`${k.phase}-hold`:k?.phase??'';}return 'claw';},

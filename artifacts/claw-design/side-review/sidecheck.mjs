@@ -1,0 +1,17 @@
+import {chromium} from '@playwright/test';
+const SIZE=process.argv[2]??'pc',VP=SIZE==='portrait'?[390,844,true]:[1280,720,false];
+const {createServer}=await import('vite');const port=5455;
+const vite=await createServer({root:process.cwd(),server:{port,host:'127.0.0.1',strictPort:true},logLevel:'warn'});await vite.listen();
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
+const sl=ms=>new Promise(r=>setTimeout(r,ms));
+const ctx=await browser.newContext({viewport:{width:VP[0],height:VP[1]},deviceScaleFactor:1,isMobile:VP[2],hasTouch:VP[2]});
+await ctx.addInitScript(()=>{if(!sessionStorage.getItem('__k')){localStorage.clear();sessionStorage.setItem('__k','1');}localStorage.setItem('aoworld:settings:v1',JSON.stringify({sound:false,volume:.7,music:true,hubTime:'auto'}));});
+const p=await ctx.newPage();
+await p.goto(`http://127.0.0.1:${port}/claw/`);await p.waitForFunction(()=>window.claw&&window.claw.fps>0,null,{timeout:180000});
+await p.evaluate(()=>{claw.setCoins(30);claw.seen(true);});
+await p.evaluate(n=>claw.goMachine(n),2);await sl(1100);
+await (await p.waitForSelector('.kh-big[data-act=play]',{state:'visible'})).click();await sl(900);
+await (await p.waitForSelector('.kh-todo[data-act=side]',{state:'visible'})).click();await sl(1500);
+console.log(await p.evaluate(()=>{const g=claw.shop.userData.machines[2].group,C=claw.camera,V=C.position.constructor;const c=new V();g.getWorldPosition(c);const s=c.clone().project(C);
+ return {cam:C.position.toArray().map(v=>+v.toFixed(2)),mach:c.toArray().map(v=>+v.toFixed(2)),scr:[+s.x.toFixed(2),+s.y.toFixed(2)],fov:C.fov,aspect:C.aspect,canvas:[claw.camera.aspect,innerWidth,innerHeight]};}));
+await browser.close();await vite.close();

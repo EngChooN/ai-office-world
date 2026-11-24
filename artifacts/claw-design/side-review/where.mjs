@@ -1,0 +1,23 @@
+// 봉 옆 시점에서 집게 머리가 화면 어디에 있나(조작 중 ↑ 누르는 동안)
+import {chromium} from '@playwright/test';
+const SIZE=process.argv[2]??'pc',VP=SIZE==='portrait'?[390,844,true]:[1280,720,false];
+const {createServer}=await import('vite');const port=5432;
+const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true},logLevel:'warn'});await vite.listen();
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--enable-webgl','--ignore-gpu-blocklist']});
+const sl=ms=>new Promise(r=>setTimeout(r,ms));
+const ctx=await browser.newContext({viewport:{width:VP[0],height:VP[1]},deviceScaleFactor:1,isMobile:VP[2],hasTouch:VP[2]});
+await ctx.addInitScript(()=>{if(!sessionStorage.getItem('__k')){localStorage.clear();sessionStorage.setItem('__k','1');}localStorage.setItem('aoworld:settings:v1',JSON.stringify({sound:false,volume:.7,music:true,hubTime:'auto'}));});
+const p=await ctx.newPage();
+await p.goto(`http://127.0.0.1:${port}/claw/`);await p.waitForFunction(()=>window.claw&&window.claw.fps>0,null,{timeout:180000});
+await p.evaluate(()=>{claw.setCoins(30);claw.seen(true);});
+const names=await p.evaluate(()=>{const g=claw.shop.userData.machines[7].group,s=new Set();g.traverse(o=>{if(o.name)s.add(o.name);});return [...s].slice(0,80);});
+//console.log(names.join(' | '));
+await p.evaluate(n=>claw.goMachine(n),7);await sl(1100);
+await (await p.waitForSelector('.kh-big[data-act=play]',{state:'visible'})).click();await sl(900);
+await (await p.waitForSelector('.kh-todo[data-act=side]',{state:'visible'})).click();await sl(1200);
+const hold=async(ms)=>{const b=await p.waitForSelector('.kh-big',{state:'visible'});const r=await b.boundingBox();await p.mouse.move(r.x+r.width/2,r.y+r.height/2);await p.mouse.down();await sl(ms);};
+await hold(900);await p.mouse.up();await sl(500);await hold(1300);
+const r=await p.evaluate(()=>{const g=claw.shop.userData.machines[7].group,cam=claw.camera,out=[];const W=innerWidth,H=innerHeight;
+ g.traverse(o=>{if(!o.name||!/^집게/.test(o.name))return;const v=o.getWorldPosition(new o.position.constructor());const q=v.clone().project(cam);out.push([o.name,+((q.x+1)/2*W).toFixed(0),+((1-q.y)/2*H).toFixed(0),+v.y.toFixed(2)]);});return out;});
+console.log(JSON.stringify(r));
+await p.mouse.up();await browser.close();await vite.close();process.exit(0);

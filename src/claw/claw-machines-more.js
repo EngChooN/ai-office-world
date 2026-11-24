@@ -183,7 +183,7 @@ export function buildTimerMachine(theme='timer-1',{toonify=null,guestObject=null
  const update=dt=>{lights.update(dt);if(S.state==='win'&&S.t<1.8){S.t+=dt;redraw();}else S.t+=dt;DS.t+=dt;paintLed();};
  const press=(k=1)=>{button.position.y=C.panel.top+.025-.012*k;};
  root.userData={kind:'timer',machine:M,height:T.height,setTimer,setBand,setButton,setPrize,detachPrize,get prize(){return prizeObj;},stage:stageTop,setDoor,door:DS,
-  setLights:lights.setLights,update,press,mats,camera:T.camera,timer:{get text(){return S.text;},get state(){return S.state;}},
+  setLights:lights.setLights,update,press,mats,camera:T.camera,timer:{get text(){return S.text;},get state(){return S.state;},get dim(){return S.dim;}},
   spots:{stand:new THREE.Vector3(0,0,C.stand.z),button:new THREE.Vector3(T.button[0],C.panel.top+.04,T.button[2]),coin:new THREE.Vector3(...C.panel.coin).setZ(hd+.02),
    door:new THREE.Vector3(C.door[0],C.door[1],hd+.03),display:new THREE.Vector3(0,T.display.y,hd+.01),sign:new THREE.Vector3(0,T.height+.15,0),
    out:new THREE.Vector3(...T.out),tray:new THREE.Vector3(T.tray.x,T.tray.top,(T.tray.z0+T.tray.z1)/2),lock:new THREE.Vector3(hw-.03,ly,hd+.03)},pile:null};
