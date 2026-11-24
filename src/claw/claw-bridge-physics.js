@@ -11,6 +11,8 @@ import {bridgeLayout,BAR_Y as LAYOUT_BAR_Y,DECK_DROP as LAYOUT_DECK_DROP} from '
 export {U};
 
 const G=38,SUB=1/240,ITER=6,SWAY_MAX=.6,SWAY_BACK=.985,SLOW2=(.25*SUB)**2,BACK=12,MU_CLAW_S=.6,MU_CLAW_K=.42;
+let SLACK=.6; // 발이 상자에 닿은 뒤 더 내려가는 길이(단위 = 6cm, 11-24 깊이). 시험용 setBridgeSlack
+export const setBridgeSlack=v=>{SLACK=v;};
 const TIP_REST=CLAW_RIG.l1*Math.cos(CLAW_RIG.rest)+CLAW_RIG.l2*Math.cos(CLAW_RIG.rest-CLAW_RIG.bend);
 // ── 닿음 판정 = 보이는 모양 그대로(대표 지적 2026-11-23 「집게가 상자를 통과」): 예전에는 상자 = 모서리 공 16개라 가운데(폭 약 6cm)가 비어
 //  집게발·봉이 상자 속으로 최대 6cm 들어갔다. 이제 상자 = 진짜 직육면체, 집게 = claw-bridge.js buildClaw2가 그리는 납작한 팔·고무 발끝·머리 상자.
@@ -162,11 +164,17 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
   switch(c.state){
    case 'idle':case 'done':case 'move':for(let k=0;k<prongs;k++)toward(k,CL.rest,1.5);break;
    case 'drop':{
-    for(let k=0;k<prongs;k++)toward(k,c.openTo,2.2);
+    // 벌림: openTo까지 벌리고, 상자에 눌려 더 벌어진 발(아래 경첩 젖힘)은 천천히만 되돌림(11-24 깊이)
+    for(let k=0;k<prongs;k++)toward(k,c.openTo,c.th[k]>c.openTo?.5:2.2);
     if(c.t<.45)break;
     c.y-=2.6*h;
-    // 닿으면 멈춤(줄이 느슨해짐): 상자를 누른 힘·머리 닿음·못 밀어낸 겹침(상자가 봉에 눌려 꼼짝 못 함)
-    if(c.hubPen>.012||c.pen[0]+c.pen[1]>.06||c.resid>.015)c.touched=true;
+    // 닿으면 멈춤(줄이 느슨해짐) — 11-24 대표 지적 「별로 안 내려옴」: 예전에는 발끝 하나가 상자 윗면에 닿는 순간 멈춰 평균 5.5cm만 내려감(머리가 상자 위 22cm).
+    //  이제 발이 상자에 닿아도 SLACK만큼 더 내려가며 상자를 누르고, 눌린 발은 바깥으로 젖혀져 상자 옆으로 미끄러짐(실제 기계처럼 줄이 다 풀릴 때까지).
+    //  멈춤 = 머리 닿음 · 발이 다 벌어졌는데도 못 밀어낸 겹침 · 닿은 뒤 SLACK 다 내려감 · 겹침이 너무 큼(상자가 봉에 눌려 꼼짝 못 함)
+    const press=c.pen[0]+c.pen[1]>.06||c.resid>.015;
+    if(press&&c.touchY==null)c.touchY=c.y;
+    const splayed=c.th[0]>=CL.splay-.02&&c.th[1]>=CL.splay-.02;
+    if(c.hubPen>.012||c.resid>.035||press&&splayed||c.touchY!=null&&c.touchY-c.y>=SLACK)c.touched=true;
     // 집게발 끝이 봉에 닿으면 멈춤(봉을 뚫고 내려가지 않게)
     for(let s=3;s<curSegs.length;s+=FINGER_PLATES.length){const S=curSegs[s];for(const R2 of rods)for(const j of [0,3])if(rodDist(R2,S[j],S[j+1],S[j+2])[3]<barR+S[9]+.02)c.touched=true;}
     if(c.y<=c.minY||c.touched&&c.t>.6){c.y=Math.max(c.y,c.minY)+c.resid;c.state='close';c.t=0;c.strength=c.power.grab;events.push({type:'close'});}
@@ -177,7 +185,7 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
     if(d<=sp){c.x=hx;c.z=hz;c.state='release';c.t=0;events.push({type:'release'});}else{c.x+=dx/d*sp;c.z+=dz/d*sp;}break;}
    case 'release':for(let k=0;k<prongs;k++)toward(k,c.openTo,2.5);if(c.t>1.0){c.state='done';c.t=0;events.push({type:'done'});}break;
   }
-  for(let k=0;k<prongs;k++)c.th[k]=Math.max(CL.closed,Math.min(c.state==='close'||c.state==='lift'||c.state==='carry'?CL.splay:c.state==='drop'||c.state==='release'?Math.max(CL.open,c.openTo):CL.open,c.th[k]));
+  for(let k=0;k<prongs;k++)c.th[k]=Math.max(CL.closed,Math.min(c.state==='close'||c.state==='lift'||c.state==='carry'||c.state==='drop'?CL.splay:c.state==='release'?Math.max(CL.open,c.openTo):CL.open,c.th[k]));
  }
  function sub(){
   const h=SUB;clawLogic(h);curSegs=buildPlates(curSegs.length?curSegs:[]);
@@ -240,7 +248,7 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
  const sim={P,parts,claw,events,geom,half,
   setPos(x,z){claw.x=Math.max(RANGE.x0,Math.min(RANGE.x1,x));claw.z=Math.max(RANGE.z0,Math.min(RANGE.z1,z));},
   start(){claw.state='move';claw.t=0;sim.setPos(HOME.x,HOME.z);claw.y=HOME.y;}, // 처음 자리 = 구멍 위를 범위 안으로(11-24)
-  drop(){if(claw.state!=='move')return false;claw.state='drop';claw.t=0;claw.touched=false;return true;},
+  drop(){if(claw.state!=='move')return false;claw.state='drop';claw.t=0;claw.touched=false;claw.touchY=null;return true;},
   step(dt){const n=Math.min(12,Math.round(dt/SUB));for(let i=0;i<n;i++)sub();},
   settle(sec){for(let i=0;i<sec/SUB;i++)sub();},
   get won(){return won;},get gone(){return gone;},get sleeping(){return sleep;},

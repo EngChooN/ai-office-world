@@ -281,6 +281,12 @@ test('봉 물리: 약한 집게는 조이면 상자가 걸려 조금 들려도 �
  if(!won){for(let seed=4;seed<10&&!won;seed++){const s3=bridgeSim({gap:.16},{seed,pose:{x:0,z:0,yaw:Math.PI/2+seed*.02}});for(let m=0;m<25&&!won;m++){const k=s3.center();won=runBridgeDrop(s3,k[0]+(m%2?.5:-.5),k[2]+(m%3?.9:-.9),B).won;}}}
  assert.ok(won,'정해 둔 순서로 25판 안에 성공하는 상자가 있음');
 });
+test('봉 깊이(11-24 대표 지적 「별로 안 내려옴」): 발 하나가 상자 윗면에 닿아도 바로 멈추지 않고 더 내려감(가장자리 겨눔 7cm 넘게), 가장 낮은 곳은 바닥 제한 그대로', ()=>{
+ const B=T.bridge;
+ for(const [ox,oz] of [[.56,.66],[-.56,-.66],[.56,0],[0,.66],[0,0]]){const s=bridgeSim();const c=s.center();s.start();s.setPos(c[0]+ox,c[2]+oz);s.drop();let low=99;
+  for(let t=0;t<6&&s.claw.state!=='lift';t+=1/240){s.step(1/240);low=Math.min(low,s.claw.y);}
+  const drop=(s.geom.HOME.y-low)*U;assert.ok(drop>.07,`겨눔 (${ox},${oz}) 하강 ${(drop*100).toFixed(1)}cm`);assert.ok(low>=s.claw.minY-1e-6,'바닥 제한(발끝 상자 바닥 + 3.5cm) 아래로 안 내려감');}
+});
 test('봉 상태 저장(혼자 뽑기 v4.1 §3): 상자 자리를 그대로 다시 놓음·오늘까지·새날은 처음 자리, 진척 없음 판정', ()=>{
  // 11-24 집게 키움 뒤: 예전 겨눔(+0.9, +0.6)은 상자가 막이 봉 끝에 기울어 걸린 채 멈춰(드묾) 다시 열면 2cm 미끄러짐 → 상자가 16cm 움직이는 (−0.6, +0.6)으로
  const B=T.bridge,s=bridgeSim();const k=s.center();runBridgeDrop(s,k[0]-.6,k[2]+.6,B);
