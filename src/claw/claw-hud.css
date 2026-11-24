@@ -180,3 +180,44 @@
 /* 카드가 화면보다 길면(가로 휴대폰 규칙 카드) 아래 단추 줄은 카드 아래에 붙어 늘 보임 */
 .kh-card>.kh-row:last-child{position:sticky;bottom:-14px;margin:10px -16px -14px;padding:10px 16px 14px;background:linear-gradient(rgba(255,250,238,0),rgba(255,250,238,.98) 30%)}
 @media (orientation:landscape) and (max-height:540px){.kh-card{padding:12px 14px 12px}.kh-rules{font-size:12.5px}.kh-prizes{margin:4px 0}}
+
+/* ── 조작 중 큰 단추 = 아래 가운데 넓은 판(11-24 시안 B, 대표 승인 · 공통 틀 「오른쪽 아래 원」의 인형뽑기 조작 중 예외) ──
+   기본(손가락 기기) = 화면 폭 판, 키캡 없음 · 집게(.kh-half)는 왼쪽 십자 판 오른쪽에 세로로 큰 판 · 마우스 기기 = 520px 판 + 「스페이스」 키캡.
+   data-uf를 달지 않아 공통 틀 자리 규칙과 상관없음. 숨김: 결과·카드 땐 단추 자체를 안 만듦, 조작 중엔 ☰·💬가 닫혀 있음 */
+.kh .kh-big.kh-bar{position:fixed;z-index:30;left:calc(var(--uf-sl) + 16px);right:calc(var(--uf-sr) + 16px);top:auto;bottom:calc(var(--uf-sb) + 18px);width:auto;height:80px;margin:0;box-sizing:border-box;
+ display:flex;align-items:center;justify-content:center;gap:12px;padding:0 18px;border:0;border-radius:22px;background:var(--uf-red);color:#fff;font:900 26px/1 var(--uf-font);letter-spacing:0;white-space:nowrap;
+ box-shadow:0 7px 0 rgba(0,0,0,.32),0 0 0 4px #fff,0 0 0 7px #2a213c,0 14px 24px rgba(0,0,0,.35);--ic-point:#ffd36b;cursor:pointer;transition:transform .05s,filter .05s}
+:root.uf .kh-big.kh-bar.kh-green{box-shadow:0 7px 0 rgba(0,0,0,.32),0 0 0 4px #fff,0 0 0 7px #2a213c,0 14px 24px rgba(0,0,0,.35)!important}
+.kh-bar .kh-lb{display:flex;align-items:center;gap:10px;min-width:0;pointer-events:none}
+.kh-bar .kh-lb em{font-style:normal;display:grid;place-items:center;line-height:1}
+.kh-bar .kh-lb .ic{width:34px;height:34px;font-size:30px}
+.kh-bar .kh-lt{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.kh-bar .kh-lt b{font:inherit}
+.kh-bar small{display:block;margin-top:4px;font:700 12px/1.2 var(--uf-font);opacity:.92;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.kh .kh-bar kbd.kh-key{display:none}
+/* 집게 남은 시간 막대(원 고리 대신, 판 바로 아래) */
+.kh-bar .kh-tm{position:absolute;left:18px;right:18px;bottom:-17px;height:7px;border-radius:4px;background:rgba(255,250,238,.85);overflow:hidden;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.kh-bar .kh-tm>i{position:absolute;left:0;top:0;bottom:0;width:100%;background:#ffb52b;transition:width .1s linear}
+.kh-bar .kh-tm.hurry>i{background:#ff5a4a;animation:kh-blink .5s steps(2) infinite}
+/* 휴대폰 집게: 십자 판(16 + 192px) 오른쪽 나머지, 세로로 큰 판, 작은 설명 없음 */
+.kh .kh-big.kh-bar.kh-half{left:calc(var(--uf-sl) + 224px);right:calc(var(--uf-sr) + 14px);bottom:calc(var(--uf-sb) + 44px);height:112px;flex-direction:column;gap:4px;padding:0 6px;font-size:22px}
+.kh-bar.kh-half .kh-lb{flex-direction:column;gap:4px}
+.kh-bar.kh-half .kh-lt{align-items:center}
+.kh-bar.kh-half small{display:none}
+.kh-bar.kh-half .kh-tm{left:10px;right:10px;bottom:-15px}
+/* 가로 휴대폰: 높이가 낮아 판을 낮게·가운데 좁게. 판 자리만큼 게임 그림이 위로 올라감(main.js BAR_RESERVE). 집게는 가운데 300px(십자 판 16 + 180px보다 오른쪽) */
+@media (orientation:landscape) and (max-height:540px){
+ .kh .kh-big.kh-bar{left:calc(50% - 210px);right:auto;width:420px;height:68px;bottom:calc(var(--uf-sb) + 18px);font-size:22px;border-radius:18px}
+ .kh .kh-big.kh-bar.kh-half{left:max(calc(50% - 150px),calc(max(16px,var(--uf-sl)) + 196px));right:auto;width:300px;height:68px;bottom:calc(var(--uf-sb) + 18px);flex-direction:row;gap:10px;font-size:22px}
+ .kh-bar.kh-half .kh-lb{flex-direction:row}
+ .kh-bar .kh-lb .ic{width:28px;height:28px;font-size:24px}
+ .kh-bar .kh-tm,.kh-bar.kh-half .kh-tm{bottom:-13px;height:6px}
+}
+/* 키보드·마우스 기기: 기계 바로 아래 520×84 판 + 「스페이스」 키캡 + 키 안내(화면 크기와 상관없이 같은 판) */
+@media (hover:hover) and (pointer:fine){
+ .kh:not(.touch) .kh-big.kh-bar{left:calc(50% - min(260px,50vw - 16px));right:auto;width:min(520px,calc(100vw - 32px));height:84px;bottom:calc(var(--uf-sb) + 26px);justify-content:flex-start;gap:16px;padding:0 22px 0 14px;border-radius:20px;font-size:26px}
+ .kh:not(.touch) .kh-bar kbd.kh-key{display:flex;flex:none;align-items:center;justify-content:center;position:static;width:150px;height:56px;padding:0;border-radius:12px;background:#fffaf0;color:#2a213c;font:900 17px/1 var(--uf-font);box-shadow:inset 0 -5px 0 #d9cbb0}
+ .kh:not(.touch) .kh-big.kh-bar.on kbd.kh-key{box-shadow:inset 0 -2px 0 #d9cbb0;transform:translateY(2px)}
+ .kh:not(.touch) .kh-bar .kh-lb .ic{width:34px;height:34px;font-size:30px}
+ .kh:not(.touch) .kh-bar small{font-size:12.5px}
+}

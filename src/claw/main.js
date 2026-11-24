@@ -18,6 +18,7 @@ import {installHikingChat} from '../hiking-chat-ui.js';
 import {openWin,closeWin} from '../ui-frame.js';
 import {buildClawShop,SHOP,SHOP_LIGHT,SHADOW_LAYER} from './claw-shop-art.js';
 import {CLAW,setSignThumbs} from './claw-machine-art.js';
+import {TIMER} from './claw-machines-more.js';
 import {makePlush} from './claw-plush.js';
 import {MACHINES,RARITY,RARITY_ORDER} from './claw-palette.js';
 import {loadGuests,makeGuestPlush,clawCatalog,resolvePool,isGuestId} from './claw-guest.js';
@@ -229,6 +230,23 @@ function hideSideBlockers(){
  for(const j of want)if(!sideHidden.has(j)){U.machines[j].group.visible=false;sideHidden.add(j);}
 }
 const camPos=new THREE.Vector3(),camLook=new THREE.Vector3(),wantPos=new THREE.Vector3(),wantLook=new THREE.Vector3();let camFov=BASE_FOV,camInit=false;
+let camRes=0;
+// 아래 판 단추(11-24 시안 B) 자리만큼 게임 그림을 위로 올리고 그만큼 넓게 봄: 기계 그림 단추·유리 앞 바닥(인형)·경품 받침이 판 위 12px보다 아래면 필요한 만큼만.
+//  1440×900·세로 휴대폰처럼 기계 아래 받침이 남는 화면은 0(그대로). 기계·옆보기·화면 크기·판 높이마다 한 번 계산, 결과 카드 동안은 앞 값 유지
+const resCam=new THREE.PerspectiveCamera(),resV=new THREE.Vector3();let resKey='',resVal=0;
+function barReserve(i){
+ const bar=document.querySelector('.kh-bar'),H=innerHeight;if(!bar)return play.mode==='result'?resVal:0;
+ const free=H-bar.getBoundingClientRect().top+7+12; // 판 윗변(바깥 테두리 7px)에서 12px 위까지
+ const key=`${i}|${side}|${innerWidth}x${H}|${Math.round(free)}`;if(key===resKey)return resVal;resKey=key;
+ const g=U.machines[i].group,b=g.userData.spots?.button;g.updateMatrixWorld();
+ const pts=[[0,CLAW.floorY,CLAW.depth/2],[-.3,CLAW.floorY,CLAW.depth/2],[.3,CLAW.floorY,CLAW.depth/2]];if(b)pts.push([b.x,b.y-.03,b.z+.07]);
+ if(g.userData.kind==='timer')pts.push([TIMER.out[0],TIMER.out[1],TIMER.out[2]+.1]);
+ const W=pts.map(q=>g.localToWorld(new THREE.Vector3(...q)));
+ resVal=0;
+ for(let R=0;R<=H*.45;R+=6){resCam.fov=THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(camFov)/2)*H/(H-R)));resCam.aspect=innerWidth/H;
+  if(R)resCam.setViewOffset(innerWidth,H,0,Math.round(R/2),innerWidth,H);else resCam.clearViewOffset();resCam.updateProjectionMatrix();resCam.position.copy(wantPos);resCam.lookAt(wantLook);resCam.updateMatrixWorld();
+  const y=Math.max(...W.map(w=>(-resV.copy(w).project(resCam).y*.5+.5)*H));resVal=R;if(y<=H-free)break;}
+ return resVal;}
 function updateCamera(dt){
  const i=play.machine;
  if(play.mode!=='idle'&&i>=0){ // 조작 카메라: 기계 정면 고정(월드아트 CLAW.camera, 세로 휴대폰은 portrait). 봉은 집게 기계 몸이라 같은 카메라
@@ -248,7 +266,12 @@ function updateCamera(dt){
  hideSideBlockers();
  const k=camInit?1-Math.exp(-dt*8):1;camInit=true;
  camPos.lerp(wantPos,k);camLook.lerp(wantLook,k);camera.position.copy(camPos);camera.lookAt(camLook);
- if(Math.abs(camera.fov-camFov)>.05){camera.fov+=(camFov-camera.fov)*k;camera.updateProjectionMatrix();}
+ // 조작 중 아래 판 단추가 기계 그림 단추·인형을 가리면 그만큼 그림을 위로(barReserve)
+ const wantRes=play.mode!=='idle'&&i>=0?barReserve(i):0;
+ camRes+=(wantRes-camRes)*k;if(Math.abs(camRes-wantRes)<.5)camRes=wantRes;
+ const fovNow=camRes>0?THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(camFov)/2)*innerHeight/(innerHeight-camRes))):camFov;
+ if(Math.abs(camera.fov-fovNow)>.05){camera.fov+=(fovNow-camera.fov)*k;camera.updateProjectionMatrix();}
+ const off=Math.round(camRes/2);if(off!==(camera.view?.enabled?camera.view.offsetY:0)||camera.view?.enabled&&(camera.view.fullWidth!==innerWidth||camera.view.fullHeight!==innerHeight)){if(off)camera.setViewOffset(innerWidth,innerHeight,0,off,innerWidth,innerHeight);else camera.clearViewOffset();}
 }
 
 // 봉 기계 「옆에서 본 작은 창」(v4.1 §7-2): ↑를 누르는 동안·집게가 내려가는 동안 화면 위 왼쪽 150×104, 낮은 화질(카툰 후처리 없이 바로 그림)
@@ -292,6 +315,29 @@ function screenPos(id){
  const dist=camera.position.distanceTo(headV);headV.project(camera);
  return {x:(headV.x*.5+.5)*innerWidth,y:(-headV.y*.5+.5)*innerHeight,visible:headV.z<1&&Math.abs(headV.x)<1.1&&Math.abs(headV.y)<1.1,dist};
 }
+// ── 조작 중 기계 그림의 화면 자리(11-24 시안 B): 그림 단추·타이머 숫자판·인형 → 화면 사각형 {x,y,r,b}
+//  그림 단추를 누르면(게임 화면은 조작 중 눌리지 않음) 「아래 단추를 눌러요」 알림. 점검은 claw.artRects()로 판 단추가 이것들을 안 가리는지 잼
+const artV=new THREE.Vector3(),artBox=new THREE.Box3();
+function rectOf(pts){let x=Infinity,y=Infinity,r=-Infinity,b=-Infinity,on=false;for(const p of pts){artV.copy(p).project(camera);if(artV.z>=1)continue;on=true;const sx=(artV.x*.5+.5)*innerWidth,sy=(-artV.y*.5+.5)*innerHeight;x=Math.min(x,sx);y=Math.min(y,sy);r=Math.max(r,sx);b=Math.max(b,sy);}return on?{x:Math.round(x),y:Math.round(y),r:Math.round(r),b:Math.round(b)}:null;}
+const boxPts=bx=>{const out=[];for(let i=0;i<8;i++)out.push(new THREE.Vector3(i&1?bx.max.x:bx.min.x,i&2?bx.max.y:bx.min.y,i&4?bx.max.z:bx.min.z));return out;};
+function artRects(i=play.machine){
+ const g=U.machines[i]?.group;if(!g)return null;g.updateMatrixWorld();const sp=g.userData.spots??{},loc=(x,y,z)=>g.localToWorld(new THREE.Vector3(x,y,z));
+ const out={button:null,display:null,plush:[]};
+ if(sp.button){const c=sp.button,R=.07;out.button=rectOf([[-R,-.03,-R],[R,-.03,-R],[-R,.01,R],[R,.01,R],[-R,.01,-R],[R,-.03,R]].map(([dx,dy,dz])=>loc(c.x+dx,c.y+dy,c.z+dz)));}
+ if(sp.display&&g.userData.kind==='timer'){const c=sp.display,{w,h}=TIMER.display;out.display=rectOf([[-1,-1],[1,-1],[-1,1],[1,1]].map(([a,bb])=>loc(c.x+a*w/2,c.y+bb*h/2,c.z)));}
+ const imM=new THREE.Matrix4();
+ g.traverse(o=>{if(o.isInstancedMesh&&o.name.startsWith('물리 인형')&&o.visible){ // 집게 기계 인형 더미 = 인스턴스 그림(인형 하나 = 한 칸)
+   if(!o.geometry.boundingBox)o.geometry.computeBoundingBox();o.updateMatrixWorld();
+   for(let k=0;k<o.count;k++){o.getMatrixAt(k,imM);imM.premultiply(o.matrixWorld);artBox.copy(o.geometry.boundingBox).applyMatrix4(imM);if(artBox.max.x-artBox.min.x<1e-3)continue;const r=rectOf(boxPts(artBox));if(r)out.plush.push(r);}return;}
+  if(o.userData?.plushId&&o!==g){let vis=true;for(let q=o;q&&q!==g;q=q.parent)if(!q.visible){vis=false;break;}if(!vis)return;artBox.setFromObject(o);if(!artBox.isEmpty()){const r=rectOf(boxPts(artBox));if(r)out.plush.push(r);}}});
+ return out;
+}
+addEventListener('pointerdown',e=>{
+ if(play.mode!=='play'||hud.card||e.button>0)return;
+ if(e.target?.closest?.('button,a,input,textarea,select,[role=dialog],.kh-pad,.uf-sheet,.kh-card,.kh-mini'))return;
+ const r=artRects()?.button;if(!r)return;const pad=Math.max(14,(r.r-r.x)*.4);
+ if(e.clientX>=r.x-pad&&e.clientX<=r.r+pad&&e.clientY>=r.y-pad&&e.clientY<=r.b+pad)hud.artTap();
+},true);
 // 다른 손님 이름표 + 기계 위 「○○ 뽑는 중」
 const tagLayer=document.createElement('div');tagLayer.className='kh-tags';tagLayer.setAttribute('aria-hidden','true');document.body.append(tagLayer);
 {const st=document.createElement('style');st.textContent=`.kh-tags{position:fixed;inset:0;pointer-events:none;z-index:20}.kh-tag{position:absolute;left:0;top:0;padding:3px 8px;border-radius:10px;background:rgba(58,43,34,.72);color:#fffaf0;font:700 12px/1.2 "Apple SD Gothic Neo",Pretendard,sans-serif;white-space:nowrap;will-change:transform}.kh-tag.busy{background:rgba(217,74,124,.9)}.kh-tag.near{background:rgba(42,33,60,.86);color:#ffd6ea;border:1px solid #ff7fb0}:root[data-claw-mode=play] .kh-tags,:root[data-claw-mode=drop] .kh-tags{opacity:.0}`;document.head.append(st);}
@@ -384,6 +430,7 @@ window.claw={shop,player,play,multi,hud,state,cam,camera,catalog,pools,
   player:{x:+player.x.toFixed(2),z:+player.z.toFixed(2),heading:+player.heading.toFixed(2)},play:play.status(),multi:multi.status(),guests:guests.length,catalog:catalog.length,
   calls:renderer.info.render.calls,tris:renderer.info.render.triangles,textures:renderer.info.memory.textures,geometries:renderer.info.memory.geometries,thumbs:thumbs.size};},
  goMachine,nearestFree,teleport(x,z,h=0){player.place(x,z,h);},
+ artRects,
  get mini(){return miniOn;},
  // 점검용(개발 서버에서만): 코인 바꾸기·저장 지우기·집게 겨누기(가장 위 인형)·열쇠 옮기기
  ...(import.meta.env.DEV?{setCoins(n){state.coins=n;saveState(state);},resetSave(){localStorage.removeItem('claw-world:v1');},

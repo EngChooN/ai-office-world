@@ -1,6 +1,6 @@
 // 온라인 인형뽑기 브라우저 점검(월드개발, 2026-11-23). vite 개발 서버(·PART=server면 함께 걷기 서버도)를 직접 띄운다.
 //   node scripts/verify-claw.mjs            → artifacts/claw-verify/*.png + report.json
-//   PART=size,keys,multi,server,hub  SIZES=portrait,landscape,pc …
+//   PART=size,keys,multi,server,hub,bar  SIZES=portrait,landscape,pc …
 // 확인: 설계 v1 §8 완료 기준 — 화면 단추 44px 이상·안 겹침·화면 안, 마우스/손가락만으로 입장 → 기계 가기 → 한 판 → 도감,
 //       십자 단추 누르고 있기·옆으로 밀기·떼면 멈춤, 알림·결과 카드가 알약·위 단추에 안 가림, 조작 중 💬·☰·조이스틱 숨김,
 //       코인 없음·그만두기·확률 안내, 다른 손님 구경(두 창·진짜 서버), 허브 카드 → 입장, 페이지 오류 0.
@@ -323,7 +323,78 @@ async function hubRun(){
  }
 }
 
+// ── 조작 단추 시안 B(11-24, 대표 승인): 아래 가운데 넓은 판. PART=bar SIZES=portrait,landscape,pc,pcbig
+//  판이 보임·화면 안·44px 이상·다른 단추와 안 겹침, 기계 그림 단추·타이머 숫자판·인형을 안 가림, 마우스 기기만 「스페이스」 키캡,
+//  휴대폰 집게는 십자 판 오른쪽, 그림 단추를 누르면 「아래 … 눌러요」 알림(판은 그대로), 판으로 끝까지 한 판
+async function barRun(size){
+ const {ctx,p}=await open(size);const tag=`[${size} 판]`,[W,H,touch]=SIZES[size];
+ await p.evaluate(()=>{claw.seen(true);claw.setCoins(30);});
+ const others=async()=>[...await rect(p,'.kh-dir'),...await rect(p,'.kh-todo'),...await rect(p,'.kh-pill'),...await rect(p,'.kh-quit'),...await rect(p,'.kh-timer'),...await rect(p,'.kh-hint'),...await rect(p,'.kh-tnum')];
+ const pad=8; // 판 그림자·테두리(바깥 7px)까지
+ async function checkBar(name,shot){
+  const bar=(await rect(p,'.kh-big.kh-bar'))[0];
+  ok(`${tag} ${name}: 판 단추 보임·화면 안·44px 이상`,bar&&bar.x>=0&&bar.r<=W&&bar.b<=H&&bar.h>=44&&bar.w>=44,JSON.stringify(bar));
+  if(!bar)return null;
+  const big={x:bar.x-pad,y:bar.y-pad,r:bar.r+pad,b:bar.b+pad+10};
+  const ov=(await others()).filter(r=>hit(big,r));ok(`${tag} ${name}: 판이 다른 단추·안내와 안 겹침`,!ov.length,ov.map(r=>r.cls).join(', '));
+  const A=await p.evaluate(()=>claw.artRects());
+  const cov=[];if(A.button&&hit(big,A.button))cov.push('그림 단추');if(A.display&&hit(big,A.display))cov.push('숫자판');const pc=A.plush.filter(r=>hit(big,r));if(pc.length)cov.push(`인형 ${pc.length}/${A.plush.length}`);
+  ok(`${tag} ${name}: 판이 그림 단추·숫자판·인형을 안 가림`,!cov.length&&A.button,`${cov.join(', ')} 판 y ${bar.y} · 그림 단추 ${JSON.stringify(A.button)}${A.display?' 숫자판 '+JSON.stringify(A.display):''} 인형 아래 끝 ${Math.max(...A.plush.map(r=>r.b))}`);
+  const key=(await rect(p,'.kh-bar kbd.kh-key')).length,txt=await p.evaluate(()=>document.querySelector('.kh-bar').innerText);
+  if(touch)ok(`${tag} ${name}: 휴대폰은 키캡·키·마우스 안내 없음`,!key&&!/스페이스|Space|WASD|방향키|마우스|클릭/.test(txt),txt);
+  else ok(`${tag} ${name}: PC는 「스페이스」 키캡 보임`,key===1&&/스페이스/.test(txt),txt);
+  if(shot)await p.screenshot({path:`${OUT}/bar-${size}-${shot}.png`});
+  return {bar,A};
+ }
+ async function tapArt(name){
+  const A=await p.evaluate(()=>claw.artRects()),before=await p.evaluate(()=>({sub:claw.play.sub,mode:claw.play.mode}));
+  const x=(A.button.x+A.button.r)/2,y=(A.button.y+A.button.b)/2;await p.mouse.click(x,y);await sl(250);
+  const t=await p.evaluate(()=>{const e=document.querySelector('.kh-toast');return e.hidden?'':e.textContent;}),after=await p.evaluate(()=>({sub:claw.play.sub,mode:claw.play.mode}));
+  ok(`${tag} ${name}: 그림 단추 누르면 「아래 … 눌러요」 알림·게임은 그대로`,/장식/.test(t)&&/아래/.test(t)&&(touch?!/Space/.test(t):/Space/.test(t))&&after.mode===before.mode&&after.sub===before.sub,`${t} | ${JSON.stringify(before)}→${JSON.stringify(after)}`);
+  await p.screenshot({path:`${OUT}/bar-${size}-${name}-arttap.png`});
+  await p.evaluate(()=>{const e=document.querySelector('.kh-toast');e.hidden=true;});
+ }
+ const start=async i=>{await p.evaluate(i=>claw.goMachine(i),i);await sl(900);await click(p,'.kh-big[data-act=play]');await p.waitForFunction(()=>claw.play.mode==='play',null,{timeout:8000});await sl(700);};
+ const finish=async()=>{await waitResult(p,40000);await click(p,'.kh-card [data-c=stop]');await sl(500);};
+ // 집게
+ await start(0);
+ {const r=await checkBar('집게','claw');
+  if(touch&&r){const pd=await rect(p,'.kh-dir');const padR=Math.max(...pd.map(d=>d.r));ok(`${tag} 집게: 판이 십자 판 오른쪽(오른쪽 절반 쪽)`,r.bar.x>=padR+8&&(W>H||r.bar.x>=W*.4),`판 x ${r.bar.x} 십자 오른쪽 ${padR}`);}
+  ok(`${tag} 집게: 남은 시간 막대`,(await rect(p,'.kh-bar .kh-tm')).length===1);}
+ await tapArt('집게');
+ await click(p,'.kh-big.kh-bar');await sl(300);ok(`${tag} 집게: 판을 누르면 집게가 내려감`,await p.evaluate(()=>claw.play.mode==='drop'));
+ await sl(300);await checkBar('집게 내려가는 중','claw-drop');
+ await finish();
+ // 타이머
+ await start(10);
+ await checkBar('타이머 시작 전','timer-ready');
+ ok(`${tag} 타이머: 판 「시작」 초록`,await p.evaluate(()=>{const b=document.querySelector('.kh-bar');return /시작/.test(b.textContent)&&b.classList.contains('kh-green');}));
+ await tapArt('타이머');
+ ok(`${tag} 타이머: 그림 단추를 눌러도 시작 안 됨`,await p.evaluate(()=>claw.play.status().timer.phase!=='run'));
+ await click(p,'.kh-big.kh-bar');await sl(900);
+ ok(`${tag} 타이머: 판을 누르면 숫자가 오르고 「멈춤」`,await p.evaluate(()=>/멈춤/.test(document.querySelector('.kh-bar').textContent)&&claw.play.status().timer.phase==='run'));
+ await checkBar('타이머 도는 중','timer-run');
+ await click(p,'.kh-big.kh-bar');await finish();
+ // 봉
+ await start(6);
+ await checkBar('봉','bridge');
+ await tapArt('봉');
+ const b0=(await st(p)).play.claw;await holdBig(p,600);await sl(80);const b1=(await st(p)).play.claw;
+ ok(`${tag} 봉: 판을 누르고 있으면 집게가 오른쪽, 떼면 멈춤`,b1.x>b0.x+.08&&b1.phase==='gap',`${JSON.stringify(b0)}→${JSON.stringify(b1)}`);
+ await sl(500);await checkBar('봉 안쪽 단계','bridge-k2');
+ await holdBig(p,500);await sl(100);ok(`${tag} 봉: 두 번째 누르고 떼면 내려감`,(await st(p)).mode==='drop');
+ await finish();
+ // 열쇠(봉과 같은 판)
+ await start(13);
+ await checkBar('열쇠','key');
+ await holdBig(p,500);await sl(500);await holdBig(p,600);await sl(100);ok(`${tag} 열쇠: 판으로 두 번 누르고 있기 → 판정`,(await st(p)).mode==='drop');
+ await finish();
+ ok(`${tag} 페이지 오류 0`,!p.errs.length,p.errs.join(' | '));report.errors.push(...p.errs.map(e=>`${tag} ${e}`));
+ await ctx.close();
+}
+
 try{
+ if(PARTS.includes('bar'))for(const s of ONLY)await barRun(s);
  if(PARTS.includes('size'))for(const s of ONLY)await sizeRun(s);
  if(PARTS.includes('keys'))await keysRun();
  if(PARTS.includes('multi'))await multiRun();

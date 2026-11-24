@@ -351,3 +351,18 @@ test('봉 손맛(11-23 대표 결정): 아슬아슬 = 받침 여유 2cm 이하�
  assert.deepEqual({...MACHINES.find(m=>m.id==='bridge-4').bars},{gap:.16});assert.deepEqual({...MACHINES.find(m=>m.id==='bridge-3').bars},{near:.15,far:.175});assert.deepEqual({...MACHINES.find(m=>m.id==='bridge-1').bars},{gap:.165});assert.deepEqual({...MACHINES.find(m=>m.id==='bridge-2').bars},{gap:.165},'봉 1·2 = 16.5cm(11-24 집게 키움 뒤 다시 맞춤)');
  assert.ok(B.pityAfter===8&&B.lieDeg===45&&B.liePlays===3&&!('pityPower' in B));
 });
+
+// 11-24 조작 단추 시안 B(대표 승인): 조작 중 큰 단추 = 아래 가운데 넓은 판, 공통 틀 원 자리(data-uf)에 안 넣음, 마우스 기기만 키캡, 그림 단추 알림
+test('조작 단추 시안 B: 세 기계(집게·타이머·봉/열쇠) 모두 판, 키캡은 마우스 기기만, 그림 단추 알림', ()=>{
+ const js=readFileSync(new URL('../src/claw/claw-hud.js',import.meta.url),'utf8'),css=readFileSync(new URL('../src/claw/claw-hud.css',import.meta.url),'utf8'),main=readFileSync(new URL('../src/claw/main.js',import.meta.url),'utf8');
+ const playBlock=js.slice(js.indexOf("if(kind==='claw')setActions("),js.indexOf("else if(mode==='result'||cardKind)"));
+ assert.equal((playBlock.match(/bar:true/g)??[]).length,3,'집게·타이머·봉(열쇠) 세 갈래 모두 판');
+ assert.match(playBlock,/half:!F/,'손가락 기기 집게만 오른쪽(십자 판 옆)');
+ assert.match(js,/ufPlace\(root,\{big:big\?\.bar\?null:b/,'판은 공통 틀 원 자리에 안 넣음');
+ assert.match(js,/kbd class="kh-key"[^`]*스페이스/);assert.ok(!/스페이스|Space|WASD|방향키/.test(playBlock.match(/'십자로[^']*'/)[0]));
+ assert.match(css,/\.kh \.kh-bar kbd\.kh-key\{display:none\}/,'키캡 기본 숨김');
+ assert.match(css,/@media \(hover:hover\) and \(pointer:fine\)\{\n \.kh:not\(\.touch\) \.kh-big\.kh-bar\{[^}]*width:min\(520px/,'마우스 기기 = 520px 판');
+ assert.match(css,/\.kh:not\(\.touch\) \.kh-bar kbd\.kh-key\{display:flex/,'마우스 기기만 키캡');
+ assert.match(js,/기계 그림 단추는 장식이에요 · 아래 「\$\{l\}」 단추나 Space를 눌러요/);assert.match(js,/기계 그림 단추는 장식이에요 · 아래 「\$\{l\}」 판을 눌러요/);
+ assert.match(main,/hud\.artTap\(\)/);assert.match(main,/function barReserve\(/,'판이 가리면 그림을 위로');
+});

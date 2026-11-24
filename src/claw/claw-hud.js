@@ -33,8 +33,12 @@ const ict=(k,text,o={})=>iconText(IC[k][0],text,{size:'s',fallback:IC[k][1],...o
 /**
  * catalog: 도감 칸 목록(clawCatalog), pools: 기계별 인형 id(손님 자리 바꾼 것), state(): 저장값, thumb(id) → 그림 주소(없으면 '')
  * act: {play(i), press(), quit(), goMachine(i), sound(on), servers(), retry(), mute(id), unmute(id), report(id), run(on), hub()}
+ * 조작 중 큰 단추(11-24 시안 B, 대표 승인): 오른쪽 아래 원이 아니라 화면 아래 가운데 넓은 판(.kh-bar). 공통 틀 「큰 단추 = 오른쪽 아래 원」의 인형뽑기 조작 중 예외.
+ *  마우스가 있는 기기 = 520px 판 + 「스페이스」 키캡, 손가락 기기 = 화면 폭 판(집게는 십자 판 오른쪽), 키·마우스 안내 없음. 기계 그림 단추를 누르면 artTap() 알림
  */
 export function createClawHud({doc=document,win=window,mobile=false,catalog,pools,state,thumb=()=>'',multi,act={}}){
+ // 키보드·마우스 기기(키캡·「Space」 안내를 보임). CSS kbd 규칙과 같은 조건(입력 방식으로 나눔, 화면 크기 아님)
+ const fine=()=>!mobile&&!!win.matchMedia?.('(hover:hover) and (pointer:fine)').matches;
  const T=CLAW_TUNING,root=doc.createElement('div');root.className='kh';root.classList.toggle('touch',mobile);
  root.innerHTML=`
 <button type="button" class="kh-pill" data-k="pill" aria-haspopup="dialog"><em aria-hidden="true">${icon('c-person',{size:'s'})}</em><span class="kh-pill-t">혼자 뽑기</span><span class="kh-coins">${ic('coin','xs')}<b data-coins>0</b></span></button>
@@ -101,18 +105,21 @@ export function createClawHud({doc=document,win=window,mobile=false,catalog,pool
  //  hold:true면 pointerdown/up으로 바로 넘김(타이머 시각·열쇠 누르고 있기). 누르는 동안 글이 바뀌어도 단추를 새로 만들지 않게(손가락 잡기가 풀리지 않게) 같은 단추면 안만 고침
  let actSig='';
  function setActions(big,todo=[],small=[]){
-  const sig=JSON.stringify([big&&[big.id,big.label,big.dim,big.ring,big.hold,big.tone],todo.map(t=>[t.id,t.label,t.dim]),small.map(t=>[t.id,t.label])]);if(sig===actSig)return;actSig=sig;
+  const sig=JSON.stringify([big&&[big.id,big.label,big.dim,big.ring,big.hold,big.tone,big.bar,big.sub,big.half],todo.map(t=>[t.id,t.label,t.dim]),small.map(t=>[t.id,t.label])]);if(sig===actSig)return;actSig=sig;
   const old=acts.querySelector('.kh-big');
-  const bigHTML=big?`<em aria-hidden="true">${icon(big.ic,{size:'l',fallback:big.fb})}</em><span>${esc(big.label)}</span>${big.key&&!mobile?`<kbd>${esc(big.key)}</kbd>`:''}${big.ring?'<svg class="kh-ringsvg" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47"/></svg>':''}`:'';
+  // 판 단추(big.bar): [스페이스 키캡] [아이콘 글 / 작은 설명] (+ 집게 남은 시간 막대)
+  const bigHTML=!big?'':big.bar?`${big.key&&!mobile?`<kbd class="kh-key" aria-hidden="true">스페이스</kbd>`:''}<span class="kh-lb"><em aria-hidden="true">${icon(big.ic,{size:'l',fallback:big.fb})}</em><span class="kh-lt"><b>${esc(big.label)}</b>${big.sub?`<small>${esc(big.sub)}</small>`:''}</span></span>${big.ring?'<i class="kh-tm" aria-hidden="true"><i></i></i>':''}`
+   :`<em aria-hidden="true">${icon(big.ic,{size:'l',fallback:big.fb})}</em><span>${esc(big.label)}</span>${big.key&&!mobile?`<kbd>${esc(big.key)}</kbd>`:''}${big.ring?'<svg class="kh-ringsvg" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="47"/></svg>':''}`;
   const keep=old&&big&&old.dataset.act===big.id&&old.hasPointerCapture?.(heldPointer);
   for(const e of [...acts.children])if(e!==(keep?old:null))e.remove();
   let b=keep?old:null;
   if(big){if(!b){b=doc.createElement('button');b.type='button';acts.prepend(b);}
-   b.className=`kh-big${big.ring?' kh-ring':''}${big.tone?' kh-'+big.tone:''}`;b.dataset.act=big.id;b.toggleAttribute('data-hold',!!big.hold);b.toggleAttribute('data-dim',!!big.dim);b.setAttribute('aria-disabled',String(!!big.dim));b.innerHTML=bigHTML;}
+   b.className=`kh-big${big.bar?' kh-bar':big.ring?' kh-ring':''}${big.half?' kh-half':''}${big.tone?' kh-'+big.tone:''}`;b.dataset.act=big.id;b.toggleAttribute('data-hold',!!big.hold);b.toggleAttribute('data-dim',!!big.dim);b.setAttribute('aria-disabled',String(!!big.dim));b.innerHTML=bigHTML;
+   if(big.bar)b.setAttribute('aria-label',`${big.label}${big.key&&fine()?` (${big.key})`:''}`);else b.removeAttribute('aria-label');}
   acts.insertAdjacentHTML('beforeend',small.map(t=>`<button type="button" class="kh-small" data-act="${esc(t.id)}" aria-label="${esc(t.label)}"><em aria-hidden="true">${icon(t.ic,{size:'m',fallback:t.fb})}</em><span>${esc(t.label)}</span></button>`).join('')
    +todo.map(t=>`<button type="button" class="kh-todo" data-act="${esc(t.id)}"${t.dim?' data-dim="1" aria-disabled="true"':''}><em aria-hidden="true">${icon(t.ic,{size:'s',fallback:t.fb})}</em><span>${esc(t.label)}</span>${t.key&&!mobile?`<kbd>${esc(t.key)}</kbd>`:''}</button>`).join(''));
   const labels=new Map();if(b&&big.short)labels.set(b,big.short);for(const e of acts.querySelectorAll('.kh-small'))labels.set(e,e.querySelector('span').textContent);
-  ufPlace(root,{big:b,small:[...acts.querySelectorAll('.kh-small')],todo:[...acts.querySelectorAll('.kh-todo')],labels});
+  ufPlace(root,{big:big?.bar?null:b,small:[...acts.querySelectorAll('.kh-small')],todo:[...acts.querySelectorAll('.kh-todo')],labels});
  }
  let heldPointer=null;
  acts.addEventListener('click',e=>{const b=e.target.closest('[data-act]');if(!b||b.dataset.dim||b.hasAttribute('data-hold'))return;doAct(b.dataset.act);});
@@ -248,7 +255,7 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
  win.addEventListener('claw:multi-note',e=>{if(e.detail?.reject)rejectAt=performance.now();if(e.detail?.text)toast(e.detail.text,{sec:3.4});});
 
  // ── 매 프레임 화면(view = main.js가 만든 지금 상태)
- let view={},nearMachine=-1,pillSig='',modeSig='';
+ let view={},nearMachine=-1,pillSig='',modeSig='',artTapAt=null;
  // 한 줄 안내(설계 v3 §5): 조작 중 지금 할 일
  const HINT={claw:'옆에서 보면 집게가 앞뒤 어디 있는지 보여요',ready:'「▶ 시작」을 누르고, 숫자가 10.00일 때 「✋ 멈춤」',run:'10.00에 멈추세요!',
   k1:'누르고 있으면 열쇠가 오른쪽으로 가요. 원하는 칸에서 떼세요',gap:'잠깐만요…',k2:'이번엔 누르고 있으면 위로 가요. 구멍 높이에서 떼세요',drop:''};
@@ -278,9 +285,11 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
   if(playing){
    // 👁 옆에서 보기(모든 기계, 11-23 대표 지적): 조작 중·집게가 내려가 결과가 나오기 전까지. 할 일 칩 자리(오른쪽 위로 쌓임)
    const sideChips=mode==='play'||mode==='drop'?[{id:'side',ic:IC.side[0],fb:IC.side[1],label:v.side?'정면으로 보기':'옆에서 보기'},...(v.side?[{id:'flip',ic:IC.side[0],fb:IC.side[1],label:v.side>0?'왼쪽 옆에서 보기':'오른쪽 옆에서 보기'}]:[])]:[];
-   if(kind==='claw')setActions({id:'press',ic:IC.claw[0],fb:IC.claw[1],label:'뽑기',short:'뽑기',key:'Space',dim:mode==='drop'||!v.armed,ring:true,hold:true},sideChips); // 👁는 할 일 칩 자리(오른쪽 위로 쌓임): 작은 단추 원 자리는 좁은 화면에서 십자 단추와 겹쳤다
-   else if(kind==='timer'){const run=sub==='run';setActions({id:'press',ic:(run?IC.stop:IC.start)[0],fb:(run?IC.stop:IC.start)[1],label:run?'멈춤':'시작',short:run?'멈춤':'시작',key:'Space',dim:mode==='drop',hold:true,tone:run?'':'green'},sideChips);}
-   else{const up=sub.startsWith('k2'),gap=sub==='gap';setActions({id:'press',ic:(up?IC.up:IC.right)[0],fb:(up?IC.up:IC.right)[1],label:gap?'잠깐':up?(kind==='bridge'?'안쪽':'위로'):'오른쪽',short:gap?'잠깐':'누르고 있기',key:'Space',dim:mode==='drop'||gap,hold:true},sideChips);}
+   // 큰 단추 = 아래 가운데 판(bar). 작은 설명은 키보드 기기면 키 안내, 손가락 기기면 손가락 말로(설계 시안 B)
+   const F=fine(),drop=mode==='drop';
+   if(kind==='claw')setActions({id:'press',ic:IC.claw[0],fb:IC.claw[1],label:'뽑기',short:'뽑기',key:'Space',dim:drop||!v.armed,ring:true,hold:true,bar:true,half:!F,sub:drop?'집게가 내려가요':F?'방향키·WASD로 옮기고, 이 단추로 뽑아요':'십자로 옮기고, 이 단추로 뽑아요'},sideChips); // 👁는 할 일 칩 자리(오른쪽 위로 쌓임): 작은 단추 원 자리는 좁은 화면에서 십자 단추와 겹쳤다
+   else if(kind==='timer'){const run=sub==='run';setActions({id:'press',ic:(run?IC.stop:IC.start)[0],fb:(run?IC.stop:IC.start)[1],label:run?'멈춤':'시작',short:run?'멈춤':'시작',key:'Space',dim:drop,hold:true,tone:run?'':'green',bar:true,sub:drop?'결과를 보는 중':run?'숫자가 10.00일 때 누르세요':'누르면 숫자가 올라가요'},sideChips);}
+   else{const up=sub.startsWith('k2'),gap=sub==='gap';setActions({id:'press',ic:(up?IC.up:IC.right)[0],fb:(up?IC.up:IC.right)[1],label:gap?'잠깐':up?(kind==='bridge'?'안쪽':'위로'):'오른쪽',short:gap?'잠깐':'누르고 있기',key:'Space',dim:drop||gap,hold:true,bar:true,sub:drop?(kind==='bridge'?'집게가 내려가요':'결과를 보는 중'):gap?'잠깐만요…':'누르고 있는 동안 움직이고, 떼면 멈춰요'},sideChips);}
   }
   else if(mode==='result'||cardKind)setActions(null,[]);
   else if(v.near>=0){const M=MACHINES[v.near],busy=v.busy?.[v.near];
@@ -290,6 +299,7 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
     busy?[{id:'wait',ic:IC.wait[0],fb:IC.wait[1],label:`${M.name}${josa(M.name,'은','는')} ${busy}님이 뽑는 중`,dim:true},fi>=0?{id:'free',ic:IC.machine[0],fb:IC.machine[1],label:`옆 빈 ${K.label}${josa(K.label,'으로','로')} →`,key:'E'}:{id:'wait2',ic:IC.wait[0],fb:IC.wait[1],label:`빈 ${K.label}${josa(K.label,'이','가')} 없어요 · 구경하며 기다리기`,dim:true}]
     :[{id:'play',ic:IC.claw[0],fb:IC.claw[1],label:`${M.name} 한 판 · 🪙${T.coin.cost}`,key:'E'},{id:'rules',ic:IC.odds[0],fb:IC.odds[1],label:'규칙'}]);}
   else setActions({id:'run',ic:IC.run[0],fb:IC.run[1],label:v.running?'걷기':'달리기',short:v.running?'걷기':'달리기'},[]);
+  const tm=acts.querySelector('.kh-tm>i');if(tm){const k=Math.max(0,Math.min(1,(v.timeLeft??0)/T.claw.timeSec)),w=`${(k*100).toFixed(1)}%`;if(tm.style.width!==w)tm.style.width=w;tm.parentNode.classList.toggle('hurry',(v.timeLeft??0)<=5&&mode==='play');}
   const ring=acts.querySelector('.kh-ringsvg circle');if(ring){const k=Math.max(0,Math.min(1,(v.timeLeft??0)/T.claw.timeSec));ring.style.strokeDashoffset=String(295.3*(1-k));ring.parentNode.classList.toggle('hurry',(v.timeLeft??0)<=5&&mode==='play');}
   if(frame.isOpen&&frame.tab==='machines'&&v.busySig!==update.busySig){update.busySig=v.busySig;renderMachines(frame.panel('machines'));}
  }
@@ -297,6 +307,9 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
  return {frame,update,toast,showResult,showNoCoin,showOdds,showRules,confirmQuit,closeCard,padDir,setKeyDir,clearPad,
   get card(){return cardKind;},
   setMuted(on){muted=!!on;},
+  // 기계 그림 속 단추를 눌렀을 때(그림은 장식): 진짜 단추 = 아래 판을 알려 줌. 같은 알림은 2.5초에 한 번
+  artTap(){const b=acts.querySelector('.kh-big.kh-bar');if(!b||cardKind)return false;const now=performance.now();if(now-(artTapAt??-1e9)<2500)return false;artTapAt=now;
+   const l=b.querySelector('.kh-lt b')?.textContent??'';toast(fine()?`기계 그림 단추는 장식이에요 · 아래 「${l}」 단추나 Space를 눌러요`:`기계 그림 단추는 장식이에요 · 아래 「${l}」 판을 눌러요`,{sec:2.6,urgent:true});return true;},
   refreshTab:()=>frame.refreshTab(),
   doTodo(){const b=acts.querySelector('.kh-todo:not([data-dim])')??acts.querySelector('.kh-big:not([data-dim])');if(b)doAct(b.dataset.act);},
  };
