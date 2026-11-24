@@ -285,7 +285,7 @@ test('흡연장 서버(옥상-1 → smoking:옥상)도 같은 규칙, 체험마�
  assert.equal(join('등산','옥상-1').room.key,'hiking:옥상','등산의 옥상 방은 서버 목록 밖 → 따로');
  const row=(n,id,count)=>({id,name:`${n} ${id}서버`,count,max:2});
  assert.deepEqual(rooms.serverCounts(),{hiking:[row('관악산','1',0),row('관악산','2',0),row('관악산','3',0),...[1,2,3].map(i=>({id:`n${i}`,name:`남산 ${i}서버`,count:0,max:2}))],smoking:[row('옥상','1',2),row('옥상','2',0),row('옥상','3',0)],
-  christmas:[1,2,3].map(i=>({id:String(i),name:`눈마을 광장 ${i}서버`,count:0,max:30})),claw:[row('인형가게','1',0)]},'크리스마스는 체험별 정원 30(maxPerRoom과 따로), 인형가게는 1서버');
+  christmas:[1,2,3].map(i=>({id:String(i),name:`눈마을 광장 ${i}서버`,count:0,max:30})),claw:[row('인형가게','1',0),row('인형가게','2',0),row('인형가게','3',0)]},'크리스마스는 체험별 정원 30(maxPerRoom과 따로), 인형가게도 3서버');
 });
 test('서버 방에서 신고로 숨겨지면 다른 방으로 옮기지 않고 이름만 숨긴다(넘길 서버가 없음)',()=>{
  const {rooms,join}=setup();

@@ -211,11 +211,11 @@ test('공개판 도감: 우리 인형 8 + 큰 인형 3 + 상자 8칸, 손님 자
  assert.match(read('src/claw/claw-guest.js'),/VITE_CLAW_PRIVATE!=='1'\)return \[\]/);
  assert.match(read('.gitignore'),/^private\/$/m);
 });
-test('같은 가게 손님 규격: claw 체험·위치/채팅/act만·1서버·익명 이름', ()=>{
+test('같은 가게 손님 규격: claw 체험·위치/채팅/act만·3서버·익명 이름', ()=>{
  assert.ok(EXPERIENCES.includes('claw'));assert.equal(parseExperience('claw'),'claw');
  for(const t of ['s','c','act','j','b','report'])assert.ok(messageAllowed('claw',t),t);
  for(const t of ['tree:put','lounge:smoke','pair:offer','lk-hang','g'])assert.equal(messageAllowed('claw',t),false,t);
- assert.deepEqual(SERVERS.claw.map(s=>s.id),['1']);assert.equal(findServer('claw','인형가게').id,'1');assert.equal(findServer('claw','인형가게-1').name,'인형가게 1서버');
+ assert.deepEqual(SERVERS.claw.map(s=>s.id),['1','2','3']);assert.equal(findServer('claw','인형가게-3').name,'인형가게 3서버');assert.equal(findServer('claw','인형가게').id,'1');assert.equal(findServer('claw','인형가게-1').name,'인형가게 1서버');
  assert.match(anonymousName('ab12cd','claw'),/^뽑기손님[0-9A-Z]{4}$/);
  assert.deepEqual(sanitizeAct('claw',{m:2,ph:'drop',cx:encodeClawPos(.2),cz:encodeClawPos(-.28),r:'dongdong-santa',k:KIND_CODE.win,n:7,v:1000,o:'santa'}),{m:2,ph:'drop',cx:70,cz:22,r:'dongdong-santa',k:1,n:7,v:1000});
  {const [a,b]=decodeKeyPos(...encodeKeyPos(2.5,1.72));assert.ok(Math.abs(a-2.5)<1e-9&&Math.abs(b-1.72)<1e-9);}
@@ -233,7 +233,7 @@ test('서버: 인형가게 방에 들어가고 act(집게 자리·결과)를 같
  assert.equal(x.inbox.filter(m=>m.t==='act').length,0);
  const c=join('라','인형가게-1','claw');assert.ok(c.inbox.some(m=>m.t==='act'&&m.id===a.id&&m.a.ph==='play'),'나중에 온 손님도 지금 뽑는 모습');
  rooms.message(a,{t:'tree:put',slot:1,k:'ballRed'});assert.equal(rooms.stats.tree??0,0,'다른 체험 메시지는 버림');
- const cnt=rooms.serverCounts().claw;assert.deepEqual(cnt,[{id:'1',name:'인형가게 1서버',count:3,max:30}]);
+ const cnt=rooms.serverCounts().claw;assert.deepEqual(cnt,[1,2,3].map(i=>({id:String(i),name:`인형가게 ${i}서버`,count:i===1?3:0,max:30})));
 });
 test('허브 카드·서버 창·친구 부르기·입장: 인형뽑기 한 줄', ()=>{
  const e=HUB_EXP.find(x=>x.id==='claw');assert.ok(e);assert.equal(experienceHref(e,'/ai-office-world/'),'/ai-office-world/claw/');

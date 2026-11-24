@@ -295,8 +295,8 @@ export const SERVERS=Object.freeze({
  hiking:Object.freeze([...['1','2','3'].map(id=>Object.freeze({id,name:`관악산 ${id}서버`,room:`관악산-${id}`,mountain:'gwanak'})),...['1','2','3'].map(n=>Object.freeze({id:`n${n}`,name:`남산 ${n}서버`,room:`남산-${n}`,mountain:'namsan'}))]),
  smoking:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`옥상 ${id}서버`,room:`옥상-${id}`}))),
  christmas:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`눈마을 광장 ${id}서버`,room:`눈마을-${id}`}))),
- // 인형뽑기(11-23): 서버 규모·비용은 대표 미결정이라 가게 1서버만(기존 정원 30 그대로, 기획서 MVP §6 「기존 수준 이상 확장 안 함」)
- claw:Object.freeze([Object.freeze({id:'1',name:'인형가게 1서버',room:'인형가게-1'})])
+ // 인형뽑기(11-23 가게 1서버 → 11-24 대표 지시로 3서버·정원 30, 다른 체험과 같음)
+ claw:Object.freeze(['1','2','3'].map(id=>Object.freeze({id,name:`인형가게 ${id}서버`,room:`인형가게-${id}`})))
 });
 /** 산 하나의 서버 줄만 담은 표({hiking:[…]}). 서버 고르기 창(createServerPick servers)에 넘긴다 */
 export const mountainServers=mountain=>Object.freeze({...SERVERS,hiking:Object.freeze(SERVERS.hiking.filter(s=>s.mountain===mountain))});
