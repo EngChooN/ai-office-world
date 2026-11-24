@@ -373,7 +373,7 @@ renderer.setAnimationLoop(()=>{
  frames++;const now=performance.now();if(now-last>1000){fps=frames*1000/(now-last);frames=0;last=now;}
 });
 loading?.classList.add('done');setTimeout(()=>loading?.remove(),700);
-// 그날 첫 접속: 위 알림 「오늘의 코인 15개」(설계 §1, 11-23 대표 결정: 매일 15개로 다시 채움)
+// 그날 첫 접속: 위 알림 「오늘의 코인 30개」(설계 §1, 11-24 대표 결정: 매일 30개로 다시 채움, 11-23엔 15개)
 if(granted)setTimeout(()=>{hud.toast(`오늘의 코인 ${granted}개 · 매일 0시에 ${T.coin.daily}개로 다시 채워져요`,{sec:4,icn:['k-coin','🪙']});audio.play('grant');},900);
 if(!state.seenTip){state.seenTip=true;saveState(state);setTimeout(()=>hud.toast('기계 앞에 가면 「한 판」 단추가 나와요 · ☰ 기계에서 「가기」도 돼요',{sec:4.4}),granted?5200:1200);}
 

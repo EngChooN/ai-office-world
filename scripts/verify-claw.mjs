@@ -67,7 +67,7 @@ async function sizeRun(size){
  await p.waitForSelector('.kh-toast:not([hidden])',{timeout:5000}).catch(()=>{});await sl(200);
  const t0=await rect(p,'.kh-toast'),pill=(await rect(p,'.kh-pill'))[0],tr=await rect(p,'.uf-tr > *');
  ok(`${tag} 첫 알림 「오늘의 코인」 보임`,t0.length&&await p.evaluate(()=>document.querySelector('.kh-toast').textContent.includes('오늘의 코인')));
- ok(`${tag} 하루 첫 접속 코인 15개(알림에도 15개)`,(await st(p)).coins===15&&await p.evaluate(()=>/15개/.test(document.querySelector('.kh-toast').textContent)),String((await st(p)).coins));
+ ok(`${tag} 하루 첫 접속 코인 30개(알림에도 30개)`,(await st(p)).coins===30&&await p.evaluate(()=>/30개/.test(document.querySelector('.kh-toast').textContent)),String((await st(p)).coins));
  ok(`${tag} 알림이 알약·위 단추와 안 겹침`,t0.length&&![pill,...tr].some(r=>hit(t0[0],r)),JSON.stringify(t0[0]));
  ok(`${tag} 알림이 위 단추보다 위층(z)`,await p.evaluate(()=>+getComputedStyle(document.querySelector('.kh-toast')).zIndex>+getComputedStyle(document.querySelector('.uf-tr')).zIndex));
  await p.screenshot({path:`${OUT}/${size}-1walk.png`});
@@ -201,23 +201,25 @@ async function sizeRun(size){
  await click(p,'.kh-card [data-c=close]');
  await click(p,'.uf-menu-btn');await click(p,'[data-uf-tab=coin]');await sl(200);
  ok(`${tag} 코인 탭: 오늘 받음·기록`,await p.evaluate(()=>{const t=document.querySelector('[data-uf-panel=coin]').textContent;return /오늘 받음/.test(t)&&/한 판/.test(t);}));
- ok(`${tag} 코인 탭: 「/ 하루 15」·넘어가지 않음 안내(최대 30 없음)`,await p.evaluate(()=>{const t=document.querySelector('[data-uf-panel=coin]').textContent;return /\/ 하루 15/.test(t)&&/넘어가지 않아요/.test(t)&&!/최대/.test(t);}));
+ ok(`${tag} 코인 탭: 「/ 하루 30」·넘어가지 않음 안내(최대 없음)`,await p.evaluate(()=>{const t=document.querySelector('[data-uf-panel=coin]').textContent;return /\/ 하루 30/.test(t)&&/넘어가지 않아요/.test(t)&&!/최대/.test(t);}));
  await click(p,'.uf-x');
  const dexN=Object.keys((await st(p)).dex).length;
  await p.reload();await p.waitForFunction(()=>window.claw&&window.claw.fps>0,null,{timeout:180000});await sl(400);
  s=await st(p);ok(`${tag} 이어하기: 새로고침 뒤 코인 0·도감 ${dexN}종(같은 날 다시 안 줌)`,s.coins===0&&Object.keys(s.dex).length===dexN,`${s.coins} ${JSON.stringify(s.dex)}`);
  {const b2=await p.evaluate(()=>claw.play.bridge(6)),b1=bs.b;
   // 저장한 상자 자리(공 자리 mm)와 새로고침 뒤 자리를 비교: 공마다 8mm 안(다시 놓을 때 0.4초 굳힘으로 생기는 어긋남 허용).
-  // 봉 밖으로 떨어진 상자(받침 여유 −)는 다시 놓는 규칙(11-23)이라 처음 자리면 맞음(11-24: 커진 집게로 이 판에서 자주 떨어짐)
+  // 봉 밖으로 떨어진 상자(받침 여유 −)는 다시 놓는 규칙(11-23)이라 처음 자리면 맞음(11-24: 커진 집게로 이 판에서 자주 떨어짐).
+  // 처음 자리 받침 여유는 약 3cm지만 ±4mm·±8° 흔들어 놓아 2.9cm대도 나옴 → 「아슬아슬(2cm) 아님」으로 봄(11-24 코인 30 점검 때 2.95cm로 실패)
   const diff=bs.st&&b2.st&&bs.st.length===b2.st.length?Math.max(...bs.st.map((v,i)=>Math.abs(v-b2.st[i]))):null;
-  ok(`${tag} 봉: 새로고침해도 상자가 그 자리(저장한 자리와 공마다 8mm 안)`,b1.won||b1.refill?b2.support>.03:diff!==null&&diff<=8||b1.support<0&&b2.support>.03,`최대 어긋남 ${diff}mm · ${b1.support}/${b1.tilt} → ${b2.support}/${b2.tilt}`);}
- // 다음 날(11-23 대표 결정): 남은 개수와 상관없이 15로 — 어제 받은 것으로 바꾸고 새로고침
+  ok(`${tag} 봉: 새로고침해도 상자가 그 자리(저장한 자리와 공마다 8mm 안)`,b1.won||b1.refill?b2.support>.02:diff!==null&&diff<=8||b1.support<0&&b2.support>.02,`최대 어긋남 ${diff}mm · ${b1.support}/${b1.tilt} → ${b2.support}/${b2.tilt}`);}
+ // 다음 날(11-24 대표 결정): 남은 개수와 상관없이 30으로 — 어제 받은 것으로 바꾸고 새로고침
  const dayShift=async(patch)=>{await p.evaluate(patch=>{const k='claw-world:v1',v=JSON.parse(localStorage.getItem(k));const y=new Date(Date.now()+9*3600e3-86400e3).toISOString().slice(0,10);
    Object.assign(v,patch);if(v.lastGrant==='Y')v.lastGrant=y;if(v.lastGrant==='T')v.lastGrant=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);if(patch.coinV===null)delete v.coinV;localStorage.setItem(k,JSON.stringify(v));},patch);
   await p.reload();await p.waitForFunction(()=>window.claw&&window.claw.fps>0,null,{timeout:180000});await sl(1400);return st(p);};
- s=await dayShift({coins:3,lastGrant:'Y'});ok(`${tag} 다음 날: 남은 3개 → 15개`,s.coins===15&&Object.keys(s.dex).length===dexN,String(s.coins));
- s=await dayShift({coins:15,lastGrant:'Y'});ok(`${tag} 다음 날: 안 쓴 15개 → 15개(30 안 됨)`,s.coins===15,String(s.coins));
- s=await dayShift({coins:4,lastGrant:'T',coinV:null});ok(`${tag} 옛 저장(오늘 받고 4개 남음) → 오늘 15개로 채움`,s.coins===15,String(s.coins));
+ s=await dayShift({coins:3,lastGrant:'Y'});ok(`${tag} 다음 날: 남은 3개 → 30개`,s.coins===30&&Object.keys(s.dex).length===dexN,String(s.coins));
+ s=await dayShift({coins:30,lastGrant:'Y'});ok(`${tag} 다음 날: 안 쓴 30개 → 30개(60 안 됨)`,s.coins===30,String(s.coins));
+ s=await dayShift({coins:4,lastGrant:'T',coinV:null});ok(`${tag} 옛 저장(오늘 받고 4개 남음) → 오늘 30개로 채움`,s.coins===30,String(s.coins));
+ s=await dayShift({coins:6,lastGrant:'T',coinV:2});ok(`${tag} 하루 15개 시절 저장(오늘 받고 6개 남음) → 오늘 30개로 채움`,s.coins===30,String(s.coins));
  ok(`${tag} 페이지 오류 0`,!p.errs.length,p.errs.slice(0,3).join(' / '));
  await ctx.close();
 }

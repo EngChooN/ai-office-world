@@ -6,7 +6,7 @@
 import {PLUSH,RARITY,RARITY_ORDER,MACHINES,plushInfo} from './claw-palette.js';
 
 export const CLAW_TUNING=Object.freeze({
- coin:Object.freeze({daily:15,cost:1}),               // 하루 코인(서울 날짜가 바뀌면 이 개수로 다시 채움, 남은 코인은 넘어가지 않음) · 한 판 값  [대표 결정 11-23]
+ coin:Object.freeze({daily:30,cost:1}),               // 하루 코인(서울 날짜가 바뀌면 이 개수로 다시 채움, 남은 코인은 넘어가지 않음) · 한 판 값  [대표 결정 11-23 15개 → 11-24 30개]
  pity:Object.freeze({after:5}),                       // 같은 기계에서 연달아 n번 실패하면 다음 판 도움(기계 종류마다 다름, 0이면 끔)  [임시값]
  // 집게(설계 v2·v3 §3-1): 물리 판정. 세기 = 집게발이 버티는 힘(잡기/들고 가기). 보장 판 = 직원 도움(11-24 대표 결정: 힘센 집게는 그림 모양 판정 뒤 22%로 보통 판과 같아 바꿈 —
  //  구멍 뒤 턱 바로 뒤에 인형 하나를 세워 줌. claw-physics.js staffHelp)
@@ -46,8 +46,9 @@ const bigTimer=id=>({'big-squirrel':'timer-1','big-dongdong':'timer-2','big-haec
 const renameMachine=(id,plush)=>MACHINE_IDS.includes(id)?id:id==='city'&&bigTimer(plush)?bigTimer(plush):MACHINE_RENAME[id]??'';
 const int=(v,lo,hi,d=0)=>Number.isInteger(v)&&v>=lo&&v<=hi?v:d;
 const date=v=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)?v:null;
-// coinV = 코인 규칙 판(2 = 11-23 대표 결정 「하루 15개로 다시 채움」, 그 전 저장(1) = 10개씩 더해 30개까지 모으던 규칙)
-export const COIN_V=2;
+// coinV = 코인 규칙 판(3 = 11-24 대표 결정 「하루 30개로 다시 채움」. 그 전 저장(1 = 10개씩 더해 30개까지, 2 = 하루 15개)은 모두 옛 판으로 읽어
+//  처음 읽는 날 grantDaily가 하루 개수까지 채워 줌 — 오늘 15개를 받은 사람도 그날 바로 30개가 됨)
+export const COIN_V=3;
 export function freshState(){return {coins:0,lastGrant:null,coinV:COIN_V,plays:0,wins:0,dex:{},pity:{},seen:{},log:[],seenTip:false,mach:{}};}
 /** 저장값을 믿지 않고 정리한다(손님 인형 id는 isKnown이 true일 때만 남김 — 공개판에는 칸이 없다) */
 export function sanitizeState(raw,{isKnown=id=>!!plushInfo(id)}={}){
@@ -63,7 +64,7 @@ export function sanitizeState(raw,{isKnown=id=>!!plushInfo(id)}={}){
 export function loadState(storage=globalThis.localStorage,opt){try{return sanitizeState(JSON.parse(storage?.getItem(SAVE_KEY)??'null'),opt);}catch{return freshState();}}
 export function saveState(s,storage=globalThis.localStorage){try{storage?.setItem(SAVE_KEY,JSON.stringify(s));return true;}catch{return false;}}
 const addLog=(s,at,text,d=0,extra=null)=>{s.log.push({at,text,d,...extra});while(s.log.length>CLAW_TUNING.log)s.log.shift();};
-// 매일 채움 기록 줄(v4 §10, 대표 승인): 늘어남·줄어듦 숫자 없이 「오늘 15개로 채웠어요」 + 결과 개수(t:'refill', n). 예전 저장의 채움 줄도 화면이 같은 모양으로 그림
+// 매일 채움 기록 줄(v4 §10, 대표 승인): 늘어남·줄어듦 숫자 없이 「오늘 n개로 채웠어요」 + 결과 개수(t:'refill', n). 예전 저장의 채움 줄도 화면이 같은 모양으로 그림
 export const isRefillLog=r=>r?.t==='refill'||typeof r?.text==='string'&&/^오늘의 코인/.test(r.text);
 
 // ── 코인 ──
