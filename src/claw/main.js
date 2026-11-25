@@ -96,14 +96,42 @@ player.place(SHOP.spawn.x+(Math.random()-.5)*.8,SHOP.spawn.z,0);
 
 // ── 부딪힘: 가게 안 네모(SHOP.walk) 안, 기계·진열장·의자·화분·가운데 인형 밖으로 민다
 const R=.22;
-function collide(x,z){
+// 손에 받쳐 든 인형(11-25 ③ 어깨 높이): 몸 오른쪽 약 0.4m까지 나와 기계 옆을 지나면 기계 속으로 파고들었다 →
+//  든 동안만 인형 자리에 작은 원(handRing)을 하나 더 두고 기계·진열장(네모)에서 몸째 밀어낸다. 의자(동그라미)는 낮아서 안 봄.
+//  handRing = {r 오른쪽, f 앞, rad} 몸 기준, 지난 프레임 인형 모양에서 잼(updatePlayer 끝)
+let handRing=null;
+function pushBox(c,x,z,rad,ox=0,oz=0){ // 원(x+ox,z+oz,rad)이 네모 c에 겹치면 몸(x,z)을 밀어낸 자리
+ const px=x+ox,pz=z+oz,nx=Math.min(Math.max(px,c.x0),c.x1),nz=Math.min(Math.max(pz,c.z0),c.z1),dx=px-nx,dz=pz-nz,d=Math.hypot(dx,dz);
+ if(d>=rad)return null;
+ if(d>1e-6)return {x:nx+dx/d*rad-ox,z:nz+dz/d*rad-oz};
+ const o=[[c.x0-rad-px,0],[c.x1+rad-px,0],[0,c.z0-rad-pz],[0,c.z1+rad-pz]].sort((a,b)=>Math.abs(a[0]+a[1])-Math.abs(b[0]+b[1]))[0];return {x:x+o[0],z:z+o[1]};
+}
+function collide(x,z,heading=null){
  const w=SHOP.walk;x=Math.min(Math.max(x,w.x[0]),w.x[1]);z=Math.min(Math.max(z,w.z[0]),w.z[1]);
- for(let pass=0;pass<2;pass++)for(const c of U.colliders){
-  if(c.r!==undefined){const dx=x-c.x,dz=z-c.z,d=Math.hypot(dx,dz),m=c.r+R;if(d<m&&d>1e-6){x=c.x+dx/d*m;z=c.z+dz/d*m;}}
-  else{const nx=Math.min(Math.max(x,c.x0),c.x1),nz=Math.min(Math.max(z,c.z0),c.z1),dx=x-nx,dz=z-nz,d=Math.hypot(dx,dz);
-   if(d<R){if(d>1e-6){x=nx+dx/d*R;z=nz+dz/d*R;}else{const o=[[c.x0-R-x,0],[c.x1+R-x,0],[0,c.z0-R-z],[0,c.z1+R-z]].sort((a,b)=>Math.abs(a[0]+a[1])-Math.abs(b[0]+b[1]))[0];x+=o[0];z+=o[1];}}}
+ const H=heading!=null?handRing:null;let ox=0,oz=0;
+ if(H){const s=Math.sin(heading),c=Math.cos(heading);ox=c*H.r-s*H.f;oz=-s*H.r-c*H.f;}
+ for(let pass=0;pass<2;pass++){
+  for(const c of U.colliders){
+   if(c.r!==undefined){const dx=x-c.x,dz=z-c.z,d=Math.hypot(dx,dz),m=c.r+R;if(d<m&&d>1e-6){x=c.x+dx/d*m;z=c.z+dz/d*m;}}
+   else{const g=pushBox(c,x,z,R);if(g){x=g.x;z=g.z;}}
+  }
+  if(H){for(const c of U.colliders)if(c.r===undefined){const g=pushBox(c,x,z,H.rad,ox,oz);if(g){x=g.x;z=g.z;}}
+   // 벽: 걷는 네모는 몸 반지름만큼 벽 안쪽이라, 인형은 R − rad만큼 더 나가도 됨
+   const m=R-H.rad;x=Math.min(Math.max(x+ox,w.x[0]-m),w.x[1]+m)-ox;z=Math.min(Math.max(z+oz,w.z[0]-m),w.z[1]+m)-oz;}
+  x=Math.min(Math.max(x,w.x[0]),w.x[1]);z=Math.min(Math.max(z,w.z[0]),w.z[1]);
  }
  return {x,z};
+}
+// 밀어내도 인형이 남는 곳(벽 쪽 몸 폭만 한 좁은 틈): 인형이 더 파고드는 쪽으로는 안 감(덜 파고드는 쪽은 감 → 갇히지 않음)
+function handPen(x,z,heading){
+ const H=handRing;if(!H)return 0;const s=Math.sin(heading),c=Math.cos(heading),px=x+c*H.r-s*H.f,pz=z-s*H.r-c*H.f;let pen=0;
+ for(const b of U.colliders)if(b.r===undefined){const d=Math.hypot(px-Math.min(Math.max(px,b.x0),b.x1),pz-Math.min(Math.max(pz,b.z0),b.z1));pen=Math.max(pen,H.rad-d);}
+ return pen;
+}
+function measureHand(){
+ const b=player.carry.bounds('hand');if(!b){handRing=null;return;}
+ const cx=(b.min.x+b.max.x)/2-player.x,cz=(b.min.z+b.max.z)/2-player.z,s=Math.sin(player.heading),c=Math.cos(player.heading);
+ handRing={r:cx*c-cz*s,f:-(cx*s+cz*c),rad:Math.min(.16,Math.max(b.max.x-b.min.x,b.max.z-b.min.z)/2)};
 }
 
 // ── 소리
@@ -202,9 +230,12 @@ function updatePlayer(dt){
  if(mv.forward||mv.side){const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);dirX=fx*mv.forward+rx*mv.side;dirZ=fz*mv.forward+rz*mv.side;}
  const len=Math.hypot(dirX,dirZ);
  if(len>0){dirX/=len;dirZ/=len;const running=mv.run||runOn,speed=WALK_SPEED*(running?RUN_MUL:1)*Math.min(1,len);
-  const got=collide(player.x+dirX*speed*dt,player.z+dirZ*speed*dt),moved=Math.hypot(got.x-player.x,got.z-player.z);
-  player.x=got.x;player.z=got.z;player.heading=Math.atan2(-dirX,-dirZ);player.running=running;player.update(dt,{moved,running});}
+  const heading=Math.atan2(-dirX,-dirZ);let got=collide(player.x+dirX*speed*dt,player.z+dirZ*speed*dt,heading);
+  if(handRing){const pen=handPen(got.x,got.z,heading);if(pen>.01&&pen>=handPen(player.x,player.z,heading)-1e-4)got={x:player.x,z:player.z};}
+  const moved=Math.hypot(got.x-player.x,got.z-player.z);
+  player.x=got.x;player.z=got.z;player.heading=heading;player.running=running;player.update(dt,{moved,running});}
  else{player.running=false;player.update(dt,{moved:0});}
+ measureHand();
 }
 // 조작 카메라: 기계 정면·조금 위(월드아트 추천값 CLAW.camera를 바탕으로). 정면 가운데에서는 내 동동이 모자가 유리 상자 아래쪽을 가려서
 //  조작·결과를 보는 동안만 내 화면에서 내 동동이를 숨긴다(다른 손님 화면에는 기계 앞에 선 모습 그대로 보임)
@@ -431,7 +462,7 @@ if(granted)setTimeout(()=>{hud.toast(`오늘의 코인 ${granted}개 · 매일 0
 if(!state.seenTip){state.seenTip=true;saveState(state);setTimeout(()=>hud.toast('기계 앞에 가면 「한 판」 단추가 나와요 · ☰ 기계에서 「가기」도 돼요',{sec:4.4}),granted?5200:1200);}
 
 // 진단·자동 점검용(브라우저 콘솔 window.claw)
-window.claw={shop,player,play,multi,hud,state,cam,camera,catalog,pools,
+window.claw={shop,player,play,multi,hud,state,cam,camera,catalog,pools,collide,handPen,get handRing(){return handRing;},
  get fps(){return fps;},
  status(){return {fps:+fps.toFixed(1),mode:play.mode,near:nearMachine(),coins:state.coins,plays:state.plays,wins:state.wins,dex:Object.fromEntries(Object.entries(state.dex).map(([k,v])=>[k,v.n])),pity:{...state.pity},
   player:{x:+player.x.toFixed(2),z:+player.z.toFixed(2),heading:+player.heading.toFixed(2)},play:play.status(),multi:multi.status(),guests:guests.length,catalog:catalog.length,
