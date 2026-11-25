@@ -93,6 +93,11 @@ async function clawSize(size){
   await p.evaluate(()=>window.claw.hud.showResult({res:{kind:'win',id:'box-cat'},machine:7,kind:'bridge',isNew:false,count:1,fails:0,coins:20}));await sl(500);
   const cb=await rect(p,'.kh-card .kh-carry');const note=await p.evaluate(()=>document.querySelector('.kh-carry-note')?.textContent??'');
   ok(`${tag} 성공 카드 맨 위 「손에 들고 다니기」 + 바꿔 듦 안내`,!!cb&&cb.h>=44&&cb.b<=cb.H&&note.includes('산타 동동이'),JSON.stringify({cb,note}));
+  // 인형 이름이 스크롤 없이 보이고 단추 줄(바닥에 붙는 줄)과 안 겹침(11-25 후속: 가로 휴대폰에서 이름이 단추 뒤로 가려지던 문제)
+  const nm=await p.evaluate(()=>{const c=document.querySelector('.kh-card'),h=c.querySelector('.kh-win h2'),r=h.getBoundingClientRect(),cr=c.getBoundingClientRect();
+   const hit=[...c.querySelectorAll('.kh-row>*')].map(e=>e.getBoundingClientRect()).filter(b=>b.width&&b.left<r.right&&b.right>r.left&&b.top<r.bottom&&b.bottom>r.top).length;
+   return {top:r.top|0,bottom:r.bottom|0,cardTop:cr.top|0,cardBottom:cr.bottom|0,scroll:c.scrollTop,overflow:c.scrollHeight-c.clientHeight,hit,H:innerHeight};});
+  ok(`${tag} 성공 카드 인형 이름이 보임(단추와 안 겹침·카드 안)`,nm.hit===0&&nm.top>=nm.cardTop&&nm.bottom<=nm.cardBottom&&nm.bottom<=nm.H,JSON.stringify(nm));
   await p.screenshot({path:`${OUT}/claw-${size}-5-card.png`});
   await tap(o,'.kh-card .kh-carry');await sl(800);
   ok(`${tag} 성공 카드에서 들기 → 손 = 상자 고양이, 카드 닫힘`,(await stored(p))==='{"hand":"box-cat","back":"big-haechi"}'&&!(await rect(p,'.kh-card')));
@@ -150,10 +155,10 @@ async function multi(){
   }finally{await B.ctx.close();await C.ctx.close();}
  }catch(e){ok(`${tag} 실행`,false,String(e?.stack??e));}finally{await A.ctx.close();}
 }
-// 옛 서버(지금 공개 서버와 같은 코드 = 마지막 커밋, ch·cb 모름) + 새 화면
+// 옛 서버(지금 공개 서버와 같은 코드 = 인형 자랑 이전 커밋 e0e1963^, ch·cb 모름) + 새 화면
 async function old(){
  const tag='[옛 서버 + 새 화면]',dir='/tmp/carry-oldsrv';
- if(!existsSync(dir))execSync(`git -C ${ROOT} worktree add --detach ${dir} HEAD`,{stdio:'ignore'});
+ if(!existsSync(dir))execSync(`git -C ${ROOT} worktree add --detach ${dir} e0e1963^`,{stdio:'ignore'});
  const {startServer:startOld}=await import(dir+'/server/multi-server.mjs');
  const os=startOld({PORT:String(OP),HOST:'127.0.0.1',DATA_DIR:'/tmp/carry-v/old'},{quiet:true});await os.ready;
  try{

@@ -241,5 +241,12 @@
 .kh-card .kh-carry{display:flex;flex:1 1 100%;margin:0 auto} /* 성공 카드: 아래 단추 줄(짧은 화면에서 바닥에 붙는 줄) 맨 위 한 줄 — 스크롤에 가려지지 않게 */
 .kh-card .kh-row>.kh-carry-note{flex:1 1 100%;margin:-4px 0 2px}
 .kh-carry-note{margin:4px 0 0;text-align:center}
+/* 가로 휴대폰 성공 카드: 세로로 쌓으면 넘쳐 바닥 단추 줄이 인형 이름을 덮음 → 왼쪽 인형·이름, 오른쪽 단추 두 칸(스크롤 없음) */
+@media (orientation:landscape) and (max-height:540px){
+ .kh-card[data-kind=result]:not([hidden]):has(>.kh-win){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto 1fr;column-gap:16px;align-items:center;width:min(620px,calc(100vw - 24px - var(--uf-sl) - var(--uf-sr)))}
+ .kh-card[data-kind=result]:has(>.kh-win)>.kh-band{grid-area:1/1}
+ .kh-card[data-kind=result]:has(>.kh-win)>.kh-win{grid-area:2/1;align-self:start}
+ .kh-card[data-kind=result]:has(>.kh-win)>.kh-row{grid-area:1/2/3/3;position:static;margin:0;padding:0;background:none}
+}
 .kh-toast.act{pointer-events:auto;display:flex;align-items:center;gap:10px;padding:6px 6px 6px 16px;-webkit-line-clamp:unset}
 .kh-undo{flex:none;min-height:36px;padding:0 12px;border:1.5px solid rgba(255,250,240,.6);border-radius:16px;background:transparent;color:#fffaf0;font:800 12.5px/1 var(--uf-font);cursor:pointer}
