@@ -235,6 +235,16 @@ test('서버: 인형가게 방에 들어가고 act(집게 자리·결과)를 같
  rooms.message(a,{t:'tree:put',slot:1,k:'ballRed'});assert.equal(rooms.stats.tree??0,0,'다른 체험 메시지는 버림');
  const cnt=rooms.serverCounts().claw;assert.deepEqual(cnt,[1,2,3].map(i=>({id:String(i),name:`인형가게 ${i}서버`,count:i===1?3:0,max:30})));
 });
+test('서버: 든 인형 칸(ch·cb, 11-25)을 같은 가게 같은 서버 손님에게만 중계·기억', ()=>{
+ let t=1e6,n=0;const rooms=createRooms({now:()=>t,idGen:()=>`p${++n}`,tokenGen:()=>`tok${n}`,reports:{append(){}}});
+ const join=(name,room,exp)=>{const inbox=[];const r=rooms.join({room,name,experience:exp,send:s=>inbox.push(JSON.parse(s))});r.client.inbox=inbox;return r.client;};
+ const a=join('가','인형가게-1','claw'),b=join('나','인형가게-1','claw'),y=join('마','인형가게-2','claw');
+ rooms.message(a,{t:'act',a:{m:0,ph:'',cx:50,cz:50,r:'',k:0,n:0,v:0,ch:'dongdong-santa',cb:'big-haechi'}});
+ assert.deepEqual(b.inbox.filter(m=>m.t==='act').at(-1)?.a,{m:0,ph:'',cx:50,cz:50,r:'',k:0,n:0,v:0,ch:'dongdong-santa',cb:'big-haechi'});
+ assert.equal(y.inbox.filter(m=>m.t==='act').length,0,'2서버 손님에게는 안 감');
+ const c=join('라','인형가게-1','claw');assert.equal(c.inbox.find(m=>m.t==='act'&&m.id===a.id)?.a.ch,'dongdong-santa','나중에 온 손님도 받음');
+ rooms.message(a,{t:'act',a:{m:0,ph:'',cx:50,cz:50,r:'',k:0,n:0,v:0,ch:'<b>'}});assert.equal(b.inbox.filter(m=>m.t==='act').at(-1).a.ch,undefined,'이상한 값은 버림');
+});
 test('허브 카드·서버 창·친구 부르기·입장: 인형뽑기 한 줄', ()=>{
  const e=HUB_EXP.find(x=>x.id==='claw');assert.ok(e);assert.equal(experienceHref(e,'/ai-office-world/'),'/ai-office-world/claw/');
  assert.ok(ART[e.art]);assert.ok(MAP_POS.claw);assert.ok(hasIcon(e.icon));for(const [ic] of e.feats)assert.ok(hasIcon(ic),ic);

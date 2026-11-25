@@ -7,6 +7,7 @@
 //  - 왼쪽 아래(조작 중만): 십자 단추 4개(누르고 있기, 옆 단추로 밀면 방향 바뀜, 두 손가락 대각선). 걷기 조이스틱 자리를 대신함
 //  - 알림(z 50, 위 단추 줄 아래)·결과 카드·코인 없음·그만두기 확인·확률 안내(z 55, 무거운 창) — HUD에 가려지지 않게(설계 §4)
 //  - ☰ 탭: 기계 · 도감 · 코인 · 소리 · 설정
+//  - 든 인형(11-25 인형 자랑, 시안 v2 대표 결정): 🧸 도감 맨 위 손·등 칸, 자세히 화면 「손에 들기/등에 업기/내려놓기」, 성공 카드 「들고 다니기」. 저장·규칙은 src/carry/carry-store.js
 // main.js와는 act 콜백과 update(view)로만 만난다. 그림(인형 작은 그림)은 thumb(id) → 그림 주소.
 import './claw-hud.css';
 import '../ui-frame.css';
@@ -15,6 +16,7 @@ import {icon,iconText} from '../icons/icon.js';
 import {createUiFrame,ufPlace,openWin,closeWin,onWin} from '../ui-frame.js';
 import {clawStatusView} from './claw-multi.js';
 import {RARITY,RARITY_ORDER,MACHINES} from './claw-palette.js';
+import {currentCarry,setCarry,onCarry,toggleCarry,slotOf,isCarryId,carryLabel} from '../carry/carry-store.js';
 import {CLAW_TUNING,rulesFor,KIND_INFO,KINDS,PITY_NAME,timerDiffText,keyMissText,grantedToday,msToNextGrant,leftText,pityLeft,dexCount,levelOf,isRefillLog} from './claw-rules.js';
 document.documentElement.dataset.icExp='claw';
 
@@ -78,12 +80,15 @@ export function createClawHud({doc=document,win=window,mobile=false,catalog,pool
 
  // ── 알림(한 번에 하나, 뒤의 것은 줄 서서 1.5초 간격 이상)
  const queue=[];let toastT=0,toastGap=0;
- function toast(text,{sec=2.6,icn=null,urgent=false}={}){if(urgent){queue.length=0;toastT=0;toastGap=0;}queue.push({text,sec,icn});}
+ function toast(text,{sec=2.6,icn=null,urgent=false,undo=null}={}){if(urgent){queue.length=0;toastT=0;toastGap=0;}queue.push({text,sec,icn,undo});}
+ // undo = 「되돌리기」 단추(든 인형 알림, 시안 v2 ③). 단추가 있는 알림만 누를 수 있음
+ let toastUndo=null;
+ toastEl.addEventListener('click',e=>{if(!e.target.closest('[data-undo]')||!toastUndo)return;const f=toastUndo;toastUndo=null;f();toastT=Math.min(toastT,.25);});
  function tickToast(dt){
   if(toastT>0){toastT-=dt;if(toastT<=.25)toastEl.classList.add('out');if(toastT<=0){toastEl.hidden=true;toastGap=.3;}return;}
   if(toastGap>0){toastGap-=dt;return;}
   const n=queue.shift();if(!n)return;
-  toastEl.innerHTML=n.icn?iconText(n.icn[0],n.text,{size:'xs',fallback:n.icn[1]}):esc(n.text);toastEl.hidden=false;toastEl.classList.remove('out');toastT=Math.max(1.5,n.sec);
+  toastEl.innerHTML=(n.icn?iconText(n.icn[0],n.text,{size:'xs',fallback:n.icn[1]}):esc(n.text))+(n.undo?'<button type="button" class="kh-undo" data-undo>되돌리기</button>':'');toastUndo=n.undo??null;toastEl.classList.toggle('act',!!n.undo);toastEl.hidden=false;toastEl.classList.remove('out');toastT=Math.max(1.5,n.sec);
  }
 
  // ── 십자 단추: 손가락마다 지금 올라가 있는 단추 방향. 옆 단추로 밀면 바뀌고, 단추 밖이면 멈춤
@@ -142,6 +147,7 @@ export function createClawHud({doc=document,win=window,mobile=false,catalog,pool
   else if(c==='stop'){closeCard();act.stop?.();}
   else if(c==='dex'){const was=cardKind;closeCard();if(was==='result')act.stop?.();frame.open('dex');}
   else if(c==='close'){closeCard();}
+  else if(c==='carry'){const id=b.dataset.id;closeCard();act.stop?.();carryPick(id);} // 들고 판이 끝남(걸어 나감)
   else if(c==='quit'){closeCard();act.quit?.();}
   else if(c==='keep'){closeCard();}
   else if(c==='go'){const i=+b.dataset.m;closeCard();act.confirmStart?.(i);}});
@@ -157,9 +163,10 @@ export function createClawHud({doc=document,win=window,mobile=false,catalog,pool
   const pityLine=left===null?'':left<=0?`다음 판은 ${PITY_NAME[kind]}!`:`${PITY_NAME[kind]}까지 ${left}번`;
   const detail=kind==='timer'&&res.shown?`<p class="kh-num" data-num>${esc(res.shown)}</p><p>${esc(timerDiffText(res.diff??0))}</p>`:kind==='key'&&res.key&&res.kind!=='win'?`<p>${esc(keyMissText(res.key))}</p>`:'';
   if(res.kind==='win'){const p=infoOf(res.id),R=RARITY[p?.rarity]??RARITY.common;
+   const cb=carryButton(res.id,'card'),again2=cb?again.replace(' kh-red','').replace(' data-main',''):again;
    openCard('result',`<div class="kh-band" style="--rc:${R.color}"><b>${stars(p?.rarity)} ${esc(R.label)}</b></div>
 <div class="kh-win">${plushImg(res.id,120)}<h2>${esc(p?.name??'인형')}</h2>${kind==='timer'&&res.shown?`<p class="kh-num ok" data-num>${esc(res.shown)}</p>`:''}<p class="kh-new">${isNew?'새 인형! 도감에 넣었어요':`${count}개째예요`}${res.more?` · 하나 더 떨어졌어요(${res.more})`:''}</p></div>
-<div class="kh-row"><button type="button" class="kh-btn" data-c="dex">${ict('dex','도감 보기')}</button>${noMore?'':again}<button type="button" class="kh-btn" data-c="stop"${noMore?' data-main':''}>그만</button></div>`,'뽑기 성공');}
+<div class="kh-row">${cb}<button type="button" class="kh-btn" data-c="dex">${ict('dex','도감 보기')}</button>${noMore?'':again2}<button type="button" class="kh-btn" data-c="stop"${noMore&&!cb?' data-main':''}>그만</button></div>`,'뽑기 성공');}
   else{const near=res.kind==='near';
    const title=kind==='timer'?(near?'아까워요! 거의 맞았어요':'아쉬워요'):kind==='key'?(near?'아까워요! 구멍 가장자리예요':'아쉬워요, 안 열렸어요'):kind==='bridge'?(near?'상자가 많이 움직였어요':'상자가 거의 안 움직였어요'):(near?'아까워요! 들었다 놓쳤어요':'못 잡았어요');
    const why=kind==='claw'?(near?'조금만 더 꽉 잡았으면…':'「👁 옆에서」로 보고 앞뒤를 맞춰 보세요'):kind==='bridge'?'상자는 그 자리에 남아요 · 점선이 판 전 자리예요':'';
@@ -201,17 +208,43 @@ ${first?`<div class="kh-row"><button type="button" class="kh-btn kh-red" data-c=
 <p class="kh-sub">「가기」를 누르면 그 기계 앞으로 바로 가요.</p>`;
   p.onclick=e=>{const g=e.target.closest('[data-go]'),o=e.target.closest('[data-odds]');if(g){frame.close();act.goMachine?.(+g.dataset.go);}else if(o){frame.close();showRules(+o.dataset.odds);}};
  }
+ // ── 든 인형(11-25, 시안 v2 §5): 도감 맨 위 손·등 칸·자세히 화면 단추·성공 카드 단추. 규칙·저장은 carry-store.js
+ const isHeld=id=>{const c=currentCarry();return c.hand===id||c.back===id;};
+ const carryText=(id,picked)=>{const n=carryLabel(id)?.name??'인형';return picked?(slotOf(id)==='back'?`${n}${josa(n,'을','를')} 업었어요`:`${n}${josa(n,'을','를')} 손에 들었어요`):`${n}${josa(n,'을','를')} 내려놓았어요`;};
+ function carrySlots(){const c=currentCarry();
+  const one=k=>{const id=c[k],l=id?carryLabel(id):null,ic=k==='hand'?'✋':'🎒',nm=k==='hand'?'손':'등';
+   return l?`<div class="kh-slot on" style="--rc:${l.color}">${plushImg(id,40)}<span><small>${ic} ${nm}</small><b>${esc(l.name)}</b></span><button type="button" class="kh-btn kh-mini kh-cdrop" data-drop="${k}">내려놓기</button></div>`
+    :`<div class="kh-slot"><span class="kh-slot-e" aria-hidden="true">${ic}</span><span><small>${ic} ${nm} · 비어 있음</small><b>${k==='hand'?'작은 인형을 고르면 들어요':'큰 인형을 고르면 업어요'}</b></span></div>`;};
+  return `<div class="kh-slots" role="group" aria-label="든 인형">${one('hand')}${one('back')}</div>`;}
+ /** 들기 단추: where = 'dex'(자세히 화면) | 'card'(성공 카드). 들 수 없는 인형(손님 인형)은 없음 */
+ function carryButton(id,where){
+  if(!isCarryId(id))return '';const k=slotOf(id),held=isHeld(id),cur=currentCarry()[k],other=cur&&cur!==id?carryLabel(cur)?.name:null;
+  const label=held?'내려놓기':where==='card'?(k==='back'?'🎒 등에 업고 다니기':'✋ 손에 들고 다니기'):(k==='back'?'🎒 등에 업기':'✋ 손에 들기');
+  const note=!held&&other?`<p class="kh-sub kh-carry-note">지금 ${k==='back'?'등':'손'}에 ${esc(other)}${josa(other,'이','가')} 있어요 → 바꿔 ${k==='back'?'업어요':'들어요'}</p>`:'';
+  return where==='card'?(held?'':`<button type="button" class="kh-btn kh-red kh-carry" data-c="carry" data-id="${esc(id)}" data-main>${label}</button>${note}`)
+   :`<button type="button" class="kh-btn ${held?'':'kh-red '}kh-carry" data-carry="${esc(id)}">${label}</button>${note}`;
+ }
+ /** 들기: 같은 자리 인형은 바꿔 듦. later = 0.3초 뒤 창 닫기(창을 닫아야 내 캐릭터가 보임). 알림 「되돌리기」 = 원래 들던 것으로 */
+ function carryPick(id,{later=false}={}){
+  const was=currentCarry(),k=slotOf(id),next=setCarry({...was,[k]:id},{win});if(next[k]!==id)return;
+  const fin=()=>{toast(carryText(id,true),{sec:3,urgent:true,undo:()=>{setCarry({...currentCarry(),[k]:was[k]},{win});}});};
+  if(later)setTimeout(()=>{frame.close();fin();},300);else fin();
+ }
+ function carryDrop(k){const id=currentCarry()[k];if(!id)return;setCarry({...currentCarry(),[k]:null},{win});toast(carryText(id,false),{sec:2.4,urgent:true});}
+ onCarry(()=>{if(frame?.isOpen&&frame.tab==='dex')frame.refreshTab();},{win});
  function renderDex(p){
   const s=state(),list=catalog.filter(c=>dexMachine==='all'||machinesOf(c.id).some(i=>(MACHINES[i].kind??'claw')===dexMachine));
   if(dexDetail){const c=catalog.find(x=>x.id===dexDetail),d=s.dex[dexDetail],R=RARITY[c?.rarity]??RARITY.common,ms=machinesOf(dexDetail),mi=ms.length?ms.reduce((a,b)=>(view.dist?.[b]??0)<(view.dist?.[a]??0)?b:a):-1;
    p.innerHTML=`<button type="button" class="kh-btn kh-mini kh-back" data-back>${icon('c-back',{size:'s',fallback:'←'})} 도감</button>
 <div class="kh-detail">${plushImg(dexDetail,160,!d)}<h2>${d?esc(c?.name):'아직 못 뽑은 인형'}</h2><p class="kh-band" style="--rc:${R.color}"><b>${stars(c?.rarity)} ${esc(R.label)}</b></p>${c?.big?`<p class="kh-bigline">${BIG_TAG} 큰 인형 · ${esc(MACHINES[mi]?.name??'타이머')}</p>`:c?.box?`<p class="kh-bigline">${BOX_TAG} 상자 피규어 · ${esc(MACHINES[mi]?.name??'봉')}</p>`:''}
 <dl><dt>나오는 기계</dt><dd>${esc(ms.map(i=>MACHINES[i].name).join(' · ')||'-')}</dd><dt>처음 뽑은 날</dt><dd>${d?.first?esc(d.first):'-'}</dd><dt>모은 수</dt><dd>${d?d.n:0}개</dd></dl>
-${mi>=0?`<button type="button" class="kh-btn kh-go" data-go="${mi}">기계로 가기</button>`:''}</div>`;}
+${d?carryButton(dexDetail,'dex'):''}${mi>=0?`<button type="button" class="kh-btn kh-go" data-go="${mi}">기계로 가기</button>`:''}</div>`;}
   else p.innerHTML=`<h2 class="kh-tab-h">${ict('dex','도감')} <span class="kh-count">${dexCount(s,catalog)} / ${catalog.length}</span></h2>
-<div class="kh-chips" role="group" aria-label="기계 종류별로 보기">${[['all','전체'],...KINDS.map(k=>[k,KIND_INFO[k].label])].map(([id,n])=>`<button type="button" class="kh-chip" data-mf="${id}" aria-pressed="${dexMachine===id}">${esc(n)}</button>`).join('')}</div>
-<div class="kh-grid">${list.map(c=>{const d=s.dex[c.id],R=RARITY[c.rarity];return `<button type="button" class="kh-cell${d?'':' none'}" data-id="${esc(c.id)}" style="--rc:${R.color}" aria-label="${esc(d?c.name:(c.big?'못 뽑은 큰 인형':c.box?'못 뽑은 상자 피규어':'못 뽑은 인형'))}">${plushImg(c.id,72,!d)}<span>${esc(d?c.name:'?')}</span>${d&&d.n>1?`<b>×${d.n}</b>`:''}${tagOf(c)}</button>`;}).join('')}</div>`;
-  p.onclick=e=>{const mf=e.target.closest('[data-mf]'),cell=e.target.closest('[data-id]'),back=e.target.closest('[data-back]'),go=e.target.closest('[data-go]');
+${carrySlots()}<div class="kh-chips" role="group" aria-label="기계 종류별로 보기">${[['all','전체'],...KINDS.map(k=>[k,KIND_INFO[k].label])].map(([id,n])=>`<button type="button" class="kh-chip" data-mf="${id}" aria-pressed="${dexMachine===id}">${esc(n)}</button>`).join('')}</div>
+<div class="kh-grid">${list.map(c=>{const d=s.dex[c.id],R=RARITY[c.rarity];const held=d&&isHeld(c.id);return `<button type="button" class="kh-cell${d?'':' none'}${held?' held':''}" data-id="${esc(c.id)}" style="--rc:${R.color}" aria-label="${esc(d?c.name+(held?(slotOf(c.id)==='back'?' · 업음':' · 손에 듦'):''):(c.big?'못 뽑은 큰 인형':c.box?'못 뽑은 상자 피규어':'못 뽑은 인형'))}">${plushImg(c.id,72,!d)}<span>${esc(d?c.name:'?')}</span>${d&&d.n>1?`<b>×${d.n}</b>`:''}${tagOf(c)}${held?`<em class="kh-held">${slotOf(c.id)==='back'?'업음':'손에 듦'}</em>`:''}</button>`;}).join('')}</div>`;
+  p.onclick=e=>{const mf=e.target.closest('[data-mf]'),cell=e.target.closest('[data-id]'),back=e.target.closest('[data-back]'),go=e.target.closest('[data-go]'),cy=e.target.closest('[data-carry]'),drop=e.target.closest('[data-drop]');
+   if(drop){carryDrop(drop.dataset.drop);renderDex(p);return;}
+   if(cy){const id=cy.dataset.carry;if(isHeld(id)){carryDrop(slotOf(id));renderDex(p);}else{carryPick(id,{later:true});renderDex(p);dexDetail=null;}return;} // 다음에 열면 도감 목록(맨 위 손·등 칸)부터
    if(mf){dexMachine=mf.dataset.mf;renderDex(p);}else if(cell){dexDetail=cell.dataset.id;renderDex(p);}else if(back){dexDetail=null;renderDex(p);}else if(go){dexDetail=null;frame.close();act.goMachine?.(+go.dataset.go);}};
  }
  function renderCoin(p){

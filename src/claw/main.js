@@ -31,6 +31,9 @@ import {CLAW_TUNING,loadState,saveState,grantDaily,canPlay,spendCoin,recordResul
 import {plushSize} from './claw-plush.js';
 import {isBoxPlush} from './claw-palette.js';
 import {makeBoxPrize} from './claw-bridge.js';
+import {currentCarry,onCarry,carryAct,carryHide} from '../carry/carry-store.js';
+import {setCarryEnv} from '../carry/carry-attach.js';
+import {CARRY_ART} from '../carry/carry-art.js';
 
 const q=new URLSearchParams(location.search);
 const mobile=q.get('mobile')==='1'||matchMedia('(pointer:coarse)').matches||/iPhone|iPad|Android/i.test(navigator.userAgent);
@@ -86,6 +89,8 @@ setLoad('동동이 가게 들어가는 중…');
 const profile={nickname:(()=>{try{return cleanName(localStorage.getItem(NAME_KEY)??'');}catch{return '';}})()};
 const player=await createClawAvatar({rigUrl:RIG_URL,toon,name:profile.nickname||'동동이',id:'me'});
 world.add(player.root);
+// 든 인형(11-25 인형 자랑, 대표 결정: 인형가게 안에서만 보임): 걸을 때 보이고 기계 앞에서 뽑는 동안만 숨김. 실내라 빛 세기 하나(CARRY_ART.glow.shop)
+setCarryEnv({camera,daylight:CARRY_ART.glow.shop});player.carry.set(currentCarry());onCarry(c=>player.carry.set(c));
 // 들어온 자리: 문 안쪽, 기계 쪽을 봄(아바타 heading 0 = −Z)
 player.place(SHOP.spawn.x+(Math.random()-.5)*.8,SHOP.spawn.z,0);
 
@@ -190,6 +195,7 @@ addEventListener('keydown',e=>{if(typing()||e.repeat)return;
  else if((e.code==='ShiftLeft'||e.code==='ShiftRight')&&play.mode==='idle'){} // 달리기는 input.move().run
 });
 function updatePlayer(dt){
+ player.carryHide=carryHide({m:play.mode!=='idle'?1:0});
  if(play.mode!=='idle'){player.update(dt,{moved:0});return;}
  const blocked=!!hud.card||document.documentElement.dataset.ufWin==='menu'&&mobile;
  const mv=blocked?{forward:0,side:0,run:false}:input.move();let dirX=0,dirZ=0;
@@ -277,8 +283,9 @@ function updateCamera(dt){
 // 봉 기계 「옆에서 본 작은 창」(v4.1 §7-2): ↑를 누르는 동안·집게가 내려가는 동안 화면 위 왼쪽 150×104, 낮은 화질(카툰 후처리 없이 바로 그림)
 // 작은 창은 이 기계 안(옆 1.7m까지)만 그림: 가게 전체를 한 번 더 그리지 않게(조작 화면 그리기 ≤ 220, v4.1 §9-1)
 const miniCam=new THREE.PerspectiveCamera(38,146/100,.05,1.7),MINI={w:150,h:104};let miniOn=false;
+// 옆에서 보기 작은 화면 틀. 스타일은 div.kh-mini로만(작은 단추 .kh-btn.kh-mini와 이름이 같아, 11-25까지 도감 「← 도감」·기계 ⓘ 단추가 왼쪽 위로 끌려가 안 눌렸음)
 const miniFrame=document.createElement('div');miniFrame.className='kh-mini';miniFrame.hidden=true;miniFrame.setAttribute('aria-hidden','true');miniFrame.innerHTML='<span>옆에서</span>';document.body.append(miniFrame);
-{const st=document.createElement('style');st.textContent=`.kh-mini{box-sizing:border-box;position:fixed;left:calc(env(safe-area-inset-left,0px) + 10px);top:calc(env(safe-area-inset-top,0px) + 62px);width:${MINI.w}px;height:${MINI.h}px;border:2px solid #fffaf0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none;z-index:22}.kh-mini span{position:absolute;left:6px;top:4px;padding:1px 6px;border-radius:8px;background:rgba(42,33,60,.8);color:#fffaf0;font:800 11px/1.3 "Apple SD Gothic Neo",Pretendard,sans-serif}`;document.head.append(st);}
+{const st=document.createElement('style');st.textContent=`div.kh-mini{box-sizing:border-box;position:fixed;left:calc(env(safe-area-inset-left,0px) + 10px);top:calc(env(safe-area-inset-top,0px) + 62px);width:${MINI.w}px;height:${MINI.h}px;border:2px solid #fffaf0;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none;z-index:22}div.kh-mini span{position:absolute;left:6px;top:4px;padding:1px 6px;border-radius:8px;background:rgba(42,33,60,.8);color:#fffaf0;font:800 11px/1.3 "Apple SD Gothic Neo",Pretendard,sans-serif}`;document.head.append(st);}
 function renderMini(){
  const sub=play.sub,on=play.kind==='bridge'&&!side&&(play.mode==='play'&&sub.startsWith('k2')||play.mode==='drop')&&!hud.card; // 큰 화면이 이미 옆이면 작은 창은 안 띄움
  if(on!==miniOn){miniOn=on;miniFrame.hidden=!on;}
@@ -334,7 +341,7 @@ function artRects(i=play.machine){
 }
 addEventListener('pointerdown',e=>{
  if(play.mode!=='play'||hud.card||e.button>0)return;
- if(e.target?.closest?.('button,a,input,textarea,select,[role=dialog],.kh-pad,.uf-sheet,.kh-card,.kh-mini'))return;
+ if(e.target?.closest?.('button,a,input,textarea,select,[role=dialog],.kh-pad,.uf-sheet,.kh-card,div.kh-mini'))return;
  const r=artRects()?.button;if(!r)return;const pad=Math.max(14,(r.r-r.x)*.4);
  if(e.clientX>=r.x-pad&&e.clientX<=r.r+pad&&e.clientY>=r.y-pad&&e.clientY<=r.b+pad)hud.artTap();
 },true);
@@ -358,7 +365,7 @@ function updateTags(){
 // ── 화면
 await serverReady;
 multi=createClawMulti({ctx:{world,player,profile,mobile,createAvatar:o=>createClawAvatar({rigUrl:RIG_URL,toon,...o})},envUrl:import.meta.env.VITE_MULTI_SERVER_URL,
- myAct:()=>play.act(),onAct:onRemoteAct,onLeave:()=>{for(let i=0;i<U.machines.length;i++){const id=play.busy(i);if(id)play.unwatch(id);}}});
+ myAct:()=>({...play.act(),...carryAct(currentCarry())}),onAct:onRemoteAct,onLeave:()=>{for(let i=0;i<U.machines.length;i++){const id=play.busy(i);if(id)play.unwatch(id);}}});
 hud=createClawHud({mobile,catalog,pools,state:()=>state,thumb:id=>thumbs.get(id)??'',multi,act:{
  play:()=>{const i=nearMachine();if(i>=0)startPlay(i);},
  bigDown:ts=>play.bigDown(ts),bigUp:ts=>play.bigUp(ts),

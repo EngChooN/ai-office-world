@@ -7,6 +7,7 @@ import {createRealisticHiker} from '../realistic-hiker.js';
 import {loadRig,WALK_SPEED,RUN_MUL,BASE_STRIDE} from '../lounge/avatar.js';
 import {createClawPoser} from './claw-poses.js';
 import {applyClawOutfit,DEFAULT_CLAW_OUTFIT} from './claw-outfits.js';
+import {attachCarry} from '../carry/carry-attach.js';
 export {WALK_SPEED,RUN_MUL};
 
 const flat=()=>0,noSample=()=>({});
@@ -22,6 +23,8 @@ export async function createClawAvatar({rigUrl,toon,name='동동이',id='me',out
  const a={
   id,name,hiker,root,
   x:0,z:0,heading:0,phase:0,moving:false,running:false,speed:0,idle:0,
+  // 든 인형(11-25 인형 자랑). 기계 앞에서 뽑는 동안은 carryHide로 숨김(act m > 0, carry-store.js carryHide)
+  carry:attachCarry(hiker,{toonify:toon.toonify}),carryHide:null,
   place(x,z,heading=a.heading){a.x=x;a.z=z;a.heading=heading;root.position.set(x,0,z);hiker.snapTo(heading);},
   /** 기쁨(두 팔 만세 + 깡충, 1초) · 아쉬움(고개 숙임 0.8초) · 조작(두 손을 조작대에, 기계 group 또는 null) */
   cheer(){(poser??=createClawPoser(a)).cheer();},sigh(){(poser??=createClawPoser(a)).sigh();},
@@ -37,6 +40,7 @@ export async function createClawAvatar({rigUrl,toon,name='동동이',id='me',out
    hiker.ground({moving:a.moving,phase:a.phase,floorHeight:0,sample:noSample,surfaceHeight:flat,pose:'stand'});
    hidePoles();
    poser?.update(dt);
+   a.carry.update(dt,{moving:a.moving,phase:a.phase,...a.carryHide});
   },
   headTop(target=new THREE.Vector3()){const h=headBone??=hiker.model?.getObjectByName('mixamorigHead')??null;if(h){target.setFromMatrixPosition(h.matrixWorld);if(target.lengthSq()===0)h.getWorldPosition(target);target.y+=.42;}else target.set(a.x,1.25,a.z);return target;},
  };

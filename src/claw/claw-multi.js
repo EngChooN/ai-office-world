@@ -5,6 +5,7 @@
 //  - 다른 손님 몸: 가까운 cap명만 동동이로 그리고 나머지는 숨긴다(가게가 좁아 가벼운 몸은 두지 않음).
 //  - 다른 손님 act는 onAct(id, act)로 넘겨 기계 구경(claw-play.js watch)에 쓴다.
 // 화면(상태 알약·알림)은 claw-hud.js. 이 파일과는 'claw:multi-status'·'claw:multi-note' 이벤트와 반환 객체로 만난다.
+import {carryFromAct,carryHide,carryFar} from '../carry/carry-store.js';
 import {createWebSocketTransport,createBroadcastTransport,multiServerUrl,createBackgroundTimer} from '../multi-transport.js';
 import {anonymousName,sanitizeName,createInterpolator,decodeState,FLAG,NET,findServer,PRESENCE,createPresence,sanitizeAct,createModeration,REPORT_REASONS,serverMax} from '../multi-protocol.js';
 
@@ -92,7 +93,7 @@ export function createClawMulti({ctx,search=globalThis.location?.search??'',envU
  }
  function drop(id){
   const r=roster.get(id);if(!r)return;roster.delete(id);r.dead=true;
-  if(r.avatar)ctx.world.remove(r.avatar.root);onAct(id,null);
+  if(r.avatar){r.avatar.carry?.dispose();ctx.world.remove(r.avatar.root);}onAct(id,null);
   emitStatus();
  }
  function onMessage(m){
@@ -164,6 +165,8 @@ export function createClawMulti({ctx,search=globalThis.location?.search??'',envU
   const a=r.avatar;
   if(r.snap){a.place(s.x,s.z,s.heading);r.snap=false;a.update(0,{moved:0});return;}
   const moved=Math.hypot(s.x-a.x,s.z-a.z);a.x=s.x;a.z=s.z;if(moved>1e-3||!s.moving)a.heading=s.heading;
+  // 든 인형(11-25): 받은 act ch·cb, 기계 앞에서 뽑는 동안(m) 숨김, 휴대폰 먼 사람은 빛만
+  a.carry?.set(carryFromAct(r.act));if(a.carry)a.carryHide={...carryHide(r.act),far:carryFar(Math.hypot(s.x-ctx.player.x,s.z-ctx.player.z),ctx.mobile)};
   a.update(dt,{moved,running:!!(r.flags&FLAG.run)});
  }
  return {

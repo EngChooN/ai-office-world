@@ -221,3 +221,25 @@
  .kh:not(.touch) .kh-bar .kh-lb .ic{width:34px;height:34px;font-size:30px}
  .kh:not(.touch) .kh-bar small{font-size:12.5px}
 }
+
+/* ── 든 인형(11-25 인형 자랑, 시안 v2 §5): 도감 맨 위 손·등 칸 · 든 칸 초록 테두리 · 자세히/성공 카드 단추 · 알림 「되돌리기」 */
+.kh-slots{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 10px}
+.kh-slot{display:flex;align-items:center;gap:8px;min-width:0;min-height:56px;padding:6px 8px;box-sizing:border-box;border:1.5px dashed var(--uf-line);border-radius:14px;background:#fffdf7}
+.kh-slot.on{border:2px solid #3f9a55;background:#f1f8ee;flex-wrap:wrap}
+.kh-slot>span:not(.kh-img):not(.kh-slot-e){flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.kh-slot small{font:700 11px/1.2 var(--uf-font);color:var(--uf-ink2)}
+.kh-slot b{font:800 13px/1.25 var(--uf-font);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kh-slot:not(.on) b{font-weight:600;font-size:11.5px;color:var(--uf-ink2);white-space:normal}
+.kh-slot-e{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:10px;background:#f3ead6;font-size:19px;opacity:.55}
+.kh-slot .kh-img{flex:none}
+.kh-cdrop{min-height:44px!important;min-width:0!important;padding:0 10px!important;font-size:12.5px!important;flex:none}
+/* 좁은 판(세로 휴대폰·가로 오른쪽 판 340px)은 칸 안에서 단추를 아래 줄로 */
+@media (max-width:480px),(orientation:landscape) and (max-height:540px),(min-width:900px) and (min-height:541px){.kh-slot.on .kh-cdrop{flex-basis:100%}}
+.kh-cell.held{box-shadow:0 0 0 3px #3f9a55;background:#f1f8ee}
+.kh-held{position:absolute;left:50%;bottom:-8px;transform:translateX(-50%);padding:1px 7px;border-radius:8px;background:#3f9a55;color:#fff;font:800 10.5px/1.4 var(--uf-font);font-style:normal;white-space:nowrap}
+.kh-carry{width:100%;max-width:320px;min-height:52px;margin-top:8px}
+.kh-card .kh-carry{display:flex;flex:1 1 100%;margin:0 auto} /* 성공 카드: 아래 단추 줄(짧은 화면에서 바닥에 붙는 줄) 맨 위 한 줄 — 스크롤에 가려지지 않게 */
+.kh-card .kh-row>.kh-carry-note{flex:1 1 100%;margin:-4px 0 2px}
+.kh-carry-note{margin:4px 0 0;text-align:center}
+.kh-toast.act{pointer-events:auto;display:flex;align-items:center;gap:10px;padding:6px 6px 6px 16px;-webkit-line-clamp:unset}
+.kh-undo{flex:none;min-height:36px;padding:0 12px;border:1.5px solid rgba(255,250,240,.6);border-radius:16px;background:transparent;color:#fffaf0;font:800 12.5px/1 var(--uf-font);cursor:pointer}

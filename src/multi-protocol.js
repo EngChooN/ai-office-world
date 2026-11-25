@@ -97,6 +97,8 @@ export function sanitizeSmoke(m){
 // 체험마다 받는 칸이 다르다(목록 밖 칸·값은 버림). 칸 값은 enum 배열, 'int'(0~65535 정수), 'id'(영문 소문자·숫자·- 24자, 빈 값 허용).
 //  흡연장: p 자세(stand·lean·sit) · b 벤치 번호(앉을 때) · can 캔커피(0 없음·1 뽑는 중·2 들고 있음) · sip 한 모금 횟수(늘면 받는 쪽이 한 모금 마심)
 //  등산: p 자세(stand·sit·tea) · g 기구(none·binoculars·phone) · sf 셀카(0·1) · x 지금 동작 id(스트레칭·즐길거리·이모트 등, 없으면 '') · n 동작 횟수(같은 동작을 다시 시작하면 늘어남) · v 동작 보조 값(int)
+//  인형가게만(11-25 인형 자랑, 대표 결정: 가게 안에서만 보임): ch 손에 든 인형 · cb 등에 업은 인형(인형 id, src/carry/carry-store.js carryAct). 빈 칸 = 안 듦. 옛 서버는 버림(다시 켜야 보임)
+export const CARRY_ACT=Object.freeze({ch:'id',cb:'id'});
 export const ACT_SCHEMA=Object.freeze({
  //   + 11-17: s 좌판 칸(0 가운데·1·2 옆자리) · lx,lz 기댄 난간 지점(src/lounge/room-rules.js encodeLean) · o 고른 옷(src/lounge/outfit.js OUTFITS) · e 마지막 인사 동작 · en 인사 횟수(늘면 받는 쪽 말풍선)
  smoking:Object.freeze({p:Object.freeze(['stand','lean','sit']),b:'int',can:Object.freeze([0,1,2]),sip:'int',
@@ -118,7 +120,7 @@ export const ACT_SCHEMA=Object.freeze({
  //  인형뽑기(11-23): m 쓰는 기계(0 없음·1~16) · ph 단계(''·play 조작·drop 판정 연출·win 성공·lose 실패) · cx,cz 집게 자리(cm, 기계 좌표 +50)·열쇠 자리(칸×100)
  //   · r 이번 판 인형 id · k 결과(0 아직·1 성공·2 아까움·3 실패) · n 판 번호 · v 타이머 멈춘 숫자(0.01초). 규칙은 src/claw/claw-rules.js(결과는 뽑는 사람 화면이 정하고 구경하는 화면은 그대로 그림)
  claw:Object.freeze({m:Object.freeze(Array.from({length:17},(_,i)=>i)), // 기계 번호 0(없음)·1~16(11-23 기계 16대, 설계 v4.1). 운영 서버는 다시 켜야 5~16번 기계 구경이 전달됨
-  ph:Object.freeze(['','play','drop','win','lose']),cx:'int',cz:'int',r:'id',k:Object.freeze([0,1,2,3]),n:'int',v:'int'})
+  ph:Object.freeze(['','play','drop','win','lose']),cx:'int',cz:'int',r:'id',k:Object.freeze([0,1,2,3]),n:'int',v:'int',...CARRY_ACT})
 });
 export function sanitizeAct(exp,a){
  const sc=ACT_SCHEMA[exp];if(!sc||!a||typeof a!=='object'||Array.isArray(a))return null;
