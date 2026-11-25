@@ -96,7 +96,7 @@ for(const name of ONLY)for(const size of SZ){
    ok(`[${size}] 크리스마스 사람 목록·옷 = ☰ 탭 안(위 ☰ 점검에 포함)`,await p.evaluate(()=>!!document.querySelector('.uf-panel .xh-sheet[data-sheet=people]')&&!!document.querySelector('.uf-panel .xh-sheet[data-sheet=outfit]')));
   }
   if(name==='claw'){
-   await p.evaluate(()=>{claw.seen(true);claw.setCoins(30);claw.goMachine(0);});await sl(900);await p.evaluate(()=>document.querySelector('.kh-big[data-act=play]').click());await p.waitForFunction(()=>claw.play.mode==='play');
+   await p.evaluate(()=>{claw.seen(true);claw.setCoins(30);claw.goMachine(0);});await sl(900);await p.evaluate(()=>document.querySelector('.kh-small[data-act=play]').click());await p.waitForFunction(()=>claw.play.mode==='play');
    await p.evaluate(()=>{claw.hud.frame.open('set');document.querySelector('.kh-pill').click();});await sl(300);
    ok(`[${size}] 인형뽑기 판 진행 중엔 ☰ 시트가 안 열림(알약 눌러도)`,!await isOpen(p,'.uf-sheet')&&!!await p.$('.kh-bar'));
    await p.screenshot({path:`${OUT}/claw-playing-${size}.png`});

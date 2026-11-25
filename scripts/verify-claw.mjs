@@ -47,7 +47,7 @@ const st=p=>p.evaluate(()=>window.claw.status());
 const bigBox=async p=>{const b=await p.waitForSelector('.kh-big',{state:'visible'});return b.boundingBox();};
 async function holdBig(p,ms){const b=await bigBox(p);await p.mouse.move(b.x+b.width/2,b.y+b.height/2);await p.mouse.down();await sl(ms);await p.mouse.up();}
 async function firstPlay(p,tag,name){ // 기계 앞 → 한 판 → (처음이면) 규칙 카드 → 시작하기
- const before=(await st(p)).coins;await click(p,'.kh-big[data-act=play]');await sl(300);
+ const before=(await st(p)).coins;await click(p,'.kh-small[data-act=play]');await sl(300);
  const rules=await p.evaluate(()=>window.claw.hud.card);
  ok(`${tag} ${name}: 처음 한 판 전 규칙 카드(코인 아직 안 씀)`,rules==='rules'&&(await st(p)).coins===before);
  await checkButtons(p,`${tag} ${name} 규칙 카드`,['.kh-card .kh-btn','.kh-card .kh-x']);
@@ -72,6 +72,7 @@ async function sizeRun(size){
  ok(`${tag} 알림이 위 단추보다 위층(z)`,await p.evaluate(()=>+getComputedStyle(document.querySelector('.kh-toast')).zIndex>+getComputedStyle(document.querySelector('.uf-tr')).zIndex));
  await p.screenshot({path:`${OUT}/${size}-1walk.png`});
  await checkButtons(p,`${tag} 걷기`,['.kh-pill','.uf-tr > button:not([hidden])','[data-uf]']);
+ const walkRun=(await rect(p,'[data-uf=big][data-act=run]'))[0];
  // ☰ → 기계 탭 → 「가기」(숲속 = 집게)
  await click(p,'.uf-menu-btn');await click(p,'[data-uf-tab=machines]');await sl(300);
  await p.screenshot({path:`${OUT}/${size}-2machines.png`});
@@ -82,6 +83,16 @@ async function sizeRun(size){
  let s=await st(p);ok(`${tag} 「가기」로 집게 1 앞`,s.near===0,`near=${s.near}`);
  await p.screenshot({path:`${OUT}/${size}-3near.png`});
  await checkButtons(p,`${tag} 기계 앞`,['.kh-pill','.uf-tr > button:not([hidden])','[data-uf]']);
+ // 기계 앞에서도 달리기 = 큰 단추 자리 그대로, 「한 판」은 따로 작은 단추(11-25 대표 요청)
+ {const runAt=(await rect(p,'[data-uf=big][data-act=run]'))[0],playAt=(await rect(p,'[data-uf=s1][data-act=play]'))[0];
+  ok(`${tag} 기계 앞: 달리기 단추가 걷기 때와 같은 자리`,runAt&&walkRun&&Math.abs(runAt.x-walkRun.x)<=1&&Math.abs(runAt.y-walkRun.y)<=1,JSON.stringify([walkRun,runAt]));
+  ok(`${tag} 기계 앞: 「한 판」 작은 단추가 따로 있고 달리기와 안 겹침`,playAt&&runAt&&!hit(playAt,runAt),JSON.stringify(playAt));
+  ok(`${tag} 기계 앞: 두 단추 모두 그 자리에서 맨 위(가리지 않음)`,await p.evaluate(()=>['[data-act=run]','[data-uf=s1][data-act=play]'].every(s=>{const e=document.querySelector(s),b=e.getBoundingClientRect();return e.contains(document.elementFromPoint(b.left+b.width/2,b.top+b.height/2));})));
+  await click(p,'[data-uf=big][data-act=run]');await sl(250);
+  await p.keyboard.down('s');await sl(450);const running=await p.evaluate(()=>claw.player.running);await p.keyboard.up('s');await sl(200);
+  ok(`${tag} 기계 앞: 달리기 단추를 누르면 달림(단추 글 「걷기」)`,running&&await p.evaluate(()=>/걷기/.test(document.querySelector('[data-act=run]').dataset.ufT??'')));
+  await p.screenshot({path:`${OUT}/${size}-3near-run.png`});
+  await click(p,'[data-act=run]');await sl(150);await p.evaluate(()=>claw.goMachine(0));await sl(700);}
  ok(`${tag} 할 일 칩 「한 판 · 🪙1」·「규칙」`,(await p.evaluate(()=>[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|'))).match(/집게 1 한 판.*규칙/));
  await click(p,'.kh-todo[data-act=rules]');await sl(250);
  ok(`${tag} 규칙 카드(조절값 글·보장 글·인형)`,await p.evaluate(()=>{const c=document.querySelector('.kh-card');return !c.hidden&&/20초/.test(c.textContent)&&/직원이 인형 하나를/.test(c.textContent)&&c.querySelectorAll('.kh-prizes span').length>=3;}));
@@ -191,11 +202,11 @@ async function sizeRun(size){
  await click(p,'.kh-card [data-c=stop]');await sl(500);
  // 그만두기: 집게 한 판 → ✕ → 확인 → 그만두기(코인 안 돌려줌)
  await p.evaluate(()=>claw.goMachine(0));await sl(900);const cb=(await st(p)).coins;
- await click(p,'.kh-big[data-act=play]');await sl(900);await click(p,'.kh-quit');await sl(200);
+ await click(p,'.kh-small[data-act=play]');await sl(900);await click(p,'.kh-quit');await sl(200);
  ok(`${tag} ✕ → 「코인은 돌려받지 못해요」 확인`,await p.evaluate(()=>/돌려받지 못해요/.test(document.querySelector('.kh-card').textContent)));
  await click(p,'.kh-card [data-c=quit]');await sl(500);s=await st(p);ok(`${tag} 그만두기 → 걷기·코인 그대로 −1`,s.mode==='idle'&&s.coins===cb-1,`${cb}→${s.coins}`);
  // 코인 없음
- await p.evaluate(()=>claw.setCoins(0));await sl(200);await click(p,'.kh-big[data-act=play]');await sl(300);
+ await p.evaluate(()=>claw.setCoins(0));await sl(200);await click(p,'.kh-small[data-act=play]');await sl(300);
  ok(`${tag} 코인 없음 카드(사는 단추 없음)`,await p.evaluate(()=>{const c=document.querySelector('.kh-card');return !c.hidden&&/코인이 없어요/.test(c.textContent)&&!/사기|구매|충전/.test(c.textContent);}));
  await p.screenshot({path:`${OUT}/${size}-16nocoin.png`});
  await click(p,'.kh-card [data-c=close]');
@@ -260,16 +271,16 @@ async function multiRun(){
  const [A,B]=pages;await sl(2500);
  ok('[두 창] 서로 보임(2명)',(await B.evaluate(()=>claw.multi.status().people.length))===1&&(await A.evaluate(()=>claw.multi.status().people.length))===1);
  await A.evaluate(()=>claw.seen(true));await B.evaluate(()=>claw.seen(true));
- await A.evaluate(()=>claw.goMachine(0));await sl(700);await click(A,'.kh-big[data-act=play]');await sl(600);
+ await A.evaluate(()=>claw.goMachine(0));await sl(700);await click(A,'.kh-small[data-act=play]');await sl(600);
  await A.evaluate(()=>claw.play.aim(.25,-.2));await sl(900);
  const rb=await B.evaluate(()=>claw.play.status().rigs[0]);ok('[두 창] 구경: 집게 1 집게가 A 자리로',!!rb.owner&&Math.abs(rb.x-.25)<.05&&Math.abs(rb.z+.2)<.05,JSON.stringify(rb));
  await A.evaluate(()=>claw.play.press());await A.waitForFunction(()=>window.claw.hud.card==='result',null,{timeout:40000});await sl(1500);
  ok('[두 창] 구경: 집게 결과를 B 화면에서도 다시 그림',await B.evaluate(()=>!!claw.play.status().rigs[0].seq||claw.play.status().rigs[0].lights!=='play'));
  await click(A,'.kh-card [data-c=stop]');await sl(1200);
  // 열쇠 기계: A가 희귀 칸(위 줄 해치)을 연다 → B 구경·소식
- await A.evaluate(()=>claw.goMachine(13));await sl(700);await click(A,'.kh-big[data-act=play]');await sl(600);
+ await A.evaluate(()=>claw.goMachine(13));await sl(700);await click(A,'.kh-small[data-act=play]');await sl(600);
  await B.evaluate(()=>claw.goMachine(13));await sl(900);
- ok('[두 창] B 화면: 「열쇠 1은 가나님이 뽑는 중」 + 「옆 빈 열쇠로 →」(같은 기계 못 씀)',await B.evaluate(()=>{const t=[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|');return /열쇠 1은 가나님이 뽑는 중/.test(t)&&/옆 빈 열쇠로/.test(t)&&!document.querySelector('.kh-big[data-act=play]');}));
+ ok('[두 창] B 화면: 「열쇠 1은 가나님이 뽑는 중」 + 「옆 빈 열쇠로 →」(같은 기계 못 씀)',await B.evaluate(()=>{const t=[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|');return /열쇠 1은 가나님이 뽑는 중/.test(t)&&/옆 빈 열쇠로/.test(t)&&!document.querySelector('[data-act=play]');}));
  ok('[두 창] 기계 위 「가나 뽑는 중」 이름표',await B.evaluate(()=>[...document.querySelectorAll('.kh-tag.busy')].some(e=>/가나 뽑는 중/.test(e.textContent))));
  await B.screenshot({path:`${OUT}/multi-watch-play.png`});
  await B.evaluate(()=>claw.teleport(-1.15,-2.3,Math.PI));await sl(300);
@@ -299,7 +310,7 @@ async function serverRun(){
   ok('[서버] 서로 보임',sa.people.length===1&&(await B.evaluate(()=>claw.multi.status().people.length))===1);
   ok('[서버] 상태 알약 「1서버 · 👥 2/30」',await A.evaluate(()=>/1서버 · .*2\/30/.test(document.querySelector('.kh-pill-t').textContent)));
   const health=await (await fetch(`http://127.0.0.1:${sport}/health`)).json();ok('[서버] /health 인형가게 2명',health.servers?.claw?.[0]?.count===2,JSON.stringify(health.servers?.claw));
-  await A.evaluate(()=>{claw.seen(true);claw.goMachine(0);});await sl(700);await click(A,'.kh-big[data-act=play]');await sl(600);await A.evaluate(()=>claw.play.aim(-.1,.05));await sl(900);
+  await A.evaluate(()=>{claw.seen(true);claw.goMachine(0);});await sl(700);await click(A,'.kh-small[data-act=play]');await sl(600);await A.evaluate(()=>claw.play.aim(-.1,.05));await sl(900);
   const rb=await B.evaluate(()=>claw.play.status().rigs[0]);ok('[서버] 구경: 집게 1 집게가 A 자리로',!!rb.owner&&Math.abs(rb.x+.1)<.05,JSON.stringify(rb));
   await B.evaluate(()=>claw.goMachine(0));await sl(900);await B.screenshot({path:`${OUT}/server-watch.png`});
   // 채팅
@@ -354,7 +365,7 @@ async function barRun(size){
   await p.screenshot({path:`${OUT}/bar-${size}-${name}-arttap.png`});
   await p.evaluate(()=>{const e=document.querySelector('.kh-toast');e.hidden=true;});
  }
- const start=async i=>{await p.evaluate(i=>claw.goMachine(i),i);await sl(900);await click(p,'.kh-big[data-act=play]');await p.waitForFunction(()=>claw.play.mode==='play',null,{timeout:8000});await sl(700);};
+ const start=async i=>{await p.evaluate(i=>claw.goMachine(i),i);await sl(900);await click(p,'.kh-small[data-act=play]');await p.waitForFunction(()=>claw.play.mode==='play',null,{timeout:8000});await sl(700);};
  const finish=async()=>{await waitResult(p,40000);await click(p,'.kh-card [data-c=stop]');await sl(500);};
  // 집게
  await start(0);

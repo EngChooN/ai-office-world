@@ -293,6 +293,7 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
  const HINT={claw:'옆에서 보면 집게가 앞뒤 어디 있는지 보여요',ready:'「▶ 시작」을 누르고, 숫자가 10.00일 때 「✋ 멈춤」',run:'10.00에 멈추세요!',
   k1:'누르고 있으면 열쇠가 오른쪽으로 가요. 원하는 칸에서 떼세요',gap:'잠깐만요…',k2:'이번엔 누르고 있으면 위로 가요. 구멍 높이에서 떼세요',drop:''};
  const HINT_BRIDGE={k1:'① 「→」를 누르고 있다가 놓아요 · 상자 모서리를 노려요',gap:'잠깐만요…',k2:'② 「↑」를 누르고 있다가 놓아요 · 놓으면 집게가 내려가요'};
+ const runBig=v=>({id:'run',ic:IC.run[0],fb:IC.run[1],label:v.running?'걷기':'달리기',short:v.running?'걷기':'달리기'});
  function update(dt,v){
   view=v;nearMachine=v.near;tickToast(dt);
   const mode=v.mode,kind=v.kind,playing=mode==='play'||mode==='drop';
@@ -327,11 +328,13 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
   else if(mode==='result'||cardKind)setActions(null,[]);
   else if(v.near>=0){const M=MACHINES[v.near],busy=v.busy?.[v.near];
    // 남이 쓰는 중이면(설계 v4 §4-2): 「집게 3은 ○○님이 뽑는 중」 + 「옆 빈 집게로 →」(같은 종류 중 가장 가까운 빈 기계). 다 차면 기다리기 안내만(다음 차례 걸기는 서버 자리 잡기와 함께 3단계)
+   // 달리기는 기계 앞에서도 큰 단추 자리 그대로(11-25 대표 요청), 「한 판」은 그 왼쪽 작은 단추(s1)
    const K=KIND_INFO[M.kind??'claw'],fi=v.freeKind?.[M.kind??'claw']??-1;
-   setActions(busy?null:{id:'play',ic:IC.claw[0],fb:IC.claw[1],label:'한 판',short:'한 판',key:'E'},
+   setActions(runBig(v),
     busy?[{id:'wait',ic:IC.wait[0],fb:IC.wait[1],label:`${M.name}${josa(M.name,'은','는')} ${busy}님이 뽑는 중`,dim:true},fi>=0?{id:'free',ic:IC.machine[0],fb:IC.machine[1],label:`옆 빈 ${K.label}${josa(K.label,'으로','로')} →`,key:'E'}:{id:'wait2',ic:IC.wait[0],fb:IC.wait[1],label:`빈 ${K.label}${josa(K.label,'이','가')} 없어요 · 구경하며 기다리기`,dim:true}]
-    :[{id:'play',ic:IC.claw[0],fb:IC.claw[1],label:`${M.name} 한 판 · 🪙${T.coin.cost}`,key:'E'},{id:'rules',ic:IC.odds[0],fb:IC.odds[1],label:'규칙'}]);}
-  else setActions({id:'run',ic:IC.run[0],fb:IC.run[1],label:v.running?'걷기':'달리기',short:v.running?'걷기':'달리기'},[]);
+    :[{id:'play',ic:IC.claw[0],fb:IC.claw[1],label:`${M.name} 한 판 · 🪙${T.coin.cost}`,key:'E'},{id:'rules',ic:IC.odds[0],fb:IC.odds[1],label:'규칙'}],
+    busy?[]:[{id:'play',ic:IC.claw[0],fb:IC.claw[1],label:'한 판'}]);}
+  else setActions(runBig(v),[]);
   const tm=acts.querySelector('.kh-tm>i');if(tm){const k=Math.max(0,Math.min(1,(v.timeLeft??0)/T.claw.timeSec)),w=`${(k*100).toFixed(1)}%`;if(tm.style.width!==w)tm.style.width=w;tm.parentNode.classList.toggle('hurry',(v.timeLeft??0)<=5&&mode==='play');}
   const ring=acts.querySelector('.kh-ringsvg circle');if(ring){const k=Math.max(0,Math.min(1,(v.timeLeft??0)/T.claw.timeSec));ring.style.strokeDashoffset=String(295.3*(1-k));ring.parentNode.classList.toggle('hurry',(v.timeLeft??0)<=5&&mode==='play');}
   if(frame.isOpen&&frame.tab==='machines'&&v.busySig!==update.busySig){update.busySig=v.busySig;renderMachines(frame.panel('machines'));}
