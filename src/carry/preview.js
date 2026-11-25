@@ -1,6 +1,6 @@
 // 인형 들기·업기·빛 확인(vite dev: /src/carry/preview.html). 실제 게임과 같은 동동이·update → ground → carry.update 순서.
 // ?hand=인형id&back=인형id&body=shirt|padding|hike(등산 = 배낭)&clip=Idle|Walk|Run&pose=stand|sit&phase=0~2&anim=1
-// &view=front|back|side|sideL|three|threeL|game&night=1&far=1&n=4(사람 여러 명: hands=a,b,c,d)
+// &view=front|back|side|sideL|three|threeL|game&night=1&far=1&n=4(사람 여러 명: hands=a,b,c,d)&bench=1(pose=sit일 때 0.42m 벤치에 앉음)
 import * as THREE from 'three';
 import {createToonStyle} from '../toon/index.js';
 import {composeEnvironment} from '../daytime.js';
@@ -38,7 +38,11 @@ async function person(i){
 }
 const people=[];for(let i=0;i<n;i++)people.push(await person(i));
 const state={clip:q.get('clip')??'Idle',pose:q.get('pose')??'stand',phase:+(q.get('phase')??0),view:q.get('view')??'three',anim:q.get('anim')==='1',far:q.get('far')==='1'};
-const flat=()=>0;let t=0;
+// 벤치: 사람마다 엉덩이 뒤쪽 좌판(높이 0.42m)
+const BENCH=q.get('bench')==='1'?.42:0;
+if(BENCH)for(const {h} of people){const b=new THREE.Mesh(new THREE.BoxGeometry(.8,.06,.36).translate(0,BENCH-.03,0),new THREE.MeshStandardMaterial({color:'#a8774a'}));b.position.set(h.scene.position.x,0,.1);b.castShadow=b.receiveShadow=true;scene.add(b);toon.toonify(b);
+ for(const sx of [-.34,.34]){const l=new THREE.Mesh(new THREE.BoxGeometry(.05,BENCH-.06,.3).translate(0,(BENCH-.06)/2,0),b.material);l.position.set(h.scene.position.x+sx,0,.1);scene.add(l);toon.toonify(l);}}
+const flat=BENCH?(x,z)=>people.some(({h})=>Math.abs(x-h.scene.position.x)<.4&&z>-.08&&z<.28)?BENCH:0:()=>0;let t=0;
 function step(dt){
  const moving=state.clip!=='Idle',running=state.clip==='Run';
  for(const {h,c} of people){const steps=h.profile.animSteps;

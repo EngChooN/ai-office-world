@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {Vector3} from 'three';
+import {Vector3,Quaternion,Box3} from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {createRealisticHiker} from '../src/realistic-hiker.js';
 import {buildToonHikerGltf} from '../src/toon/link-hiker.js';
@@ -38,20 +38,28 @@ test('빛 = 희귀 보라·특별 금빛+반짝이, 흔함·보통 없음, 큰 �
  assert.ok(CARRY_ART.glow.special.sparkHz<1,'깜빡임은 초당 1번 아래');
 });
 
-test('손 인형: 왼쪽 옆구리, 왼손이 인형 위를 감쌈(서기·걷기·뛰기)', async () => {
+test('손 인형: 어깨 높이로 받쳐 들기 — 오른손 위, 얼굴 옆·머리 바깥, 앞을 봄(서기·걷기·뛰기, 대표 결정 11-25 시안 v3 ③)', async () => {
  const h=await hiker(),c=createCarryArt(h,{pack:true});
- c.set({hand:'dongdong-office'});
- for(const [clip,phases] of [['Idle',[0]],['Walk',[0,.25,.5,.75,1,1.25,1.5,1.75]],['Run',[0,.5,1,1.5]]]){
-  for(let i=0;i<12;i++)frame(h,c,{clip,phase:phases[0]+i*.02});
-  for(const ph of phases){frame(h,c,{clip,phase:ph});
-   const b=c.bounds('hand'),hand=P(h,'LeftHand'),hips=P(h,'Hips');
-   assert.ok(b.max.x<hips.x-.08,`${clip} ${ph}: 인형이 몸 왼쪽 바깥(${b.max.x.toFixed(3)})`);
-   assert.ok(b.min.y>.08,`${clip} ${ph}: 바닥에 끌리지 않음`);
-   const top=new Vector3((b.min.x+b.max.x)/2,b.max.y,(b.min.z+b.max.z)/2);
-   assert.ok(hand.distanceTo(top)<.14,`${clip} ${ph}: 왼손이 인형 위(${hand.distanceTo(top).toFixed(3)}m)`);}
+ for(const id of ['dongdong-santa','squirrel','box-dongdong-santa']){c.set({hand:id});
+  for(const [clip,phases] of [['Idle',[0]],['Walk',[0,.25,.5,.75,1,1.25,1.5,1.75]],['Run',[0,.5,1,1.5]]]){
+   for(let i=0;i<12;i++)frame(h,c,{clip,phase:phases[0]+i*.02});
+   for(const ph of phases){frame(h,c,{clip,phase:ph});
+    const b=c.bounds('hand'),hand=P(h,'RightHand'),sh=P(h,'RightArm'),hips=P(h,'Hips'),head=P(h,'Head'),cx=(b.min.x+b.max.x)/2,cz=(b.min.z+b.max.z)/2;
+    const at=`${id} ${clip} ${ph}`;
+    assert.ok(b.min.x>hips.x+.2,`${at}: 몸통 오른쪽 바깥(${b.min.x.toFixed(3)})`);
+    assert.ok(cx>head.x+.32,`${at}: 머리 바깥 옆(가운데 ${cx.toFixed(3)})`);
+    assert.ok(b.min.y>sh.y-.1&&b.min.y<sh.y+.12,`${at}: 어깨 높이(바닥 ${b.min.y.toFixed(3)} / 어깨 ${sh.y.toFixed(3)})`);
+    const top=new Box3();h.model.traverse(o=>{if(o.isMesh&&!o.userData.outline&&/head|hair/i.test(o.name))top.expandByObject(o);});
+    assert.ok(b.max.y<top.max.y-.1,`${at}: 머리 꼭대기보다 낮음(${b.max.y.toFixed(3)} / ${top.max.y.toFixed(3)})`);
+    assert.ok(Math.abs(hand.x-cx)<.1&&Math.abs(hand.z-cz)<.1&&b.min.y-hand.y>0&&b.min.y-hand.y<.06,`${at}: 오른손(손목 뼈)이 인형 바로 아래(위아래 ${(b.min.y-hand.y).toFixed(3)}·옆 ${(cx-hand.x).toFixed(3)}·앞뒤 ${(cz-hand.z).toFixed(3)}m)`);}
+  }
+  const fwd=new Vector3(0,0,1).applyQuaternion(c.slots.hand.doll.getWorldQuaternion(new Quaternion()));
+  assert.ok(fwd.z<-.85&&fwd.x>0,`${id}: 인형(상자 창)이 앞을 보고 조금 바깥으로(${fwd.x.toFixed(2)},${fwd.z.toFixed(2)})`);
  }
- assert.equal(h.props.poles[0].group.visible,false,'손에 들면 왼쪽 스틱 숨김');
- c.set({hand:null});assert.equal(h.props.poles[0].group.visible,true,'내려놓으면 스틱 돌아옴');
+ const box=c.bounds('hand'),size=box.getSize(new Vector3());
+ assert.ok(size.y>size.x&&size.y>size.z,'상자는 세워 듦(높이가 가장 김)');
+ assert.equal(h.props.poles[1].group.visible,false,'손에 들면 오른쪽 스틱 숨김');
+ c.set({hand:null});assert.equal(h.props.poles[1].group.visible,true,'내려놓으면 스틱 돌아옴');
 });
 
 test('업은 인형: 등 뒤, 얼굴이 뒤를 봄, 머리를 가리지 않음(큰 인형 3종, 배낭 있음·없음)', async () => {
@@ -66,7 +74,7 @@ test('업은 인형: 등 뒤, 얼굴이 뒤를 봄, 머리를 가리지 않음(�
   c.dispose();}
 });
 
-test('손 쓰는 동작·탈것 동안 숨김 → 다시 보이면 0.2초 동안 커짐, 앉으면 손 인형은 배 앞·등 인형은 숨김', async () => {
+test('손 쓰는 동작·탈것 동안 숨김 → 다시 보이면 0.2초 동안 커짐, 앉아도 손 인형은 어깨 높이·등 인형은 숨김', async () => {
  const h=await hiker(),c=createCarryArt(h,{pack:true});
  c.set({hand:'haechi',back:'big-haechi'});
  for(let i=0;i<10;i++)frame(h,c,{});
@@ -76,8 +84,9 @@ test('손 쓰는 동작·탈것 동안 숨김 → 다시 보이면 0.2초 동안
  for(let i=0;i<5;i++)frame(h,c,{dt:.05});assert.equal(c.slots.hand.root.scale.x,1);
  for(let i=0;i<120;i++)frame(h,c,{pose:'sit'});
  assert.equal(c.slots.back.root.visible,false,'앉으면 등 인형 숨김');
- const b=c.bounds('hand'),hips=P(h,'Hips');
- assert.ok(b.max.z<hips.z-.1,'앉으면 배 앞(-Z)');
+ const b=c.bounds('hand'),sh=P(h,'RightArm'),hand=P(h,'RightHand');
+ assert.ok(Math.abs(b.min.y-sh.y)<.12&&b.min.x>sh.x+.1,'앉아도 오른 어깨 높이 바깥');
+ assert.ok(b.min.y-hand.y>0&&b.min.y-hand.y<.06,'앉아도 손 위에 얹힘');
  frame(h,c,{far:true});assert.equal(c.slots.hand.doll.visible,false,'먼 사람은 인형 모형 숨김(빛만)');
 });
 

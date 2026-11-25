@@ -1,11 +1,13 @@
 // 뽑은 인형 자랑하기 — 들기·업기 모습과 등급 빛(월드아트, 2026-11-25). 시안: docs/인형뽑기/인형자랑-체험-시안-v1.html(11-25 대표 결정).
 // 모든 콘텐츠(등산·흡연장·크리스마스·인형가게)의 동동이가 같은 코드를 쓴다. 내 캐릭터·다른 사람 캐릭터 모두 hiker 하나마다 createCarryArt 하나.
 // 동동이 원본(src/toon/**·realistic-hiker.js)은 고치지 않고, 원래 동작(update → ground)이 끝난 뒤 왼팔 뼈만 덧씌운다(claw-poses.js와 같은 방식).
-//  - 손(hand): 작은 인형·상자 피규어. 왼쪽 옆구리에 끼고 왼팔로 위를 감쌈. 오른손은 비워 둠(쌍안경·컵·담배는 오른손/두 손).
+//  - 손(hand): 작은 인형·상자 피규어. 어깨 높이로 받쳐 들기(11-25 대표 결정, 시안 docs/인형뽑기/인형드는자세-시안-v3.html ③):
+//    오른 팔꿈치를 굽혀 손 위 인형을 얼굴 옆·머리 바깥에, 인형은 앞(조금 바깥)을 봄. 왼팔은 원래 걸음 그대로.
+//    동동이는 머리가 어깨보다 넓어(약 68cm·어깨 사이 28cm) 등 뒤 게임 카메라에서는 머리 바깥에 있어야 보임.
 //  - 등(back): 큰 인형 3종(isBigPlush)만. 얼굴이 뒤를 보게 업고 어깨끈 두 줄 + 가슴끈. 배낭이 있으면(pack) 배낭 바깥면에 매닮(끈 대신 배낭 띠).
 //  - 빛: 희귀 = 보라(인형 높이 2배, 2초에 한 번 숨쉬듯), 특별 = 금빛(2.5배) + 반짝이 5개. 흔함·보통 = 없음. 큰 인형은 원래 등급을 따름.
 //    진짜 조명이 아니라 그림 한 장(Sprite) + 알갱이라 휴대폰 부담이 작다. 낮에는 밤의 1.5배(시안 촬영에서 낮 보라가 잘 안 보였음).
-// 좌표: hiker.scene(루트) 기준 앞 -Z·왼쪽 -X·위 +Y, 단위 m. 인형 그림 앞은 +Z, 바닥 y=0(claw-plush.js).
+// 좌표: hiker.scene(루트) 기준 앞 -Z·왼쪽 -X·오른쪽 +X·위 +Y, 단위 m. 인형 그림 앞은 +Z, 바닥 y=0(claw-plush.js).
 import * as THREE from 'three';
 import {makePlush,plushSize} from '../claw/claw-plush.js';
 import {makeBoxPrize} from '../claw/claw-bridge.js';
@@ -15,15 +17,14 @@ import {POSE_TOOLS,poseRig} from '../lounge/spots.js';
 const {blend,limb,wpos}=POSE_TOOLS;
 const V3=THREE.Vector3,D=THREE.MathUtils.degToRad;
 export const CARRY_ART=Object.freeze({
- // 손: 인형 바닥 높이·앞뒤는 엉덩이 뼈 기준(서 있을 때 엉덩이 뼈 높이에서 뺀 값). 옆은 몸통 반폭 + 인형 폭의 1/3.
- hand:Object.freeze({side:.15,sideK:.36,drop:.065,front:-.02,yaw:160,box:[.16,.10,.22]}),
- // 손으로 감싸는 자리: 인형 윗면 바깥쪽에서 조금 앞(인형 높이 비율). 팔꿈치는 바깥·뒤로.
- hug:Object.freeze({up:.78,out:.05,fwd:-.12,elbow:[-.85,-.35,.45]}),
+ // 손: 오른손 자리 = 지금 오른 어깨 뼈 + reach(바깥·위·앞). 인형 바닥 = 손 + seat(손 위에 얹힘). 팔꿈치는 바깥·아래·뒤로(elbow).
+ // yaw = 인형이 앞에서 바깥(오른쪽)으로 돈 각도(°). sway = 걸음마다 앞뒤로 끄덕(rad).
+ // 상자 피규어는 세워 진열하는 모양(폭·높이·깊이 = box[2]·box[1]·box[0], 창과 안의 인형이 앞을 봄). 봉 기계 경품 상자는 눕힌 모양이라 들 때만 세운 치수.
+ hand:Object.freeze({reach:[.25,.03,-.10],seat:[.02,.012,0],yaw:20,elbow:[.5,-1,.5],nod:.06,box:[.10,.22,.16]}),
  // 등: 등뼈(Spine2) 기준. 끈으로 업음(0.17m 뒤) / 배낭 바깥면(0.30m 뒤, 조금 낮게)
  back:Object.freeze({behind:.17,drop:.3,tilt:10,pack:Object.freeze({behind:.30,drop:.29,tilt:4})}),
  strap:Object.freeze({r:.011,color:'#e8d9b0',pack:'#2f7f78'}),
- // 앉기: 무릎 위에 올려 둠(손 인형). 등 인형은 숨김(등받이·좌석에 파묻힘 방지)
- lap:Object.freeze({up:-.04,fwd:-.15,fwdK:.3}),
+ // 앉기: 손 인형은 서 있을 때와 같이 어깨 높이로 받쳐 듦. 등 인형은 숨김(등받이·좌석에 파묻힘 방지)
  // 빛(시안 §5 추천안, 대표 결정 11-25). opacity = 밤 기준, 낮은 dayBoost배.
  glow:Object.freeze({
   rare:Object.freeze({scale:2.2,opacity:.72,breathSec:2,breath:.25}),
@@ -65,11 +66,10 @@ function makeGlow(id,size){
  return {group:g,halo,sparks,tier,G,size};
 }
 
-// 인형 그림(손 = 작은 인형·상자, 등 = 큰 인형). 상자 피규어는 봉 기계 경품 그림 그대로(높이 0.10m라 세워 들면 작아서 긴 쪽을 세움).
+// 인형 그림(손 = 작은 인형·상자, 등 = 큰 인형). 상자 피규어는 봉 기계 경품 그림(makeBoxPrize)을 세운 치수로: 창(+Z)과 안의 인형이 앞을 봄.
 function makeDoll(id,toonify){
  if(isBoxPlush(id)){const b=makeBoxPrize(id,{toonify,box:CARRY_ART.hand.box}),g=new THREE.Group();
-  // 상자는 눕혀 진열하는 모양(길이 x·높이 y·폭 z). 옆구리에는 앞 창이 바깥(앞)을 보게 세워 낌: 바닥 y=0, 높이 = 상자 길이.
-  b.rotation.z=Math.PI/2;const [w,h,l]=CARRY_ART.hand.box;b.position.y=l/2;g.add(b);g.userData={plushId:id,size:l,box:true,width:h};return g;}
+  const [d,h,w]=CARRY_ART.hand.box;b.position.y=h/2;g.add(b);g.userData={plushId:id,size:h,box:true,width:w,depth:d};return g;}
  const p=makePlush(id,{toonify});return p;
 }
 
@@ -77,7 +77,7 @@ function makeDoll(id,toonify){
  * hiker(realistic-hiker.js api) 하나에 인형 들기·업기를 붙인다.
  * 부르는 순서: hiker.update → hiker.ground → (인형가게면 claw poser) → carry.update(dt,{...}).
  * @param {object} hiker createRealisticHiker 결과(카툰 동동이)
- * @param {{toonify?:Function,pack?:boolean,hidePole?:boolean}} o pack = 큰 배낭을 멘 몸(등산) → 업은 인형을 배낭 바깥면에. hidePole = 손에 들면 왼쪽 등산 스틱을 숨김
+ * @param {{toonify?:Function,pack?:boolean,hidePole?:boolean}} o pack = 큰 배낭을 멘 몸(등산) → 업은 인형을 배낭 바깥면에. hidePole = 손에 들면 오른쪽 등산 스틱을 숨김
  */
 export function createCarryArt(hiker,{toonify=null,pack=false,hidePole=true}={}){
  const root=hiker.scene,model=hiker.model,rig=poseRig(model);
@@ -124,7 +124,7 @@ export function createCarryArt(hiker,{toonify=null,pack=false,hidePole=true}={})
  function build(slot,id){
   const old=slots[slot];if(old){old.root.removeFromParent();old.straps?.traverse(o=>{if(o.isMesh)o.geometry.dispose();});old.glow?.group.traverse(o=>o.material?.dispose());}
   slots[slot]=null;S[slot]=id??null;
-  if(slot==='hand'&&hidePole){const p=hiker.props?.poles?.[0];if(p){p.userData??={};if(id){p.wasVisible??=p.group.visible;p.group.visible=false;}else if(p.wasVisible!==undefined){p.group.visible=p.wasVisible;delete p.wasVisible;}}}
+  if(slot==='hand'&&hidePole){const p=hiker.props?.poles?.[1];if(p){p.userData??={};if(id){p.wasVisible??=p.group.visible;p.group.visible=false;}else if(p.wasVisible!==undefined){p.group.visible=p.wasVisible;delete p.wasVisible;}}}
   if(!id)return;
   if(!rest.hips)measure();
   const doll=makeDoll(id,toonify),s=doll.userData.size,holder=new THREE.Group();holder.name=`${slot==='hand'?'든':'업은'} 인형:${id}`;
@@ -132,9 +132,8 @@ export function createCarryArt(hiker,{toonify=null,pack=false,hidePole=true}={})
   const glow=makeGlow(id,doll.userData.box?s*.8:s);if(glow){glow.group.position.y=s*.5;body.add(glow.group);}
   let straps=null;
   if(slot==='hand'){
-   const H=CARRY_ART.hand,w=doll.userData.box?doll.userData.width:s;
-   holder.position.set(rest.hips.x-(H.side+w*H.sideK),rest.hips.y-H.drop,rest.hips.z+H.front);
-   holder.position.sub(rest.hips);doll.rotation.y=D(H.yaw);handA.add(holder);
+   // 자리는 update에서 매 프레임 오른 어깨를 따라 정함
+   doll.rotation.y=Math.PI-D(CARRY_ART.hand.yaw);handA.add(holder);
   }else{
    const B=pack?CARRY_ART.back.pack:CARRY_ART.back;
    holder.position.set(0,-B.drop,B.behind);body.rotation.x=D(B.tilt);backA.add(holder);
@@ -143,7 +142,7 @@ export function createCarryArt(hiker,{toonify=null,pack=false,hidePole=true}={})
   slots[slot]={id,root:holder,body,doll,glow,straps,size:s,pop:0,shown:false};
  }
 
- const tmp=new V3(),tmp2=new V3(),cam=new V3();
+ const tmp=new V3(),tmp2=new V3(),cam=new V3(),_hand=new V3(),_p=new V3(),_seat=new V3();
  const api={
   /** 들 인형 정하기. id = 인형 id 또는 null(내려놓기). 손·등 자리는 carrySlotOf로 저절로 정해진다. */
   set({hand,back}={}){
@@ -154,13 +153,14 @@ export function createCarryArt(hiker,{toonify=null,pack=false,hidePole=true}={})
   /**
    * 매 프레임(ground 뒤). camera = 빛을 인형 뒤로 미는 기준(없으면 밀지 않음).
    * daylight 0(밤)~1(낮). hideHand/hideBack = 손 쓰는 동작·탈것 동안 잠시 숨김(다시 보이면 0.2초 커짐).
-   * seated 0~1 = 앉은 정도(0.5 넘으면 손 인형은 무릎 위, 등 인형은 숨김). far = 먼 사람(인형 모형은 숨기고 빛만).
+   * seated 0~1 = 앉은 정도(0.5 넘으면 등 인형은 숨김, 손 인형은 그대로 어깨 높이). far = 먼 사람(인형 모형은 숨기고 빛만).
    * moving·phase = 걸음 흔들림(hiker.ground에 준 값 그대로).
    */
   update(dt,{camera=null,daylight=1,hideHand=false,hideBack=false,seated=0,far=false,moving=false,phase=0}={}){
    S.t+=dt;if(!slots.hand&&!slots.back)return;
    if(!rest.hips)measure();
    follow(handA,rig.hips,rest.hips,rest.hipsQ);follow(backA,rig.spine.at(-1),rest.spine,rest.spineQ);
+   handA.updateMatrixWorld(true);
    const sit=seated>.5,swing=moving?Math.sin(Math.PI*phase):0;
    for(const slot of ['hand','back']){
     const c=slots[slot];if(!c)continue;
@@ -172,23 +172,16 @@ export function createCarryArt(hiker,{toonify=null,pack=false,hidePole=true}={})
     c.body.rotation.z=swing*CARRY_ART.sway[slot]*.5;
     if(slot==='back'){c.body.rotation.x=D((pack?CARRY_ART.back.pack:CARRY_ART.back).tilt)+Math.abs(swing)*CARRY_ART.sway.back*.6;if(c.straps)c.straps.visible=!far;}
    }
-   // 손 인형: 앉으면 무릎 위, 서면 옆구리 + 왼팔로 감쌈
+   // 손 인형: 어깨 높이로 받쳐 들기(서기·걷기·뛰기·앉기 같음). 손 자리 = 지금 오른 어깨 + reach(어깨가 걸음·앉기로 움직이면 같이 감)
    const h=slots.hand;
    if(h&&h.root.visible){
-    if(sit){
-     // 동동이는 다리가 짧아(무릎이 배 안쪽) 무릎 위 = 배 앞. 엉덩이 바로 앞, 배에 등을 기대고 앞을 봄.
-     const L=CARRY_ART.lap,hp=handA.worldToLocal(wpos(rig.hips,tmp));
-     h.root.position.set(hp.x,hp.y+L.up,hp.z+L.fwd-h.size*L.fwdK);h.doll.rotation.y=Math.PI;
-    }else{
-     const H=CARRY_ART.hand,w=h.doll.userData.box?h.doll.userData.width:h.size;
-     h.root.position.set(-(H.side+w*H.sideK),-H.drop,H.front);h.doll.rotation.y=D(H.yaw);
-     h.root.updateMatrixWorld(true);
-     // 왼팔: 인형 윗면 바깥쪽을 감쌈(손 자리 = 인형 위 78% 높이, 바깥·조금 앞)
-     const U=CARRY_ART.hug,ph=h.doll.userData.box?h.size*.9:h.size;
-     const t=h.root.localToWorld(tmp.set(-w*U.out,ph*U.up,h.size*U.fwd));
-     const bend=root.localToWorld(tmp2.set(...U.elbow)).sub(wpos(root,cam)).normalize();
-     blend(rig.Left.arm,Math.min(1,h.pop*3),()=>limb(rig.Left.arm,t,bend));
-    }
+    const H=CARRY_ART.hand;root.updateMatrixWorld(true);
+    const sh=root.worldToLocal(wpos(rig.Right.arm[0],tmp)),hand=_hand.set(sh.x+H.reach[0],sh.y+H.reach[1],sh.z+H.reach[2]);
+    root.localToWorld(_p.copy(hand).add(_seat.set(...H.seat)));h.root.position.copy(handA.worldToLocal(_p));
+    h.doll.rotation.set(swing*H.nod,Math.PI-D(H.yaw),0);
+    h.root.updateMatrixWorld(true);
+    const bend=root.localToWorld(tmp2.set(...H.elbow)).sub(wpos(root,cam)).normalize();
+    blend(rig.Right.arm,Math.min(1,h.pop*3),()=>limb(rig.Right.arm,root.localToWorld(hand),bend));
    }
    // 빛: 숨쉬기·반짝이, 그림은 카메라 반대쪽(인형 뒤)으로 민다
    const boost=THREE.MathUtils.lerp(1,CARRY_ART.glow.dayBoost,THREE.MathUtils.clamp(daylight,0,1));
