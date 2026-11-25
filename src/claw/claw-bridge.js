@@ -24,13 +24,18 @@ import {CLAW_TUNING} from './claw-rules.js';
 
 const {builder,std,signMesh}=machineKit;
 // 상자 색(원래 캐릭터 대표 색, claw-palette.js PLUSH_COLORS_FOR_PILE과 같은 계열). 테두리 띠 = 희귀도 색
-export const BOX_COLORS=Object.freeze({squirrel:'#c98b5a',hare:'#f0a7b8',magpie:'#4a5a78',cat:'#e9a15f',dongdong:'#f08a3c','dongdong-office':'#5b6b8c',haechi:'#5fb592','dongdong-santa':'#d23b36'});
+export const BOX_COLORS=Object.freeze({squirrel:'#c98b5a',hare:'#f0a7b8',magpie:'#4a5a78',cat:'#e9a15f',dongdong:'#f08a3c','dongdong-office':'#5b6b8c',haechi:'#5fb592','dongdong-santa':'#d23b36',
+ // 11-25 추가 상자 3종(시안 색 그대로)
+ kongi:'#ffcf4a',bau:'#6fa04a','haechi-gold':'#9e3a2e'}); // 황금 해치는 금빛 인형·특별 금색 띠가 상자에 묻혀 시안 금색 대신 짙은 단청 빨강
 const _c=new THREE.Color();
 function paint(g,hex){if(g.index){const n=g.toNonIndexed();g.dispose();g=n;}for(const k of Object.keys(g.attributes))if(!['position','normal','color'].includes(k))g.deleteAttribute(k);
  _c.set(hex);const n=g.attributes.position.count,a=new Float32Array(n*3);for(let i=0;i<n;i++)a.set([_c.r,_c.g,_c.b],i*3);g.setAttribute('color',new THREE.BufferAttribute(a,3));return g;}
 const pale=(hex,k)=>'#'+new THREE.Color(hex).lerp(new THREE.Color('#ffffff'),k).getHexString();
 
-/** 상자 피규어 하나. box = [폭(z), 높이, 길이(x)] m — 겉 크기 = 판정 크기. 앞(+z)·위에 창, 안에 선 작은 인형 */
+/** 상자 피규어 하나. box = [폭(z), 높이, 길이(x)] m — 겉 크기 = 판정 크기. 앞(+z)·위에 창, 안에 선 작은 인형.
+ *  안 인형은 상자 밖으로 나오지 않게 줄여 넣는다(11-25 대표 지적 「인형이 상자 밖으로 삐져나가지 않게」, 전에는 까치 9cm·다람쥐 7cm 등 나옴):
+ *  세운 상자(높이 ≥ 폭, 손에 드는 진열 상자)는 아래 띠 높이 받침 위에 세워 앞 창으로 다 보이게, 눕힌 상자(봉 기계)는 바닥에.
+ *  창 폭(길이의 80%)·상자 안 깊이·창 높이 안에 모두 들어가게 크기를 맞춘다(넓은 바우·해치 갈기·까치 꼬리도). */
 export function makeBoxPrize(id,{toonify=null,box=[.16,.10,.22]}={}){
  const info=plushInfo(id),R=RARITY[info?.rarity??'common'],[w,h,l]=box,g=new THREE.Group();g.name=`상자:${id}`;
  const base=baseOfPlush(id),col=BOX_COLORS[base]??'#e8689e',inside=pale(col,.72),t=.005,band=h*.3,P=[];
@@ -44,6 +49,8 @@ export function makeBoxPrize(id,{toonify=null,box=[.16,.10,.22]}={}){
  for(let i=0;i<R.stars;i++)P.push(paint(new THREE.OctahedronGeometry(band*.26,0).scale(1,1,.35).translate((i-(R.stars-1)/2)*band*.62,-h/2+band/2,w/2+.0015),'#fffaf0'));
  // 위 창틀: 앞·뒤 띠
  B(l,t,w*.16,0,h/2-t/2,-w/2+w*.08,col);B(l,t,t*1.6,0,h/2-t/2,w/2-t*.8,col);for(const s of [-1,1])B(l*.1,t,w,s*(l/2-l*.05),h/2-t/2,0,col);
+ // 세운 상자의 안 받침(아래 띠 높이, 옅은 캐릭터 색) — 껍데기와 한 덩어리(그리기 횟수 그대로)
+ const shelf=h>=w&&!!base&&base!==id;if(shelf)B(l-2*t,band-t,w-2*t,0,-h/2+t+(band-t)/2,0,inside);
  // 장식(별·끝 동그라미)이 몇 mm 튀어나오므로 껍데기 전체를 판정 크기(l×h×w)에 딱 맞게 줄인다(그림 크기 = 판정 크기)
  const sg=mergeGeometries(P,false);P.forEach(x=>x.dispose());sg.computeBoundingBox();{const bb=sg.boundingBox,c=bb.getCenter(new THREE.Vector3()),sz=bb.getSize(new THREE.Vector3());sg.translate(-c.x,-c.y,-c.z).scale(l/sz.x,h/sz.y,w/sz.z);}
  const shell=new THREE.Mesh(sg,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.75}));
@@ -52,8 +59,12 @@ export function makeBoxPrize(id,{toonify=null,box=[.16,.10,.22]}={}){
  const wf=new THREE.PlaneGeometry(l*.8,h-band-t*1.6).translate(0,-h/2+band+(h-band-t*1.6)/2,w/2-.0015),wt=new THREE.PlaneGeometry(l*.8,w*.82).rotateX(-Math.PI/2).translate(0,h/2-.0015,w*.04);
  for(const x of [wf,wt])x.deleteAttribute('uv');
  const glass=new THREE.Mesh(mergeGeometries([wf,wt]),new THREE.MeshStandardMaterial({color:'#e8f8ff',transparent:true,opacity:.3,roughness:.1,depthWrite:false,side:THREE.DoubleSide}));glass.name='상자 창';glass.renderOrder=2;g.add(glass);wf.dispose();wt.dispose();
- // 안의 작은 인형(바닥에 서서 앞을 봄, 높이 = 상자 안 높이의 90%)
- if(base&&base!==id){const p=makePlush(base,{toonify});const k=(h-t*2)*.9/plushSize(base);p.scale.multiplyScalar(k);p.position.set(0,-h/2+t,-w*.04);g.add(p);}
+ // 안의 작은 인형(앞을 봄). 세운 상자면 받침 위
+ if(base&&base!==id){
+  const floor=shelf?-h/2+band:-h/2+t,room=shelf?h-band-t*1.6:h-t*2;
+  const p=makePlush(base,{toonify});p.scale.multiplyScalar(room*.92/plushSize(base));
+  const bb=new THREE.Box3().setFromObject(p),sz=bb.getSize(new THREE.Vector3()),k=Math.min(1,l*.8*.94/sz.x,(w-t*2)*.92/sz.z);p.scale.multiplyScalar(k);
+  const b2=new THREE.Box3().setFromObject(p),c=b2.getCenter(new THREE.Vector3());p.position.set(-c.x,floor-b2.min.y,-c.z);p.userData.inner=true;g.add(p);}
  g.userData.plushId=id;g.userData.size=h;return g;
 }
 
@@ -158,7 +169,7 @@ export function buildBridgeMachine(theme,{toonify=null,T=CLAW_TUNING}={}){
  const parts={bar:[],grip:[],post:[]},RW=.022,v=new THREE.Vector3(),up=new THREE.Vector3(0,1,0),q=new THREE.Quaternion();
  for(const S of L.bars){const by=C.floorY+S.a[1]*U,lift=by-y,a=new THREE.Vector3(...S.a).multiplyScalar(U),bb=new THREE.Vector3(...S.b).multiplyScalar(U);a.y=bb.y=by;
   v.subVectors(bb,a);const len=v.length();q.setFromUnitVectors(up,v.normalize());
-  // 봉은 레일 가운데까지(죔쇠 속으로). 막이 봉은 판정대로 3cm 위(claw-bridge-layout.js GUARD_RISE) — 죔쇠를 그만큼 길게 해 레일에 닿게
+  // 봉은 레일 가운데까지(죔쇠 속으로). 막이 봉은 판정대로 위(CLAW_TUNING.bridge.guardRise 4.5cm, 없으면 claw-bridge-layout.js GUARD_RISE 3cm) — 죔쇠를 그만큼 길게 해 레일에 닿게
   parts.bar.push(new THREE.CylinderGeometry(r,r,len+RW,12).applyQuaternion(q).translate((a.x+bb.x)/2,by,(a.z+bb.z)/2));
   for(const e of [a,bb]){const s=Math.sign(e.x);parts.grip.push(new RoundedBoxGeometry(.03,r*2+.014+lift,.034,2,.004).translate(e.x+s*RW/2,by-lift/2,e.z));}}
  for(const s of [-1,1]){const x=(s<0?px0:px1)+s*RW/2;

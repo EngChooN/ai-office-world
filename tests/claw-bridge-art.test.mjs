@@ -31,13 +31,13 @@ test('봉 기계(11-23 대표 지적 2차, 사진): 봉 4개 모두 좌우로 �
  assert.equal(LBAR_Y,BAR_Y,'봉 높이 = 판정 BAR_Y');assert.equal(LDECK,DECK_DROP,'받침판 내림 = 판정 DECK_DROP');
  for(const M of BRIDGES){const m=buildBridgeMachine(M.id),L=m.userData.layout,bar=m.getObjectByName('봉 bar');bar.geometry.computeBoundingBox();const bb=bar.geometry.boundingBox,r=T.bridge.barR;
   assert.deepEqual(L.bars.map(b=>b.role),['guard','support','support','guard'],`${M.id} 봉 4개 차례`);
-  for(const S of L.bars){const h=BAR_Y+(S.role==='guard'?GUARD_RISE:0);assert.ok(S.a[0]<-3.5&&S.b[0]>3.5,`${M.id} 봉 ${S.i} 좌우로 가로지름`);assert.ok(Math.abs(S.a[1]-h)<1e-9&&Math.abs(S.b[1]-h)<1e-9,`${M.id} 받침 봉 = BAR_Y, 막이 봉 = 3cm 위(11-23 월드디자인 판정 보정)`);}
-  assert.equal(GUARD_RISE,.3);
+  for(const S of L.bars){const h=BAR_Y+(S.role==='guard'?T.bridge.guardRise??GUARD_RISE:0);assert.ok(S.a[0]<-3.5&&S.b[0]>3.5,`${M.id} 봉 ${S.i} 좌우로 가로지름`);assert.ok(Math.abs(S.a[1]-h)<1e-9&&Math.abs(S.b[1]-h)<1e-9,`${M.id} 받침 봉 = BAR_Y, 막이 봉 = 4.5cm 위(11-23 월드디자인 판정 보정 3cm → 11-25 상자 키움 4.5cm)`);}
+  assert.equal(GUARD_RISE,.3);assert.equal(T.bridge.guardRise,.45);
   const near=M.bars.near??M.bars.gap,far=M.bars.far??M.bars.gap;
   assert.ok(Math.abs((L.bars[2].a[2]-L.bars[1].a[2])*U-near)<1e-9&&Math.abs((L.bars[2].b[2]-L.bars[1].b[2])*U-far)<1e-9,`${M.id} 받침 간격 ${near}→${far}`);
   const gz=T.bridge.box[2]/2+GUARD_CLEAR+r;for(const e of ['a','b'])assert.ok(Math.abs(L.bars[3][e][2]*U-gz)<1e-9&&Math.abs(L.bars[0][e][2]*U+gz)<1e-9,`${M.id} 막이 봉 = 상자 끝 바로 바깥`);
   for(const e of ['a','b'])assert.ok((L.bars[3][e][2]-L.bars[2][e][2])<(L.bars[2][e][2]-L.bars[1][e][2]),`${M.id} 받침↔막이 < 가운데 간격(사진)`);
-  const y=CLAW.floorY+BAR_Y*U,r2=r;assert.ok(Math.abs(bb.min.y-(y-r2))<.001&&Math.abs(bb.max.y-(y+GUARD_RISE*U+r2))<.001,`${M.id} 봉 높이(그림 = 판정)`);
+  const y=CLAW.floorY+BAR_Y*U,r2=r;assert.ok(Math.abs(bb.min.y-(y-r2))<.001&&Math.abs(bb.max.y-(y+(T.bridge.guardRise??GUARD_RISE)*U+r2))<.001,`${M.id} 봉 높이(그림 = 판정)`);
   const zmax=gz+r;assert.ok(Math.abs(bb.max.z-zmax)<.002&&Math.abs(bb.min.z+zmax)<.002,`${M.id} 봉 앞뒤 끝 ${bb.max.z}`);
   assert.ok(bb.max.x>L.x1*U&&bb.min.x<L.x0*U,`${M.id} 봉이 레일까지`);
   const box=new THREE.Box3().setFromObject(m);for(const k of ['x','z'])assert.ok(Math.abs(box.min[k]-ref.min[k])<.03&&Math.abs(box.max[k]-ref.max[k])<.03,`${M.id} 바닥 넓이 ${k}`);
@@ -90,5 +90,5 @@ test('봉 기계 바닥(11-23 대표 지적 2차, 사진): 봉 아래 = 레일 �
   for(const z of [P.z1*U+.02,P.z0*U-.02])assert.ok(Math.abs(hit(0,z)-top)<1e-6,`${M.id} 막이 봉 앞·뒤 = 받침판`);
   assert.ok(Math.abs(hit(P.x1*U+.02,0)-top)<1e-6&&Math.abs(hit(P.x0*U-.02,0)-top)<1e-6,`${M.id} 레일 바깥 = 받침판`);
   assert.ok(m.getObjectByName('exit'),'출구');
-  assert.ok(Math.abs(m.userData.floorAt(0,P.z1*U+.05)-top)<1e-6&&m.userData.floorAt(0,0)<top-.05,'그림자 점 바닥');}
+  assert.ok(Math.abs(m.userData.floorAt(0,P.z1*U+.05)-top)<1e-6&&m.userData.floorAt(0,0)<top-.03,'그림자 점 바닥(11-25 봉을 5cm 내려 구덩이가 얕아짐: 가운데가 받침판보다 3cm 넘게 아래)');}
 });

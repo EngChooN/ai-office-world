@@ -18,8 +18,11 @@ export const CLAW_TUNING=Object.freeze({
  // 열쇠(설계 v3 §3-3): 칸 2×4, 누르고 있기 → 오른쪽(떼면 고정) → 0.3초 → 누르고 있기 → 위(떼면 밀어 넣음). 단위 = 칸 폭
  key:Object.freeze({cols:4,rows:2,cellH:1.4,holeY:.32,startX:.15,startY:-.3,speed:1.4,fit:.14,fitRare:.08,nearMul:2,pityFitBonus:.05,holdLimitSec:10,gapSec:.3}),
  // 봉(월드디자인 설계 v4.1 §7, 다리 걸치기): 2발 약한 집게로 봉 두 개 위 상자를 밀어 봉 사이로 떨어뜨림. 판정 = 물리(claw-bridge-physics.js). 모두 임시값
- bridge:Object.freeze({gap:.16,barR:.012,barLen:.55,barFriction:.35,box:Object.freeze([.16,.10,.22]),boxMass:1.0,boxMassRare:1.2,prongs:2,clawGrab:.0012,clawOpen:.82,
-  moveSpeed:.30,holdLimitSec:10,gapSec:.3,nearSupportM:.02,refillSec:2.5,startJitterM:.004,startJitterDeg:8,pityAfter:8,lieDeg:45,liePlays:3}),
+ // 11-25 대표 결정 「상자를 키우고 봉 기계를 다시 맞춤」: 상자 [.16,.10,.22] → [.19,.15,.24](손에 드는 상자 carry-art.js CARRY_ART.hand.box가 이 값을 세워 씀 = 같은 상자).
+ //  키가 커져 잘 뒤집히고 막이 봉을 넘어가 → 봉 간격 넓힘(claw-palette.js MACHINES bars)·막이 봉 4.5cm 높게(guardRise .45, 단위 10cm, 전 3cm)·아슬아슬 기준 2cm → 0.5cm(처음 받침 여유가 줄어서).
+ //  무작위 시험 80개(artifacts/claw-design/bar-tune-v3/out.jsonl): 평균 봉 1·2 4.6판(전 4.1) · 봉 3 5.0판(전 4.7) · 봉 4 5.8판(전 5.8), 80개 모두 25판 안 성공
+ bridge:Object.freeze({gap:.2175,barR:.012,barLen:.55,barFriction:.35,box:Object.freeze([.19,.15,.24]),guardRise:.45,boxMass:1.0,boxMassRare:1.2,prongs:2,clawGrab:.0012,clawOpen:.82,
+  moveSpeed:.30,holdLimitSec:10,gapSec:.3,nearSupportM:.005,refillSec:2.5,startJitterM:.004,startJitterDeg:8,pityAfter:8,lieDeg:45,liePlays:3}),
  // ↑ pityAfter판 연달아 실패 → 직원 도움(상자를 처음 자리에 다시 놓음, 대표 2026-11-23: 힘센 집게는 상자를 밀기만 해 효과 없음). 아슬아슬한 상자면 건너뜀
  //   lieDeg 넘게 누운 채 liePlays판이면 다시 놓음(막이 봉 밖·봉 아래 끼임은 판 끝나면 바로, 대표 2026-11-23)
  // 기계 상태 공유·자리 잡기(v4.1 §8). 지금은 혼자 뽑기만 씀(stuck*·solo). 서버 쪽 값(leave·idle·drop·commit…)은 3단계 서버 연결 때 씀
@@ -162,8 +165,8 @@ export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.
   note:`코인은 매일 0시(서울)에 무료로 ${T.coin.daily}개가 돼요. 남은 코인은 다음 날로 넘어가지 않아요. 사는 곳·바꾸는 곳은 없어요. 판정 숫자는 시험용 임시값이에요.`};
 }
 
-// 봉 상자 판정 버전: 2 = 상자 직육면체·봉 간격 넓힘(2026-11-23 「집게가 상자를 통과」 수정). 옛 자리(박힌 상자·옛 봉 간격)는 버리고 처음 자리로
-export const MACH_PV=2;
+// 봉 상자 판정 버전: 3 = 상자 키움·봉 간격 다시 맞춤(11-25), 2 = 상자 직육면체·봉 간격 넓힘(2026-11-23 「집게가 상자를 통과」 수정). 옛 자리(박힌 상자·옛 봉 간격)는 버리고 처음 자리로
+export const MACH_PV=3; // 3 = 11-25 상자 키움(옛 상자 자리는 버림)
 // ── 혼자 뽑기 기계 상태(v4.1 §3 A안, 대표 승인): 봉 상자 자리를 이 기기에 오늘(서울 0시)까지. st = 상자 공 자리(mm 정수, claw-bridge-physics.js boxState)
 //  {day, st:[int…], id 지금 상자 경품, mv 옮긴 판 수, still 진척 없는 판 수, lay 누운 채 판 수}
 export function sanitizeMachState(m,kind){

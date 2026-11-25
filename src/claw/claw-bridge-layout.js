@@ -5,7 +5,8 @@
 //  · 봉 아래는 양옆 벽 사이가 통째로 뚫린 구덩이(사진의 흰 벽·아래 바닥). 앞 막이 봉 앞·뒤 막이 봉 뒤는 받침판(뒤는 진열 선반)
 // 단위: 1 = 10cm, 원점 = 유리 상자 바닥 가운데, 앞(손님 쪽) = +z, 위 = +y(claw-bridge-physics.js와 같음). 기계 좌표(m) = ×0.1 (+ CLAW.floorY).
 export const U=.1;
-export const BAR_Y=2.4;      // 봉 가운데 높이(바닥에서 24cm) — claw-bridge-physics.js BAR_Y와 같음
+export const BAR_Y=1.9;      // 봉 가운데 높이(바닥에서 19cm) — claw-bridge-physics.js BAR_Y와 같음. 11-25 상자를 5cm 키워(높이 0.15m) 24 → 19cm:
+                             //  집게는 레일 때문에 못 올리므로, 위에서 옮겨 다니는 집게 발끝(쉼 높이)이 상자 윗면보다 2.5cm 위에 오게(전과 같은 틈) 봉을 내림
 export const DECK_DROP=1.2;  // 받침판 윗면 = 봉 윗면에서 12cm 아래 — claw-bridge-physics.js DECK_DROP과 같음
 export const GUARD_CLEAR=.008; // 막이 봉 안쪽 가장자리 = 상자(가운데 놓임) 끝 + 0.8cm. 사진: 상자 끝이 막이 봉 바로 안쪽, 받침↔막이 간격은 가운데 간격보다 좁음(약 절반)
 export const GUARD_RISE=.3;  // 막이 봉 가운데 = 받침 봉보다 3cm 위(월드디자인 2026-11-23 시험: 같은 높이면 기운 상자가 넘어가 영영 못 떨어짐, 2cm는 아직 넘고 4~5cm는 끼임). 실물 재현 아닌 판정 보정
@@ -25,7 +26,7 @@ export function bridgeLayout(C,bars,B){
  // 봉 i: 0 = 뒤 막이, 1 = 뒤 받침, 2 = 앞 받침, 3 = 앞 막이. barZ(i,x) = 그 x에서 봉 가운데 z
  const ROLE=['guard','support','support','guard'],SIGN=[-1,-1,1,1];
  const barZ=(i,x)=>SIGN[i]*(ROLE[i]==='guard'?guardZ:half(x));
- const yOf=role=>BAR_Y+(role==='guard'?GUARD_RISE:0);
+ const yOf=role=>BAR_Y+(role==='guard'?(B.guardRise??GUARD_RISE):0);
  const list=ROLE.map((role,i)=>({i,role,a:[x0,yOf(role),barZ(i,x0)],b:[x1,yOf(role),barZ(i,x1)]}));
  const deckY=BAR_Y+barR-DECK_DROP;
  const pit={x0,x1,z0:-(guardZ+barR)-PIT_PAD*k,z1:guardZ+barR+PIT_PAD*k};

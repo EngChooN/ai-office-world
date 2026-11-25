@@ -1,0 +1,4 @@
+{"mid":"bridge-1","mode":"new","box":"box-squirrel","mass":1,"bars":{"gap":0.2175},"mean":4.6,"median":4,"within6":67,"within12":76,"win25":80,"n":80,"resets":{"off":2,"lay":34,"still":0,"reach":0,"staff":9}}
+{"mid":"bridge-2","mode":"new","box":"box-magpie","mass":1,"bars":{"gap":0.2175},"mean":4.6,"median":4,"within6":67,"within12":76,"win25":80,"n":80,"resets":{"off":2,"lay":34,"still":0,"reach":0,"staff":9}}
+{"mid":"bridge-3","mode":"new","box":"box-dongdong","mass":1,"bars":{"near":0.205,"far":0.225},"mean":5,"median":4,"within6":60,"within12":75,"win25":80,"n":80,"resets":{"off":2,"lay":34,"still":0,"reach":0,"staff":8}}
+{"mid":"bridge-4","mode":"new","box":"box-haechi","mass":1.2,"bars":{"gap":0.21},"mean":5.8,"median":5,"within6":59,"within12":74,"win25":80,"n":80,"resets":{"off":4,"lay":47,"still":0,"reach":0,"staff":16}}

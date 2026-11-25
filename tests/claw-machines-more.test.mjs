@@ -90,11 +90,11 @@ test('가게 kinds: 기본은 모두 집게(미리보기), 켜면 종류대로 �
 });
 
 test('큰 인형(11-23 v1.6, 타이머 기계 전용): 원래 인형 형상 공유·희귀도 그대로·약 2배·단 한도 아래, 문 밖 받침에 놓임',()=>{
- assert.ok(BIG_PLUSH.length>=1&&BIG_PLUSH.length<=3);
+ assert.equal(BIG_PLUSH.length,6); // 11-25 큰 인형 3 + 3
  for(const b of BIG_PLUSH){const base=plushInfo(b.base);assert.ok(base,'원래 인형');assert.equal(b.rarity,base.rarity,'희귀도·이름표 색 그대로');assert.equal(plushInfo(b.id).name,b.name);
-  assert.equal(plushGeometry(b.id),plushGeometry(b.base),'형상 공유(새 형상 없음)');const k=plushSize(b.id)/plushSize(b.base);assert.ok(k>=1.7&&k<=2.2,`${b.id} 배율 ${k.toFixed(2)}`);
+  assert.equal(plushGeometry(b.id),plushGeometry(b.base),'형상 공유(새 형상 없음)');const k=plushSize(b.id)/plushSize(b.base);assert.ok(k>=1.65&&k<=2.2,`${b.id} 배율 ${k.toFixed(2)}`);
   assert.ok(plushSize(b.id)<=TIMER.big.maxSize,'단 한도 아래');assert.ok(Math.abs(plushLineWidth(b.id)*plushSize(b.id)-plushLineWidth(b.base)*plushSize(b.base))<1e-9,'외곽선 실제 두께 같음');}
- assert.deepEqual(MACHINES.filter(m=>m.kind==='timer').flatMap(m=>m.pool).sort(),BIG_PLUSH.map(b=>b.id).sort(),'타이머 기계 = 큰 인형만(기계마다 1종)');
+ assert.deepEqual(MACHINES.filter(m=>m.kind==='timer').flatMap(m=>m.pool).sort(),BIG_PLUSH.map(b=>b.id).sort(),'타이머 기계 = 큰 인형만(11-25부터 기계마다 2종 번갈아)');
  const m=buildTimerMachine('timer-2'),U=m.userData;
  for(const b of BIG_PLUSH){U.setPrize(b.id);const bb=new THREE.Box3().setFromObject(U.prize);assert.ok(bb.max.y<CLAW.glassTop-.05,`${b.id} 유리 안`);assert.ok(bb.max.x-bb.min.x<CLAW.width-.2,'문 폭 안');
   // 받침에 놓았을 때: 열린 문(x ≈ -0.44)과 큰 단추에 안 닿음

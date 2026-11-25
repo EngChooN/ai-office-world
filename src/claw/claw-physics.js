@@ -13,7 +13,9 @@ export const BODY_TYPES=Object.freeze({
  chick:{parts:[[0,0,0,.45],[0,.42,.06,.32],[-.26,.02,0,.25],[.26,.02,0,.25]],dens:.8,bottom:.45,height:1.19},
 });
 // 우리 인형 → 몸 모양(그림 모양과 비슷한 것). 크기는 인형 키(m)에 맞춰 늘림 → 큰(희귀) 인형일수록 무거워 잘 안 잡힘
-export const PLUSH_BODY=Object.freeze({squirrel:'bear',hare:'bunny',magpie:'chick',cat:'bear',dongdong:'bear','dongdong-office':'bear',haechi:'bear','dongdong-santa':'bear'});
+export const PLUSH_BODY=Object.freeze({squirrel:'bear',hare:'bunny',magpie:'chick',cat:'bear',dongdong:'bear','dongdong-office':'bear',haechi:'bear','dongdong-santa':'bear',
+ // 11-25 추가 8종(그림 모양으로): 도토리·커피잔·부엉이 = 둥근 새 몸, 루돌프 = 뿔이 귀 자리라 토끼 몸, 눈사람·로봇·캠핑 동동이·별(위·양옆 꼭짓점) = 곰 몸
+ kkulbam:'chick',nunsong:'bear',mongle:'chick',bueong:'chick',rudolph:'bunny',domdol:'bear','dongdong-camp':'bear',star:'bear'});
 export const bodyOf=id=>BODY_TYPES[PLUSH_BODY[id]??'bear'];
 // 무게는 시안 몸 크기 그대로(키운 만큼 세제곱으로 무거워지지 않게) × 희귀도 무게(massOf). 크기만 그림에 맞춤
 const scaled=(id,size)=>{const B=bodyOf(id),s=size/(B.height*U);return {parts:B.parts.map(([x,y,z,r])=>[x*s,y*s,z*s,r*s,r]),dens:B.dens,bottom:B.bottom*s,scale:s};};

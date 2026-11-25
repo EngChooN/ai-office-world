@@ -267,8 +267,12 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
   const y=center()[1];
   // 성공 = 틈을 완전히 빠짐: 가운데가 봉 아래로 상자 높이만큼 내려감(받침판 위 상자는 가운데가 받침판 + 반 높이라 여기 못 옴)
   // 두 받침 봉 사이(가운데가 받침 봉 둘 사이)로 빠진 것만 — 받침·막이 봉 사이 좁은 틈으로 끼어 내려간 것은 성공 아님(막힘으로 처리)
-  if(!won&&y<barY-half[1]*2-barR){const c=center();if(c[2]>barZ(-1,c[0])&&c[2]<barZ(1,c[0])){won=true;events.push({type:'won'});}}
-  if(won&&y<half[1]+.3&&!gone){still+=SUB;if(still>.5)gone=true;}
+  // 11-25 상자를 키우고(0.24×0.15×0.19m) 봉을 19cm로 내림: 구덩이가 얕아 옛 기준(가운데가 봉 아래로 상자 높이만큼)으로는 옆으로 누워 떨어진 상자(가운데 9.5cm)가
+  //  성공이 안 됐다 → 가운데가 받침 봉 아랫면보다 반 높이 넘게 아래(눕힌 상자면 윗면이 봉 아래 = 틈을 다 빠짐), 또는 가운데가 봉 아래이고 상자 끝이 구덩이 바닥(3cm 안)에 닿음
+  //  (긴 쪽 24cm가 구덩이 19cm보다 길어 끝부터 빠진 상자는 바닥에 서서 봉에 기댐 — 실제 기계라면 구멍으로 떨어진 것). 봉 위·받침판 위·틈에 낀 상자는 여기 못 옴
+  let low=Infinity;if(!won&&y<barY-barR)for(let i=4;i<N;i++)low=Math.min(low,P.y[i]-parts[i][3]);
+  if(!won&&(y<barY-barR-half[1]||low<.3)){const c=center();if(c[2]>barZ(-1,c[0])&&c[2]<barZ(1,c[0])){won=true;events.push({type:'won'});}}
+  if(won&&y<barY-barR&&!gone){still+=SUB;if(still>.5)gone=true;} // 11-25: 바닥에 서서 봉에 기댄 상자도 0.5초 뒤 치움(전: 눕힌 상자만)
   // 그래도 남은 겹침은 줄에 매달린 집게가 상자에 밀려 살짝 비켜 흔들림(옆 최대 SWAY_MAX, 닿지 않으면 천천히 제자리로).
   //  위로는 SWAY_UP(15cm)까지(11-24 깊이 2차): 줄은 당기기만 하니 밀려 올라가는 건 막지 않음 — 깊이 내려간 발이 다 벌어진 채 상자·봉 사이에 끼면 옆 6cm로는 못 빠져 0.5cm 파고들었음
   {const o=claw.sway;let pushed=false;

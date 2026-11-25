@@ -167,8 +167,8 @@ async function sizeRun(size){
  await waitResult(p,15000);await p.screenshot({path:`${OUT}/${size}-11timer-win.png`});
  await click(p,'.kh-card [data-c=dex]');await sl(500);
  ok(`${tag} 도감에 뽑은 인형(색 칸)`,await p.evaluate(()=>document.querySelectorAll('.kh-cell:not(.none)').length>=1&&new RegExp(`\\d / ${claw.catalog.length}$`).test(document.querySelector('.kh-count')?.textContent??'')));
- ok(`${tag} 도감 19칸: 큰 인형 3칸 「큰」·상자 8칸 「상자」 딱지(작은 인형 칸엔 없음)`,await p.evaluate(()=>{const big=claw.catalog.filter(c=>c.big).map(c=>c.id),box=claw.catalog.filter(c=>c.box).map(c=>c.id),cells=[...document.querySelectorAll('.kh-cell')];
-  return claw.catalog.length===19&&big.length===3&&box.length===8&&cells.length===19&&cells.every(el=>{const t=el.querySelector('.kh-big')?.textContent??'';return t===(big.includes(el.dataset.id)?'큰':box.includes(el.dataset.id)?'상자':'');});}));
+ ok(`${tag} 도감 33칸(11-25 새 인형 14종): 작은 16·큰 인형 6칸 「큰」·상자 11칸 「상자」 딱지(작은 인형 칸엔 없음)`,await p.evaluate(()=>{const big=claw.catalog.filter(c=>c.big).map(c=>c.id),box=claw.catalog.filter(c=>c.box).map(c=>c.id),cells=[...document.querySelectorAll('.kh-cell')];
+  return claw.catalog.length===33&&big.length===6&&box.length===11&&cells.length===33&&cells.every(el=>{const t=el.querySelector('.kh-big')?.textContent??'';return t===(big.includes(el.dataset.id)?'큰':box.includes(el.dataset.id)?'상자':'');});}));
  await p.screenshot({path:`${OUT}/${size}-12dex.png`});
  await click(p,'.kh-cell:not(.none)');await sl(200);
  ok(`${tag} 인형 자세히(처음 뽑은 날·모은 수)`,await p.evaluate(()=>/처음 뽑은 날/.test(document.querySelector('.kh-detail')?.textContent??'')));

@@ -1,20 +1,20 @@
 // 인형뽑기 그림 미리보기(월드아트, vite dev: /src/claw/preview.html). 게임 화면이 아니라 그림·에셋 확인용이다.
 // 카툰 재질·후처리는 다른 콘텐츠와 같은 createToonStyle, 빛은 claw-shop-art.js SHOP_LIGHT(실내). 크기 비교용 동동이를 기계 앞에 세운다.
-// ?view=shop|entry|machines|play|pile|plush|showcase &machine=0~2 &lights=idle|play|win|rainbow &claw=x,z,drop,open &collected=all|none|3
+// ?view=shop|entry|machines|play|pile|plush|showcase &machine=0~15|claw-1|timer-2… &lights=idle|play|win|rainbow &claw=x,z,drop,open &collected=all|none|3
 // &mobile=1(휴대폰: 더미 인형 줄임·DPR 1) &hud=0 &dd=0(동동이 숨김) &kinds=0(세 대 모두 집게 — 게임 연결 전 모습)
 // 그림 방향: &look=neon(기본)|pastel(대안)
 // 가게 옷: &outfit=hoodie|jacket|tee(자세 동동이 옷) · view=outfits(세 벌 나란히, &side=1이면 옆모습)
 // 동동이 자세: &pose=operate|cheer|droop(&at=초, 그 순간에 멈춤) — 게임과 같은 claw-avatar.js(claw-poses.js) 동동이, view=pose(옆 앞에서)
-// 타이머 기계(machine=1): &timer=09.87,run(상태 ready·run·win·near·miss) &dim=1(도는 숫자 어둡게) · 열쇠 기계(machine=2): &key=x,y,push(판정 좌표) &mark=i,j,ok|near|miss &open=i,j &pity=1
+// 타이머 기계(machine=timer-1~3): &timer=09.87,run(상태 ready·run·win·near·miss) &dim=1(도는 숫자 어둡게) · 열쇠 기계(machine=key-1~3): &key=x,y,push(판정 좌표) &mark=i,j,ok|near|miss &open=i,j &pity=1
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {createToonStyle} from '../toon/index.js';
 import {composeEnvironment} from '../daytime.js';
 import {buildClawShop,SHOP,SHOP_LIGHTS,SHADOW_LAYER} from './claw-shop-art.js';
-import {CLAW} from './claw-machine-art.js';
+import {CLAW,fillPile} from './claw-machine-art.js';
 import {makePlush,PLUSH_IDS,plushTriangles} from './claw-plush.js';
-import {PLUSH,RARITY} from './claw-palette.js';
-import {loadGuests,makeGuestPlush,clawCatalog} from './claw-guest.js';
+import {PLUSH,RARITY,MACHINES,machineIndex,baseOfPlush} from './claw-palette.js';
+import {loadGuests,makeGuestPlush,clawCatalog,resolvePool} from './claw-guest.js';
 import {createClawAvatar} from './claw-avatar.js';
 import {CLAW_OUTFIT_IDS} from './claw-outfits.js';
 
@@ -55,9 +55,12 @@ const lineup=new THREE.Group();lineup.name='인형 줄';scene.add(lineup);
 {const cat=clawCatalog(guests);let x=0;const items=cat.map(c=>{const o=c.guest?guestProtos.get(c.id).clone(true):makePlush(c.id,{toonify:toon.toonify});lineup.add(o);return {o,w:RARITY[c.rarity].size*1.1};});
  const total=items.reduce((s,i)=>s+i.w,0)+.06*(items.length-1);x=-total/2;for(const it of items){it.o.position.set(x+it.w/2,0,0);x+=it.w+.06;}
  lineup.position.set(0,0,2.2);lineup.visible=false;lineup.updateMatrixWorld(true);}
-const mi=Math.max(0,Math.min(2,+(q.get('machine')??1))),M=U.machines[mi];
+// machine = 번호 0~15 또는 id(claw-1·bridge-2·timer-3·key-1…). 기본은 타이머 1(기계 3대 시절 machine=1과 같은 기계)
+const mq=q.get('machine')??'timer-1',mi=/^\d+$/.test(mq)?Math.min(U.machines.length-1,+mq):Math.max(0,machineIndex(mq)),M=U.machines[mi];
 const lights=q.get('lights')??'idle';for(const m of U.machines)m.group.userData.setLights(m===M?lights:'idle');
 const MU=M.group.userData;
+// 기계 종류대로 그린 가게(kinds)는 집게 더미를 게임 물리가 그리므로, 미리보기에서는 고른 집게 기계에만 그림 더미를 채운다
+if(M.kind==='claw'&&!MU.pile){const P=MACHINES[mi];fillPile(M.group,resolvePool(P.pool,guests).map(baseOfPlush),{count:mobile?9:14,seed:7+mi*101,toonify:toon.toonify,guestObject:id=>guestProtos.get(id).clone(true)});}
 if(M.kind==='claw'){if(q.get('claw')){const [x,z,drop,open]=q.get('claw').split(',').map(Number);MU.claw.set({x,z,drop,open,dotY:MU.pile.topAt(x,z)});}
  else MU.claw.set({x:.05,z:-.05,drop:0,open:.6,dotY:MU.pile.topAt(.05,-.05)});}
 if(M.kind==='timer'){const [text,state]=(q.get('timer')??'09.87,run').split(',');MU.setTimer({text,state,dim:q.get('dim')==='1'});MU.setButton(state==='run'?'stop':state==='ready'?'start':'off');}
@@ -79,7 +82,8 @@ const views={
  front:()=>({pos:[M.x+.9,1.35,M.z+2.2],look:[M.x,1.0,M.z]}),
  plush:()=>{const b=new THREE.Box3().setFromObject(lineup),w=b.max.x-b.min.x,fov=30,t=Math.tan(THREE.MathUtils.degToRad(fov/2)),d=Math.max(w/1.7/(t*camera.aspect),.5/t);return {pos:[0,.15+d*.12,2.2+d],look:[0,.14,2.2],fov};},
  outfits:()=>q.get('side')!=='0'?({pos:[M.x+2.6,.75,M.z+1.6],look:[M.x,.5,M.z+1.6],fov:34}):({pos:[M.x,.85,M.z+4.2],look:[M.x,.5,M.z+1.6],fov:innerWidth<innerHeight?44:30}),
- showcase:()=>({pos:[SHOP.showcase.x+2.4,1.3,SHOP.showcase.z+.4],look:[SHOP.showcase.x,1.0,SHOP.showcase.z]}),
+ // 진열장은 오른벽(side 1)에 붙어 있어 가게 안쪽(−x)에서 봄(11-23 가게 넓힌 뒤 +x 쪽은 벽 밖이었음)
+ showcase:()=>({pos:[SHOP.showcase.x-SHOP.showcase.side*2.6,1.3,SHOP.showcase.z+.3],look:[SHOP.showcase.x,1.0,SHOP.showcase.z]}),
 };
 let view=q.get('view')??'shop';
 function setView(v){view=v;const V=views[v]?.()??views.shop();camera.fov=V.fov??(innerWidth<innerHeight?62:50);camera.updateProjectionMatrix();camera.position.set(...V.pos);controls.target.set(...V.look);controls.update();

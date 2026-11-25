@@ -9,8 +9,8 @@ import {CLAW,buildClawMachine,fillPile} from '../src/claw/claw-machine-art.js';
 import {SHOP,buildClawShop} from '../src/claw/claw-shop-art.js';
 import {loadGuests,clawCatalog,resolvePool,isGuestId,makeGuestPlush} from '../src/claw/claw-guest.js';
 
-test('인형 8종: id 겹침 없음, 희귀도 4단계가 모두 있고 클수록 큼',()=>{
- assert.equal(PLUSH.length,8);assert.equal(new Set(PLUSH_IDS).size,8);
+test('인형 16종(11-25 처음 8 + 추가 8): id 겹침 없음, 희귀도 4단계가 모두 있고 클수록 큼',()=>{
+ assert.equal(PLUSH.length,16);assert.equal(new Set(PLUSH_IDS).size,16);
  for(const p of PLUSH)assert.ok(RARITY[p.rarity],p.id);
  assert.deepEqual([...new Set(PLUSH.map(p=>p.rarity))].sort(),[...RARITY_ORDER].sort());
  for(let i=1;i<RARITY_ORDER.length;i++)assert.ok(RARITY[RARITY_ORDER[i]].size>RARITY[RARITY_ORDER[i-1]].size);
@@ -79,11 +79,13 @@ test('가게(11-23 기계 16대·14×11m, 설계 v4·v4.1): 기계가 걷는 범
  const cam=new THREE.PerspectiveCamera();cam.position.set(0,6,SHOP.d/2+3);U.fadeWalls(cam);
  assert.equal(U.walls.find(w=>w.key==='front').mesh.visible,false);assert.equal(U.walls.find(w=>w.key==='back').mesh.visible,true);
  cam.position.set(0,1.5,0);U.fadeWalls(cam);assert.ok(U.walls.every(w=>w.mesh.visible));
- U.showcase.set(['hare']);assert.equal(U.showcase.slots.length,8);
+ U.showcase.set(['hare']);assert.equal(U.showcase.slots.length,16);
+ {const ys=new Set(U.showcase.slots.map(s=>s.pos.y.toFixed(3)));assert.equal(ys.size,3,'선반 3단');const byY=new Map();for(const s of U.showcase.slots){const k=s.pos.y.toFixed(3);byY.set(k,[...(byY.get(k)??[]),s.pos.z].sort((a,b)=>a-b));}
+  for(const zs of byY.values())for(let i=1;i<zs.length;i++)assert.ok(zs[i]-zs[i-1]>=.4,'진열 인형 사이 0.4m 넘게');}
 });
 test('손님 인형 자리: 공개판(설정 없음)에는 손님이 없고 대체 우리 인형이 그 자리에 놓임',async()=>{
  const guests=await loadGuests();assert.deepEqual(guests,[]);
- assert.equal(clawCatalog(guests).length,8+BIG_PLUSH.length+BOX_PLUSH.length);assert.ok(clawCatalog(guests).every(c=>!c.guest));
+ assert.equal(clawCatalog(guests).length,16+BIG_PLUSH.length+BOX_PLUSH.length);assert.ok(clawCatalog(guests).every(c=>!c.guest));
  for(const s of GUEST_SLOTS){assert.ok(PLUSH_IDS.includes(s.fallback),`${s.id} 대체 인형`);assert.ok(isGuestId(s.id));}
  for(const M of MACHINES){const pool=resolvePool(M.pool,guests);assert.ok(pool.every(id=>PLUSH_IDS.includes(id)||BIG_PLUSH.some(b=>b.id===id)||BOX_PLUSH.some(b=>b.id===id)),`${M.id} 공개판 목록`);}
  assert.deepEqual(resolvePool(['guest-1','cat'],[{id:'guest-1'}]),['guest-1','cat']);

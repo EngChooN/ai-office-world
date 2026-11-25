@@ -216,7 +216,9 @@ export function buildClawShop({toonify=null,mobile=false,guests=[],guestObject=n
  const shelf=new THREE.Group();shelf.name='진열장 인형';root.add(shelf);
  const silMat=new THREE.MeshStandardMaterial({color:'#a59a8a',roughness:1,name:'claw-silhouette'});const sil=toonify?(()=>{const m=new THREE.Mesh(new THREE.BufferGeometry(),silMat);toonify(m,{kind:'prop'});return m.material;})():silMat;
  const shelfIds=PLUSH.map(p=>p.id),slots=[];
- shelfIds.forEach((id,i)=>{const row=Math.floor(i/3),col=i%3,y=shelfY[2-Math.min(row,2)]+.02,z=sc.z-sc.len/2+.55+col*1.15+(row===2?.55:0);slots.push({id,pos:new THREE.Vector3(sc.x,y,z)});});
+ // 선반 3단에 위에서부터 한 단 6칸씩(11-25 작은 인형 16종 → 6·6·4칸, 칸 사이 약 0.45m. 한 단 칸 수가 모자라면 가운데로 모음)
+ {const per=Math.ceil(shelfIds.length/shelfY.length),step=(sc.len-.3)/per;
+  shelfIds.forEach((id,i)=>{const row=Math.floor(i/per),n=Math.min(per,shelfIds.length-row*per),col=i-row*per,y=shelfY[shelfY.length-1-row]+.02,z=sc.z+(col-(n-1)/2)*step;slots.push({id,pos:new THREE.Vector3(sc.x,y,z)});});}
  const shownObjs=new Map();
  // 휴대폰: 벽 진열장 인형은 가벼운 형상(삼각형 약 40%, 늘 몇 m 떨어져 봄)
  const lowPlush=id=>{const geo=plushGeometry(id,{low:true}),s=plushSize(id),g=new THREE.Group();g.name=`인형:${id}`;
@@ -224,7 +226,8 @@ export function buildClawShop({toonify=null,mobile=false,guests=[],guestObject=n
   const l=new THREE.Mesh(geo.line,plushLineMaterial(plushLineWidth(id)));l.userData.outline=true;l.name='outline';l.scale.setScalar(s);g.add(l);g.userData.plushId=id;return g;};
  const showcase={slots,set(ids){const have=new Set(ids);for(const o of shownObjs.values())shelf.remove(o);shownObjs.clear();
   for(const s of slots){let o;if(have.has(s.id))o=mobile?lowPlush(s.id):makePlush(s.id,{toonify});else{o=new THREE.Mesh(plushGeometry(s.id,{low:mobile}).color,sil);o.scale.setScalar(plushSize(s.id));o.castShadow=true;}
-   o.position.copy(s.pos);o.rotation.y=Math.PI/2;shelf.add(o);shownObjs.set(s.id,o);}}};
+   o.position.copy(s.pos);o.rotation.y=-sg*Math.PI/2;shelf.add(o); // 가게 안쪽을 봄(11-25: 진열장이 오른벽으로 옮겨진 뒤 벽을 보던 것 고침)
+   shownObjs.set(s.id,o);}}};
  showcase.set([]);
  // 부딪힘(가게 좌표 네모 x0,z0,x1,z1 / 동그라미 x,z,r). 벽은 walk 네모로.
  const pd=CLAW.depth/2+CLAW.panel.depth;

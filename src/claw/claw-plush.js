@@ -6,8 +6,9 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {SimplifyModifier} from 'three/addons/modifiers/SimplifyModifier.js';
-import {v,smoothGeo,ell as kitEll,capsule,sweep,at,part,surf,smile,omega,grp} from '../toon/concept-kit.js';
-import {RARITY,PLUSH,plushInfo,BIG_PLUSH,BIG_EXTRA,isBigPlush,baseOfPlush} from './claw-palette.js';
+import {v,smoothGeo,ell as kitEll,capsule,sweep,noodle,at,part,surf,smile,omega,grp,box as boxShape} from '../toon/concept-kit.js';
+import {RARITY,PLUSH,plushInfo,BIG_PLUSH,BIG_EXTRA,isBigPlush,baseOfPlush,PLUSH_ADD,BOX_SHAPES} from './claw-palette.js';
+import {moreMakers} from './claw-plush-more.js';
 
 // 가벼운 타원체(시안 도우미보다 칸 수를 줄였다)
 // LOW = 먼 기계용 가벼운 형상을 만드는 중(plushGeometry(id,{low:true})): 타원체 칸 수를 반으로(같은 생김새·색, 삼각형 약 1/3)
@@ -16,8 +17,8 @@ const lowSeg=o=>LOW?{w:Math.max(5,(o.w??12)/2|0),h:Math.max(3,(o.h??8)/2|0)}:{};
 const E=(r,o={})=>kitEll(r,{w:12,h:8,...o,...lowSeg({w:12,h:8,...o})});
 const Es=(r,o={})=>kitEll(r,{w:8,h:6,...o,...lowSeg({w:8,h:6,...o})});
 // 얼굴 부품: 짙은 눈 + 하이라이트 하나, 볼, 입. line 0이라 외곽선 껍질에 안 들어간다.
-function face(g,c,r,{eyeYaw=.34,eyePitch=-.08,eye=v(.055,.07,.02),blushYaw=.6,blushPitch=-.3,blush='#f3a08f',mouth='#8a3f33',mouthPitch=-.32,kind='smile'}={}){
- for(const s of [-1,1]){const e=surf(g,c,r,s*eyeYaw,eyePitch,Es(eye),'#2a2321',{lift:-eye.z*.3});
+function face(g,c,r,{eyeYaw=.34,eyePitch=-.08,eye=v(.055,.07,.02),blushYaw=.6,blushPitch=-.3,blush='#f3a08f',mouth='#8a3f33',mouthPitch=-.32,kind='smile',eyeColor='#2a2321'}={}){
+ for(const s of [-1,1]){const e=surf(g,c,r,s*eyeYaw,eyePitch,Es(eye),eyeColor,{lift:-eye.z*.3});
   part(e,at(Es(v(eye.x*.38,eye.y*.32,eye.z*.5),{w:8,h:6}),v(-eye.x*.28,eye.y*.36,eye.z*.75)),'#ffffff',{line:0,shadow:false});
   if(blush)surf(g,c,r,s*blushYaw,blushPitch,Es(v(.06,.032,.012)),blush,{lift:-.004});}
  if(kind==='smile')surf(g,c,r,0,mouthPitch,smile(.03,.008),mouth,{lift:.003});
@@ -158,6 +159,8 @@ function haechi(){
 }
 const MAKERS={squirrel,hare,magpie,cat,haechi,dongdong:()=>{const g=dongdong('hike');tag(g,'uncommon');return g;},
  'dongdong-office':()=>{const g=dongdong('office');tag(g,'rare');return g;},'dongdong-santa':()=>{const g=dongdong('santa');tag(g,'special');return g;}};
+// 11-25 추가 인형(작은 8 + 상자 안 전용 모양 3, claw-plush-more.js). 얼굴·이름표·몸은 이 파일 것을 그대로 씀(LOW 칸 줄이기도 같이 따름)
+Object.assign(MAKERS,moreMakers({E,Es,face,tag,sitBody,ddHead,K:{v,smoothGeo,capsule,noodle,at,part,surf,smile,grp,box:boxShape}}));
 
 // ── 형상 한 벌: 색 덩어리(얼굴 포함) + 외곽선용 몸 덩어리. 높이 1로 맞춘다.
 const _col=new THREE.Color();
@@ -171,8 +174,10 @@ function flatten(root){
  const color=mergeGeometries(all,false),line=mergeGeometries(body.map(g=>{const c=g.clone();c.deleteAttribute('color');return c;}),false);
  all.forEach(g=>g.dispose());
  // 높이 1로(이름표·모자 포함), 바닥 0
- color.computeBoundingBox();const bb=color.boundingBox,k=1/(bb.max.y-bb.min.y);
- for(const g of [color,line]){g.translate(0,-bb.min.y,0);g.scale(k,k,k);g.computeBoundingSphere();g.userData.shared=true;}
+ // 바닥 높이는 미리 숫자로 받아 둔다: color를 옮기면 color.boundingBox(같은 상자 객체)가 다시 계산돼, 예전에는 외곽선 껍질(line)이 바닥만큼
+ // 덜 내려가 몸보다 위로 밀려 그려졌다(바닥이 0보다 높이 뜬 반짝별에서 5% — 위쪽 테두리가 두껍고 아래가 옅던 원인, 11-25)
+ color.computeBoundingBox();const y0=color.boundingBox.min.y,k=1/(color.boundingBox.max.y-y0);
+ for(const g of [color,line]){g.translate(0,-y0,0);g.scale(k,k,k);g.computeBoundingSphere();g.userData.shared=true;}
  color.computeBoundingBox();return {color,line};
 }
 const geoCache=new Map(),GEO_ID=new WeakMap();
@@ -196,7 +201,10 @@ export function plushFarGeometry(id){id=baseOfPlush(id);if(farCache.has(id))retu
  try{simplifier??=new SimplifyModifier();g=simplifier.modify(low,Math.floor(low.attributes.position.count*.5));low.dispose();g.computeVertexNormals();}catch{g=low;}
  g.userData.shared=true;g.computeBoundingSphere();farCache.set(id,g);return g;}
 // 큰 인형(타이머 기계 전용)까지 포함한 우리 인형 id
-export const OUR_PLUSH_IDS=Object.freeze([...PLUSH_IDS,...BIG_PLUSH.map(b=>b.id)]);
+// 11-25 추가 작은 인형 8종 id(PLUSH에 합쳐짐, 11-25 연결). 상자 안 전용 모양(콩이·바우·황금 해치)은 BOX_SHAPES
+export const PLUSH_ADD_IDS=Object.freeze(PLUSH_ADD.map(p=>p.id));
+// 상자 안 전용 모양(BOX_SHAPES)도 우리 그림(기계 종류 없이 그린 옛 가게 미리보기는 봉 기계에도 더미를 채움)
+export const OUR_PLUSH_IDS=Object.freeze([...PLUSH_IDS,...BIG_PLUSH.map(b=>b.id),...BOX_SHAPES]);
 export const isOurPlush=id=>OUR_PLUSH_IDS.includes(id);
 export const plushSize=id=>RARITY[plushInfo(id)?.rarity??'common'].size+(isBigPlush(id)?BIG_EXTRA:0);
 // 외곽선 두께(높이 1 기준): 큰 인형은 크기에 비례해 굵어지지 않게 원래 인형과 같은 실제 두께(약 4mm)로

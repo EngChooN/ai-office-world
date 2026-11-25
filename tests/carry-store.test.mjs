@@ -10,9 +10,9 @@ const mem=(o={})=>{const m=new Map(Object.entries(o));return {getItem:k=>m.has(k
 const dex=ids=>JSON.stringify({dex:Object.fromEntries(ids.map(id=>[id,{n:1,first:'2026-11-25',machine:'claw-1'}]))});
 
 test('들 수 있는 인형 = 작은 8·큰 3·상자 8, 자리는 그림 규칙과 같음(큰 인형만 등)',()=>{
- assert.equal(CARRY_IDS.length,19);
+ assert.equal(CARRY_IDS.length,33); // 11-25 새 14종(작은 16·큰 6·상자 11)
  for(const id of CARRY_IDS)assert.equal(slotOf(id),carrySlotOf(id),id);
- assert.deepEqual(CARRY_IDS.filter(id=>slotOf(id)==='back'),['big-squirrel','big-dongdong','big-haechi']);
+ assert.deepEqual(CARRY_IDS.filter(id=>slotOf(id)==='back'),['big-squirrel','big-dongdong','big-haechi','big-nunsong','big-rudolph','big-dongdong-santa']); // 11-25 큰 인형 6종만 등
  assert.equal(CLAW_SAVE_KEY,SAVE_KEY);
 });
 test('저장값 정리: 모르는 인형·자리 틀림·안 뽑은 인형은 내려놓음',()=>{

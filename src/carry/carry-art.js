@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import {makePlush,plushSize} from '../claw/claw-plush.js';
 import {makeBoxPrize} from '../claw/claw-bridge.js';
 import {RARITY,plushInfo,isBigPlush,isBoxPlush} from '../claw/claw-palette.js';
+import {CLAW_TUNING} from '../claw/claw-rules.js';
 import {POSE_TOOLS,poseRig} from '../lounge/spots.js';
 
 const {blend,limb,wpos}=POSE_TOOLS;
@@ -20,7 +21,10 @@ export const CARRY_ART=Object.freeze({
  // 손: 오른손 자리 = 지금 오른 어깨 뼈 + reach(바깥·위·앞). 인형 바닥 = 손 + seat(손 위에 얹힘). 팔꿈치는 바깥·아래·뒤로(elbow).
  // yaw = 인형이 앞에서 바깥(오른쪽)으로 돈 각도(°). sway = 걸음마다 앞뒤로 끄덕(rad).
  // 상자 피규어는 세워 진열하는 모양(폭·높이·깊이 = box[2]·box[1]·box[0], 창과 안의 인형이 앞을 봄). 봉 기계 경품 상자는 눕힌 모양이라 들 때만 세운 치수.
- hand:Object.freeze({reach:[.25,.03,-.10],seat:[.02,.012,0],yaw:20,elbow:[.5,-1,.5],nod:.06,box:[.10,.22,.16]}),
+ // 상자 치수 11-25 대표 지적 「인형이 상자 밖으로 삐져나가지 않게 상자를 키우던가」로 [.10,.22,.16] → [.15,.24,.19](안 인형은 받침 위, claw-bridge.js makeBoxPrize)
+ // wide = 이 폭(m)보다 넓은 인형은 넘는 폭만큼 손을 더 바깥으로(11-25 반짝별 0.30m가 머리에 닿음. 지금 가장 넓은 해치 0.25m까지는 그대로)
+ // 11-25 연결(월드공통개발): 봉 기계 상자(CLAW_TUNING.bridge.box [폭, 높이, 길이] = [.19,.15,.24], 판정 크기)와 같은 상자를 세움 → [깊이, 높이, 폭] = [.15,.24,.19]
+ hand:Object.freeze({reach:[.25,.03,-.10],seat:[.02,.012,0],yaw:20,elbow:[.5,-1,.5],nod:.06,box:Object.freeze((([w,h,l])=>[h,l,w])(CLAW_TUNING.bridge.box)),wide:.25}),
  // 등: 등뼈(Spine2) 기준. 끈으로 업음(0.17m 뒤) / 배낭 바깥면(0.30m 뒤, 조금 낮게)
  back:Object.freeze({behind:.17,drop:.3,tilt:10,pack:Object.freeze({behind:.30,drop:.29,tilt:4})}),
  strap:Object.freeze({r:.011,color:'#e8d9b0',pack:'#2f7f78'}),
@@ -128,6 +132,8 @@ export function createCarryArt(hiker,{toonify=null,pack=false,hidePole=true}={})
   if(!id)return;
   if(!rest.hips)measure();
   const doll=makeDoll(id,toonify),s=doll.userData.size,holder=new THREE.Group();holder.name=`${slot==='hand'?'든':'업은'} 인형:${id}`;
+  // 넓은 인형은 손을 더 바깥으로(아직 아무 데도 안 붙은 인형 자체 폭으로 잼)
+  const out=slot==='hand'?Math.max(0,(new THREE.Box3().setFromObject(doll).getSize(new V3()).x-CARRY_ART.hand.wide)):0;
   const body=new THREE.Group();body.add(doll);holder.add(body);
   const glow=makeGlow(id,doll.userData.box?s*.8:s);if(glow){glow.group.position.y=s*.5;body.add(glow.group);}
   let straps=null;
@@ -139,7 +145,7 @@ export function createCarryArt(hiker,{toonify=null,pack=false,hidePole=true}={})
    holder.position.set(0,-B.drop,B.behind);body.rotation.x=D(B.tilt);backA.add(holder);
    straps=strapsFor(s,doll);(pack?body:backA).add(straps);
   }
-  slots[slot]={id,root:holder,body,doll,glow,straps,size:s,pop:0,shown:false};
+  slots[slot]={id,root:holder,body,doll,glow,straps,size:s,pop:0,shown:false,out};
  }
 
  const tmp=new V3(),tmp2=new V3(),cam=new V3(),_hand=new V3(),_p=new V3(),_seat=new V3();
@@ -176,7 +182,7 @@ export function createCarryArt(hiker,{toonify=null,pack=false,hidePole=true}={})
    const h=slots.hand;
    if(h&&h.root.visible){
     const H=CARRY_ART.hand;root.updateMatrixWorld(true);
-    const sh=root.worldToLocal(wpos(rig.Right.arm[0],tmp)),hand=_hand.set(sh.x+H.reach[0],sh.y+H.reach[1],sh.z+H.reach[2]);
+    const sh=root.worldToLocal(wpos(rig.Right.arm[0],tmp)),hand=_hand.set(sh.x+H.reach[0]+h.out,sh.y+H.reach[1],sh.z+H.reach[2]);
     root.localToWorld(_p.copy(hand).add(_seat.set(...H.seat)));h.root.position.copy(handA.worldToLocal(_p));
     h.doll.rotation.set(swing*H.nod,Math.PI-D(H.yaw),0);
     h.root.updateMatrixWorld(true);
