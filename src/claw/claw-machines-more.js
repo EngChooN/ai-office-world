@@ -251,7 +251,7 @@ export function buildKeyMachine(theme='key-1',{toonify=null,guestObject=null,cel
  // 자물쇠 판 재질도 카툰으로 바뀐 것을 쓴다(희귀 칸 판은 따로 바꿔 둠)
  const plateMats={n:cellList[0].plate.material,r:toonify?(()=>{const m=new THREE.Mesh(new THREE.BufferGeometry(),plateRare);toonify(m,{kind:'prop'});return m.material;})():plateRare};
  const cellAt=(i,j)=>cellList[j*K.cols+i]??null;
- let holeConf={fit:.14,fitRare:.08,pityBonus:0,pity:false};
+ let holeConf={fit:.09,fitRare:.06,pityBonus:0,pity:false};   // CLAW_TUNING.key와 같게(미리보기도 이 값)
  const paintHoles=()=>{for(const c of cellList){const f=(c.rare?holeConf.fitRare:holeConf.fit)+(holeConf.pity?holeConf.pityBonus:0),s=2*f*K.cell;
   c.hole.scale.set(s,s,1);c.rim.scale.set(s+.008,s+.008,1);c.plate.material=c.rare?plateMats.r:plateMats.n;}};
  // 구멍 크기 = 판정 허용 폭(칸 단위 fit·fitRare, 보장 판이면 + pityBonus). 그린 정사각형 한 변 = 2 × fit × 칸 폭.

@@ -47,7 +47,7 @@ test('열쇠 칸: 크기 = 판정 단위(칸 폭·1.4칸), 구멍 그림 한 변
  assert.equal(U.cells.length,8);
  for(const c of U.cells){const want=KEY.toLocal(c.i+.5,c.j*KEY.cellH+KEY.holeY);c.hole.getWorldPosition(wp);
   assert.ok(Math.abs(wp.x-want.x)<1e-6&&Math.abs(wp.y-want.y)<1e-6,`구멍 ${c.i},${c.j} 자리`);
-  const f=c.rare?.08:.14;assert.ok(Math.abs(c.hole.scale.x-2*f*KEY.cell)<1e-9,`구멍 ${c.i},${c.j} 크기`);
+  const f=c.rare?.06:.09;assert.ok(Math.abs(c.hole.scale.x-2*f*KEY.cell)<1e-9,`구멍 ${c.i},${c.j} 크기`);
   assert.equal(c.rare,keyCellRare(c.id));}
  assert.ok(U.cells.some(c=>c.rare)&&U.cells.some(c=>!c.rare));
  for(const c of U.cells)if(c.id&&!c.id.startsWith('guest-'))assert.equal(c.rare,['rare','special'].includes(plushInfo(c.id).rarity));

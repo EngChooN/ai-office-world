@@ -13,7 +13,7 @@ import {TIMER} from './claw-machines-more.js';
 const TIMER_RATTLE=TIMER.door.rattle;
 import {plushGeometry,plushMaterial,plushLineMaterial} from './claw-plush.js';
 import {geomFrom,createClawSim,toMachine,U,staffHelp} from './claw-physics.js';
-import {CLAW_TUNING,judgeTimer,judgeKey,fmtTimer,hund,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,hideAfterOf} from './claw-rules.js';
+import {CLAW_TUNING,judgeTimer,judgeKey,keyHole,fmtTimer,hund,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,hideAfterOf} from './claw-rules.js';
 import {createBridgeSim,startPose,nearState,bridgeOutcome,bridgeSnap,noProgress,offRails} from './claw-bridge-physics.js';
 import {MACHINES} from './claw-palette.js';
 
@@ -285,7 +285,9 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
    }
   }
   // 열쇠 밀어 넣기 연출(판정은 bigUp에서 이미 끝남)
-  if(mode==='drop'&&cur?.kind==='key'){const r=cur,k=r.key;k.gapT+=dt;r.U.key?.set({x:k.x,y:k.y,push:Math.min(1,k.gapT/.35)});
+  if(mode==='drop'&&cur?.kind==='key'){const r=cur,k=r.key;k.gapT+=dt;const p=Math.min(1,k.gapT/.35),kw=result.key;
+   // 성공이면 밀어 넣는 동안 구멍 가운데로 미끄러져 들어감(구멍 가장자리에서 성공해도 열쇠가 판에 박혀 보이지 않게)
+   const [hx,hy]=kw?.r==='win'?keyHole(kw.i,kw.j,T.key):[k.x,k.y],e=p*p*(3-2*p);r.U.key?.set({x:k.x+(hx-k.x)*e,y:k.y+(hy-k.y)*e,push:p});
    if(k.gapT>=.35&&!k.marked){k.marked=true;const kr=result.key;
     if(kr.i>=0&&kr.j>=0&&kr.i<T.key.cols&&kr.j<T.key.rows){r.U.markCell?.(kr.i,kr.j,kr.r==='win'?'ok':kr.r);if(kr.r==='win'){r.U.openCell?.(kr.i,kr.j);audio?.play('grab');}else audio?.play('bump');}else audio?.play('bump');}
    if(k.gapT>=(result.kind==='win'?1.5:1.1))finishLocal(r,result);}
@@ -357,8 +359,8 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
    else if(r.kind==='timer'){r.U.setTimer?.({text:fmtTimer((act.v??0)*10),state:kind});r.U.setButton?.('off');
     startDoorSeq(r,{res,local:false});}
    else{const [x,y]=decodeKeyPos(act.cx,act.cz),kr=judgeKey(x,y,T.key,(i,j)=>!!r.U.cellAt?.(i,j)?.rare,false);
-    r.U.key?.set({x,y,push:1});if(kr.i>=0&&kr.j>=0&&kr.i<T.key.cols&&kr.j<T.key.rows){r.U.markCell?.(kr.i,kr.j,kind==='win'?'ok':kind);if(kind==='win')r.U.openCell?.(kr.i,kr.j);}
-    outcomeFx(r,res);r.keyFx={x,y,tx:x,ty:y,until:clock+3};}
+    const [px,py]=kind==='win'&&kr.r==='win'?keyHole(kr.i,kr.j,T.key):[x,y];r.U.key?.set({x:px,y:py,push:1});if(kr.i>=0&&kr.j>=0&&kr.i<T.key.cols&&kr.j<T.key.rows){r.U.markCell?.(kr.i,kr.j,kind==='win'?'ok':kind);if(kind==='win')r.U.openCell?.(kr.i,kr.j);}
+    outcomeFx(r,res);r.keyFx={x:px,y:py,tx:px,ty:py,until:clock+3};}
   }else if(act.ph==='drop'&&(r.kind==='claw'||r.kind==='bridge')&&!r.seq){r.tx=decodeClawPos(act.cx??50);r.tz=decodeClawPos(act.cz??50);r.open=OPEN.down;}
   if(!act.ph&&!r.seq&&!r.dseq)release(r);
  }

@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {CLAW_TUNING as T,COIN_V,seoulDate,msToNextGrant,freshState,sanitizeState,grantDaily,grantedToday,canPlay,spendCoin,recordResult,rulesFor,pityLeft,pityOn,kindOf,
- judgeTimer,fmtTimer,judgeKey,keyMissText,timerDiffText,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,ACT_PHASES,dexCount,isRefillLog,levelOf,hideAfterOf,pityNow,
+ judgeTimer,fmtTimer,judgeKey,keyHole,keyMissText,timerDiffText,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,ACT_PHASES,dexCount,isRefillLog,levelOf,hideAfterOf,pityNow,
   machStateToday,saveMachState,sanitizeMachState,MACH_PV} from '../src/claw/claw-rules.js';
 import {createBridgeSim,bridgeGeom,runBridgeDrop,startPose,nearState,bridgeSnap,noProgress,boxParts,bridgeOutcome,offRails,FINGER_PLATES,HEAD_PLATE,FINGER_ANGLE_B,FINGER_PIVOT_Z,plateBox} from '../src/claw/claw-bridge-physics.js';
 import {geomFrom,createClawSim,runDrop,BODY_TYPES,PLUSH_BODY,CLAW_RIG,U,FINGER_CURVE,FINGER_TUBE,FINGER_TIP,FINGER_PIVOT,FINGER_ANGLE_C} from '../src/claw/claw-physics.js';
@@ -101,12 +101,13 @@ test('타이머 판정 표(설계 v3 §7-1): 화면 숫자로만, 0.01초 아래
  for(let ms=0;ms<=15000;ms++){const j=judgeTimer(ms);assert.match(j.shown,/^\d\d\.\d\d$/);if((j.r==='win')!==(j.shown==='10.00'))assert.fail(`${ms} ${j.shown} ${j.r}`);}
  assert.equal(fmtTimer(9876.9),'09.87');assert.equal(timerDiffText(.03),'+0.03초 늦었어요');assert.equal(timerDiffText(-1.42),'1.42초 빨랐어요');
 });
-test('열쇠 판정(설계 v3 §7-3): 구멍 가운데 성공·0.2칸 아까움·0.5칸 실패·희귀 칸은 작은 구멍·보장은 넓어짐', ()=>{
+test('열쇠 판정(설계 v3 §7-3, 11-26 구멍 .09·.06): 구멍 가운데 성공·0.15칸 아까움·0.5칸 실패·희귀 칸은 작은 구멍·보장은 넓어짐', ()=>{
  const c=T.key,hole=(i,j)=>[i+.5,j*c.cellH+c.holeY];
  assert.equal(judgeKey(...hole(1,0)).r,'win');
- const [x,y]=hole(2,1);assert.equal(judgeKey(x+.2,y).r,'near');assert.equal(judgeKey(x+.5,y).r,'miss');
- assert.equal(judgeKey(x+.1,y,c,()=>true).r,'near','희귀 칸 0.08');assert.equal(judgeKey(x+.1,y,c,()=>false).r,'win');
- assert.equal(judgeKey(x+.17,y,c,()=>false,true).r,'win','보장 +0.05');
+ const [x,y]=hole(2,1);assert.equal(judgeKey(x+.15,y).r,'near');assert.equal(judgeKey(x+.5,y).r,'miss');
+ assert.equal(judgeKey(x+.08,y,c,()=>true).r,'near','희귀 칸 0.06');assert.equal(judgeKey(x+.08,y,c,()=>false).r,'win');
+ assert.equal(judgeKey(x+.13,y,c,()=>false,true).r,'win','보장 +0.05');assert.equal(judgeKey(x+.13,y).r,'near');
+ assert.deepEqual(keyHole(2,1),[x,y],'성공한 열쇠가 들어가는 구멍 가운데');
  assert.equal(judgeKey(1.5,-.3).r,'miss','칸 아래');assert.match(keyMissText(judgeKey(x+.5,y)),/왼쪽/);
  // 그림 좌표 = 판정 좌표(월드아트 KEY)
  assert.equal(KEY.cols,c.cols);assert.equal(KEY.rows,c.rows);assert.equal(KEY.cellH,c.cellH);assert.equal(KEY.holeY,c.holeY);
@@ -184,7 +185,7 @@ test('집게 직원 도움(11-24): 구멍 뒤 턱 바로 뒤에 인형 하나를
 test('규칙 안내: 조절값에서 만든 글(값을 바꾸면 글도 바뀜)', ()=>{
  const t=rulesFor('timer-1',MACHINES[10].pool);assert.equal(t.kind,'timer');assert.ok(t.lines.some(l=>/딱 10\.00일 때만 성공/.test(l)));assert.ok(t.lines.some(l=>/9\.90~10\.10/.test(l)));assert.equal(t.pity,'');
  const t2=rulesFor('timer-1',MACHINES[10].pool,{...T,timer:{...T.timer,okWinSec:.05,pityWinSec:.02}});assert.ok(t2.lines.some(l=>/9\.95~10\.05에 멈추면 성공/.test(l)));assert.match(t2.pity,/0\.02초/);
- assert.match(rulesFor('key-1',MACHINES[13].cells).lines.join(' '),/0\.14칸.*0\.08칸/);assert.match(rulesFor('claw-1',MACHINES[0].pool).pity,/직원이 인형 하나를 구멍 뒤/);assert.ok(!('pityPower' in T.claw),'힘센 집게 없앰(11-24)');
+ assert.match(rulesFor('key-1',MACHINES[13].cells).lines.join(' '),/0\.09칸.*0\.06칸/);assert.match(rulesFor('claw-1',MACHINES[0].pool).pity,/직원이 인형 하나를 구멍 뒤/);assert.ok(!('pityPower' in T.claw),'힘센 집게 없앰(11-24)');
  assert.ok(rulesFor('timer-3',MACHINES[12].pool).lines.some(l=>/3\.00초부터 숫자가 어두워져요/.test(l)),'타이머 3은 3초부터');assert.ok(rulesFor('timer-2',MACHINES[11].pool).lines.some(l=>/7\.00초부터 숫자가 어두워져요/.test(l)),'타이머 2는 7초부터');assert.ok(!rulesFor('timer-1',MACHINES[10].pool).lines.some(l=>/어두워져요/.test(l)));
  // 봉 규칙 글(v4.1 §7-7): 혼자 = 오늘 안에 이어서, 가게 공유(3단계) = 모두 같음·30분
  const b=rulesFor('bridge-3',MACHINES[8].pool);assert.equal(b.kind,'bridge');assert.match(b.lines.join(' '),/들고 오지 못해요.*봉 사이로 떨어뜨리면 성공/);assert.match(b.lines.join(' '),/팔\(八\) 자.*20\.5cm.*22\.5cm/);assert.match(b.lines.join(' '),/오늘 안에 이어서/);

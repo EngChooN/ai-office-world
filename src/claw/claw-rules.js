@@ -16,7 +16,9 @@ export const CLAW_TUNING=Object.freeze({
  // 타이머(설계 v3 §3-2): 화면에 멈춘 숫자로만 판정. 10.00 = 성공, ±0.10 = 아까움, 15.00 넘김·그 밖 = 실패. 보장 기본 끔(pityWinSec 0)
  timer:Object.freeze({targetSec:10,okWinSec:0,nearWinSec:.1,maxSec:15,startLockSec:.5,readyLimitSec:20,hideAfterSec:0,pityWinSec:0}),
  // 열쇠(설계 v3 §3-3): 칸 2×4, 누르고 있기 → 오른쪽(떼면 고정) → 0.3초 → 누르고 있기 → 위(떼면 밀어 넣음). 단위 = 칸 폭
- key:Object.freeze({cols:4,rows:2,cellH:1.4,holeY:.32,startX:.15,startY:-.3,speed:1.4,fit:.14,fitRare:.08,nearMul:2,pityFitBonus:.05,holdLimitSec:10,gapSec:.3}),
+ // 11-26 대표 제보 「열쇠가 너무 쉬움」 → 구멍 fit .14 → .09 · fitRare .08 → .06(사람 손 시험 σ60ms: 열쇠 1·2 판당 63 → 39%, 평균 1.6 → 2.5판 · 열쇠 3 1.9 → 2.8판,
+ //  artifacts/claw-design/key-tune). 희귀 구멍 .06칸(2.4cm)이 열쇠 몸통(1.6cm)보다 넉넉한 마지막 값이라 더 줄이지 않음. 성공하면 열쇠가 구멍 가운데로 들어감(keyHole)
+ key:Object.freeze({cols:4,rows:2,cellH:1.4,holeY:.32,startX:.15,startY:-.3,speed:1.4,fit:.09,fitRare:.06,nearMul:2,pityFitBonus:.05,holdLimitSec:10,gapSec:.3}),
  // 봉(월드디자인 설계 v4.1 §7, 다리 걸치기): 2발 약한 집게로 봉 두 개 위 상자를 밀어 봉 사이로 떨어뜨림. 판정 = 물리(claw-bridge-physics.js). 모두 임시값
  // 11-25 대표 결정 「상자를 키우고 봉 기계를 다시 맞춤」: 상자 [.16,.10,.22] → [.19,.15,.24](손에 드는 상자 carry-art.js CARRY_ART.hand.box가 이 값을 세워 씀 = 같은 상자).
  //  키가 커져 잘 뒤집히고 막이 봉을 넘어가 → 봉 간격 넓힘(claw-palette.js MACHINES bars)·막이 봉 4.5cm 높게(guardRise .45, 단위 10cm, 전 3cm)·아슬아슬 기준 2cm → 0.5cm(처음 받침 여유가 줄어서).
@@ -117,6 +119,8 @@ export function judgeKey(x,y,c=CLAW_TUNING.key,rare=()=>false,pity=false){
  const m=Math.max(Math.abs(dx),Math.abs(dy));
  return {r:m<=f?'win':m<=f*c.nearMul?'near':'miss',i,j,dx,dy,fit:f};
 }
+/** 구멍 가운데(칸 i,j) — 성공한 열쇠는 밀어 넣으며 여기로 미끄러져 들어간다(구멍이 작아도 들어가는 게 보이게) */
+export const keyHole=(i,j,c=CLAW_TUNING.key)=>[i+.5,j*c.cellH+c.holeY];
 /** 열쇠가 빗나간 방향 글(결과 카드) */
 export function keyMissText(k){
  if(!k||k.r==='win')return '';const parts=[];
