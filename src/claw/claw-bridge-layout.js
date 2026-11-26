@@ -7,6 +7,8 @@
 export const U=.1;
 export const BAR_Y=1.9;      // 봉 가운데 높이(바닥에서 19cm) — claw-bridge-physics.js BAR_Y와 같음. 11-25 상자를 5cm 키워(높이 0.15m) 24 → 19cm:
                              //  집게는 레일 때문에 못 올리므로, 위에서 옮겨 다니는 집게 발끝(쉼 높이)이 상자 윗면보다 2.5cm 위에 오게(전과 같은 틈) 봉을 내림
+                             //  11-26 대표 제보(옮기는 집게가 상자를 쳐 날림): 막이 봉에 기댄 상자는 윗면이 보통 40·높으면 45cm라 2.5cm 틈으로는 판의 40~50%에서 닿았음 →
+                             //  기계를 12cm 높여(CLAW.glassTop·railY·clawTop) 쉼 발끝 51cm, 봉 높이는 그대로
 export const DECK_DROP=1.2;  // 받침판 윗면 = 봉 윗면에서 12cm 아래 — claw-bridge-physics.js DECK_DROP과 같음
 export const GUARD_CLEAR=.008; // 막이 봉 안쪽 가장자리 = 상자(가운데 놓임) 끝 + 0.8cm. 사진: 상자 끝이 막이 봉 바로 안쪽, 받침↔막이 간격은 가운데 간격보다 좁음(약 절반)
 export const GUARD_RISE=.3;  // 막이 봉 가운데 = 받침 봉보다 3cm 위(월드디자인 2026-11-23 시험: 같은 높이면 기운 상자가 넘어가 영영 못 떨어짐, 2cm는 아직 넘고 4~5cm는 끼임). 실물 재현 아닌 판정 보정

@@ -221,8 +221,10 @@ async function sizeRun(size){
   // 저장한 상자 자리(공 자리 mm)와 새로고침 뒤 자리를 비교: 공마다 8mm 안(다시 놓을 때 0.4초 굳힘으로 생기는 어긋남 허용).
   // 봉 밖으로 떨어진 상자(받침 여유 −)는 다시 놓는 규칙(11-23)이라 처음 자리면 맞음(11-24: 커진 집게로 이 판에서 자주 떨어짐).
   // 처음 자리 받침 여유는 약 3cm지만 ±4mm·±8° 흔들어 놓아 2.9cm대도 나옴 → 「아슬아슬(2cm) 아님」으로 봄(11-24 코인 30 점검 때 2.95cm로 실패)
+  // 11-26: 11-25 상자를 키운 뒤 처음 받침 여유는 약 1cm(±4mm 흔듦) → 「처음 자리」 = 아슬아슬 기준(0.5cm)보다 넉넉하고 거의 똑바로(전 기준 2cm는 낡음)
+  const fresh=b2.support>.005&&b2.tilt<15;
   const diff=bs.st&&b2.st&&bs.st.length===b2.st.length?Math.max(...bs.st.map((v,i)=>Math.abs(v-b2.st[i]))):null;
-  ok(`${tag} 봉: 새로고침해도 상자가 그 자리(저장한 자리와 공마다 8mm 안)`,b1.won||b1.refill?b2.support>.02:diff!==null&&diff<=8||b1.support<0&&b2.support>.02,`최대 어긋남 ${diff}mm · ${b1.support}/${b1.tilt} → ${b2.support}/${b2.tilt}`);}
+  ok(`${tag} 봉: 새로고침해도 상자가 그 자리(저장한 자리와 공마다 8mm 안)`,b1.won||b1.refill?fresh:diff!==null&&diff<=8||b1.support<0&&fresh,`최대 어긋남 ${diff}mm · ${b1.support}/${b1.tilt} → ${b2.support}/${b2.tilt}`);}
  // 다음 날(11-24 대표 결정): 남은 개수와 상관없이 30으로 — 어제 받은 것으로 바꾸고 새로고침
  const dayShift=async(patch)=>{await p.evaluate(patch=>{const k='claw-world:v1',v=JSON.parse(localStorage.getItem(k));const y=new Date(Date.now()+9*3600e3-86400e3).toISOString().slice(0,10);
    Object.assign(v,patch);if(v.lastGrant==='Y')v.lastGrant=y;if(v.lastGrant==='T')v.lastGrant=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);if(patch.coinV===null)delete v.coinV;localStorage.setItem(k,JSON.stringify(v));},patch);

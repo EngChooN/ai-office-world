@@ -19,6 +19,7 @@ const themeOf=t=>{const M=typeof t==='string'?MACHINES.find(m=>m.id===t):t;if(!M
 // ── 타이머 기계 치수
 export const TIMER=Object.freeze({
  height:1.8,                                   // 이름판 위 끝
+ glassTop:1.3,boxTop:1.62,                     // 유리 상자 위 끝·위 간판 상자 위 끝(11-26 집게·봉 기계를 12cm 높일 때 타이머는 그대로 둠 — 숫자판·이름판이 이 자리에 맞춰 있음)
  display:Object.freeze({w:CLAW.width*.84,h:CLAW.width*.84*144/384,y:1.46,digitH:CLAW.width*.84*92/384}),   // 숫자판(앞면, 위 간판 상자 자리). 숫자 글자 높이 digitH ≈ 0.19m = 기계 폭 20%
  // 인형 올린 단(윗면 높이). 11-23 v1.6: 큰 인형(최대 0.50m)이 유리 상자(안 높이 0.74m) 안에 머리 위 18cm 남기고 들어가게 낮고 넓게(높이 6cm·반지름 20cm)
  stage:Object.freeze({x:0,z:-.04,r:.2,top:CLAW.floorY+.06}),
@@ -118,9 +119,9 @@ function plushAt(id,{toonify,guestObject,scale=1}){
 //  setPrize(id)(큰 인형 BIG_PLUSH, 단 한도 TIMER.big.maxSize), prize(지금 단 위 인형), stage(단 윗면 가운데, 기계 좌표), setDoor({open,rattle,lock}), door(상태), setLights, update(dt), press(k), spots(out = 꺼낸 인형 자리)
 //  11-23(대표 피드백): 집게 없음. 유리 상자 안 = 단 위 인형 + 잠긴 앞 유리문. 성공이면 잠금이 풀리고 문이 열려 인형을 꺼낸다(연출 순서는 claw-play.js).
 export function buildTimerMachine(theme='timer-1',{toonify=null,guestObject=null,prize=null}={}){
- const M=themeOf(theme),C=CLAW,T=TIMER,W=C.width,D=C.depth,hw=W/2,hd=D/2,root=new THREE.Group();root.name=`인형뽑기 기계:${M.id}`;
+ const T=TIMER,M=themeOf(theme),C={...CLAW,glassTop:T.glassTop,height:T.boxTop},W=C.width,D=C.depth,hw=W/2,hd=D/2,root=new THREE.Group();root.name=`인형뽑기 기계:${M.id}`;
  const mats=machineMats(M),b=builder(),late=[];
- lowerBody(b,M,{bulbs:'crest'});
+ lowerBody(b,M,{bulbs:'crest',glassTop:T.glassTop,height:T.boxTop});
  // 위 간판 상자 위 이름판 받침(숫자판이 간판 자리를 쓰므로 이름은 위로)
  b.rbox('dark',W*.78,T.height-C.height,.16,.03,0,(C.height+T.height)/2,.1);
  // 숫자판 테(금색)·안쪽 바닥판·뒷벽
@@ -137,7 +138,7 @@ export function buildTimerMachine(theme='timer-1',{toonify=null,guestObject=null
  const ly=T.door.lockY;b.rbox('dark',.06,.13,.05,.01,hw-.03,ly,hd+.005);b.box('gold',.03,.016,.02,hw-.05,ly+.035,hd+.03);
  b.box('strip',W-.12,.015,.03,0,C.glassTop-.03,-hd+.08);
  b.build(mats,root,{outline:new Set(['body','top','dark'])});
- glassBox(root,late,{chuteGuard:false,front:false});
+ glassBox(root,late,{chuteGuard:false,front:false,glassTop:T.glassTop});
  // 앞 유리문: 경첩(왼쪽 앞 기둥) 묶음 = 유리 + 테 + 손잡이·걸쇠. 열면 바깥(+Z)으로 돈다
  const gh=C.glassTop-C.floorY-.02,gw=W-.08,gy=(C.glassTop+C.floorY)/2,hinge=new THREE.Group();hinge.name='잠금 유리문';hinge.position.set(-hw+.04,0,hd-.015);root.add(hinge);
  const glassD=new THREE.Mesh(new THREE.PlaneGeometry(gw-.03,gh-.03),glassMat());glassD.position.set(gw/2,gy,0);glassD.renderOrder=2;hinge.add(glassD);

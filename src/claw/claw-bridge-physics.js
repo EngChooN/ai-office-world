@@ -59,7 +59,7 @@ export function plateBox(a,b,s,r,h){
  const p=n?[px/n,py/n,pz/n]:mp;for(let k=0;k<3;k++)p[k]=Math.max(-h[k],Math.min(h[k],p[k]));
  return {u:bu,d:best,p};
 }
-export const BAR_Y=LAYOUT_BAR_Y,DECK_DROP=LAYOUT_DECK_DROP; // 봉 가운데 높이 24cm, 받침판 = 봉 윗면 12cm 아래(claw-bridge-layout.js)
+export const BAR_Y=LAYOUT_BAR_Y,DECK_DROP=LAYOUT_DECK_DROP; // 봉 가운데 높이 19cm, 받침판 = 봉 윗면 12cm 아래(claw-bridge-layout.js)
 function rng(seed){let s=seed>>>0||1;return()=>((s=(s*1664525+1013904223)>>>0)/4294967296);}
 
 /** 기계 치수(CLAW, m)·봉 배치(bars {gap} | {near,far}, m)·조절값(T.bridge) → 물리 치수(단위) */

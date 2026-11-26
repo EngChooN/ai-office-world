@@ -21,7 +21,9 @@ export const CLAW_TUNING=Object.freeze({
  // 11-25 대표 결정 「상자를 키우고 봉 기계를 다시 맞춤」: 상자 [.16,.10,.22] → [.19,.15,.24](손에 드는 상자 carry-art.js CARRY_ART.hand.box가 이 값을 세워 씀 = 같은 상자).
  //  키가 커져 잘 뒤집히고 막이 봉을 넘어가 → 봉 간격 넓힘(claw-palette.js MACHINES bars)·막이 봉 4.5cm 높게(guardRise .45, 단위 10cm, 전 3cm)·아슬아슬 기준 2cm → 0.5cm(처음 받침 여유가 줄어서).
  //  무작위 시험 80개(artifacts/claw-design/bar-tune-v3/out.jsonl): 평균 봉 1·2 4.6판(전 4.1) · 봉 3 5.0판(전 4.7) · 봉 4 5.8판(전 5.8), 80개 모두 25판 안 성공
- bridge:Object.freeze({gap:.2175,barR:.012,barLen:.55,barFriction:.35,box:Object.freeze([.19,.15,.24]),guardRise:.45,boxMass:1.0,boxMassRare:1.2,prongs:2,clawGrab:.0012,clawOpen:.82,
+ //  11-26 기계 12cm 높임(옮기는 집게가 기댄 상자를 쳐 주던 일이 없어져 4.6·5.0·5.8 → 6.2·7.8·9.8판) → 봉 마찰 0.35 → 0.25: 120개 4.2·5.5·6.6판(artifacts/claw-design/travel/tune/fr25-*).
+ //  봉 간격을 넓히는 쪽은 새 상자 처음 받침 여유가 줄어 놓자마자 「아슬아슬」(봉 1·2 22.75cm면 17%)이라 안 씀
+ bridge:Object.freeze({gap:.2175,barR:.012,barLen:.55,barFriction:.25,box:Object.freeze([.19,.15,.24]),guardRise:.45,boxMass:1.0,boxMassRare:1.2,prongs:2,clawGrab:.0012,clawOpen:.82,
   moveSpeed:.30,holdLimitSec:10,gapSec:.3,nearSupportM:.005,refillSec:2.5,startJitterM:.004,startJitterDeg:8,pityAfter:8,lieDeg:45,liePlays:3}),
  // ↑ pityAfter판 연달아 실패 → 직원 도움(상자를 처음 자리에 다시 놓음, 대표 2026-11-23: 힘센 집게는 상자를 밀기만 해 효과 없음). 아슬아슬한 상자면 건너뜀
  //   lieDeg 넘게 누운 채 liePlays판이면 다시 놓음(막이 봉 밖·봉 아래 끼임은 판 끝나면 바로, 대표 2026-11-23)

@@ -21,7 +21,7 @@ test('타이머 글자: 설계 v3 §7 표 그대로, 늘 두 자리.두 자리',
 });
 test('타이머 기계: 숫자판 = 기계 폭 84%·숫자 ≈ 폭 20%, 판정이 준 글자를 그대로 씀, 단 위 인형, 단추 색',()=>{
  assert.ok(Math.abs(TIMER.display.w-CLAW.width*.84)<1e-9);assert.ok(TIMER.display.digitH/CLAW.width>=.19,'숫자 높이');
- assert.ok(TIMER.display.y+TIMER.display.h/2<=CLAW.height+.001&&TIMER.display.y-TIMER.display.h/2>=CLAW.glassTop-.001,'숫자판이 위 간판 상자 안');
+ assert.ok(TIMER.display.y+TIMER.display.h/2<=TIMER.boxTop+.001&&TIMER.display.y-TIMER.display.h/2>=TIMER.glassTop-.001,'숫자판이 위 간판 상자 안');
  const m=buildTimerMachine('timer-2'),U=m.userData;
  assert.equal(U.kind,'timer');assert.equal(U.height,TIMER.height);
  U.setTimer({text:'09.87',state:'run'});assert.equal(U.timer.text,'09.87');assert.equal(U.timer.state,'run');
@@ -30,7 +30,7 @@ test('타이머 기계: 숫자판 = 기계 폭 84%·숫자 ≈ 폭 20%, 판정�
  assert.ok(Math.abs(U.prize.position.y-TIMER.stage.top)<1e-9,'인형이 단 윗면에 앉음');
  const st=TIMER.stage,hw=CLAW.width/2-.05,hd=CLAW.depth/2-.05;assert.ok(Math.abs(st.x)+st.r<hw&&Math.abs(st.z)+st.r<hd,'단이 유리 안');
  // 11-23 v1.6 큰 인형: 단 위 인형 머리가 유리 천장 불빛 줄 아래, 경품 받침·단추가 서로·열린 문과 안 겹침
- {const bb=new THREE.Box3().setFromObject(U.prize);assert.ok(bb.max.y<CLAW.glassTop-.05,`큰 인형 머리 ${bb.max.y.toFixed(3)}`);assert.ok(U.prize.userData.size>=.4,'큰 인형');}
+ {const bb=new THREE.Box3().setFromObject(U.prize);assert.ok(bb.max.y<TIMER.glassTop-.05,`큰 인형 머리 ${bb.max.y.toFixed(3)}`);assert.ok(U.prize.userData.size>=.4,'큰 인형');}
  const t=TIMER.tray;assert.ok(t.x+t.w/2<TIMER.button[0]-.08,'받침이 단추 왼쪽');assert.ok(t.x-t.w/2>-CLAW.width/2+.04,'받침이 열린 문(왼쪽 경첩) 안쪽');
  // 11-23 대표 피드백: 타이머 기계는 집게 없이 잠금 유리문으로 꺼냄
  assert.equal(U.claw,undefined,'집게 없음');let clawParts=0;m.traverse(o=>{if(/집게/.test(o.name))clawParts++;});assert.equal(clawParts,0);
@@ -96,7 +96,7 @@ test('큰 인형(11-23 v1.6, 타이머 기계 전용): 원래 인형 형상 공�
   assert.ok(plushSize(b.id)<=TIMER.big.maxSize,'단 한도 아래');assert.ok(Math.abs(plushLineWidth(b.id)*plushSize(b.id)-plushLineWidth(b.base)*plushSize(b.base))<1e-9,'외곽선 실제 두께 같음');}
  assert.deepEqual(MACHINES.filter(m=>m.kind==='timer').flatMap(m=>m.pool).sort(),BIG_PLUSH.map(b=>b.id).sort(),'타이머 기계 = 큰 인형만(11-25부터 기계마다 2종 번갈아)');
  const m=buildTimerMachine('timer-2'),U=m.userData;
- for(const b of BIG_PLUSH){U.setPrize(b.id);const bb=new THREE.Box3().setFromObject(U.prize);assert.ok(bb.max.y<CLAW.glassTop-.05,`${b.id} 유리 안`);assert.ok(bb.max.x-bb.min.x<CLAW.width-.2,'문 폭 안');
+ for(const b of BIG_PLUSH){U.setPrize(b.id);const bb=new THREE.Box3().setFromObject(U.prize);assert.ok(bb.max.y<TIMER.glassTop-.05,`${b.id} 유리 안`);assert.ok(bb.max.x-bb.min.x<CLAW.width-.2,'문 폭 안');
   // 받침에 놓았을 때: 열린 문(x ≈ -0.44)과 큰 단추에 안 닿음
   const o=U.prize;o.position.copy(U.spots.out);o.rotation.y=0;const q=new THREE.Box3().setFromObject(o);
   assert.ok(q.min.x>-CLAW.width/2+.01,`${b.id} 열린 문과 떨어짐 ${q.min.x.toFixed(3)}`);assert.ok(q.max.x<TIMER.button[0]-.07,`${b.id} 단추와 떨어짐`);}
