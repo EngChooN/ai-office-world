@@ -2,7 +2,7 @@
 // localStorage `aoworld:settings:v1` = {sound, volume, music, hubTime, at}. 같은 도메인이라 허브에서 바꾸면 체험에도 그대로 간다.
 //  - sound: 소리 전체 켜기/끄기(등산 🔊·흡연장 🔊·크리스마스 🔊 단추와 같은 값)
 //  - volume: 0~1 소리 크기(등산 소리 크기 막대와 같은 값, 흡연장·크리스마스는 마스터에 곱함)
-//  - music: 배경 음악(지금은 크리스마스 캐럴. 관악산 FM은 사용자가 따로 켜는 라디오라 넣지 않음)
+//  - music: 배경 음악(크리스마스 캐럴·인형가게 음악(11-26). 관악산 FM은 사용자가 따로 켜는 라디오라 넣지 않음)
 //  - hubTime: 허브 색 'auto'|'day'|'dusk'|'night'(허브만 씀)
 // 체험별 옛 저장값(gwanak-hiking:sound:v1·흡연장 profile.muted·크리스마스 profile.sound/carol)은 지우지 않는다.
 // 이 값이 한 번이라도 저장되어 있으면(has) 체험이 들어올 때 이 값을 따르고, 체험 안에서 바꾸면 여기에도 같이 쓴다.

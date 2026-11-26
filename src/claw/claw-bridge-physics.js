@@ -186,7 +186,7 @@ export function createBridgeSim({geom,box,mass=1,power={grab:.0012,carry:.001},s
     //  이제 발이 상자에 닿아도 SLACK만큼 더 내려가며 상자를 누르고, 눌린 발은 바깥으로 젖혀져 상자 옆으로 미끄러짐(실제 기계처럼 줄이 다 풀릴 때까지).
     //  멈춤 = 머리 닿음 · 발이 다 벌어졌는데도 못 밀어낸 겹침 · 닿은 뒤 SLACK 다 내려감 · 겹침이 너무 큼(상자가 봉에 눌려 꼼짝 못 함)
     const press=c.pen[0]+c.pen[1]>.06||c.resid>.015;
-    if(press&&c.touchY==null)c.touchY=c.y;
+    if(press&&c.touchY==null){c.touchY=c.y;events.push({type:'touch'});} // 발이 상자를 누르기 시작(소리 「툭」, 11-26)
     const splayed=c.th[0]>=CL.splay-.02&&c.th[1]>=CL.splay-.02;
     if(c.hubPen>.012||c.resid>.035||press&&splayed||c.touchY!=null&&c.touchY-c.y>=SLACK)c.touched=true;
     // 집게발 끝이 봉에 닿으면 멈춤(봉을 뚫고 내려가지 않게)

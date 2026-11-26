@@ -136,7 +136,8 @@ function measureHand(){
 
 // ── 소리
 const shared=loadShared();
-const audio=createClawAudio({muted:shared.has?!shared.sound:false,volume:shared.has?volumeGain(shared.volume):1});
+const bgmMood=new URLSearchParams(location.search).get('bgm'); // 개발용 분위기 듣기 ?bgm=arcade|pop|retro
+const audio=createClawAudio({muted:shared.has?!shared.sound:false,volume:shared.has?volumeGain(shared.volume):1,music:shared.music,...(bgmMood?{mood:bgmMood}:{})});
 const vibrate=ms=>{if(!audio.muted)try{navigator.vibrate?.(ms);}catch{}};
 
 // ── 인형 작은 그림(도감·결과 카드): 작은 캔버스 렌더러로 한 번만 그려 그림 주소로 둔다
@@ -156,8 +157,10 @@ makeThumbs();
 setSignThumbs(id=>thumbs.get(id)); // 기계 간판 오른쪽 대표 인형 그림(월드아트 signAtlas)
 
 // ── 한 판(집게)·결과
-let hud=null,multi=null,runOn=false;
-const play=createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf,toonify:toon.toonify,audio,rareOf,
+let hud=null,multi=null,runOn=false,ducked=false;
+// 다른 손님 기계 소리: 2m 안은 0.6, 9m에서 0(30명 가게가 시끄럽지 않게, 11-26 개발 결정)
+const hearOf=i=>{const M=U.machines[i];if(!M)return 0;const [x,z]=toShop(M,0,0),d=Math.hypot(x-player.x,z-player.z);return .6*Math.max(0,Math.min(1,(9-d)/7));};
+const play=createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf,toonify:toon.toonify,audio,rareOf,hearOf,
  pityFor:i=>pityNow(state,MACHINES[i].id),
  machState:i=>machStateToday(state,MACHINES[i].id), // 봉 상자 자리: 이 기기에 오늘까지(혼자 뽑기, v4.1 §3 A안)
  onEvent(type,d){
@@ -224,6 +227,7 @@ addEventListener('keydown',e=>{if(typing()||e.repeat)return;
 });
 function updatePlayer(dt){
  player.carryHide=carryHide({m:play.mode!=='idle'?1:0});
+ {const d=play.mode!=='idle';if(d!==ducked){ducked=d;audio.duck(d);}} // 기계 앞에서 조작하는 동안 배경 음악을 줄임
  if(play.mode!=='idle'){player.update(dt,{moved:0});return;}
  const blocked=!!hud.card||document.documentElement.dataset.ufWin==='menu'&&mobile;
  const mv=blocked?{forward:0,side:0,run:false}:input.move();let dirX=0,dirZ=0;
@@ -411,12 +415,14 @@ hud=createClawHud({mobile,catalog,pools,state:()=>state,thumb:id=>thumbs.get(id)
  goFree:kind=>{const j=nearestFree(kind,nearMachine());if(j>=0)goMachine(j);},
  run:()=>{runOn=!runOn;},
  sound:on=>{audio.setMuted(!on);saveShared({sound:on});},
+ music:on=>{audio.setMusic(on);saveShared({music:on});},
+ volume:v=>{audio.setVolume(volumeGain(v));saveShared({volume:v});},
  servers:()=>openPick(),
  retry:()=>multi.join({room:multi.room,name:profile.nickname}),
  mute:id=>multi.mute(id),unmute:id=>multi.unmute(id),report:id=>multi.report(id),
  full:()=>openPick('full'),
 }});
-hud.setMuted(audio.muted);
+hud.setMuted(audio.muted);hud.setMusic(audio.music);hud.setVolume(shared.volume);
 const chat=installHikingChat({ns:'claw',cls:'kc-chat',frame:hud.frame,notice:'전화번호·주소·SNS 아이디는 적지 마세요. 채팅은 저장되지 않아요.',lookup:id=>screenPos(id)});
 // 서버 고르기(세 체험과 같은 창): 허브 → 인형뽑기 카드 → 서버 → 가게. 혼자 뽑기도 된다
 const pick=createServerPick({experience:'claw',serverUrl:multi.server,serverOff:currentChoice().source==='file-off',defaultName:profile.nickname,
@@ -463,7 +469,7 @@ if(granted)setTimeout(()=>{hud.toast(`오늘의 코인 ${granted}개 · 매일 0
 if(!state.seenTip){state.seenTip=true;saveState(state);setTimeout(()=>hud.toast('기계 앞에 가면 「한 판」 단추가 나와요 · ☰ 기계에서 「가기」도 돼요',{sec:4.4}),granted?5200:1200);}
 
 // 진단·자동 점검용(브라우저 콘솔 window.claw)
-window.claw={shop,player,play,multi,hud,state,cam,camera,catalog,pools,collide,handPen,get handRing(){return handRing;},
+window.claw={shop,player,play,multi,hud,state,audio,cam,camera,catalog,pools,collide,handPen,get handRing(){return handRing;},
  get fps(){return fps;},
  status(){return {fps:+fps.toFixed(1),mode:play.mode,near:nearMachine(),coins:state.coins,plays:state.plays,wins:state.wins,dex:Object.fromEntries(Object.entries(state.dex).map(([k,v])=>[k,v.n])),pity:{...state.pity},
   player:{x:+player.x.toFixed(2),z:+player.z.toFixed(2),heading:+player.heading.toFixed(2)},play:play.status(),multi:multi.status(),guests:guests.length,catalog:catalog.length,

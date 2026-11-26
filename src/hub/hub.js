@@ -144,7 +144,7 @@ ${l?`<button type="button" class="hb-cont" data-open="${l.id}" style="--c:${l.co
 <label class="hb-row"><span>${icon('c-person',{size:'s'})}닉네임</span><input name="hb-name" type="text" maxlength="${NET.nameMax}" placeholder="비우면 자동 이름" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" value="${esc(loadPickName(storage))}"></label>
 <div class="hb-row"><span>${icon(shared.sound?'c-sound':'c-sound-off',{size:'s'})}소리</span>${seg('sound',[['true','켜기'],['false','끄기']],shared.sound)}</div>
 <label class="hb-row"><span>${icon('c-sound',{size:'s'})}소리 크기</span><input type="range" name="hb-vol" min="0" max="100" step="5" value="${Math.round(shared.volume*100)}" aria-label="소리 크기"></label>
-<div class="hb-row"><span>${icon(shared.music?'c-music':'c-music-off',{size:'s'})}배경 음악<small>크리스마스 캐럴</small></span>${seg('music',[['true','켜기'],['false','끄기']],shared.music)}</div>
+<div class="hb-row"><span>${icon(shared.music?'c-music':'c-music-off',{size:'s'})}배경 음악<small>캐럴·인형가게 음악</small></span>${seg('music',[['true','켜기'],['false','끄기']],shared.music)}</div>
 <div class="hb-row"><span>${icon('c-time-day',{size:'s'})}허브 시간대</span>${seg('hubTime',[['auto','자동'],['day','낮'],['dusk','노을'],['night','밤']],shared.hubTime)}</div>
 <button type="button" class="hb-row hb-link" data-fb="talk"><span>${icon('c-feedback',{size:'s'})}의견 보내기</span>${icon('c-right',{size:'s'})}</button>
 </section></div>`;

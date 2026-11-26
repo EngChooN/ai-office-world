@@ -34,7 +34,7 @@ const ict=(k,text,o={})=>iconText(IC[k][0],text,{size:'s',fallback:IC[k][1],...o
 
 /**
  * catalog: 도감 칸 목록(clawCatalog), pools: 기계별 인형 id(손님 자리 바꾼 것), state(): 저장값, thumb(id) → 그림 주소(없으면 '')
- * act: {play(i), press(), quit(), goMachine(i), sound(on), servers(), retry(), mute(id), unmute(id), report(id), run(on), hub()}
+ * act: {play(i), press(), quit(), goMachine(i), sound(on), music(on), volume(v), servers(), retry(), mute(id), unmute(id), report(id), run(on), hub()}
  * 조작 중 큰 단추(11-24 시안 B, 대표 승인): 오른쪽 아래 원이 아니라 화면 아래 가운데 넓은 판(.kh-bar). 공통 틀 「큰 단추 = 오른쪽 아래 원」의 인형뽑기 조작 중 예외.
  *  마우스가 있는 기기 = 520px 판 + 「스페이스」 키캡, 손가락 기기 = 화면 폭 판(집게는 십자 판 오른쪽), 키·마우스 안내 없음. 기계 그림 단추를 누르면 artTap() 알림
  */
@@ -257,10 +257,13 @@ ${carrySlots()}<div class="kh-chips" role="group" aria-label="기계 종류별�
    if(isRefillLog(r))return `<li class="refill"><span>${icon('k-coin',{size:'xs',fallback:'🪙'})} ${esc(r.t==='refill'?r.text:`오늘 ${T.coin.daily}개로 채웠어요`)}</span><b class="mute">${r.t==='refill'?r.n:T.coin.daily}개</b></li>`;
    return `<li><span>${esc(r.text)}</span>${r.d?`<b class="${r.d>0?'up':'mute'}">${r.d>0?'+':''}${r.d}</b>`:''}</li>`;}).join(''):'<li class="kh-sub">아직 기록이 없어요</li>'}</ul>`;
  }
- let muted=false;
+ let muted=false,music=true,volume=.7;
+ // 소리 창(11-26): 소리 켜기·배경 음악 켜기·소리 크기. 세 체험·허브와 같은 공용 설정(main.js act.sound·music·volume이 저장)
  function renderSound(p){
-  p.innerHTML=`<h2 class="kh-tab-h">${iconText('c-sound','소리')}</h2><div class="kh-row"><button type="button" class="kh-btn" data-snd aria-pressed="${!muted}">${iconText('c-sound',muted?'소리 꺼짐':'소리 켜짐',{off:muted})}</button></div><p class="kh-sub">세 체험이 같이 쓰는 소리 설정이에요. 끄면 진동도 꺼져요.</p>`;
-  p.onclick=e=>{if(e.target.closest('[data-snd]')){muted=!muted;act.sound?.(!muted);renderSound(p);}};
+  p.innerHTML=`<h2 class="kh-tab-h">${iconText('c-sound','소리')}</h2><div class="kh-row"><button type="button" class="kh-btn" data-snd aria-pressed="${!muted}">${iconText('c-sound',muted?'소리 꺼짐':'소리 켜짐',{off:muted})}</button><button type="button" class="kh-btn" data-mus aria-pressed="${music}">${iconText('c-music',music?'배경 음악 켜짐':'배경 음악 꺼짐',{off:!music})}</button></div>
+<label class="kh-vol"><span>소리 크기</span><input type="range" data-vol min="0" max="100" step="5" value="${Math.round(volume*100)}" aria-label="소리 크기"></label><p class="kh-sub">세 체험이 같이 쓰는 소리 설정이에요. 끄면 진동도 꺼져요. 소리는 화면을 한 번 누른 뒤부터 나요.</p>`;
+  p.onclick=e=>{if(e.target.closest('[data-snd]')){muted=!muted;act.sound?.(!muted);renderSound(p);}else if(e.target.closest('[data-mus]')){music=!music;act.music?.(music);renderSound(p);}};
+  p.querySelector('[data-vol]').oninput=e=>{volume=Number(e.target.value)/100;act.volume?.(volume);};
  }
  function renderSet(p){
   const v=clawStatusView(status),people=multi?.people?.()??[];
@@ -343,6 +346,7 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
  return {frame,update,toast,showResult,showNoCoin,showOdds,showRules,confirmQuit,closeCard,padDir,setKeyDir,clearPad,
   get card(){return cardKind;},
   setMuted(on){muted=!!on;},
+  setMusic(on){music=!!on;},setVolume(v){volume=v;},
   // 기계 그림 속 단추를 눌렀을 때(그림은 장식): 진짜 단추 = 아래 판을 알려 줌. 같은 알림은 2.5초에 한 번
   artTap(){const b=acts.querySelector('.kh-big.kh-bar');if(!b||cardKind)return false;const now=performance.now();if(now-(artTapAt??-1e9)<2500)return false;artTapAt=now;
    const l=b.querySelector('.kh-lt b')?.textContent??'';toast(fine()?`기계 그림 단추는 장식이에요 · 아래 「${l}」 단추나 Space를 눌러요`:`기계 그림 단추는 장식이에요 · 아래 「${l}」 판을 눌러요`,{sec:2.6,urgent:true});return true;},

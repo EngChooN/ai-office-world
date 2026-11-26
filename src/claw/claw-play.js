@@ -36,7 +36,9 @@ const idOfObj=o=>o?.userData?.plushId??(o?.name?.includes(':')?o.name.split(':')
  * pityFor(i) → 이번 판 보장인가, onEvent(type,detail): 'start'·'arm'·'drop'·'result'·'quit'·'bump'·'phase'·'mach'(봉 상자 상태가 바뀜 → 이 기기에 저장)·'reset'(막힌 상자를 다시 놓음)
  * machState(i) → 이어서 쓸 봉 상자 상태(claw-rules.js machStateToday, 없으면 null = 처음 자리)
  */
-export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'common',toonify=null,audio=null,pityFor=()=>false,onEvent=()=>{},rareOf=()=>false,T=CLAW_TUNING,seed=7,machState=()=>null}){
+export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'common',toonify=null,audio=null,pityFor=()=>false,onEvent=()=>{},rareOf=()=>false,hearOf=()=>1,T=CLAW_TUNING,seed=7,machState=()=>null}){
+ // 소리: 내 판은 그대로, 다른 손님 기계(구경)는 내 자리에서 먼 만큼 작게(11-26, 30명 가게가 시끄럽지 않게)
+ const say=(r,n)=>audio?.play(n,r===cur?undefined:{gain:hearOf(r.i)});
  const rigs=shop.userData.machines.map((M,i)=>{const U2=M.group.userData,kind=U2.kind??M.kind??'claw';
   // 집게·봉이 갈 수 있는 범위(m) = 물리 RANGE(벌린 발끝이 유리 안, 11-24). 쉬는 자리 = 구멍 위(home)를 이 범위 안으로 자른 곳
   const G=kind==='bridge'?U2.geom:GEOM,range=G?{x:[G.RANGE.x0*U,G.RANGE.x1*U],z:[G.RANGE.z0*U,G.RANGE.z1*U]}:CLAW.play;
@@ -108,12 +110,12 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
  function startSeq(r,{x,z,res,local,obj=null,backTo=null,real=null}){
   const top=obj?obj.position.y+(obj.userData.size??sizeOf(idOfObj(obj)))*.85:r.bsim?boxTopAt(r)+.03:topAtM(r,x,z)+.05;
   r.seq={k:0,t:0,x0:x,z0:z,depth:clamp(CLAW.clawTop-top,.06,CLAW.dropMax),res,real,local,obj:null,given:obj,backTo,falling:null,slipped:false};
-  r.x=r.tx=x;r.z=r.tz=z;audio?.play('down');
+  r.x=r.tx=x;r.z=r.tz=z;say(r,'down');
  }
  function hang(r,obj){const s=obj.userData.size??sizeOf(idOfObj(obj))??.24;obj.position.set(r.x,tipY(r)-s*.62,r.z);}
  function attach(r){const s=r.seq,id=s.res.id;if(!id&&!s.given)return;const obj=s.given??makePlushObj(id);obj.userData.size??=sizeOf(id);if(!s.given)r.M.group.add(obj);s.obj=obj;hang(r,obj);}
  function dropBack(r){const s=r.seq;if(!s.obj)return;const to=s.backTo??new THREE.Vector3(s.obj.position.x,topAtM(r,s.obj.position.x,s.obj.position.z),s.obj.position.z);
-  s.falling={obj:s.obj,from:s.obj.position.clone(),to:to.clone(),t:0,dur:.42,keep:!!s.given};s.obj=null;s.slipped=true;audio?.play('slip');}
+  s.falling={obj:s.obj,from:s.obj.position.clone(),to:to.clone(),t:0,dur:.42,keep:!!s.given};s.obj=null;s.slipped=true;say(r,'slip');}
  function tickFalling(r,dt){const f=r.seq?.falling;if(!f)return;f.t+=dt;const k=Math.min(1,f.t/f.dur);
   f.obj.position.set(f.from.x+(f.to.x-f.from.x)*k,f.from.y+(f.to.y-f.from.y)*k*k,f.from.z+(f.to.z-f.from.z)*k);
   if(k>=1){if(!f.keep||f.chute)r.M.group.remove(f.obj);r.seq.falling=null;}}
@@ -122,11 +124,11 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   const grab=s.res.kind!=='miss';
   switch(name){
    case 'down':r.drop=s.depth*e;r.open=OPEN.play+(OPEN.down-OPEN.play)*Math.min(1,s.t/.2);break; // 내려가기 시작하며 벌림(0.2초), 벌린 채 바닥까지
-   case 'close':r.open=OPEN.down+((grab?OPEN.grab:OPEN.shut)-OPEN.down)*e;if(k>=1&&grab&&!s.obj&&!s.slipped){attach(r);audio?.play('grab');}break;
+   case 'close':r.open=OPEN.down+((grab?OPEN.grab:OPEN.shut)-OPEN.down)*e;if(k>=1&&grab&&!s.obj&&!s.slipped){attach(r);say(r,'grab');}break;
    case 'up':r.drop=s.depth*(1-e);if(s.res.kind==='near'&&s.obj&&s.t/carryLen>=.5)dropBack(r);break;
    case 'carry':r.x=s.x0+(CLAW.home[0]-s.x0)*e;r.z=s.z0+(CLAW.home[1]-s.z0)*e;if(s.res.kind==='near'&&s.obj)dropBack(r);break;
    case 'release':r.open=OPEN.grab+(OPEN.release-OPEN.grab)*e;
-    if(k>=1&&s.obj){s.falling={obj:s.obj,from:s.obj.position.clone(),to:new THREE.Vector3(CLAW.home[0],CLAW.floorY-.32,CLAW.home[1]),t:0,dur:.4,chute:true};s.obj=null;audio?.play('chute');}break;
+    if(k>=1&&s.obj){s.falling={obj:s.obj,from:s.obj.position.clone(),to:new THREE.Vector3(CLAW.home[0],CLAW.floorY-.32,CLAW.home[1]),t:0,dur:.4,chute:true};s.obj=null;say(r,'chute');}break;
    case 'fall':r.open=OPEN.release+(OPEN.play-OPEN.release)*e;r.x=CLAW.home[0]+(r.rest[0]-CLAW.home[0])*e;r.z=CLAW.home[1]+(r.rest[1]-CLAW.home[1])*e;break;
   }
   if(s.obj)hang(r,s.obj);tickFalling(r,dt);pose(r);
@@ -143,21 +145,21 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
  function outcomeFx(r,res){
   const win=res.kind==='win',rare=win&&rareOf(res.id);
   setLights(r,win?(rare?'rainbow':'win'):'idle',win?2:0);
-  if(win){audio?.play(rare?'fanfare':'win');if(r.kind!=='timer')doorPop(r,res.id);}else audio?.play(res.kind==='near'?'slip':'lose');
+  if(win){say(r,rare?'fanfare':'win');if(r.kind!=='timer')doorPop(r,res.id);}else say(r,res.kind==='near'?'slip':'lose');
  }
  function doorPop(r,id){if(!id)return;if(r.door)r.M.group.remove(r.door.obj);const obj=makePlushObj(id);const d=CLAW.door;obj.position.set(d[0],d[1]-.08,d[2]+.08);obj.scale.multiplyScalar(.9);r.M.group.add(obj);r.door={obj,t:0};}
  // ── 타이머 문 연출(정해진 결과대로 — 내 판·다른 손님 구경 공용)
  function startDoorSeq(r,{res,local}){clearTaken(r,{now:true});r.dseq={k:0,t:0,res,local,steps:DOOR_SEQ[res.kind]??DOOR_SEQ.miss,obj:res.kind==='win'?r.U.prize:null,from:null};
-  if(res.kind==='win')audio?.play('unlock');else if(res.kind==='near')audio?.play('rattle');}
+  if(res.kind==='win')say(r,'unlock');else if(res.kind==='near')say(r,'rattle');}
  function stepDoorSeq(r,dt){
   const s=r.dseq;s.t+=dt;const name=s.steps[s.k],dur=DOOR_TIMES[name],k=Math.min(1,s.t/dur),e=ease(k),D=r.U.setDoor?r.U:null;
   switch(name){
    case 'unlock':D?.setDoor({open:0,lock:'open',rattle:Math.sin(s.t*60)*.008*(1-k)});break; // 철컥: 걸쇠가 풀리며 살짝 떨림
-   case 'open':D?.setDoor({open:e,lock:'open'});if(k>=1)audio?.play('chute');break;
+   case 'open':D?.setDoor({open:e,lock:'open'});if(k>=1)say(r,'chute');break;
    case 'take':if(s.obj){s.from??=s.obj.position.clone();const to=r.U.spots.out;s.obj.position.set(s.from.x+(to.x-s.from.x)*e,s.from.y+(to.y-s.from.y)*e+Math.sin(k*Math.PI)*.08,s.from.z+(to.z-s.from.z)*e);s.obj.rotation.y=-.15+e*.15;}break;
    case 'hold':break;
-   case 'shut':D?.setDoor({open:1-e,lock:k>=1?'locked':'open'});if(k>=1)audio?.play('bump');break;
-   case 'rattle':D?.setDoor({open:0,lock:'near',rattle:Math.sin(s.t*38)*TIMER_RATTLE*(1-k)*(k<.15?k/.15:1)});if(Math.floor(s.t*8)!==Math.floor((s.t-dt)*8)&&k<.7)audio?.play('bump');break;
+   case 'shut':D?.setDoor({open:1-e,lock:k>=1?'locked':'open'});if(k>=1)say(r,'bump');break;
+   case 'rattle':D?.setDoor({open:0,lock:'near',rattle:Math.sin(s.t*38)*TIMER_RATTLE*(1-k)*(k<.15?k/.15:1)});if(Math.floor(s.t*8)!==Math.floor((s.t-dt)*8)&&k<.7)say(r,'bump');break;
    case 'blink':D?.setDoor({open:0,lock:'miss'});break;
   }
   if(k>=1){s.k++;s.t=0;if(s.k>=s.steps.length){finishDoorSeq(r);return true;}}
@@ -172,7 +174,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
  // 꺼낸 인형 치우기 → 열린 문 닫기(0.5초). now = 바로 닫음(새 판·되돌리기)
  function clearTaken(r,{now=false}={}){if(r.taken){r.M.group.remove(r.taken.obj);r.taken=null;if(r.kind==='timer'&&r.U.door?.open>0)r.shut={t:0};}
   if(r.shut&&now){r.shut=null;r.U.setDoor?.({open:0,rattle:0,lock:'locked'});}}
- function stepShut(r,dt){const s=r.shut;s.t+=dt;const k=Math.min(1,s.t/DOOR_TIMES.shut);r.U.setDoor?.({open:1-ease(k),lock:k>=1?'locked':'open'});if(k>=1){r.shut=null;audio?.play('bump');}}
+ function stepShut(r,dt){const s=r.shut;s.t+=dt;const k=Math.min(1,s.t/DOOR_TIMES.shut);r.U.setDoor?.({open:1-ease(k),lock:k>=1?'locked':'open'});if(k>=1){r.shut=null;say(r,'bump');}}
  function finishLocal(r,res){outcomeFx(r,res);mode='result';phase=res.kind==='win'?'win':'lose';onEvent('result',{machine:r.i,kind:r.kind,res});}
  const nextPrize=(r,not)=>{const pool=pools[r.i].filter(id=>id!==not);return pool[Math.floor(Math.random()*pool.length)]??pools[r.i][0];};
 
@@ -202,7 +204,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   if(mode!=='play'||!cur)return false;
   if(cur.kind==='claw')return press();
   if(cur.kind==='timer'){const t=cur.timer;
-   if(t.phase==='ready'){t.phase='run';t.t0=ts;cur.U.setButton?.('stop');cur.U.press?.(1);const r=cur;setTimeout(()=>r.U.press?.(0),150);audio?.play('coin');onEvent('phase',{phase:'run'});return true;}
+   if(t.phase==='ready'){t.phase='run';t.t0=ts;t.sec=null;cur.U.setButton?.('stop');cur.U.press?.(1);const r=cur;setTimeout(()=>r.U.press?.(0),150);audio?.play('coin');onEvent('phase',{phase:'run'});return true;}
    if(t.phase==='run'){if(ts-t.t0<T.timer.startLockSec*1000)return false;stopTimer(ts-t.t0);return true;}
    return false;}
   const k=holdState(cur);if((k.phase==='k1'||k.phase==='k2')&&!k.holding){k.holding=true;k.holdT=0;audio?.loop('motor');onEvent('phase',{phase:k.phase,holding:true});return true;}
@@ -213,9 +215,9 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   if(mode!=='play'||!cur||(cur.kind!=='key'&&cur.kind!=='bridge'))return false;const k=holdState(cur);if(!k.holding)return false;
   k.holding=false;audio?.stop('motor');
   if(k.phase==='k1'){k.phase='gap';k.gapT=0;onEvent('phase',{phase:'gap'});}
-  else if(cur.kind==='bridge'){k.phase='drop';mode='drop';phase='drop';cur.dropAt=[cur.x,cur.z];cur.bsim.setPos(cur.x/U,cur.z/U);cur.bsim.drop();cur.U.press?.(1);const r=cur;setTimeout(()=>r.U.press?.(0),180);
+  else if(cur.kind==='bridge'){k.phase='drop';mode='drop';phase='drop';cur.dropAt=[cur.x,cur.z];cur.bsim.setPos(cur.x/U,cur.z/U);cur.bsim.drop();audio?.play('down');cur.U.press?.(1);const r=cur;setTimeout(()=>r.U.press?.(0),180);
    result={kind:'pending',id:null};onEvent('drop',{machine:cur.i,res:result});}
-  else{k.phase='push';k.gapT=0;k.marked=false;mode='drop';phase='drop';
+  else{k.phase='push';k.gapT=0;k.marked=false;mode='drop';phase='drop';audio?.play('key-in');
    const cell=(i,j)=>cur.U.cellAt?.(i,j),kr=judgeKey(k.x,k.y,T.key,(i,j)=>!!cell(i,j)?.rare,pityNow);
    result={kind:kr.r,id:kr.r==='win'?cell(kr.i,kr.j)?.id??null:null,key:kr};onEvent('drop',{machine:cur.i,res:result});}
   return true;
@@ -223,12 +225,12 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
  // 집게 「뽑기」
  function press(){
   if(!armed()||cur.kind!=='claw')return false;
-  mode='drop';phase='drop';hold={x:0,z:0};audio?.stop('motor');cur.dropAt=[cur.x,cur.z];cur.sim.drop();cur.U.press?.(1);const r=cur;setTimeout(()=>r.U.press?.(0),180);
+  mode='drop';phase='drop';hold={x:0,z:0};audio?.stop('motor');audio?.play('down');cur.dropAt=[cur.x,cur.z];cur.sim.drop();cur.U.press?.(1);const r=cur;setTimeout(()=>r.U.press?.(0),180);
   result={kind:'pending',id:null};onEvent('drop',{machine:cur.i,res:result,auto:elapsed>=T.claw.timeSec});return true;
  }
  function stopTimer(ms){
   const r=cur;r.timer.phase='stop';r.timer.ms=ms;const j=judgeTimer(ms,T.timer,pityNow);lastV=hund(ms);
-  r.U.setTimer?.({text:j.shown,state:j.r});r.U.setButton?.('off');r.U.press?.(1);setTimeout(()=>r.U.press?.(0),150);
+  r.U.setTimer?.({text:j.shown,state:j.r});r.U.setButton?.('off');r.U.press?.(1);audio?.play('door');audio?.play(j.r==='win'?'perfect':j.r==='near'?'near':'tick'); // 멈춤 철컥 + 딱 10.00 반짝·아깝다 띠딩setTimeout(()=>r.U.press?.(0),150);
   const prize=r.U.prize,id=idOfObj(prize)??pools[r.i][0];
   result={kind:j.r,id:j.r==='win'?id:null,shown:j.shown,diff:j.diff,prize:id};
   mode='drop';phase='drop';onEvent('drop',{machine:r.i,res:result});
@@ -274,7 +276,8 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
     if(t.phase==='ready'){t.readyT+=dt;if(t.readyT>=T.timer.readyLimitSec)bigDown(performance.now());}
     else if(t.phase==='run'){const ms=performance.now()-t.t0;
      if(ms>=T.timer.maxSec*1000)stopTimer(T.timer.maxSec*1000);
-     else{const hide=hideAfterOf(MACHINES[r.i]?.id,T);r.U.setTimer?.({text:fmtTimer(ms),state:'run',dim:hide>0&&ms>=hide*1000});}}
+     else{const hide=hideAfterOf(MACHINES[r.i]?.id,T),dim=hide>0&&ms>=hide*1000;r.U.setTimer?.({text:fmtTimer(ms),state:'run',dim});
+      const sec=Math.floor(ms/1000);if(sec!==t.sec){if(t.sec!=null&&!dim)audio?.play('tick');t.sec=sec;}}}
    }else if(r.kind==='bridge'){const k=r.bk,sp=B.moveSpeed*W;
     if(k.holding){k.holdT+=dt;if(k.phase==='k1')r.x=Math.min(r.range.x[1],r.x+sp*dt);else r.z=Math.max(r.range.z[0],r.z-sp*dt);r.tx=r.x;r.tz=r.z;r.bsim.setPos(r.x/U,r.z/U);if(k.holdT>=B.holdLimitSec)bigUp();}
     if(k.phase==='gap'){k.gapT+=dt;if(k.gapT>=B.gapSec){k.phase='k2';onEvent('phase',{phase:'k2'});}}
@@ -289,13 +292,13 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
    // 성공이면 밀어 넣는 동안 구멍 가운데로 미끄러져 들어감(구멍 가장자리에서 성공해도 열쇠가 판에 박혀 보이지 않게)
    const [hx,hy]=kw?.r==='win'?keyHole(kw.i,kw.j,T.key):[k.x,k.y],e=p*p*(3-2*p);r.U.key?.set({x:k.x+(hx-k.x)*e,y:k.y+(hy-k.y)*e,push:p});
    if(k.gapT>=.35&&!k.marked){k.marked=true;const kr=result.key;
-    if(kr.i>=0&&kr.j>=0&&kr.i<T.key.cols&&kr.j<T.key.rows){r.U.markCell?.(kr.i,kr.j,kr.r==='win'?'ok':kr.r);if(kr.r==='win'){r.U.openCell?.(kr.i,kr.j);audio?.play('grab');}else audio?.play('bump');}else audio?.play('bump');}
+    if(kr.i>=0&&kr.j>=0&&kr.i<T.key.cols&&kr.j<T.key.rows){r.U.markCell?.(kr.i,kr.j,kr.r==='win'?'ok':kr.r);if(kr.r==='win'){r.U.openCell?.(kr.i,kr.j);audio?.play('cell');}else audio?.play('bump');}else audio?.play('bump');}
    if(k.gapT>=(result.kind==='win'?1.5:1.1))finishLocal(r,result);}
   for(const r of rigs){
    if(r.kind==='bridge'){ // 봉: 상자 물리. 쓰는 기계·움직이는 상자만 돌림(가만히 있는 상자는 잠듦)
     const b=r.bsim;
     if(r===cur||!b.sleeping||r.refillT>0)b.step(dt);
-    for(const e of b.events.splice(0)){if(r!==cur)continue;if(e.type==='close')audio?.play('grab');else if(e.type==='won'){audio?.play('chute');}else if(e.type==='done')doneAt=elapsed+.9;}
+    for(const e of b.events.splice(0)){if(r!==cur)continue;if(e.type==='close')audio?.play('grab');else if(e.type==='lift')audio?.play('up');else if(e.type==='touch')audio?.play('push');else if(e.type==='won'){audio?.play('drop');}else if(e.type==='done')doneAt=elapsed+.9;}
     if(r===cur&&mode==='drop'&&(doneAt&&elapsed>=doneAt||elapsed>40)){
      const kind=bridgeOutcome(b,r.before,B),won=kind==='win';
      if(won){r.mv=0;r.still=0;r.lay=0;r.refillT=B.refillSec;}else{r.mv++;r.still=noProgress(b,r.before,T.share)?r.still+1:0;r.lay=b.tilt()>B.lieDeg?r.lay+1:0;}
@@ -313,7 +316,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
     if(live)r.sim.step(dt);
     for(const e of r.sim.events.splice(0)){
      if(r!==cur)continue;
-     if(e.type==='close')audio?.play('grab');else if(e.type==='release')audio?.play('chute');
+     if(e.type==='close')audio?.play('grab');else if(e.type==='lift')audio?.play('up');else if(e.type==='release')audio?.play('chute');
      else if(e.type==='won')clawWon.push(e.id);
      else if(e.type==='done')doneAt=elapsed+.9;}
     if(r===cur&&mode==='drop'&&(doneAt&&elapsed>=doneAt||elapsed>T.claw.timeSec+20)){

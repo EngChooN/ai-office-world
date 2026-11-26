@@ -8,7 +8,7 @@ import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {spawn} from 'node:child_process';
 const OUT=process.env.OUT??'artifacts/claw-verify';mkdirSync(OUT,{recursive:true});
-const PARTS=(process.env.PART??'size,keys,multi,server,hub').split(',');
+const PARTS=(process.env.PART??'size,keys,multi,server,hub,sound').split(',');
 const {createServer}=await import('vite');const port=Number(process.env.PORT??5395);
 const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true},logLevel:'warn'});await vite.listen();
 const base=`http://127.0.0.1:${port}`;
@@ -406,7 +406,63 @@ async function barRun(size){
  await ctx.close();
 }
 
+// ── 소리(11-26 대표 제보 「소리가 없다」): 소리 켠 상태로 첫 누름 → 소리 깨어남·가게 음악, 집게·타이머·열쇠·봉 한 판씩 소리 이름, 소리 창(음악 끄기·크기·음소거)
+//   귀로 듣는 확인은 아님: 브라우저 소리 장치가 깨어났는지와 효과음을 몇 번 냈는지(window.claw.audio.status())만 본다
+async function soundRun(size){
+ const [w,h,touch]=SIZES[size],tag=`[소리 ${size}]`;
+ const ctx=await browser.newContext({viewport:{width:w,height:h},deviceScaleFactor:1,isMobile:touch,hasTouch:touch});
+ await ctx.addInitScript(()=>{if(!sessionStorage.getItem('__k')){localStorage.clear();sessionStorage.setItem('__k','1');localStorage.setItem('aoworld:settings:v1',JSON.stringify({sound:true,volume:.7,music:true,hubTime:'auto'}));}});
+ const p=await ctx.newPage();p.errs=[];p.on('pageerror',e=>p.errs.push(e.message));
+ await p.goto(base+'/claw/');await p.waitForFunction(()=>window.claw&&window.claw.fps>0,null,{timeout:180000});
+ const au=()=>p.evaluate(()=>window.claw.audio.status());
+ ok(`${tag} 첫 누름 전에는 소리 장치 없음(자동 재생 규칙)`,(await au()).context==='입력 대기');
+ const fps0=await p.evaluate(()=>window.claw.fps);
+ if(touch)await p.touchscreen.tap(w/2,h*.45);else await p.mouse.click(w/2,h*.45);await sl(1500);
+ let a=await au();ok(`${tag} 첫 누름 뒤 소리 깨어남·가게 음악 흐름`,a.context==='running'&&a.bgm,JSON.stringify({context:a.context,bgm:a.bgm,mood:a.mood}));
+ await p.evaluate(()=>{claw.seen(true);claw.goMachine(0);});await sl(900);
+ const tapBig=async ms=>{const b=await bigBox(p);if(touch){await p.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);}else await holdBig(p,ms);};
+ const played=async names=>{const by=(await au()).byName;return names.filter(n=>!(by[n]>0));};
+ // 집게: 한 판 → 조이스틱 대신 콘솔로 조금 움직임(모터) → 뽑기
+ await click(p,'.kh-small[data-act=play]');await sl(900);
+ ok(`${tag} 조작 중 음악 줄임`,(await au()).ducked);
+ await p.evaluate(()=>{claw.play.aim?.(0,0);});if(!touch){await p.keyboard.down('ArrowRight');await sl(500);await p.keyboard.up('ArrowRight');}
+ await tapBig(200);await waitResult(p,60000);
+ {const miss=await played(['coin','down','grab','up','chute']),by=(await au()).byName;ok(`${tag} 집게: 코인·내려감·잡음·올라옴·놓음 소리`,!miss.length,`빠짐 ${miss} · ${JSON.stringify(by)}`);
+  ok(`${tag} 집게: 성공 또는 실패 소리`,by.win>0||by.fanfare>0||by.lose>0||by.slip>0,JSON.stringify(by));}
+ await click(p,'.kh-card [data-c=stop]');await sl(500);ok(`${tag} 판 끝나면 음악 다시 크게`,!(await au()).ducked);
+ // 타이머: 시작 → 2.4초 → 멈춤
+ await p.evaluate(()=>claw.goMachine(10));await sl(900);await click(p,'.kh-small[data-act=play]');await sl(900);
+ await tapBig(120);await sl(2400);await tapBig(120);await waitResult(p,20000);
+ {const miss=await played(['tick','door']);ok(`${tag} 타이머: 1초 틱·멈춤 철컥`,!miss.length,`빠짐 ${miss} · 틱 ${(await au()).byName.tick}`);}
+ await click(p,'.kh-card [data-c=stop]');await sl(400);
+ // 열쇠: 오른쪽 → 위
+ await p.evaluate(()=>claw.goMachine(13));await sl(900);await click(p,'.kh-small[data-act=play]');await sl(900);
+ await holdBig(p,500);await sl(1200);await holdBig(p,400);await waitResult(p,20000);
+ {const by=(await au()).byName;ok(`${tag} 열쇠: 꽂기 + 칸 열림 또는 막힘 소리`,by['key-in']>0&&(by.cell>0||by.bump>0),JSON.stringify(by));}
+ await click(p,'.kh-card [data-c=stop]');await sl(400);
+ // 봉: 오른쪽 → 위 → 내려감·상자
+ await p.evaluate(()=>claw.goMachine(6));await sl(900);await click(p,'.kh-small[data-act=play]');await sl(900);
+ await holdBig(p,700);await sl(1200);await holdBig(p,500);await waitResult(p,60000);
+ {const miss=await played(['down','grab','up']),by=(await au()).byName;ok(`${tag} 봉: 내려감·잡음·올라옴 소리`,!miss.length,`빠짐 ${miss} · 밀기 ${by.push??0}·떨어짐 ${by.drop??0}`);}
+ await click(p,'.kh-card [data-c=stop]');await sl(400);
+ const fps1=await p.evaluate(()=>window.claw.fps);
+ ok(`${tag} 소리·음악 켠 뒤 화면 빠르기(참고)`,fps1>=Math.min(20,fps0*.7),`소리 전 ${fps0} → 뒤 ${fps1}`);
+ // 소리 창: 음악 끄기·크기·음소거, 공용 설정에 저장
+ await click(p,'.uf-menu-btn');await click(p,'[data-uf-tab=sound]');await sl(300);
+ await checkButtons(p,`${tag} 소리 창`,['.kh-tab-h ~ .kh-row .kh-btn']);
+ await p.screenshot({path:`${OUT}/${size}-sound.png`});
+ await click(p,'[data-mus]');await sl(300);a=await au();
+ const saved=()=>p.evaluate(()=>JSON.parse(localStorage.getItem('aoworld:settings:v1')));
+ ok(`${tag} 배경 음악 끄기 → 멈춤·저장`,!a.bgm&&(await saved()).music===false);
+ await p.evaluate(()=>{const r=document.querySelector('[data-vol]');r.value='40';r.dispatchEvent(new Event('input',{bubbles:true}));});ok(`${tag} 소리 크기 저장`,(await saved()).volume===.4);
+ await click(p,'[data-snd]');await sl(200);const n0=(await au()).played;await p.evaluate(()=>claw.audio.play('coin'));
+ ok(`${tag} 음소거면 효과음 0·저장`,(await au()).played===n0&&(await saved()).sound===false);
+ await click(p,'[data-snd]');await click(p,'[data-mus]');await sl(500);ok(`${tag} 다시 켜면 음악 흐름`,(await au()).bgm);
+ ok(`${tag} 페이지 오류 0`,!p.errs.length,p.errs.join(' / '));await ctx.close();
+}
+
 try{
+ if(PARTS.includes('sound'))for(const s of ONLY)await soundRun(s);
  if(PARTS.includes('bar'))for(const s of ONLY)await barRun(s);
  if(PARTS.includes('size'))for(const s of ONLY)await sizeRun(s);
  if(PARTS.includes('keys'))await keysRun();

@@ -1,0 +1,93 @@
+{
+ "generated": "2026-11-26T10:00:16.410Z",
+ "sampleRate": 44100,
+ "channels": 1,
+ "note": "BGM은 BGM_LEVEL 곱한 게임 크기(효과음 마스터 SFX_MASTER×볼륨 앞). active = 앞뒤 무음 뺀 구간",
+ "BGM_LEVEL": 0.09,
+ "levelApplied": "renderBars({level:BGM_LEVEL})",
+ "moods": {
+  "arcade": {
+   "label": "신나는 오락실",
+   "bpm": 144,
+   "bars": 12,
+   "barSec": 1.6667,
+   "loopSeconds": 60,
+   "seconds": 21.2,
+   "peak": 0.05557,
+   "rms": 0.00827,
+   "peakDb": -25.1,
+   "rmsDb": -41.65,
+   "active": {
+    "peak": 0.05557,
+    "rms": 0.00851,
+    "peakDb": -25.1,
+    "rmsDb": -41.4
+   },
+   "mp3": {
+    "file": "arcade.mp3",
+    "bytes": 340262,
+    "seconds": 21.2
+   }
+  },
+  "pop": {
+   "label": "경쾌한 팝",
+   "bpm": 126,
+   "bars": 11,
+   "barSec": 1.9048,
+   "loopSeconds": 83.80952380952381,
+   "seconds": 22.152,
+   "peak": 0.0357,
+   "rms": 0.00712,
+   "peakDb": -28.95,
+   "rmsDb": -42.94,
+   "active": {
+    "peak": 0.0357,
+    "rms": 0.00732,
+    "peakDb": -28.95,
+    "rmsDb": -42.71
+   },
+   "mp3": {
+    "file": "pop.mp3",
+    "bytes": 355727,
+    "seconds": 22.152902
+   }
+  },
+  "retro": {
+   "label": "레트로 게임",
+   "bpm": 134,
+   "bars": 11,
+   "barSec": 1.791,
+   "loopSeconds": 64.47761194029852,
+   "seconds": 20.901,
+   "peak": 0.04067,
+   "rms": 0.01062,
+   "peakDb": -27.81,
+   "rmsDb": -39.48,
+   "active": {
+    "peak": 0.04067,
+    "rms": 0.01093,
+    "peakDb": -27.81,
+    "rmsDb": -39.23
+   },
+   "mp3": {
+    "file": "retro.mp3",
+    "bytes": 335665,
+    "seconds": 20.901497
+   }
+  }
+ },
+ "success": {
+  "desc": "triangle 784Hz gain .2 dur .22s x4 back-to-back",
+  "seconds": 1.2,
+  "peak": 0.19425,
+  "rms": 0.03059,
+  "peakDb": -14.23,
+  "rmsDb": -30.29,
+  "active": {
+   "peak": 0.19425,
+   "rms": 0.03532,
+   "peakDb": -14.23,
+   "rmsDb": -29.04
+  }
+ }
+}
