@@ -72,7 +72,7 @@ test('먼 인형 형상: 가벼운 형상보다 가볍고 색이 있음(먼 기�
 });
 test('가게: 기계 위 불 16·별(InstancedMesh 둘), 기계 그림자 = 그림자 전용 상자 하나(층 SHADOW_LAYER), 기계 부품은 그림자 안 드리움',()=>{
  const shop=buildClawShop({kinds:true,T}),L=shop.userData.lamps;
- assert.equal(L.lamp.count,16);assert.equal(L.star.count,16);
+ assert.equal(L.lamp.count,MACHINES.length);assert.equal(L.star.count,MACHINES.length);
  L.set(6,{near:true});L.set(7,{busy:true,near:true});L.update(.05);
  const m=new THREE.Matrix4(),s=new THREE.Vector3();L.star.getMatrixAt(6,m);m.decompose(new THREE.Vector3(),new THREE.Quaternion(),s);assert.ok(s.x>.9,'빈 아슬아슬 기계 = 별');
  L.star.getMatrixAt(7,m);m.decompose(new THREE.Vector3(),new THREE.Quaternion(),s);assert.equal(s.x,0,'뽑는 중이면 별 없음');

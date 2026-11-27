@@ -8,7 +8,7 @@ import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {spawn} from 'node:child_process';
 const OUT=process.env.OUT??'artifacts/claw-verify';mkdirSync(OUT,{recursive:true});
-const PARTS=(process.env.PART??'size,keys,multi,server,hub,sound').split(',');
+const PARTS=(process.env.PART??'size,keys,multi,server,hub,sound,stack').split(',');
 const {createServer}=await import('vite');const port=Number(process.env.PORT??5395);
 const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true},logLevel:'warn'});await vite.listen();
 const base=`http://127.0.0.1:${port}`;
@@ -76,7 +76,7 @@ async function sizeRun(size){
  // ☰ → 기계 탭 → 「가기」(숲속 = 집게)
  await click(p,'.uf-menu-btn');await click(p,'[data-uf-tab=machines]');await sl(300);
  await p.screenshot({path:`${OUT}/${size}-2machines.png`});
- ok(`${tag} 기계 탭: 종류별 4묶음(집게 6·봉 4·타이머 3·열쇠 3)·빈 기계 수`,await p.evaluate(()=>{const g=[...document.querySelectorAll('.kh-mgroup')];return g.length===4&&g.map(x=>x.querySelectorAll('.kh-mlist li').length).join()==='6,4,3,3'&&/빈 기계 6\/6/.test(g[0].textContent);}));
+ ok(`${tag} 기계 탭: 종류별 5묶음(집게 6·봉 4·타이머 3·열쇠 3·불빛 쌓기 1)·빈 기계 수`,await p.evaluate(()=>{const g=[...document.querySelectorAll('.kh-mgroup')];return g.length===5&&g.map(x=>x.querySelectorAll('.kh-mlist li').length).join()==='6,4,3,3,1'&&/빈 기계 6\/6/.test(g[0].textContent);}));
  await checkButtons(p,`${tag} 기계 탭(보이는 줄)`,['.uf-tab','.uf-x']);
  await p.evaluate(()=>document.querySelector('.uf-sheet [data-go="0"]').scrollIntoView({block:'nearest'}));
  await click(p,'.uf-sheet [data-go="0"]');await sl(900);
@@ -295,7 +295,79 @@ async function multiRun(){
  await B.screenshot({path:`${OUT}/multi-notice.png`});
  await click(A,'.kh-card [data-c=stop]');await sl(1200);
  ok('[두 창] A가 그만두면 B 화면 기계 비움',await B.evaluate(()=>!claw.play.status().rigs[13].owner));
+ // 불빛 쌓기(11-27): A가 3줄 쌓으면 B 화면 판에도 같은 3줄, 결과도 같은 줄로
+ await A.evaluate(()=>claw.goMachine(16));await sl(700);await click(A,'.kh-small[data-act=play]');await A.waitForFunction(()=>claw.play.status().stack?.phase==='run',null,{timeout:5000});
+ for(let k=0;k<3;k++){await A.waitForFunction(()=>claw.play.status().stack?.phase==='run',null,{timeout:5000});await A.evaluate(()=>claw.play.bigDown(claw.play.stackAimTs(0)));}
+ await sl(900);
+ {const a=await A.evaluate(()=>claw.shop.userData.machines[16].group.userData.board.rows),b=await B.evaluate(()=>claw.shop.userData.machines[16].group.userData.board.rows);
+  ok('[두 창] 불빛 쌓기 구경: B 판에 A와 같은 쌓인 줄',a.length===3&&JSON.stringify(a)===JSON.stringify(b),`${JSON.stringify(a)} / ${JSON.stringify(b)}`);}
+ await B.evaluate(()=>claw.teleport(-2.4,3.2,0));await sl(500);await B.screenshot({path:`${OUT}/multi-watch-stack.png`});
+ await A.evaluate(()=>claw.play.quit());await sl(1200);ok('[두 창] 불빛 쌓기: A가 그만두면 B 기계 비움',await B.evaluate(()=>!claw.play.status().rigs[16].owner));
  ok('[두 창] 페이지 오류 0',!A.errs.length&&!B.errs.length,[...A.errs,...B.errs].join(' / '));
+ await ctx.close();
+}
+
+// ── 11-27 새 기계 ① 불빛 쌓기 「별빛 탑」(규칙서 §1): 규칙 카드 → 한 판(진짜 누름 + 점검용 정확한 시각) → 7줄 고르기 카드 → 계속 → 11줄 큰 인형,
+//   실패(어긋남 숫자·직원 도움까지), 7줄에서 끝, 그만두기 문구, 직원 도움 4칸. PART=stack SIZES=portrait,pc …
+async function stackRun(size){
+ const {ctx,p}=await open(size);const tag=`[별빛 탑 ${size}]`,[W,H,touch]=SIZES[size],I=16;
+ const ph=()=>p.evaluate(()=>claw.play.status().stack?.phase??null);
+ const waitPh=async(want,ms=6000)=>{await p.waitForFunction(w=>claw.play.status().stack?.phase===w,want,{timeout:ms});};
+ // 점검용 정확한 누름: 아래 줄과 miss칸 어긋난 다음 순간 시각으로 bigDown
+ const stopAt=async(miss=0)=>{await waitPh('run');return p.evaluate(m=>{const t=claw.play.stackAimTs(m);return t!=null&&claw.play.bigDown(t);},miss);};
+ await p.evaluate(i=>claw.goMachine(i),I);await sl(900);
+ ok(`${tag} 기계 앞: 할 일 칩 「별빛 탑 한 판 · 🪙1」`,/별빛 탑 한 판/.test(await p.evaluate(()=>[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|'))));
+ await p.screenshot({path:`${OUT}/stack-${size}-1near.png`});
+ await firstPlay(p,tag,'별빛 탑');
+ ok(`${tag} 규칙 카드에 7줄·11줄 인형·「계속해도 그대로」`,true); // firstPlay가 카드 찍음(아래 ⓘ 규칙에서 글 확인)
+ ok(`${tag} 준비 중 판 「준비…」(흐림)`,await p.evaluate(()=>{const b=document.querySelector('.kh-bar');return /준비/.test(b.textContent)&&b.hasAttribute('data-dim');})||await ph()==='run');
+ await waitPh('run');await sl(150);
+ ok(`${tag} 조작: 판 「멈춤」·위 칩 「⭐ 0 / 11줄」·옆에서 보기 없음·⏱ 없음`,await p.evaluate(()=>{const b=document.querySelector('.kh-bar'),c=document.querySelector('.kh-schip');return /멈춤/.test(b.textContent)&&!b.hasAttribute('data-dim')&&c&&!c.hidden&&/0 \/ 11줄/.test(c.textContent)&&!document.querySelector('.kh-todo[data-act=side]')&&document.querySelector('.kh-timer').hidden;}));
+ ok(`${tag} 한 줄 안내 「첫 줄 — 아무 데서나」`,await p.evaluate(()=>/첫 줄/.test(document.querySelector('.kh-hint').textContent)));
+ await checkButtons(p,`${tag} 조작`,['.kh-pill','.kh-quit','.kh-big.kh-bar']);
+ {const c=(await rect(p,'.kh-schip'))[0],tr=[...await rect(p,'.kh-pill'),...await rect(p,'.uf-tr > *'),...await rect(p,'.kh-big.kh-bar'),...await rect(p,'.kh-hint')];ok(`${tag} 위 칩이 화면 안·단추·안내와 안 겹침`,c&&c.x>=0&&c.r<=W&&!tr.some(r=>hit(c,r)),JSON.stringify(c));}
+ await p.screenshot({path:`${OUT}/stack-${size}-2play.png`});
+ // 1줄: 진짜 손가락/마우스로 판을 누름
+ {const b=await bigBox(p);if(touch)await p.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);else await p.mouse.click(b.x+b.width/2,b.y+b.height/2);}
+ await sl(200);let s=(await st(p)).play.stack;ok(`${tag} 판을 누르면 1줄이 멈춤(3칸 그대로)`,s.top===1&&s.rows[0][1]===3,JSON.stringify(s));
+ for(let r=2;r<=6;r++)await stopAt(0);
+ await waitPh('run');await sl(250);await p.screenshot({path:`${OUT}/stack-${size}-3row7.png`});
+ await stopAt(0);await p.waitForFunction(()=>claw.hud.card==='choice',null,{timeout:5000});await sl(300);
+ s=await st(p);ok(`${tag} 7줄: 작은 인형 바로 도감에·고르기 카드`,s.dex.squirrel>=1&&s.play.stack.phase==='choice',JSON.stringify(s.dex));
+ ok(`${tag} 고르기 카드: 계속하기·여기서 끝·남은 초·코인 안 듦`,await p.evaluate(()=>{const c=document.querySelector('.kh-card');return /계속하기/.test(c.textContent)&&/여기서 끝/.test(c.textContent)&&/초 안 고르면/.test(c.textContent)&&/코인은 더 안 들어요/.test(c.textContent);}));
+ await checkButtons(p,`${tag} 고르기 카드`,['.kh-card .kh-btn']);
+ await p.screenshot({path:`${OUT}/stack-${size}-4choice.png`});
+ await sl(1100);ok(`${tag} 고르기 카드 남은 초가 줄어듦`,await p.evaluate(()=>+document.querySelector('.kh-card [data-left]').textContent<20));
+ const coins7=(await st(p)).coins;
+ await click(p,'.kh-card [data-c=sgo]');
+ for(let r=8;r<=11;r++)await stopAt(0);
+ await sl(400);await p.screenshot({path:`${OUT}/stack-${size}-5top.png`});
+ await waitResult(p,8000);s=await st(p);
+ ok(`${tag} 11줄: 큰 인형 + 「다람쥐도 받았어요」·코인 그대로`,s.play.result?.id==='big-nunsong'&&s.dex['big-nunsong']>=1&&s.dex.squirrel===1&&s.coins===coins7&&await p.evaluate(()=>/꼭대기까지/.test(document.querySelector('.kh-card').textContent)&&/다람쥐도 받았어요/.test(document.querySelector('.kh-card').textContent)),JSON.stringify({r:s.play.result,dex:s.dex}));
+ await resultChecks(p,tag,'11줄');await p.screenshot({path:`${OUT}/stack-${size}-6bigwin.png`});
+ // 실패: 2줄을 3칸 어긋나게(모두 떨어짐) → 「1줄까지」·「2줄에서 3칸」·직원 도움까지
+ await click(p,'.kh-card [data-c=again]');await sl(300);
+ await stopAt(0);await stopAt(3);await waitResult(p,6000);s=await st(p);
+ ok(`${tag} 실패 카드: 「1줄까지」·「2줄에서 3칸 …」·「직원 도움까지 4번」`,s.play.result?.kind==='miss'&&await p.evaluate(()=>{const t=document.querySelector('.kh-card').textContent;return /1줄까지/.test(t)&&/2줄에서 3칸 (늦었|빨랐)어요/.test(t)&&/직원 도움까지 4번/.test(t);}),await p.evaluate(()=>document.querySelector('.kh-card').textContent));
+ await resultChecks(p,tag,'실패');await p.screenshot({path:`${OUT}/stack-${size}-7miss.png`});
+ // 7줄에서 끝
+ await click(p,'.kh-card [data-c=again]');await sl(300);for(let r=1;r<=7;r++)await stopAt(0);
+ await p.waitForFunction(()=>claw.hud.card==='choice',null,{timeout:5000});await click(p,'.kh-card [data-c=send]');await waitResult(p,6000);s=await st(p);
+ ok(`${tag} 여기서 끝: 「7줄에서 끝냈어요」·다람쥐 2개째(한 번만 적음)`,s.play.result?.id==='squirrel'&&s.dex.squirrel===2&&await p.evaluate(()=>/7줄에서 끝냈어요/.test(document.querySelector('.kh-card').textContent)&&/2개째/.test(document.querySelector('.kh-card').textContent)),JSON.stringify(s.dex));
+ await p.screenshot({path:`${OUT}/stack-${size}-8end7.png`});
+ // 직원 도움: 실패 5번으로 맞추고 → 4칸 시작·판 글
+ await click(p,'.kh-card [data-c=stop]');await sl(300);
+ await p.evaluate(()=>{claw.state.pity['stack-1']=5;});await click(p,'.kh-small[data-act=play]');await waitPh('run');await sl(200);
+ s=await st(p);ok(`${tag} 직원 도움(5번 실패 뒤): 시작 4칸·알림`,s.play.pity&&s.play.stack.w===4&&await p.evaluate(()=>/직원 도움/.test(document.querySelector('.kh-toast')?.textContent??'')),JSON.stringify(s.play.stack));
+ await p.screenshot({path:`${OUT}/stack-${size}-9pity.png`});
+ // 그만두기(경품 없이) → 실패 한 번 더
+ await click(p,'.kh-quit');await sl(200);ok(`${tag} ✕ → 「코인은 돌려받지 못해요」`,await p.evaluate(()=>/돌려받지 못해요/.test(document.querySelector('.kh-card').textContent)));
+ await click(p,'.kh-card [data-c=quit]');await sl(300);s=await st(p);ok(`${tag} 그만두기 → 걷기·보장 수 +1`,s.mode==='idle'&&s.pity['stack-1']===6,JSON.stringify(s.pity));
+ // 10초 무입력 → 저절로 멈춤
+ await p.evaluate(()=>{claw.state.pity['stack-1']=0;});await click(p,'.kh-small[data-act=play]');await waitPh('run');await sl(10600);
+ s=await st(p);ok(`${tag} 10초 안 누르면 저절로 멈춤`,s.play.stack?.top>=1||s.play.result,JSON.stringify(s.play.stack));
+ await click(p,'.kh-quit').catch(()=>{});await sl(200);await p.$('.kh-card [data-c=quit]').then(b=>b?.click());await sl(300);
+ ok(`${tag} 페이지 오류 0`,!p.errs.length,p.errs.slice(0,3).join(' / '));report.errors.push(...p.errs.map(e=>`${tag} ${e}`));
  await ctx.close();
 }
 
@@ -469,6 +541,7 @@ try{
  if(PARTS.includes('multi'))await multiRun();
  if(PARTS.includes('server'))await serverRun();
  if(PARTS.includes('hub'))await hubRun();
+ if(PARTS.includes('stack'))for(const s of ONLY)await stackRun(s);
 }catch(e){fails++;report.errors.push(String(e.stack??e));console.error(e);}
 finally{
  report.pass=report.checks.filter(c=>c.pass).length;report.fail=fails;writeFileSync(`${OUT}/report.json`,JSON.stringify(report,null,1));

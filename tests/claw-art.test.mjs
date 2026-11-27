@@ -68,7 +68,7 @@ test('인형 더미: 유리 안·구멍 밖, seed가 같으면 같은 배치, �
 });
 test('가게(11-23 기계 16대·14×11m, 설계 v4·v4.1): 기계가 걷는 범위 안·서는 자리가 막히지 않음, 들어온 자리 비어 있음, 벽 숨기기',()=>{
  const shop=buildClawShop({mobile:true}),U=shop.userData,W=SHOP.walk;
- assert.equal(U.machines.length,16);assert.deepEqual([SHOP.w,SHOP.d],[14,11]);
+ assert.equal(U.machines.length,MACHINES.length);assert.deepEqual([SHOP.w,SHOP.d],[14,11]);
  const inside=(x,z,c)=>c.r?Math.hypot(x-c.x,z-c.z)<c.r:x>c.x0&&x<c.x1&&z>c.z0&&z<c.z1;
  const free=(x,z)=>x>W.x[0]&&x<W.x[1]&&z>W.z[0]&&z<W.z[1]&&!U.colliders.some(c=>inside(x,z,c));
  for(const m of U.machines){assert.ok(free(m.stand.x,m.stand.z),`${m.id} 서는 자리`);assert.ok(m.group.userData.pile.items.length>=6,'휴대폰도 더미가 있음');}

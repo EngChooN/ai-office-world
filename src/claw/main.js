@@ -157,7 +157,7 @@ makeThumbs();
 setSignThumbs(id=>thumbs.get(id)); // 기계 간판 오른쪽 대표 인형 그림(월드아트 signAtlas)
 
 // ── 한 판(집게)·결과
-let hud=null,multi=null,runOn=false,ducked=false;
+let hud=null,multi=null,runOn=false,ducked=false,stackPre=null; // stackPre = 불빛 쌓기 7줄에서 이미 적은 작은 인형 기록(결과 카드가 다시 적지 않게)
 // 다른 손님 기계 소리: 2m 안은 0.6, 9m에서 0(30명 가게가 시끄럽지 않게, 11-26 개발 결정)
 const hearOf=i=>{const M=U.machines[i];if(!M)return 0;const [x,z]=toShop(M,0,0),d=Math.hypot(x-player.x,z-player.z);return .6*Math.max(0,Math.min(1,(9-d)/7));};
 const play=createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf,toonify:toon.toonify,audio,rareOf,hearOf,
@@ -168,14 +168,23 @@ const play=createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf,toonify:toon.
   else if(type==='mach'){saveMachState(state,MACHINES[d.machine].id,d.st);saveState(state);}
   else if(type==='reset')hud?.toast(`${MACHINES[d.machine].name} 상자를 다시 놓았어요`,{sec:2.6});
   else if(type==='drop'&&d.res?.kind==='pending'){hud?.toast(d.auto?'시간 끝! 집게 내려가는 중…':'집게 내려가는 중…',{sec:2,urgent:true});}
+  else if(type==='start'&&d.kind==='stack'){stackPre=null;if(d.staff)hud?.toast(`직원 도움! 이번 판은 ${T.stack.pityWidth}칸으로 시작해요`,{sec:3,urgent:true});}
+  else if(type==='stack-row'&&!d.gone)hud?.toast(`${d.r}줄 ${d.lost}칸 ${d.late?'늦었어요':'빨랐어요'}`,{sec:1.2,urgent:true});
+  else if(type==='stack-auto')hud?.toast('10초가 지나 저절로 멈췄어요',{sec:2,urgent:true});
+  else if(type==='stack-prize'){const M=MACHINES[d.machine],rec=recordResult(state,M.id,{kind:'win',id:d.id});saveState(state);stackPre={id:d.id,...rec};syncShowcase();player.cheer();vibrate(40);} // 7줄 = 작은 인형 바로 받음(계속해도 안 잃음)
+  else if(type==='choice')hud?.showStackChoice({...d,isNew:!!stackPre?.isNew});
+  else if(type==='quit'&&d.kind==='stack'&&!d.gotSmall){const id=MACHINES[d.machine].id;state.pity[id]=(state.pity[id]??0)+1;saveState(state);} // 경품 없이 그만둠 = 실패 한 번(규칙서 §1)
   else if(type==='start'&&d.staff&&d.kind==='claw'){hud?.toast('직원이 인형 하나를 구멍 바로 뒤에 세워 줬어요!',{sec:2.6,urgent:true});} // 집게 직원 도움: 뽑을 때까지 판마다
   else if(type==='start'&&d.staff){state.pity[MACHINES[d.machine].id]=0;saveState(state);hud?.toast('직원이 상자를 처음 자리에 다시 놓아 줬어요!',{sec:2.6,urgent:true});} // 봉 직원 도움: 다시 놓으면 실패 수를 처음부터
   else if(type==='start'&&d.pity&&d.kind!=='bridge'&&d.kind!=='claw'){hud?.toast(`이번 판은 ${({timer:'넓은 성공 칸',key:'넓은 구멍'})[d.kind]}예요!`,{sec:2.6,urgent:true});}
   else if(type==='result'){
-   const M=MACHINES[d.machine],res=d.res,rec=recordResult(state,M.id,res);saveState(state);
-   if(res.kind==='win'){syncShowcase();player.cheer();vibrate(40);}else player.sigh();
+   const M=MACHINES[d.machine],res=d.res;let alsoNew=false;
+   // 불빛 쌓기: 작은 인형은 7줄에서 이미 적었음(pre) — 큰 인형만 새로 적음. 끝에 받은 게 없으면 실패 한 번
+   const rec=d.kind==='stack'&&res.pre&&stackPre?.id===res.id?{isNew:stackPre.isNew,count:stackPre.count}:recordResult(state,M.id,res);
+   if(d.kind==='stack'&&res.also)alsoNew=!!stackPre?.isNew;saveState(state);
+   if(res.kind==='win'){syncShowcase();if(!res.pre)player.cheer();vibrate(40);}else player.sigh();
    if(state.plays>=3)document.documentElement.toggleAttribute('data-claw-old',true);
-   hud.showResult({res,machine:d.machine,kind:d.kind,isNew:rec.isNew,count:rec.count,fails:state.pity[M.id]??0,coins:state.coins});
+   hud.showResult({res,machine:d.machine,kind:d.kind,isNew:rec.isNew,count:rec.count,fails:state.pity[M.id]??0,coins:state.coins,alsoNew});
   }
  }});
 let side=0; // 집게 「👁 옆에서」 시점(설계 v2 §4): 0 = 정면, 1 = 오른쪽 옆, -1 = 왼쪽 옆(「반대쪽에서 보기」로 바꿈)
@@ -222,7 +231,7 @@ addEventListener('keydown',e=>{if(e.code!=='Space'||e.repeat||typing()||play.mod
 addEventListener('keyup',e=>{if(e.code!=='Space'||play.mode!=='play')return;play.bigUp(e.timeStamp);},true);
 addEventListener('keydown',e=>{if(typing()||e.repeat)return;
  if(e.code==='KeyE'&&play.mode==='idle'&&!hud.card){hud.doTodo();}
- else if(e.code==='Escape'){if(hud.card&&hud.card!=='result')hud.closeCard();else if(play.mode==='play'&&!hud.card)hud.confirmQuit();}
+ else if(e.code==='Escape'){if(hud.card&&hud.card!=='result'&&hud.card!=='choice')hud.closeCard();else if(play.mode==='play'&&!hud.card)hud.confirmQuit();}
  else if((e.code==='ShiftLeft'||e.code==='ShiftRight')&&play.mode==='idle'){} // 달리기는 input.move().run
 });
 function updatePlayer(dt){
@@ -407,6 +416,7 @@ hud=createClawHud({mobile,catalog,pools,state:()=>state,thumb:id=>thumbs.get(id)
  bigDown:ts=>play.bigDown(ts),bigUp:ts=>play.bigUp(ts),
  confirmStart:i=>{const n=nearMachine();startPlay(i,{confirmed:true});void n;},
  side:()=>{side=side?0:1;},
+ stackChoose:go=>play.stackChoose(go),
  flip:()=>{if(side)side=-side;},
  quit:()=>play.quit(),
  again:()=>{const i=play.machine;play.done();if(i>=0)startPlay(i);},
@@ -457,7 +467,7 @@ renderer.setAnimationLoop(()=>{
  key.target.position.set(0,0,0);
  const near=play.mode==='idle'?nearMachine():-1,busy=U.machines.map((_,i)=>{const id=play.busy(i);return id?multi.nameOf(id):null;});
  const freeKind=Object.fromEntries(Object.keys(KIND_INFO).map(k=>[k,nearestFree(k,near)]));
- hud.update(dt,{mode:play.mode,machine:play.machine,kind:play.kind,sub:play.sub,side,near,coins:state.coins,timeLeft:play.timeLeft,armed:play.armed,timerView:side&&play.kind==='timer'?play.timerView:null,running:runOn,busy,busySig:busy.join('|'),freeKind});
+ hud.update(dt,{mode:play.mode,machine:play.machine,kind:play.kind,sub:play.sub,side,near,coins:state.coins,timeLeft:play.timeLeft,armed:play.armed,timerView:side&&play.kind==='timer'?play.timerView:null,stackView:play.stackView,running:runOn,busy,busySig:busy.join('|'),freeKind});
  updateTags();
  renderer.info.reset();toon.pipeline.render(dt);
  renderMini();

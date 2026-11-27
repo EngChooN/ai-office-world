@@ -32,11 +32,16 @@ export const CLAW_TUNING=Object.freeze({
  // 기계 상태 공유·자리 잡기(v4.1 §8). 지금은 혼자 뽑기만 씀(stuck*·solo). 서버 쪽 값(leave·idle·drop·commit…)은 3단계 서버 연결 때 씀
  share:Object.freeze({leaveSec:3,idleSec:60,idleWaitSec:20,hiddenSec:20,dropSec:15,dropMax:3,nextSec:10,commitSec:8,idleResetMin:30,stuckPlays:6,stuckMoveM:.005,stuckTiltDeg:2,
   maxMoveM:.12,maxTurnDeg:60,yieldAfter:3,nearBubbleM:6,nearBubbleGapSec:120}),
+ // 불빛 쌓기 「별빛 탑」(11-27 새 기계 ①, 월드디자인 시안 v1 추천안·대표 미확인): 빛 막대가 칸 단위로 좌우 왕복, 누른 순간(event.timeStamp) 자리로 멈춤.
+ //  아래 줄과 겹친 칸만 남음. mid줄 = 작은 인형(바로 받음) → 계속/끝 고르기(받은 인형은 잃지 않음 = 「올인」 아님), rows줄 = 큰 인형.
+ //  steps[r-1] = r줄에서 한 칸에 머무는 ms(위로 갈수록 빨라짐). 경품 없이 pity.after판 연달아 끝나면 다음 판부터 시작 칸 width → pityWidth(직원 도움, 눈에 보임)
+ //  어림(사람 손 σ60ms, artifacts/claw-design/new3/sweep2.mjs): 7줄 판당 45.6% · 11줄 6.7%
+ stack:Object.freeze({cols:7,rows:11,mid:7,width:3,pityWidth:4,steps:Object.freeze([140,125,110,100,90,80,75,75,75,75,75]),idleSec:10,readySec:.8,choiceSec:20,fallSec:.3,endSec:.5,choiceDelaySec:.45,outSec:1.1,bigOutSec:1.3}),
  notice:Object.freeze({minRarity:'rare',gapSec:10}),   // 다른 손님 소식은 희귀 이상만, 10초에 1번(설계 v1 §4)
  log:5,
 });
 export const SAVE_KEY='claw-world:v1';
-export const KINDS=Object.freeze(['claw','bridge','timer','key']);
+export const KINDS=Object.freeze(['claw','bridge','timer','key','stack']);
 export const kindOf=machineId=>MACHINES.find(m=>m.id===machineId)?.kind??'claw';
 
 // ── 서울 날짜(무료 코인은 서울 0시에 바뀐다) ──
@@ -94,11 +99,11 @@ export function spendCoin(s,machineId,now=Date.now(),T=CLAW_TUNING){
 
 // ── 보장(같은 기계 연달아 실패 뒤 도움) ──
 /** 이 기계 종류에 보장이 켜져 있나(타이머는 기본 끔 — 완료 기준 「10.00에서만 성공」) */
-export function pityOn(kind,T=CLAW_TUNING){if(kind==='bridge')return T.bridge.pityAfter>0;if(!T.pity.after)return false;if(kind==='timer')return T.timer.pityWinSec>0;if(kind==='key')return T.key.pityFitBonus>0;return true;}
+export function pityOn(kind,T=CLAW_TUNING){if(kind==='bridge')return T.bridge.pityAfter>0;if(!T.pity.after)return false;if(kind==='timer')return T.timer.pityWinSec>0;if(kind==='key')return T.key.pityFitBonus>0;if(kind==='stack')return T.stack.pityWidth>T.stack.width;return true;}
 export const pityAfter=(kind,T=CLAW_TUNING)=>kind==='bridge'?T.bridge.pityAfter:T.pity.after; // 봉은 8판(v4.1 §7-5), 나머지는 pity.after
 export const pityLeft=(s,machineId,T=CLAW_TUNING)=>{const k=kindOf(machineId);return pityOn(k,T)?Math.max(0,pityAfter(k,T)-(s.pity[machineId]??0)):null;};
 export const pityNow=(s,machineId,T=CLAW_TUNING)=>pityLeft(s,machineId,T)===0;
-export const PITY_NAME=Object.freeze({claw:'직원 도움',bridge:'직원 도움',timer:'넓은 성공 칸',key:'넓은 구멍'});
+export const PITY_NAME=Object.freeze({claw:'직원 도움',bridge:'직원 도움',timer:'넓은 성공 칸',key:'넓은 구멍',stack:'직원 도움'});
 
 // ── 타이머 판정(설계 v3 §3-2, 시안 함수 그대로): 화면 숫자 = 0.01초 아래 버림, 판정은 그 숫자로만 ──
 export const hund=ms=>Math.floor(ms/10+1e-9);
@@ -129,12 +134,28 @@ export function keyMissText(k){
  return parts.length?`열쇠가 구멍보다 ${parts.join('·')}에 꽂혔어요`:'구멍 가장자리에 걸렸어요';
 }
 
+// ── 불빛 쌓기 판정(11-27, 시안 stack.js posAt·stop 그대로). 칸 번호 0~cols-1, 줄 r = 1~rows ──
+/** 줄이 시작된 뒤 ms만큼 지났을 때 막대 왼쪽 칸·움직이는 방향(dir +1 = 오른쪽). 홀수 줄은 왼쪽에서, 짝수 줄은 오른쪽에서 출발 */
+export function stackPos(ms,r,w,c=CLAW_TUNING.stack){
+ const range=c.cols-w;if(range<=0)return {x:0,dir:0};
+ const k=Math.max(0,Math.floor(ms/c.steps[Math.min(c.steps.length,r)-1])),p=k%(2*range);let x=p<range?p:2*range-p,dir=p<range?1:-1;
+ if(r%2===0){x=range-x;dir=-dir;}return {x,dir};
+}
+/** 멈춘 자리 판정: below = 아래 줄 {x,w}(1줄이면 null). 반환 {x 남은 왼쪽, w 남은 칸 수, lost 떨어진 칸 번호들, late 늦게 누름} */
+export function stackStop(x,w,dir,below){
+ const lo=below?Math.max(x,below.x):x,hi=below?Math.min(x+w,below.x+below.w):x+w,lost=[];
+ for(let i=x;i<x+w;i++)if(i<lo||i>=hi)lost.push(i);
+ return {x:lo,w:Math.max(0,hi-lo),lost,late:below?(x-below.x)*dir>0:false};
+}
+export const stackMissText=last=>last&&last.lost?`${last.r}줄에서 ${last.lost}칸 ${last.late?'늦었어요':'빨랐어요'}`:'';
+
 // ── 규칙 안내(ⓘ·처음 규칙 카드): 조절값에서 만든다 ──
 export const KIND_INFO=Object.freeze({
  claw:Object.freeze({icon:'🕹',short:'집게로 뽑기',level:1,label:'집게'}),
  bridge:Object.freeze({icon:'📦',short:'봉 위 상자 떨어뜨리기',level:2,label:'봉'}),
  timer:Object.freeze({icon:'⏱',short:'딱 10.00에 멈추기',level:3,label:'타이머'}),
  key:Object.freeze({icon:'🔑',short:'열쇠로 칸 고르기',level:2,label:'열쇠'}),
+ stack:Object.freeze({icon:'✨',short:'빛 막대 쌓아 올리기',level:2,label:'불빛 쌓기'}),
 });
 /** 기계 하나의 어려움 점(같은 종류 안 보이는 차이만, 설계 v4 §3-1) */
 export const levelOf=machineId=>MACHINES.find(m=>m.id===machineId)?.level??KIND_INFO[kindOf(machineId)]?.level??1;
@@ -163,6 +184,10 @@ export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.
    shared?`상자 자리는 모두 같아요. 앞사람이 옮긴 그대로 이어서 하고, 아무도 안 하면 ${T.share.idleResetMin}분 뒤 처음 자리로 돌아가요`:'상자는 판이 끝나도 그 자리에 남아요. 이 기기에서는 오늘 안에 이어서 해요');
   lines.push('상자가 앞뒤 봉 밖으로 나가거나 봉 아래에 끼면 직원이 처음 자리에 다시 놓아 줘요');
   if(pityOn('bridge',T))pity=`${P}번 연달아 못 떨어뜨리면 직원이 상자를 처음 자리에 다시 놓아 줘요(떨어지기 직전 상자는 그대로 둬요)`;}
+ else if(kind==='stack'){const c=T.stack,M=MACHINES.find(m=>m.id===machineId),sm=nameOf(M?.prizes?.small??''),bg=nameOf(M?.prizes?.big??'');
+  lines.push('빛 막대가 좌우로 오가요. 「✋ 멈춤」을 누른 순간 그 자리에 멈춰요','아래 줄과 어긋난 칸은 떨어져 사라져요. 칸이 다 없어지면 끝',
+   `위로 갈수록 빨라져요. ${c.mid}줄 = ${sm}, ${c.rows}줄(꼭대기) = ${bg}`,`${c.mid}줄에서 「계속하기」를 골라도 이미 받은 ${sm}${/[가-힣]$/.test(sm)&&(sm.charCodeAt(sm.length-1)-0xac00)%28?'은':'는'} 그대로예요. 코인도 더 안 들어요`);
+  if(pityOn('stack',T))pity=`경품 없이 ${P}번 연달아 끝나면 직원이 시작 칸을 ${c.pityWidth}칸으로 넓혀 줘요(받을 때까지 판마다)`;}
  else{const c=T.key;
   lines.push(`큰 단추를 누르고 있으면 열쇠가 오른쪽으로 가요. 떼면 그 자리에 멈춰요`,`다시 누르고 있으면 위로 가요. 떼면 열쇠를 꽂아요`,
    `구멍 가운데에서 ${c.fit.toFixed(2)}칸 안이면 그 칸 인형이 나와요. 희귀·특별 칸은 구멍이 작아요(${c.fitRare.toFixed(2)}칸)`,`${c.nearMul}배 안이면 아까움(구멍 가장자리), 그 밖이면 실패`);

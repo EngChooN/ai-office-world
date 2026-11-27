@@ -74,11 +74,11 @@ test('한 판 값: 코인 1개, 없으면 못 함(사는 길 없음)', ()=>{
  const src=read('src/claw/claw-hud.js')+read('src/claw/main.js');
  assert.doesNotMatch(src,/구매|결제|충전|buy|purchase/i,'코인을 사는 단추·말이 없다');
 });
-test('기계 16대(설계 v4.1 §12, 대표 승인): 집게 6·봉 4·타이머 3·열쇠 3, id·이름·경품 표 그대로', ()=>{
+test('기계 16대(설계 v4.1 §12, 대표 승인) + 11-27 새 기계(맨 뒤): 집게 6·봉 4·타이머 3·열쇠 3·불빛 쌓기 1, id·이름·경품 표 그대로', ()=>{
  const n=k=>MACHINES.filter(m=>kindOf(m.id)===k).length;
- assert.equal(MACHINES.length,16);assert.deepEqual([n('claw'),n('bridge'),n('timer'),n('key')],[6,4,3,3]);
- assert.deepEqual(MACHINES.map(m=>m.id),['claw-1','claw-2','claw-3','claw-4','claw-5','claw-6','bridge-1','bridge-2','bridge-3','bridge-4','timer-1','timer-2','timer-3','key-1','key-2','key-3']);
- for(const M of MACHINES)assert.match(M.name,/^(집게|봉|타이머|열쇠) \d$/,M.id);
+ assert.equal(MACHINES.length,17);assert.deepEqual([n('claw'),n('bridge'),n('timer'),n('key'),n('stack')],[6,4,3,3,1]);
+ assert.deepEqual(MACHINES.map(m=>m.id),['claw-1','claw-2','claw-3','claw-4','claw-5','claw-6','bridge-1','bridge-2','bridge-3','bridge-4','timer-1','timer-2','timer-3','key-1','key-2','key-3','stack-1'],'기존 16대 번호(act m) 그대로, 새 기계는 맨 뒤');
+ for(const M of MACHINES.slice(0,16))assert.match(M.name,/^(집게|봉|타이머|열쇠) \d$/,M.id);
  assert.deepEqual(MACHINES.filter(m=>m.kind==='timer').map(m=>m.pool[0]),['big-squirrel','big-dongdong','big-haechi']);
  // 11-25 새 14종: 모두 어느 기계에서든 나옴, 큰 산타 동동이 = 타이머 3, 타이머마다 큰 인형 둘
  {const all=new Set(MACHINES.flatMap(m=>[...m.pool,...(m.cells??[])]));for(const id of [...PLUSH,...BIG_PLUSH,...BOX_PLUSH].map(p=>p.id))assert.ok(all.has(id),`${id} 나오는 기계`);
@@ -223,7 +223,7 @@ test('같은 가게 손님 규격: claw 체험·위치/채팅/act만·3서버·�
  assert.match(anonymousName('ab12cd','claw'),/^뽑기손님[0-9A-Z]{4}$/);
  assert.deepEqual(sanitizeAct('claw',{m:2,ph:'drop',cx:encodeClawPos(.2),cz:encodeClawPos(-.28),r:'dongdong-santa',k:KIND_CODE.win,n:7,v:1000,o:'santa'}),{m:2,ph:'drop',cx:70,cz:22,r:'dongdong-santa',k:1,n:7,v:1000});
  {const [a,b]=decodeKeyPos(...encodeKeyPos(2.5,1.72));assert.ok(Math.abs(a-2.5)<1e-9&&Math.abs(b-1.72)<1e-9);}
- assert.equal(sanitizeAct('claw',{m:17,ph:'fly',r:'<b>'}),null);assert.equal(sanitizeAct('claw',{m:16,ph:'play'}).m,16,'기계 16대(m 1~16)');
+ assert.equal(sanitizeAct('claw',{m:20,ph:'fly',r:'<b>'}),null);assert.equal(sanitizeAct('claw',{m:16,ph:'play'}).m,16,'기계 16대(m 1~16)');assert.equal(sanitizeAct('claw',{m:17,ph:'drop',v:7,cx:2,cz:3}).m,17,'11-27 새 기계 m 17~19');
  assert.deepEqual(ACT_SCHEMA.claw.ph,ACT_PHASES);assert.equal(KIND_OF[KIND_CODE.near],'near');
  assert.ok(Math.abs(decodeClawPos(encodeClawPos(-.33))+.33)<.006);assert.equal(encodeClawPos(9),100);
 });
@@ -408,10 +408,10 @@ test('봉 손맛(11-23 대표 결정): 아슬아슬 = 받침 여유 0.5cm 이하
 });
 
 // 11-24 조작 단추 시안 B(대표 승인): 조작 중 큰 단추 = 아래 가운데 넓은 판, 공통 틀 원 자리(data-uf)에 안 넣음, 마우스 기기만 키캡, 그림 단추 알림
-test('조작 단추 시안 B: 세 기계(집게·타이머·봉/열쇠) 모두 판, 키캡은 마우스 기기만, 그림 단추 알림', ()=>{
+test('조작 단추 시안 B: 기계(집게·불빛 쌓기·타이머·봉/열쇠) 모두 판, 키캡은 마우스 기기만, 그림 단추 알림', ()=>{
  const js=readFileSync(new URL('../src/claw/claw-hud.js',import.meta.url),'utf8'),css=readFileSync(new URL('../src/claw/claw-hud.css',import.meta.url),'utf8'),main=readFileSync(new URL('../src/claw/main.js',import.meta.url),'utf8');
  const playBlock=js.slice(js.indexOf("if(kind==='claw')setActions("),js.indexOf("else if(mode==='result'||cardKind)"));
- assert.equal((playBlock.match(/bar:true/g)??[]).length,3,'집게·타이머·봉(열쇠) 세 갈래 모두 판');
+ assert.equal((playBlock.match(/bar:true/g)??[]).length,4,'집게·불빛 쌓기·타이머·봉(열쇠) 네 갈래 모두 판');
  assert.match(playBlock,/half:!F/,'손가락 기기 집게만 오른쪽(십자 판 옆)');
  assert.match(js,/ufPlace\(root,\{big:big\?\.bar\?null:b/,'판은 공통 틀 원 자리에 안 넣음');
  assert.match(js,/kbd class="kh-key"[^`]*스페이스/);assert.ok(!/스페이스|Space|WASD|방향키/.test(playBlock.match(/'십자로[^']*'/)[0]));

@@ -5,7 +5,7 @@
 //  → 흡연장·크리스마스처럼 touchend까지 듣고, 켜질 때까지 입력마다 다시 깨운다. 가게 배경 음악(claw-bgm.js)·올라오기·타이머 틱·열쇠·봉 상자 소리 추가.
 import {createClawBgm,BGM_LEVEL} from './claw-bgm.js';
 export const CLAW_SOUNDS=Object.freeze(['coin','bump','down','up','grab','unlock','rattle','slip','chute','win','fanfare','lose','grant',
- 'tick','perfect','near','key-in','cell','push','drop','door']);
+ 'tick','perfect','near','key-in','cell','push','drop','door','step','snap','fall','ding']);
 export const SFX_MASTER=.7; // 마스터(공용 소리 크기 배수 1일 때). 배경 음악 버스는 BGM_LEVEL, 기계 조작 중엔 BGM_DUCK배로 줄인다
 export const BGM_DUCK=.55;
 export function createClawAudio({muted=false,volume=1,music=true,mood='arcade',win=globalThis.window,doc=globalThis.document}={}){
@@ -60,10 +60,15 @@ export function createClawAudio({muted=false,volume=1,music=true,mood='arcade',w
   push:()=>{tone({f:120,f2:80,type:'triangle',dur:.12,gain:.16});noise({dur:.1,gain:.07,freq:500,q:.7});}, // 집게가 봉 상자를 밀 때 「툭」
   drop:()=>{tone({f:160,f2:55,type:'sine',dur:.35,gain:.26});noise({dur:.18,gain:.1,freq:300,q:.6,at:.02});}, // 상자가 떨어져 바닥에 「쿵」
   door:()=>tone({f:420,f2:260,type:'square',dur:.08,gain:.12}),
+  // 11-27 불빛 쌓기(규칙서 §1 소리): 칸 이동 틱(줄이 오를수록 높게, o.row 1~11)·멈춤 「딱」·떨어짐 「뿅↓」·7줄 「띠링」
+  step:(o={})=>tone({f:520*2**(((o.row??1)-1)/12),type:'square',dur:.022,gain:.035}),
+  snap:()=>{tone({f:1400,f2:900,type:'square',dur:.04,gain:.12});noise({dur:.03,gain:.06,freq:4000,q:2});},
+  fall:()=>tone({f:900,f2:220,type:'triangle',dur:.3,gain:.14}),
+  ding:()=>[1319,1760,2349].forEach((f,i)=>tone({f,type:'triangle',dur:.26,gain:.17,at:i*.08})),
  };
  return {
   // gain: 다른 손님 기계 구경 소리는 거리만큼 작게(main.js hearOf). 0이면 안 냄
-  play(name,{gain=1}={}){if(!ok()||!(gain>.01))return;try{if(gain<.999){out=ctx.createGain();out.gain.value=gain;out.connect(master);}SFX[name]?.();stats.played++;stats.byName[name]=(stats.byName[name]??0)+1;}catch{}finally{out=null;}},
+  play(name,{gain=1,...o}={}){if(!ok()||!(gain>.01))return;try{if(gain<.999){out=ctx.createGain();out.gain.value=gain;out.connect(master);}SFX[name]?.(o);stats.played++;stats.byName[name]=(stats.byName[name]??0)+1;}catch{}finally{out=null;}},
   // 이어지는 소리(집게 이동 위잉). 누르는 동안 loop, 떼면 stop
   loop(name){if(name!=='motor'||motor||!ok())return;try{const o=ctx.createOscillator(),o2=ctx.createOscillator(),g=ctx.createGain();o.type='sawtooth';o.frequency.value=110;o2.type='sine';o2.frequency.value=7;const lg=ctx.createGain();lg.gain.value=8;o2.connect(lg).connect(o.frequency);
    g.gain.value=0;g.gain.linearRampToValueAtTime(.035,ctx.currentTime+.05);o.connect(g).connect(master);o.start();o2.start();motor={o,o2,g};stats.byName.motor=(stats.byName.motor??0)+1;}catch{}},

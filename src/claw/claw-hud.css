@@ -20,6 +20,8 @@
 .kh-tnum[hidden]{display:none}
 :root:has(.kh-toast:not([hidden]):not(.out)) .kh-tnum{top:calc(env(safe-area-inset-top,0px) + 122px)} /* 알림(같은 자리, 두 줄까지)이 떠 있으면 그 아래로 */
 .kh-tnum[data-state=dim] b{opacity:.18}
+.kh-tnum.kh-schip{white-space:nowrap;font-size:18px;gap:4px;padding:0 12px;max-width:calc(100vw - 24px)} /* 11-27 불빛 쌓기 칩: 한 줄로(작은 글·인형 그림 둘) */
+.kh-schip small{white-space:nowrap}.kh-schip img{flex:none}
 .kh-tnum[data-state=win]{color:#8ff0a8}.kh-tnum[data-state=near]{color:#ffd36b}.kh-tnum[data-state=miss]{color:#ff9d8f}
 .kh-timer.hurry{background:#ffe1dc;color:var(--uf-red);animation:kh-blink .5s steps(2) infinite}
 @keyframes kh-blink{50%{opacity:.6}}

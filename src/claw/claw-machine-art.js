@@ -51,15 +51,16 @@ function machineLine(){if(lineMat)return lineMat;const m=new THREE.MeshBasicMate
 function canvasTex(w,h,draw){if(typeof document==='undefined')return null;
  const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;}
 // ── 간판 한 장 모으기(11-23 v4 §3-4·§6: 이름판·번호판 ≤ 2장). 기계 16대 간판 + 서는 자리 바닥 번호판을 2048×1024 한 장에 그린다.
-// 한 칸 512×192(집게·봉·열쇠 간판 8:3, 타이머 이름판은 위 512×128 = 4:1). 아래 줄(y 768~)은 바닥 번호판 128×128 × 16.
+// 한 칸 512×192(집게·봉·열쇠 간판 8:3, 타이머 이름판은 위 512×128 = 4:1). 아래 줄(y 960~)은 바닥 번호판 128×128, 한 줄 16장(17번째부터 다음 줄).
+// 11-27 새 기계 3종(최대 20대)을 넣으려고 2048×1024 → 2048×1280(간판 5줄 + 번호판 2줄).
 // 간판 = 왼쪽 큰 번호(글자 높이 ≥ 0.12m, 4m에서 읽힘) · 가운데 종류 그림·「종류」·별명 · 오른쪽 대표 인형 그림(인형 작은 그림이 오면 setSignThumbs로 채움).
 // 재질 하나(카툰으로 바꾸지 않는 빛나는 판)를 16대가 같이 쓴다.
-export const SIGN_ATLAS=Object.freeze({w:2048,h:1024,cw:512,ch:192,cols:4,badge:128,badgeY:768});
-const SIGN_KIND=Object.freeze({claw:'집게',bridge:'봉',timer:'타이머',key:'열쇠'});
+export const SIGN_ATLAS=Object.freeze({w:2048,h:1280,cw:512,ch:192,cols:4,badge:128,badgeY:960,badgeCols:16});
+const SIGN_KIND=Object.freeze({claw:'집게',bridge:'봉',timer:'타이머',key:'열쇠',stack:'불빛 쌓기'});
 // 대표 인형(간판 그림): 설계 v4 §3-2 표. 열쇠는 표에 없어 기계마다 다른 희귀·특별 인형(추천안·대표 미확인)
 const SIGN_REP=Object.freeze({'key-1':'haechi','key-2':'dongdong-santa','key-3':'dongdong-office'});
 export const signRep=M=>SIGN_REP[M.id]??(M.pool?.[0]??'').replace(/^box-/,'');
-const numberOf=M=>(String(M.name).match(/\d+$/)??[''])[0];
+const numberOf=M=>(String(M.name).match(/\d+$/)??[M.badge??'★'])[0]; // 번호 없는 새 기계(별빛 탑 등)는 별
 // 종류 그림(간판 가운데): 집게 = 3발, 봉 = 2발 + 봉 두 개, 타이머 = 시계, 열쇠 = 열쇠
 function kindGlyph(g,kind,x,y,s,color){g.save();g.strokeStyle=color;g.fillStyle=color;g.lineCap='round';g.lineJoin='round';g.lineWidth=s*.12;
  if(kind==='claw'||kind==='bridge'){g.beginPath();g.moveTo(x,y-s*.6);g.lineTo(x,y-s*.2);g.stroke();
@@ -69,6 +70,7 @@ function kindGlyph(g,kind,x,y,s,color){g.save();g.strokeStyle=color;g.fillStyle=
   else{g.fillRect(x-s*.3,y-s*.24,s*.6,s*.16); // 2발: 가로 머리 + 곧은 팔 둘 + 안으로 꺾인 발끝
    for(const k of [-1,1]){g.beginPath();g.moveTo(x+k*s*.26,y-s*.1);g.lineTo(x+k*s*.3,y+s*.3);g.lineTo(x+k*s*.14,y+s*.42);g.stroke();}
    g.lineWidth=s*.09;for(const k of [-1,1]){g.beginPath();g.arc(x+k*s*.36,y+s*.62,s*.07,0,Math.PI*2);g.stroke();}}}
+ else if(kind==='stack'){const c=s*.22;for(let r=0;r<3;r++)for(let i=0;i<3-r;i++)g.fillRect(x-c*1.5+i*c+r*c*.5+c*.08,y+s*.4-(r+1)*c+c*.08,c*.84,c*.84);} // 쌓인 빛 칸
  else if(kind==='timer'){g.beginPath();g.arc(x,y,s*.42,0,Math.PI*2);g.stroke();g.beginPath();g.moveTo(x,y);g.lineTo(x,y-s*.28);g.moveTo(x,y);g.lineTo(x+s*.2,y+s*.1);g.stroke();g.fillRect(x-s*.08,y-s*.62,s*.16,s*.1);}
  else{g.lineWidth=s*.13;g.beginPath();g.arc(x-s*.22,y,s*.2,0,Math.PI*2);g.stroke();g.fillRect(x-s*.02,y-s*.06,s*.6,s*.12);g.fillRect(x+s*.38,y+s*.06,s*.09,s*.18);g.fillRect(x+s*.22,y+s*.06,s*.09,s*.13);}
  g.restore();}
@@ -84,7 +86,8 @@ function drawSign(g,M,x0,y0,thumb){
  // 종류 그림·이름·별명(가운데)
  const tx=bx+bs+14,pic=timer?h-20:128,px=w-pad-12-pic,mid=px-tx-10;
  kindGlyph(g,M.kind,tx+(timer?18:24),timer?h*.36:58,timer?34:46,M.bodyDark);
- g.textAlign='left';g.fillStyle=M.bodyDark;fitFont(g,SIGN_KIND[M.kind],mid-(timer?44:58),timer?40:50,900);g.fillText(SIGN_KIND[M.kind],tx+(timer?42:56),timer?h*.36:60);
+ const label=/\d+$/.test(M.name)?SIGN_KIND[M.kind]:M.name; // 번호 없는 새 기계는 이름(「별빛 탑」), 별명 자리에 종류
+ g.textAlign='left';g.fillStyle=M.bodyDark;fitFont(g,label,mid-(timer?44:58),timer?40:50,900);g.fillText(label,tx+(timer?42:56),timer?h*.36:60);
  g.fillStyle=M.body;fitFont(g,M.sub,mid,timer?28:36,800);g.fillText(M.sub,tx,timer?h*.76:136);
  // 대표 인형 그림(오른쪽): 밝은 원 + 희귀도 테. 작은 그림이 아직 없으면 종류 그림
  const cx=px+pic/2,cy=h/2,r=pic/2;g.fillStyle='#fffaf0';g.beginPath();g.arc(cx,cy,r,0,Math.PI*2);g.fill();
@@ -92,7 +95,8 @@ function drawSign(g,M,x0,y0,thumb){
  if(thumb){g.save();g.beginPath();g.arc(cx,cy,r-4,0,Math.PI*2);g.clip();const k=(r*2.15)/Math.max(thumb.width,thumb.height);g.drawImage(thumb,cx-thumb.width*k/2,cy-thumb.height*k/2+r*.06,thumb.width*k,thumb.height*k);g.restore();}
  else kindGlyph(g,M.kind,cx,cy,r*.9,M.body);
  g.restore();}
-function drawBadge(g,M,i){const s=SIGN_ATLAS.badge,x=i*s,y=SIGN_ATLAS.badgeY;g.clearRect(x,y,s,s);
+const badgeXY=i=>[(i%SIGN_ATLAS.badgeCols)*SIGN_ATLAS.badge,SIGN_ATLAS.badgeY+Math.floor(i/SIGN_ATLAS.badgeCols)*SIGN_ATLAS.badge];
+function drawBadge(g,M,i){const s=SIGN_ATLAS.badge,[x,y]=badgeXY(i);g.clearRect(x,y,s,s);
  g.fillStyle=M.bodyDark;g.beginPath();g.roundRect(x+4,y+4,s-8,s-8,26);g.fill();g.strokeStyle=M.trim;g.lineWidth=6;g.stroke();
  g.fillStyle='#fffaf0';g.textAlign='center';g.textBaseline='middle';g.font=`900 96px ${FONT}`;g.fillText(numberOf(M),x+s/2,y+s/2+6);}
 let atlas=null;
@@ -106,7 +110,7 @@ export function signAtlas(){
  const badgeMat=new THREE.MeshStandardMaterial({map:tex,roughness:.8,polygonOffset:true,polygonOffsetFactor:-2,name:'claw-badge-atlas'});badgeMat.userData.shared=true;
  // 칸 → uv 네모 [u0,v0,u1,v1]
  const uvOf=i=>{const M=MACHINES[i],[x,y]=slot(i),h=M.kind==='timer'?128:SIGN_ATLAS.ch;return [x/SIGN_ATLAS.w,1-(y+h)/SIGN_ATLAS.h,(x+SIGN_ATLAS.cw)/SIGN_ATLAS.w,1-y/SIGN_ATLAS.h];};
- const badgeUv=i=>{const s=SIGN_ATLAS.badge;return [i*s/SIGN_ATLAS.w,1-(SIGN_ATLAS.badgeY+s)/SIGN_ATLAS.h,(i+1)*s/SIGN_ATLAS.w,1-SIGN_ATLAS.badgeY/SIGN_ATLAS.h];};
+ const badgeUv=i=>{const s=SIGN_ATLAS.badge,[x,y]=badgeXY(i);return [x/SIGN_ATLAS.w,1-(y+s)/SIGN_ATLAS.h,(x+s)/SIGN_ATLAS.w,1-y/SIGN_ATLAS.h];};
  // 대표 인형 작은 그림 채우기: thumb(id) = 그림 주소(data URL) 또는 그림. 다 그려지면 텍스처를 한 번 올림
  const setThumbs=thumb=>{MACHINES.forEach((M,i)=>{const src=thumb(signRep(M));if(!src)return;const [x,y]=slot(i);
   const put=img=>{drawSign(g,M,x,y,img);tex.needsUpdate=true;};
