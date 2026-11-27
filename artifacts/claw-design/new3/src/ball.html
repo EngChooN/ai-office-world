@@ -1,0 +1,59 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>새 기계 ③ 공 구멍 넣기 「공 떨어뜨리기」 시안 v1 — 월드디자인</title><style>/*CSS*/</style></head><body>
+<header class="top"><h1>새 기계 ③ 공 구멍 넣기 「공 떨어뜨리기」 <span class="tag">추천안 · 대표 미확인</span></h1>
+<p>집게가 든 탁구공을 구멍 판 위에서 놓습니다. 공이 몇 번 튀고 굴러 노란·보라 구멍에 들어가면 그 인형을 받습니다. 조작은 집게 기계와 같습니다. 왼쪽 휴대폰 화면의 십자 단추(또는 방향키)와 「떨어뜨리기」(또는 Space)로 해 볼 수 있습니다. 규칙서: <code>docs/인형뽑기/새기계3종-규칙서-v1.md</code> §3</p></header>
+<div class="page">
+<div class="left"><div class="phone"><canvas class="view"></canvas></div>
+<div class="ctl"><button id="demo" aria-pressed="false">자동 시연(노란 구멍 노리기)</button><button id="pity">연속 실패 5번으로 맞춤</button><button id="coins">코인 30개로</button></div></div>
+<div class="side">
+<section class="panel"><h2>한 판 흐름</h2><ol>
+<li>기계 앞 할 일 칩 「🏓 공 떨어뜨리기 한 판 · 🪙1」(처음이면 규칙 카드)</li>
+<li>준비 0.8초 「공을 집었어요」 — <b>공은 처음부터 집게에</b>(공 집기 단계 없음)</li>
+<li>십자 단추를 누르고 있으면 집게가 움직임(15초, ⏱). 판 위 <b>그림자 점</b> = 떨어질 자리</li>
+<li>「🏓 떨어뜨리기」(15초가 지나면 저절로) → 공이 튀고 굴러 구멍 하나에 들어감(2~3초, 입력 잠금)</li>
+<li>들어간 구멍에 동그라미(초록 성공·주황 아까움·빨강 실패) → 결과 카드</li></ol>
+<p class="note">판 4×4 = 16구멍(간격 6cm). 노랑 2 = 보통 인형, 보라 1 = 희귀(가장자리·작은 구멍). 구멍 옆 그림 = 그 구멍 인형(보이는 경품 = 받는 경품).</p></section>
+
+<section class="panel"><h2>휴대폰 세로 엄지 배치 <small>390×844 기준</small></h2><table>
+<tr><th>자리</th><th>무엇</th><th>기존과</th></tr>
+<tr><td>왼쪽 아래 십자 판(60, 사이 6)</td><td>누르고 있기 · 옆 단추로 밀면 방향 바뀜 · 두 손가락 대각선</td><td>집게와 같음</td></tr>
+<tr><td>오른쪽 세로 큰 판(112 높이)</td><td>「🏓 떨어뜨리기」 + 아래 남은 시간 막대</td><td>집게 「뽑기」 판(.kh-half)과 같음</td></tr>
+<tr><td>위 가운데 칩</td><td>「⏱ 12초 · 그림자 점을 노란 구멍 위로」</td><td>집게는 ⏱가 위 오른쪽 · 한 줄 안내는 판 위 — <b>여기선 칩 하나로 합침</b></td></tr>
+<tr><td>👁 옆에서 보기</td><td><b>없음</b></td><td>다름 — 아래</td></tr></table>
+<p class="note">게임 카메라는 판을 위에서 약 55° 내려다봄(앞뒤가 보이게). 그림자 점은 봉 기계 「집게 그림자 점」과 같은 그림.</p></section>
+
+<section class="panel"><h2>성공·아까움·실패 표시</h2><table>
+<tr><th></th><th>기계 위</th><th>결과 카드</th></tr>
+<tr><td>성공</td><td>공이 색 구멍에 쏙 → 구멍 초록 동그라미 → 경품구에 인형</td><td>「쏙! 까치」 · ✋ 들고 다니기</td></tr>
+<tr><td>아까움</td><td>색 구멍 바로 옆 칸 주황 동그라미 · 보라 구멍 위를 굴러 지나감</td><td>「아까워요! 색 구멍 바로 옆이에요」 / 「작은 구멍 위를 굴러 지나갔어요」</td></tr>
+<tr><td>실패</td><td>빈 구멍 빨강 동그라미</td><td>「아쉬워요, 빈 구멍이에요」</td></tr></table>
+<p class="note">공이 떨어진 뒤 2~3초가 이 기계의 볼거리라 결과 카드는 공이 멈추고 0.5초(성공 1.1초) 뒤에.</p></section>
+
+<section class="panel"><h2>연속 실패 도움</h2>
+<p><b>5판 연달아 못 넣으면</b> 다음 판부터(넣을 때까지) <b>직원이 초록 「도움 구멍」을 하나 더 열어</b> 줍니다(가운데 쪽, 보통 인형). 판 위 글·시작 알림·결과 카드 「직원 도움까지 n번」.</p>
+<p class="note">이유: 조사 초안 「6판 뒤 색 구멍 추가」를 집게(5판 직원 도움)와 같은 횟수로. 판 그림이 바뀌어 눈에 보이는 도움. 어림 판당 21% → 도움 판 약 30%(추정).</p></section>
+
+<section class="panel wide"><h2>구경하는 손님 화면 <small>왼쪽에서 한 판 하면 0.15초 늦게 따라 그림</small></h2>
+<div class="spect"><canvas id="spect" width="300" height="230"></canvas><div>
+<ul><li>다른 손님은 집게가 움직이는 것 → 공이 튀는 2~3초 → 들어간 구멍 동그라미를 봄(가장 볼 만한 장면)</li>
+<li>act: 조작 중 <code>cx·cz</code> 집게 자리(집게 기계와 같은 cm+50, 움직일 때만 초당 8번) · 공이 멈추면 <code>v</code> 들어간 구멍(0~15) + <code>k</code> 결과</li>
+<li>튐 길은 받는 쪽이 <b>받은 구멍에서 끝나게</b> 새로 만들어 그림(기존 「결과만 받아 다시 그림」 방식, 물리 상태를 보내지 않음)</li>
+<li>공 위치를 실시간으로 보내지 않으므로 구경 화면의 튐 모양은 뽑는 사람과 조금 다를 수 있음(결과 구멍은 같음)</li></ul>
+<p class="note">받은 act: <code id="spect-act"></code></p></div></div></section>
+
+<section class="panel diff"><h2>기존 4종·조사 초안과 다르게 한 곳 · 이유</h2><ul>
+<li><b>공 집기 단계 없음</b> — 초안은 공 통에서 집게로 공을 집음. 실패해도 재미없는 단계라 빼고 「놓는 자리」에 집중.</li>
+<li><b>👁 옆에서 보기 없음</b> — 판을 위에서 내려다보는 카메라 + 그림자 점으로 앞뒤가 보임.</li>
+<li><b>한 줄 안내를 위 칩에 합침</b> — 휴대폰 세로에서 십자 판(위 끝 약 598px)과 안내 자리가 겹침.</li>
+<li><b>경품 = 작은 인형만(큰 인형 없음)</b> — 초안 「가장자리 작은 구멍 = 큰 인형」 대신 희귀 작은 인형. 큰 인형은 타이머·줄 자르기 몫으로 나눔(기계마다 경품 성격이 겹치지 않게).</li>
+<li><b>판이 기울거나 도는 어려움 → 이번엔 없음</b> — 같은 종류 기계를 더 둘 때 단계별 어려움으로 남김.</li></ul></section>
+
+<section class="panel"><h2>난이도 어림 <small class="est">추정 · 거친 모델(실제 공 물리 아님)</small></h2><table>
+<tr><th>기계</th><th>판당</th><th>성공까지 평균</th></tr>
+<tr><td>공 떨어뜨리기(노랑 노림)</td><td>약 21%</td><td>약 4.2판(5판 도움 포함)</td></tr>
+<tr><td>공 떨어뜨리기(보라 노림)</td><td>약 15%</td><td>—</td></tr>
+<tr><td>집게(측정)</td><td>21.6%</td><td>—</td></tr>
+<tr><td>열쇠 1·2(측정)</td><td>39%</td><td>2.5판</td></tr></table>
+<p class="note">목표(추천안) = 조사 「집게와 봉 사이」 중 집게 쪽. 모델: 놓은 자리 오차 0.8cm + 튐 흩어짐 구멍 간격 1배, 보라 구멍은 칸 안쪽 60%에 떨어져야 들어감. 실제 공 물리를 만든 뒤 반드시 다시 잼(가장 불확실). 계산 <code>artifacts/claw-design/new3/sweep4.mjs</code></p></section>
+</div></div>
+<script>/*BASE*/</script><script>/*JS*/</script></body></html>

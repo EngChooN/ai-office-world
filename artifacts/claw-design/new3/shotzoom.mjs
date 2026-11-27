@@ -1,0 +1,10 @@
+import {chromium} from 'playwright';import path from 'node:path';
+const here=path.dirname(new URL(import.meta.url).pathname);
+const b=await chromium.launch();const p=await b.newPage({viewport:{width:1500,height:1000}});
+await p.goto('file://'+path.join(here,'../../../docs/인형뽑기/새기계-줄자르기-시안-v1.html'));
+await p.click('.h-todo [data-t=play]');await p.click('.h-card [data-c=go]');
+const bar=await p.$('.h-bar');const bb=await bar.boundingBox();
+await p.mouse.move(bb.x+bb.width/2,bb.y+40);await p.mouse.down();await p.waitForTimeout(1200);await p.mouse.up();
+await p.waitForTimeout(900);await p.screenshot({path:'shots/string-zoom.png',clip:{x:24,y:90,width:420,height:880}});
+await p.mouse.down();await p.mouse.up();await p.waitForTimeout(1700);await p.screenshot({path:'shots/string-result.png',clip:{x:24,y:90,width:420,height:880}});
+await b.close();

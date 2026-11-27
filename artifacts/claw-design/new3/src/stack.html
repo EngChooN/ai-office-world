@@ -1,0 +1,63 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>새 기계 ① 불빛 쌓기 「별빛 탑」 시안 v1 — 월드디자인</title><style>/*CSS*/</style></head><body>
+<header class="top"><h1>새 기계 ① 불빛 쌓기 「별빛 탑」 <span class="tag">추천안 · 대표 미확인</span></h1>
+<p>버튼 하나로 좌우로 오가는 빛 막대를 멈춰 위로 쌓습니다. 7줄 = 작은 인형, 11줄 = 큰 인형. 7줄에서 「계속하기」를 골라도 받은 인형은 잃지 않습니다. 왼쪽 휴대폰 화면을 직접 눌러(또는 Space) 한 판 해 볼 수 있습니다. 규칙서: <code>docs/인형뽑기/새기계3종-규칙서-v1.md</code> §1</p></header>
+<div class="page">
+<div class="left"><div class="phone"><canvas class="view"></canvas></div>
+<div class="ctl"><button id="demo" aria-pressed="false">자동 시연(사람 손 오차 σ60ms)</button><button id="pity">연속 실패 5번으로 맞춤</button><button id="coins">코인 30개로</button></div></div>
+<div class="side">
+<section class="panel"><h2>한 판 흐름</h2><ol>
+<li>기계 앞 할 일 칩 「✨ 별빛 탑 한 판 · 🪙1」(처음이면 규칙 카드 → 「시작하기」를 눌러야 코인 씀)</li>
+<li>준비 0.8초 → 1줄 빛 막대(3칸)가 좌우로 오감. <b>첫 줄은 아무 데서나</b></li>
+<li>「✋ 멈춤」 = 누른 순간 멈춤. 아래 줄과 어긋난 칸은 빨갛게 떨어짐 → 다음 줄(남은 칸 수로)</li>
+<li><b>7줄</b>: 작은 인형이 바로 나옴(도감 등록) → 카드 「▲ 계속하기 / 여기서 끝」(20초 지나면 끝)</li>
+<li>계속 → <b>11줄</b>이면 큰 인형도. 중간에 칸이 다 떨어져도 작은 인형은 그대로</li>
+<li>결과 카드: 「들고 다니기 / 도감 / 한 판 더 · 1 / 그만」(기존 카드 그대로)</li></ol>
+<p class="note">입력 없음 10초 = 그 자리에서 저절로 멈춤(열쇠 「10초면 뗀 것으로」와 같음). ✕ = 그만두기 확인 「넣은 코인은 돌려받지 못해요」.</p></section>
+
+<section class="panel"><h2>휴대폰 세로 엄지 배치 <small>390×844 기준</small></h2><table>
+<tr><th>자리</th><th>무엇</th><th>기존과</th></tr>
+<tr><td>아래 가운데 판(높이 80, 양옆 16)</td><td>「✋ 멈춤」 하나만. 누름 = pointerdown 시각</td><td>같음(타이머·열쇠 판)</td></tr>
+<tr><td>판 바로 위 한 줄 안내</td><td>「아래 줄과 겹치게 멈추세요」 / 8줄부터 「빨라요!」</td><td>같음</td></tr>
+<tr><td>위 가운데 칩</td><td>「⭐ 4 / 11줄 · 7줄 🐿️ · 11줄 ⛄」</td><td>타이머 숫자 칩 자리 재사용</td></tr>
+<tr><td>위 왼쪽 알약 · 위 오른쪽 ✕</td><td>「별빛 탑 · 🪙 29」 · 그만두기</td><td>같음</td></tr>
+<tr><td>👁 옆에서 보기 · ⏱</td><td><b>없음</b></td><td>다름 — 아래 「다르게 한 곳」</td></tr></table>
+<p class="note">가로·PC: 판은 기존 규칙 그대로(PC 520px + 「스페이스」 키캡, 가로는 판 높이만큼 그림을 위로). 기계 판은 세로로 길어서 휴대폰 세로에서 화면 높이 약 55%를 씀.</p></section>
+
+<section class="panel"><h2>성공·아까움·실패 표시</h2><table>
+<tr><th></th><th>기계 위</th><th>결과 카드</th></tr>
+<tr><td>11줄(큰)</td><td>탑 전체가 무지개로 물듦 → 경품구에 큰 인형</td><td>「꼭대기까지! 큰 눈송이」 + 「다람쥐도 받았어요」 · 🎒 업고 다니기</td></tr>
+<tr><td>7줄에서 끝</td><td>7줄 표시가 ✅ → 경품구에 작은 인형</td><td>「다람쥐를 받았어요」 · ✋ 들고 다니기</td></tr>
+<tr><td>계속하다 끝</td><td>떨어지는 칸 빨강</td><td>「다람쥐는 받았어요 · 9줄까지」(10줄이면 「아까워요! 1줄」)</td></tr>
+<tr><td>아까움(6줄)</td><td>떨어지는 칸 빨강</td><td>「아까워요! 다람쥐까지 1줄」</td></tr>
+<tr><td>실패</td><td>떨어지는 칸 빨강</td><td>「아쉬워요 · 4줄까지」 + 「5줄에서 2칸 늦었어요」</td></tr></table>
+<p class="note">줄마다 어긋나면 짧은 알림 「6줄 1칸 빨랐어요」(1.2초). 왜 실패했는지 숫자로 보임 = 타이머 「+0.03초 늦었어요」와 같은 생각.</p></section>
+
+<section class="panel"><h2>연속 실패 도움</h2>
+<p><b>경품 없이 5판 연달아 끝나면</b> 다음 판부터(받을 때까지) <b>직원이 시작 칸을 3 → 4칸으로</b> 넓혀 줍니다. 판 위에 「직원 도움 · 4칸 시작」 글, 시작 알림, 결과 카드에 「직원 도움까지 n번」.</p>
+<p class="note">이유: 열쇠(넓은 구멍)처럼 <b>눈에 보이는 도움</b>. 「첫 세 줄 느리게」(조사 초안)는 화면에서 차이가 안 보여 몰래 바꾸는 것처럼 느껴질 수 있어 뺌. 7줄 인형을 받으면 세기가 0으로.</p></section>
+
+<section class="panel wide"><h2>구경하는 손님 화면 <small>왼쪽에서 한 판 하면 0.15초 늦게 따라 그림</small></h2>
+<div class="spect"><canvas id="spect" width="300" height="230"></canvas><div>
+<ul><li>다른 손님은 <b>기계 판 불빛 그대로</b>를 봄(내 화면 HUD·카드는 안 보임 — 기존 구경과 같음)</li>
+<li>멈출 때마다 act 한 번: <code>v</code> 쌓은 줄 · <code>cx</code> 그 줄 왼쪽 칸 · <code>cz</code> 칸 수 · 7줄 고르는 동안 <code>ph:'drop'</code> → 머리 위 「고르는 중…」</li>
+<li>움직이는 줄은 받는 화면이 같은 빠르기로 혼자 움직임(초당 여러 번 보내지 않음)</li>
+<li>중간에 들어온 손님은 그 순간 줄까지 그림. 11줄이면 탑 무지개(가게 알림은 기존처럼 희귀 이상만, 10초에 1번)</li></ul>
+<p class="note">받은 act: <code id="spect-act"></code></p></div></div></section>
+
+<section class="panel diff"><h2>기존 4종과 다르게 한 곳 · 이유</h2><ul>
+<li><b>👁 옆에서 보기 없음</b> — 판이 평평한 불빛 판이라 깊이가 없음.</li>
+<li><b>⏱ 남은 시간 없음</b> — 줄마다 시간을 쓰는 기계라 판 전체 제한이 없고, 10초 무입력만 저절로 멈춤.</li>
+<li><b>한 판에 경품 둘</b> — 7줄에서 이미 줌. 「계속」은 코인·경품을 걸지 않음(도박처럼 보이는 「올인」 방지, 기획서 원칙).</li>
+<li><b>결과 카드가 두 번</b>(7줄 고르기 카드 + 끝 카드) — 7줄 카드는 「받았다」를 먼저 확인시키려는 것.</li>
+<li>타이머와 「타이밍」은 겹치지만 타이머 = 한 번 정확히, 이쪽 = 빨라지는 여러 번.</li></ul></section>
+
+<section class="panel"><h2>난이도 어림 <small class="est">추정 · 사람 손 모델 σ60ms(열쇠 시험과 같음)</small></h2><table>
+<tr><th>기계</th><th>판당</th><th>첫 인형까지 평균</th></tr>
+<tr><td>별빛 탑 7줄(작은)</td><td>45.6%</td><td>2.2판(도움 포함)</td></tr>
+<tr><td>별빛 탑 11줄(큰)</td><td>6.7%</td><td>약 15판</td></tr>
+<tr><td>열쇠 1·2(측정)</td><td>39%</td><td>2.5판</td></tr>
+<tr><td>타이머 10.00(같은 모델)</td><td>6.6%</td><td>약 15판</td></tr></table>
+<p class="note">줄별 머무는 시간(ms): 140·125·110·100·90·80·75·75·75·75·75. 목표 = 작은 인형은 열쇠 정도, 큰 인형은 타이머 1 정도(추천안). 실제 값은 구현 뒤 난이도 시험으로 다시 맞춤. 계산 <code>artifacts/claw-design/new3/rate.mjs</code></p></section>
+</div></div>
+<script>/*BASE*/</script><script>/*JS*/</script></body></html>

@@ -1,0 +1,59 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>새 기계 ② 줄 자르기 「가위로 툭」 시안 v1 — 월드디자인</title><style>/*CSS*/</style></head><body>
+<header class="top"><h1>새 기계 ② 줄 자르기 「가위로 툭」 <span class="tag">추천안 · 대표 미확인</span></h1>
+<p>흔들리는 줄에 큰 인형이 매달려 있습니다. 가위를 줄 앞으로 옮기고(누르고 있다가 떼기), 줄이 칼날 가운데를 지나는 순간 「싹둑」을 누르면 인형이 툭 떨어집니다. 왼쪽 휴대폰 화면을 직접 눌러(또는 Space) 해 볼 수 있습니다. 규칙서: <code>docs/인형뽑기/새기계3종-규칙서-v1.md</code> §2</p></header>
+<div class="page">
+<div class="left"><div class="phone"><canvas class="view"></canvas></div>
+<div class="ctl"><button id="demo" aria-pressed="false">자동 시연(사람 손 오차 σ60ms)</button><button id="pity">연속 실패 8번으로 맞춤</button><button id="coins">코인 30개로</button></div></div>
+<div class="side">
+<section class="panel"><h2>한 판 흐름</h2><ol>
+<li>기계 앞 할 일 칩 「✂️ 가위로 툭 한 판 · 🪙1」(처음이면 규칙 카드)</li>
+<li><b>① 「→ 오른쪽」 누르고 있기</b> = 가위가 오른쪽으로(초당 15cm), 떼면 고정. 되돌리기 없음 — 열쇠 ①과 같은 손</li>
+<li>0.3초 「잠깐」 → 카메라가 가위 쪽으로 2.2배 다가감(줄·칼날이 손가락 크기로 보이게)</li>
+<li><b>② 「✂️ 싹둑」 한 번 누르기</b> = 누른 순간 가위가 닫힘. 그때 줄 자리로 판정</li>
+<li>줄이 끊기면 큰 인형이 경품구로 툭 → 결과 카드(「🎒 업고 다니기 / 도감 / 한 판 더 / 그만」)</li></ol>
+<p class="note">입력 없음: ① 20초 = 그 자리에서 시작 · 누른 채 10초 또는 끝 도착 = 뗀 것으로 · ② 10초 = 저절로 싹둑. 줄 2개 = 경품 2종(어느 줄을 노릴지가 곧 인형 고르기, 열쇠의 「칸 고르기」와 같은 생각).</p></section>
+
+<section class="panel"><h2>휴대폰 세로 엄지 배치 <small>390×844 기준</small></h2><table>
+<tr><th>자리</th><th>무엇</th><th>기존과</th></tr>
+<tr><td>아래 가운데 판</td><td>① 빨강 「→ 오른쪽」(누르고 있기) → ② 주황 「✂️ 싹둑」(한 번)</td><td>판·누르고 있기 같음. ②만 주황(누르는 뜻이 바뀐 걸 색으로)</td></tr>
+<tr><td>판 위 한 줄 안내</td><td>① 「줄 앞에서 떼세요」 / ② 「줄이 노란 괄호 사이를 지날 때」</td><td>같음</td></tr>
+<tr><td>위 가운데 칩</td><td>「① 가위 옮기기」 / 「② 줄이 칼날 가운데일 때 싹둑!」</td><td>단계 표시만</td></tr>
+<tr><td>칼날 노란 괄호 · 점선</td><td>자르는 곳 ±3mm(그림 = 판정), 아래로 점선(① 때 줄과 맞추기용)</td><td>열쇠 「그림 크기 = 판정 크기」와 같음</td></tr>
+<tr><td>👁 옆에서 보기 · ⏱</td><td><b>없음</b></td><td>다름 — 아래</td></tr></table></section>
+
+<section class="panel"><h2>성공·아까움·실패 표시</h2><table>
+<tr><th></th><th>기계 위</th><th>결과 카드</th></tr>
+<tr><td>성공(±3mm)</td><td>「싹둑」 → 줄 아랫부분과 인형이 경품구로 떨어짐</td><td>「싹둑! 큰 루돌프」 · 🎒 업고 다니기</td></tr>
+<tr><td>아까움(±6mm)</td><td>칼날 가장자리에 주황 점(반쯤 잘린 자국), 인형은 그대로</td><td>「아까워요! 줄이 반쯤 잘렸어요」 + 「4mm 왼쪽」 · 「다음 판은 새 줄」</td></tr>
+<tr><td>실패</td><td>가위만 닫힘(허공)</td><td>「허공을 잘랐어요」 + 「줄이 1.8cm 오른쪽에 있었어요」</td></tr></table>
+<p class="note">빗나간 거리·방향을 카드에 그대로 = 타이머 「+0.03초」·열쇠 「오른쪽에 꽂혔어요」와 같은 생각. 반쯤 잘린 줄은 이어지지 않음(봉처럼 판 사이 상태를 남기지 않아 서버·저장 부담 없음).</p></section>
+
+<section class="panel"><h2>연속 실패 도움</h2>
+<p><b>8판 연달아 못 자르면</b> 다음 판부터(자를 때까지) <b>직원이 줄을 잡아 흔들리지 않게</b> 해 줍니다. 줄 위에 초록 「직원」 집게가 보이고, 시작 알림·결과 카드 「직원 도움까지 n번」.</p>
+<p class="note">이유: 봉 기계(8판 직원 도움)와 같은 어려움·같은 이름. 조사 초안 「칼날 폭 넓힘」 대신 흔들림 멈춤을 고른 까닭 = 칼날 폭은 눈에 잘 안 띄고, 멈춘 줄은 누가 봐도 도움. 흔들림이 멈춰도 가위 자리는 맞춰야 해서 자동 성공은 아님(어림 판당 26%).</p></section>
+
+<section class="panel wide"><h2>구경하는 손님 화면 <small>왼쪽에서 한 판 하면 0.15초 늦게 따라 그림</small></h2>
+<div class="spect"><canvas id="spect" width="300" height="230"></canvas><div>
+<ul><li>다른 손님은 기계를 봄: 가위가 레일을 따라 감 → 「싹둑」 → 인형이 떨어짐(가장 볼 만한 장면)</li>
+<li>act: <code>cx</code> 가위 자리(mm, 뗄 때 한 번) · 자를 때 <code>ph:'drop'</code> + <code>cz</code> 자른 줄(1·2) + <code>v</code> 줄과 칼날 차이(mm+100) + <code>k</code> 결과</li>
+<li>줄 흔들림은 받는 화면이 혼자 그리고, 자른 순간만 받은 차이대로 줄을 맞춤(열쇠 구경의 「구멍으로 미끄러짐」과 같은 방법)</li>
+<li>내 화면처럼 다가가기는 없음(구경은 기계 전체)</li></ul>
+<p class="note">받은 act: <code id="spect-act"></code></p></div></div></section>
+
+<section class="panel diff"><h2>기존 4종·조사 초안과 다르게 한 곳 · 이유</h2><ul>
+<li><b>② = 「앞으로 밀어 넣기」 대신 「자르는 순간」</b> — 조사 초안의 두 방향 맞추기는 열쇠와 똑같아짐. 「자리(①) + 때(②)」로 바꿔 흔들리는 줄을 노리는 이 기계만의 재미.</li>
+<li><b>줄 여러 개 중 진짜만 하나 → 뺌</b> — 숨은 속임수는 「보이는 규칙 = 판정 규칙」 원칙에 어긋남. 대신 줄 2개 모두 진짜, 줄 = 경품.</li>
+<li><b>② 판 주황색</b> — 같은 판에서 「누르고 있기」가 「한 번 누르기」로 바뀌는 걸 색으로 알림.</li>
+<li><b>카메라 2.2배 다가감</b> — 휴대폰에서 6mm 칼날이 3px로 보여서(전체 화면 폭 0.6m). 집게·봉은 「옆에서 보기」로 해결한 문제를 여기선 다가가기로.</li>
+<li><b>👁 옆에서 보기·⏱ 없음</b> — 판정이 좌우 하나뿐이라 깊이 정보가 필요 없음, 시간은 단계마다 무입력 제한만.</li></ul></section>
+
+<section class="panel"><h2>난이도 어림 <small class="est">추정 · 사람 손 모델 σ60ms</small></h2><table>
+<tr><th>기계</th><th>판당</th><th>성공까지 평균</th></tr>
+<tr><td>가위로 툭(보통 판)</td><td>14.7%</td><td>6.0판(8판 도움 포함)</td></tr>
+<tr><td>가위로 툭(도움 판)</td><td>26%</td><td>—</td></tr>
+<tr><td>봉 1·2 / 3 / 4(측정)</td><td>—</td><td>4.2 / 5.5 / 6.6판</td></tr>
+<tr><td>타이머 10.00(같은 모델)</td><td>6.6%</td><td>약 15판</td></tr></table>
+<p class="note">목표(추천안) = 조사 「봉 다음, 큰 인형 기계」: 봉 3과 봉 4 사이. 아까움도 판당 약 14%라 「거의 됐다」가 자주 보임. 줄이 끝까지 갔다 서는 순간을 노리면 더 쉬움(숨은 요령, 흔들림 크기가 판마다 ±15% 달라 완전히 쉽진 않음). 계산 <code>artifacts/claw-design/new3/sweep3.mjs</code></p></section>
+</div></div>
+<script>/*BASE*/</script><script>/*JS*/</script></body></html>

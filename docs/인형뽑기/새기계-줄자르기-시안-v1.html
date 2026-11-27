@@ -1,0 +1,354 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>새 기계 ② 줄 자르기 「가위로 툭」 시안 v1 — 월드디자인</title><style>/* 새 기계 3종 시안 공용(월드디자인 11-27). 휴대폰 HUD는 src/claw/claw-hud.css 모양을 흉내만 냄 — 실제 값·이름은 규칙서 표를 따름 */
+:root{--red:#c8382d;--grn:#2f9a55;--ink:#3a2b22;--cream:rgba(255,250,238,.92);--line:#e2d4b8;--font:"Apple SD Gothic Neo","Pretendard",-apple-system,"Malgun Gothic",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#241c33;font:15px/1.55 var(--font);color:#fffaf0}
+.top{max-width:1480px;margin:auto;padding:22px 24px 4px}
+.top h1{margin:0;font-size:24px}
+.top p{margin:4px 0 0;opacity:.85}
+.tag{display:inline-block;padding:2px 10px;border-radius:999px;background:#ffd36b;color:#3a2b22;font-weight:800;font-size:12.5px;margin-left:6px;vertical-align:middle}
+.page{display:flex;gap:28px;padding:16px 24px 40px;align-items:flex-start;max-width:1480px;margin:auto;flex-wrap:wrap}
+.left{flex:none;display:flex;flex-direction:column;align-items:center;gap:10px}
+.phone{width:390px;height:844px;border-radius:46px;position:relative;overflow:hidden;background:radial-gradient(120% 80% at 50% 10%,#4a3a6e,#1b1428);box-shadow:0 0 0 10px #0d0b12,0 22px 50px #000a;flex:none;user-select:none;-webkit-user-select:none;touch-action:none}
+.phone canvas.view{position:absolute;left:0;top:0;width:390px;height:844px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:410px}
+.ctl button{font:700 13px var(--font);padding:7px 12px;border-radius:12px;border:0;background:#fffaf0;color:var(--ink);cursor:pointer}
+.ctl button[aria-pressed=true]{background:#ffd36b}
+.side{flex:1;min-width:380px;max-width:1000px;display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px;align-content:start}
+.panel{background:#fffaf0;color:var(--ink);border-radius:16px;padding:12px 16px 14px}
+.panel h2{margin:0 0 6px;font-size:16px}
+.panel h2 small{font-weight:600;color:#8a7560;font-size:12px;margin-left:6px}
+.panel ol,.panel ul{margin:4px 0;padding-left:20px}
+.panel li{margin:2px 0}
+.panel table{border-collapse:collapse;width:100%;font-size:13px}
+.panel td,.panel th{border-top:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+.panel th{background:#f6ecd6}
+.panel .note{font-size:12.5px;color:#7a6550;margin:6px 0 0}
+.panel.wide{grid-column:1/-1}
+.diff{background:#eef7ff}
+.spect{display:flex;gap:12px;align-items:flex-start}
+.spect canvas{border-radius:12px;background:#1b1428;flex:none}
+.est{color:#8a5a00;font-weight:700}
+
+/* ── 휴대폰 HUD(안전 영역: 위 47 · 아래 34) ── */
+.h{position:absolute;z-index:20;font-family:var(--font)}
+.h-pill{left:16px;top:55px;height:44px;padding:0 14px;border-radius:22px;background:var(--cream);color:var(--ink);display:flex;align-items:center;gap:8px;font:800 14px var(--font);box-shadow:0 2px 8px rgba(40,25,10,.16)}
+.h-pill b{color:#b8860b}
+.h-x{right:16px;top:55px;width:44px;height:44px;border-radius:50%;background:var(--cream);color:var(--ink);border:0;font:900 18px var(--font);box-shadow:0 2px 8px rgba(40,25,10,.16)}
+.h-chip{left:50%;transform:translateX(-50%);top:109px;padding:6px 14px;border-radius:16px;background:rgba(30,22,45,.82);color:#fff6c8;font:800 15px var(--font);white-space:nowrap;border:2px solid rgba(255,211,107,.6)}
+.h-toast{left:50%;transform:translateX(-50%);top:150px;max-width:366px;width:max-content;padding:9px 16px;border-radius:18px;background:rgba(58,43,34,.94);color:#fffaf0;font:700 14px/1.35 var(--font);text-align:center;z-index:50;transition:opacity .25s;pointer-events:none}
+.h-hint{left:50%;transform:translateX(-50%);bottom:158px;max-width:320px;width:max-content;min-height:32px;padding:7px 12px;border-radius:14px;background:rgba(255,250,238,.9);color:var(--ink);font:700 12.5px/1.35 var(--font);text-align:center}
+.h-bar{left:16px;right:16px;bottom:52px;height:80px;border:0;border-radius:22px;background:var(--red);color:#fff;font:900 26px/1 var(--font);display:flex;align-items:center;justify-content:center;gap:12px;
+ box-shadow:0 7px 0 rgba(0,0,0,.32),0 0 0 4px #fff,0 0 0 7px #2a213c,0 14px 24px rgba(0,0,0,.35);cursor:pointer;touch-action:none}
+.h-bar.green{background:var(--grn)}
+.h-bar.cut{background:#d9822b}
+.h-bar.on{transform:translateY(5px);box-shadow:0 2px 0 rgba(0,0,0,.32),0 0 0 4px #fff,0 0 0 7px #2a213c}
+.h-bar[data-dim]{filter:grayscale(.7) brightness(.8)}
+.h-bar .lt{display:flex;flex-direction:column;align-items:flex-start}
+.h-bar small{font:700 12px/1.2 var(--font);opacity:.92;margin-top:4px}
+.h-bar.half{left:224px;right:14px;bottom:78px;height:112px;flex-direction:column;gap:2px;font-size:22px}
+.h-bar.half .lt{align-items:center}
+.h-bar.half small{display:none}
+.h-bar .tm{position:absolute;left:18px;right:18px;bottom:-17px;height:7px;border-radius:4px;background:rgba(255,250,238,.85);overflow:hidden}
+.h-bar .tm i{position:absolute;left:0;top:0;bottom:0;background:#ffb52b}
+.h-pad{left:16px;bottom:54px;display:grid;grid-template-columns:repeat(3,60px);grid-template-rows:repeat(3,60px);gap:6px}
+.h-pad button{border:0;border-radius:16px;background:var(--cream);color:var(--ink);font:900 20px var(--font);box-shadow:0 3px 0 rgba(0,0,0,.25);touch-action:none}
+.h-pad button.on{background:#ffd36b;transform:translateY(2px)}
+.h-pad button small{display:block;font-size:10px}
+.h-pad [data-d=up]{grid-column:2;grid-row:1}.h-pad [data-d=left]{grid-column:1;grid-row:2}.h-pad [data-d=right]{grid-column:3;grid-row:2}.h-pad [data-d=down]{grid-column:2;grid-row:3}
+.h-todo{right:16px;bottom:140px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.h-todo button{height:44px;padding:0 16px;border-radius:22px;border:0;background:var(--cream);color:var(--ink);font:800 14px var(--font);box-shadow:0 2px 8px rgba(40,25,10,.2);cursor:pointer}
+.h-todo button.main{background:#fff;outline:3px solid var(--red)}
+.h-run{right:16px;bottom:62px;width:76px;height:76px;border-radius:50%;background:var(--red);color:#fff;border:0;font:900 14px var(--font);box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.h-joy{left:40px;bottom:80px;width:110px;height:110px;border-radius:50%;border:3px dashed rgba(255,250,238,.35);color:rgba(255,250,238,.5);display:grid;place-items:center;font:700 12px var(--font)}
+.h-dim{position:absolute;inset:0;z-index:54;background:rgba(20,12,30,.45)}
+.h-card{left:50%;top:50%;transform:translate(-50%,-50%);width:358px;max-height:740px;overflow:auto;z-index:55;padding:16px 16px 14px;border-radius:22px;background:rgba(255,250,238,.98);color:var(--ink);text-align:center;box-shadow:0 10px 34px rgba(40,25,10,.45)}
+.h-card h3{margin:6px 0 4px;font-size:20px}
+.h-card p{margin:4px 0;font-size:14px}
+.h-card .big{font-size:70px;line-height:1.1}
+.h-card .band{margin:-16px -16px 10px;padding:8px;border-radius:22px 22px 0 0;background:var(--rc,#e5a832);color:#fff;font-weight:900}
+.h-card .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.h-card .btn{min-height:48px;padding:0 14px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--ink);font:800 15px var(--font);cursor:pointer;flex:1 1 40%}
+.h-card .btn.red{background:var(--red);border-color:var(--red);color:#fff}
+.h-card .sub{font-size:12.5px;color:#7a6550}
+.h-card .pity{margin-top:8px;padding:6px 10px;border-radius:12px;background:#eef7ee;color:#24613a;font-weight:800;font-size:13px}
+.h-card ol{text-align:left;padding-left:20px;font-size:13.5px;margin:6px 0}
+.h-card .num{font:900 30px ui-monospace,Menlo,monospace;margin:4px 0}
+.h-card .head{display:flex;justify-content:space-between;align-items:center;font-weight:900}
+.h-card .lv{color:#c8382d;font-weight:900;text-align:left;margin:2px 0 6px}
+.h-card .prz{display:flex;gap:10px;justify-content:center;font-size:13px}
+.h-card .prz span{display:flex;flex-direction:column;align-items:center}
+.h-card .prz em{font-style:normal;font-size:30px}
+[hidden]{display:none!important}
+</style></head><body>
+<header class="top"><h1>새 기계 ② 줄 자르기 「가위로 툭」 <span class="tag">추천안 · 대표 미확인</span></h1>
+<p>흔들리는 줄에 큰 인형이 매달려 있습니다. 가위를 줄 앞으로 옮기고(누르고 있다가 떼기), 줄이 칼날 가운데를 지나는 순간 「싹둑」을 누르면 인형이 툭 떨어집니다. 왼쪽 휴대폰 화면을 직접 눌러(또는 Space) 해 볼 수 있습니다. 규칙서: <code>docs/인형뽑기/새기계3종-규칙서-v1.md</code> §2</p></header>
+<div class="page">
+<div class="left"><div class="phone"><canvas class="view"></canvas></div>
+<div class="ctl"><button id="demo" aria-pressed="false">자동 시연(사람 손 오차 σ60ms)</button><button id="pity">연속 실패 8번으로 맞춤</button><button id="coins">코인 30개로</button></div></div>
+<div class="side">
+<section class="panel"><h2>한 판 흐름</h2><ol>
+<li>기계 앞 할 일 칩 「✂️ 가위로 툭 한 판 · 🪙1」(처음이면 규칙 카드)</li>
+<li><b>① 「→ 오른쪽」 누르고 있기</b> = 가위가 오른쪽으로(초당 15cm), 떼면 고정. 되돌리기 없음 — 열쇠 ①과 같은 손</li>
+<li>0.3초 「잠깐」 → 카메라가 가위 쪽으로 2.2배 다가감(줄·칼날이 손가락 크기로 보이게)</li>
+<li><b>② 「✂️ 싹둑」 한 번 누르기</b> = 누른 순간 가위가 닫힘. 그때 줄 자리로 판정</li>
+<li>줄이 끊기면 큰 인형이 경품구로 툭 → 결과 카드(「🎒 업고 다니기 / 도감 / 한 판 더 / 그만」)</li></ol>
+<p class="note">입력 없음: ① 20초 = 그 자리에서 시작 · 누른 채 10초 또는 끝 도착 = 뗀 것으로 · ② 10초 = 저절로 싹둑. 줄 2개 = 경품 2종(어느 줄을 노릴지가 곧 인형 고르기, 열쇠의 「칸 고르기」와 같은 생각).</p></section>
+
+<section class="panel"><h2>휴대폰 세로 엄지 배치 <small>390×844 기준</small></h2><table>
+<tr><th>자리</th><th>무엇</th><th>기존과</th></tr>
+<tr><td>아래 가운데 판</td><td>① 빨강 「→ 오른쪽」(누르고 있기) → ② 주황 「✂️ 싹둑」(한 번)</td><td>판·누르고 있기 같음. ②만 주황(누르는 뜻이 바뀐 걸 색으로)</td></tr>
+<tr><td>판 위 한 줄 안내</td><td>① 「줄 앞에서 떼세요」 / ② 「줄이 노란 괄호 사이를 지날 때」</td><td>같음</td></tr>
+<tr><td>위 가운데 칩</td><td>「① 가위 옮기기」 / 「② 줄이 칼날 가운데일 때 싹둑!」</td><td>단계 표시만</td></tr>
+<tr><td>칼날 노란 괄호 · 점선</td><td>자르는 곳 ±3mm(그림 = 판정), 아래로 점선(① 때 줄과 맞추기용)</td><td>열쇠 「그림 크기 = 판정 크기」와 같음</td></tr>
+<tr><td>👁 옆에서 보기 · ⏱</td><td><b>없음</b></td><td>다름 — 아래</td></tr></table></section>
+
+<section class="panel"><h2>성공·아까움·실패 표시</h2><table>
+<tr><th></th><th>기계 위</th><th>결과 카드</th></tr>
+<tr><td>성공(±3mm)</td><td>「싹둑」 → 줄 아랫부분과 인형이 경품구로 떨어짐</td><td>「싹둑! 큰 루돌프」 · 🎒 업고 다니기</td></tr>
+<tr><td>아까움(±6mm)</td><td>칼날 가장자리에 주황 점(반쯤 잘린 자국), 인형은 그대로</td><td>「아까워요! 줄이 반쯤 잘렸어요」 + 「4mm 왼쪽」 · 「다음 판은 새 줄」</td></tr>
+<tr><td>실패</td><td>가위만 닫힘(허공)</td><td>「허공을 잘랐어요」 + 「줄이 1.8cm 오른쪽에 있었어요」</td></tr></table>
+<p class="note">빗나간 거리·방향을 카드에 그대로 = 타이머 「+0.03초」·열쇠 「오른쪽에 꽂혔어요」와 같은 생각. 반쯤 잘린 줄은 이어지지 않음(봉처럼 판 사이 상태를 남기지 않아 서버·저장 부담 없음).</p></section>
+
+<section class="panel"><h2>연속 실패 도움</h2>
+<p><b>8판 연달아 못 자르면</b> 다음 판부터(자를 때까지) <b>직원이 줄을 잡아 흔들리지 않게</b> 해 줍니다. 줄 위에 초록 「직원」 집게가 보이고, 시작 알림·결과 카드 「직원 도움까지 n번」.</p>
+<p class="note">이유: 봉 기계(8판 직원 도움)와 같은 어려움·같은 이름. 조사 초안 「칼날 폭 넓힘」 대신 흔들림 멈춤을 고른 까닭 = 칼날 폭은 눈에 잘 안 띄고, 멈춘 줄은 누가 봐도 도움. 흔들림이 멈춰도 가위 자리는 맞춰야 해서 자동 성공은 아님(어림 판당 26%).</p></section>
+
+<section class="panel wide"><h2>구경하는 손님 화면 <small>왼쪽에서 한 판 하면 0.15초 늦게 따라 그림</small></h2>
+<div class="spect"><canvas id="spect" width="300" height="230"></canvas><div>
+<ul><li>다른 손님은 기계를 봄: 가위가 레일을 따라 감 → 「싹둑」 → 인형이 떨어짐(가장 볼 만한 장면)</li>
+<li>act: <code>cx</code> 가위 자리(mm, 뗄 때 한 번) · 자를 때 <code>ph:'drop'</code> + <code>cz</code> 자른 줄(1·2) + <code>v</code> 줄과 칼날 차이(mm+100) + <code>k</code> 결과</li>
+<li>줄 흔들림은 받는 화면이 혼자 그리고, 자른 순간만 받은 차이대로 줄을 맞춤(열쇠 구경의 「구멍으로 미끄러짐」과 같은 방법)</li>
+<li>내 화면처럼 다가가기는 없음(구경은 기계 전체)</li></ul>
+<p class="note">받은 act: <code id="spect-act"></code></p></div></div></section>
+
+<section class="panel diff"><h2>기존 4종·조사 초안과 다르게 한 곳 · 이유</h2><ul>
+<li><b>② = 「앞으로 밀어 넣기」 대신 「자르는 순간」</b> — 조사 초안의 두 방향 맞추기는 열쇠와 똑같아짐. 「자리(①) + 때(②)」로 바꿔 흔들리는 줄을 노리는 이 기계만의 재미.</li>
+<li><b>줄 여러 개 중 진짜만 하나 → 뺌</b> — 숨은 속임수는 「보이는 규칙 = 판정 규칙」 원칙에 어긋남. 대신 줄 2개 모두 진짜, 줄 = 경품.</li>
+<li><b>② 판 주황색</b> — 같은 판에서 「누르고 있기」가 「한 번 누르기」로 바뀌는 걸 색으로 알림.</li>
+<li><b>카메라 2.2배 다가감</b> — 휴대폰에서 6mm 칼날이 3px로 보여서(전체 화면 폭 0.6m). 집게·봉은 「옆에서 보기」로 해결한 문제를 여기선 다가가기로.</li>
+<li><b>👁 옆에서 보기·⏱ 없음</b> — 판정이 좌우 하나뿐이라 깊이 정보가 필요 없음, 시간은 단계마다 무입력 제한만.</li></ul></section>
+
+<section class="panel"><h2>난이도 어림 <small class="est">추정 · 사람 손 모델 σ60ms</small></h2><table>
+<tr><th>기계</th><th>판당</th><th>성공까지 평균</th></tr>
+<tr><td>가위로 툭(보통 판)</td><td>14.7%</td><td>6.0판(8판 도움 포함)</td></tr>
+<tr><td>가위로 툭(도움 판)</td><td>26%</td><td>—</td></tr>
+<tr><td>봉 1·2 / 3 / 4(측정)</td><td>—</td><td>4.2 / 5.5 / 6.6판</td></tr>
+<tr><td>타이머 10.00(같은 모델)</td><td>6.6%</td><td>약 15판</td></tr></table>
+<p class="note">목표(추천안) = 조사 「봉 다음, 큰 인형 기계」: 봉 3과 봉 4 사이. 아까움도 판당 약 14%라 「거의 됐다」가 자주 보임. 줄이 끝까지 갔다 서는 순간을 노리면 더 쉬움(숨은 요령, 흔들림 크기가 판마다 ±15% 달라 완전히 쉽진 않음). 계산 <code>artifacts/claw-design/new3/sweep3.mjs</code></p></section>
+</div></div>
+<script>// 새 기계 3종 시안 공용(월드디자인 11-27). 시안 전용 흉내 — 실제 구현은 src/claw/claw-hud.js·claw-play.js에 기계 종류를 더하는 방식(규칙서 §0).
+// HUD: 알약·✕·가운데 칩·한 줄 안내·아래 판 단추(누름 시각 = pointerdown timeStamp)·십자 판·알림·카드. 구경 화면은 act만 받아 그림(0.15초 늦게)
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let seed=20261127;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+const gauss=()=>Math.sqrt(-2*Math.log(rnd()+1e-12))*Math.cos(2*Math.PI*rnd());
+const now=()=>performance.now();
+const G={coins:30,fails:0,plays:0,seen:false,dex:{}};
+const hud=(()=>{
+ const ph=$('.phone');const mk=(tag,cls,html='')=>{const e=document.createElement(tag);e.className='h '+cls;e.innerHTML=html;ph.append(e);return e;};
+ const pill=mk('div','h-pill'),x=mk('button','h-x','✕'),chip=mk('div','h-chip'),toastEl=mk('div','h-toast'),hint=mk('div','h-hint'),
+  bar=mk('button','h-bar'),pad=mk('div','h-pad',['up:▲<small>안</small>','left:◀','right:▶','down:▼<small>밖</small>'].map(s=>{const [d,t]=s.split(':');return `<button data-d="${d}">${t}</button>`;}).join('')),
+  todo=mk('div','h-todo'),run=mk('button','h-run','🏃<br>달리기'),joy=mk('div','h-joy','걷기'),dim=document.createElement('div'),card=mk('section','h-card');
+ dim.className='h-dim';ph.append(dim);
+ x.setAttribute('aria-label','그만두기');
+ for(const e of [chip,toastEl,hint,bar,pad,todo,run,joy,dim,card,x])e.hidden=true;
+ let H={};let toastT=0;
+ // 판 단추: 누름·뗌 시각을 그대로 넘김(손가락이 미끄러져 나가도 뗄 때까지 유지)
+ let held=null;
+ bar.addEventListener('pointerdown',e=>{if(bar.dataset.dim!==undefined)return;e.preventDefault();held=e.pointerId;try{bar.setPointerCapture(e.pointerId);}catch{}bar.classList.add('on');H.down?.(e.timeStamp);});
+ const up=e=>{if(e.pointerId!==held)return;held=null;bar.classList.remove('on');H.up?.(e.timeStamp);};
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])bar.addEventListener(ev,up);
+ bar.addEventListener('contextmenu',e=>e.preventDefault());
+ addEventListener('keydown',e=>{if(e.code!=='Space'||e.repeat||!card.hidden||bar.hidden)return;e.preventDefault();if(bar.dataset.dim===undefined){bar.classList.add('on');H.down?.(e.timeStamp);}});
+ addEventListener('keyup',e=>{if(e.code!=='Space'||bar.hidden)return;bar.classList.remove('on');H.up?.(e.timeStamp);});
+ // 십자 판(공 구멍 넣기만)
+ const fingers=new Map();const dirAt=(cx,cy)=>document.elementFromPoint(cx,cy)?.closest?.('.h-pad [data-d]')?.dataset.d??null;
+ const paint=()=>{const on=new Set(fingers.values());for(const b of pad.querySelectorAll('[data-d]'))b.classList.toggle('on',on.has(b.dataset.d));};
+ pad.addEventListener('pointerdown',e=>{const d=dirAt(e.clientX,e.clientY);if(!d)return;e.preventDefault();try{pad.setPointerCapture(e.pointerId);}catch{}fingers.set(e.pointerId,d);paint();});
+ pad.addEventListener('pointermove',e=>{if(fingers.has(e.pointerId)){fingers.set(e.pointerId,dirAt(e.clientX,e.clientY));paint();}});
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(ev,e=>{fingers.delete(e.pointerId);paint();});
+ const keys=new Set();const KM={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};
+ addEventListener('keydown',e=>{if(KM[e.code]&&!pad.hidden){keys.add(KM[e.code]);e.preventDefault();}});addEventListener('keyup',e=>{keys.delete(KM[e.code]);});
+ const D={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+ let pend=null;
+ card.addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b||!pend)return;const f=pend;pend=null;card.hidden=true;dim.hidden=true;f(b.dataset.c);});
+ todo.addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b)H.todo?.(b.dataset.t);});
+ x.addEventListener('click',()=>H.quit?.());
+ return {
+  on(h){H=h;},
+  pill(t){pill.innerHTML=t;},
+  chip(t){chip.hidden=!t;if(t)chip.innerHTML=t;},
+  hint(t){hint.hidden=!t;if(t)hint.textContent=t;},
+  quit(on){x.hidden=!on;},
+  /** b = {ic,label,sub,tone:'green'|'cut',dim,half,ring} 또는 null */
+  bar(b){bar.hidden=!b;if(!b)return;bar.className='h h-bar'+(b.tone?' '+b.tone:'')+(b.half?' half':'')+(bar.classList.contains('on')?' on':'');
+   if(b.dim)bar.dataset.dim='';else delete bar.dataset.dim;
+   const html=`<span style="font-size:32px">${b.ic}</span><span class="lt"><b>${esc(b.label)}</b>${b.sub?`<small>${esc(b.sub)}</small>`:''}</span>${b.ring!=null?`<i class="tm"><i style="width:${(b.ring*100).toFixed(1)}%"></i></i>`:''}`;if(bar.innerHTML!==html)bar.innerHTML=html;},
+  pad(on){pad.hidden=!on;if(!on)fingers.clear(),paint();},
+  padDir(){let dx=0,dz=0;for(const d of [...fingers.values(),...keys]){if(!d)continue;dx+=D[d][0];dz+=D[d][1];}return [Math.sign(dx),Math.sign(dz)];},
+  walk(on,todos=[]){joy.hidden=run.hidden=!on;todo.hidden=!on;todo.innerHTML=todos.map(t=>`<button data-t="${t.id}" class="${t.main?'main':''}">${esc(t.label)}</button>`).join('');},
+  toast(t,sec=2.4){toastEl.textContent=t;toastEl.hidden=false;toastEl.style.opacity=1;toastT=sec;},
+  tick(dt){if(toastT>0){toastT-=dt;if(toastT<.25)toastEl.style.opacity=Math.max(0,toastT/.25);if(toastT<=0)toastEl.hidden=true;}},
+  card(html){card.innerHTML=html;card.hidden=false;dim.hidden=false;return new Promise(r=>{pend=r;});},
+  get cardOpen(){return !card.hidden;},
+ };
+})();
+/** 결과 카드 공용 모양(claw-hud.js showResult 흉내): kind win|near|miss */
+function resultCard({kind,title,big,band,lines=[],pity='',carry=''}){
+ const again=G.coins>=1?`<button class="btn${kind==='win'&&carry?'':' red'}" data-c="again">🪙 한 판 더 · 1</button>`:'';
+ return `${kind==='win'?`<div class="band" style="--rc:${band?.color??'#e5a832'}">${esc(band?.label??'')}</div>`:''}${big?`<div class="big">${big}</div>`:''}<h3>${esc(title)}</h3>${lines.map(l=>`<p>${l}</p>`).join('')}
+${pity?`<div class="pity">${esc(pity)}</div>`:''}
+<div class="row">${kind==='win'&&carry?`<button class="btn red" data-c="carry">${esc(carry)}</button>`:''}${kind==='win'?'<button class="btn" data-c="dex">🧸 도감 보기</button>':''}${again}<button class="btn" data-c="stop">그만</button></div>${G.coins<1?'<p class="sub">코인을 다 썼어요. 내일 0시에 또 받아요</p>':''}`;
+}
+function rulesCard({icon,name,sub,level,lines,pity,prizes,first}){
+ return `<div class="head"><span>${icon} ${esc(name)} · ${esc(sub)}</span>${first?'':'<button class="btn" data-c="close" style="flex:none;min-height:36px">✕</button>'}</div>
+<p class="lv">어려움 ${'●'.repeat(level)}${'○'.repeat(Math.max(3,level)-level)}</p><ol>${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ol>
+${pity?`<div class="pity">${esc(pity)}</div>`:''}<div class="prz">${prizes.map(p=>`<span><em>${p.em}</em>${esc(p.name)}</span>`).join('')}</div>
+<p class="sub">코인은 매일 0시(서울)에 무료로 30개가 돼요. 사는 곳·바꾸는 곳은 없어요.</p>
+${first?'<div class="row"><button class="btn red" data-c="go">🪙 시작하기 · 1</button></div>':''}`;
+}
+/** 구경 화면: 내 판이 보낸 act를 0.15초 늦게 받음(네트워크 흉내). draw(ctx,w,h,act,history,t) */
+function makeSpect(canvas,draw){
+ const ctx=canvas.getContext('2d'),q=[],hist=[];let act={};
+ return {send(a){q.push({at:now()+150,a:{...a}});},
+  frame(t){while(q.length&&q[0].at<=t){act=q.shift().a;hist.push(act);if(hist.length>60)hist.shift();}draw(ctx,canvas.width,canvas.height,act,hist,t);},
+  reset(){hist.length=0;act={};}};
+}
+const rr=(c,x,y,w,h,r)=>{c.beginPath();c.roundRect(x,y,w,h,r);};
+</script><script>// ② 줄 자르기 「가위로 툭」 시안. ① 「→」 누르고 있기 = 가위가 오른쪽으로(떼면 고정, 열쇠와 같음) → ② 「✂ 싹둑」 한 번 누르기 = 그 순간 줄 자리로 판정(pointerdown timeStamp)
+// 단위 m. 기계 안 폭 0.60, 줄 2개(큰 인형), 가위 0.15m/s, 흔들림 진폭 약 5cm(판마다 ±15%로 바뀜)·주기 1.4초, 자르는 곳 ±3mm, 아까움 ±6mm
+const SC={inner:.60,strings:[.22,.42],start:.04,end:.56,speed:.15,A:.05,P:1.4,w:.003,near:2,holdLimitSec:10,readySec:20,cutLimitSec:10,gapSec:.3,pityAfter:8};
+const PZ=[{id:'big-rudolph',name:'큰 루돌프',em:'🦌',band:{label:'큰 인형 · ★★★ 희귀',color:'#8a5cd6'}},{id:'big-squirrel',name:'큰 다람쥐',em:'🐿️',band:{label:'큰 인형 · ★★ 보통',color:'#4f9bd9'}}];
+const cv=$('canvas.view'),cx=cv.getContext('2d');cv.width=390*2;cv.height=844*2;cx.scale(2,2);
+let S={mode:'front',n:0},demo=false;
+const RULES={icon:'✂️',name:'가위로 툭',sub:'줄 자르기',level:3,
+ lines:['① 「→」를 누르고 있으면 가위가 오른쪽으로 가요. 떼면 그 자리에 멈춰요(되돌릴 수 없어요)','② 「✂ 싹둑」을 누른 순간 가위가 닫혀요. 그때 줄이 칼날 가운데(±3mm)에 있으면 줄이 끊겨 큰 인형이 떨어져요','줄은 좌우로 흔들려요. 흔들림 크기는 판마다 조금씩 달라요','칼날 가장자리(±6mm)면 줄이 반쯤만 잘리는 아까움 · 다음 판은 새 줄이에요'],
+ pity:`${SC.pityAfter}번 연달아 못 자르면 직원이 줄을 잡아 흔들리지 않게 해 줘요(자를 때까지 판마다)`,prizes:PZ};
+// 픽셀 자리: 기계 안 왼쪽 35px, 0.60m = 320px
+const PX=320/SC.inner,IX=35,TOP=205,CUTY=330,L=245; // 줄 위 끝 y·자르는 높이·줄 길이(px)
+const amp=(t,i,still)=>still?0:SC.A*(.85+.3*(.5+.5*Math.sin(t/7300*2*Math.PI+i*2.1)));
+const strX=(t,i,still)=>SC.strings[i]+amp(t,i,still)*Math.sin(2*Math.PI*t/(SC.P*1000)+i*1.9); // 자르는 높이에서 줄 자리(m)
+// ── 그림(내 화면·구경 화면 공용). g = {t, blade, closed(0~1), still, cut:{i,t,ok,near,dx}, zoom:{x,y,k}, s(축척), ox,oy}
+function drawCut(c,g){
+ c.save();const k=g.s??1;c.translate(g.ox??0,g.oy??0);c.scale(k,k);
+ if(g.zoom){const z=g.zoom;c.translate(z.x,z.y);c.scale(z.k,z.k);c.translate(-z.x,-z.y);}
+ // 몸
+ rr(c,18,150,354,500,24);c.fillStyle='#5a2a2a';c.fill();c.lineWidth=5;c.strokeStyle='#e0874a';c.stroke();
+ rr(c,40,160,310,34,14);c.fillStyle='#ffd36b';c.fill();c.fillStyle='#3a2b22';c.font='900 20px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('✂️ 가위로 툭',195,178);
+ c.fillStyle='#1d1216';c.fillRect(IX,198,320,380);
+ // 위 막대·레일
+ c.fillStyle='#9aa3ad';c.fillRect(IX,TOP-6,320,8);c.fillStyle='#6b7480';c.fillRect(IX,300,320,6);
+ // 줄 2개 + 큰 인형
+ for(let i=0;i<2;i++){
+  const ax=IX+SC.strings[i]*PX,cut=g.cut&&g.cut.i===i?g.cut:null;
+  let xc=IX+strX(g.t,i,g.still)*PX;if(cut)xc=IX+(cut.x)*PX;
+  const tipX=ax+(xc-ax)*(L/(CUTY-TOP)); // 줄 끝(인형 자리)
+  const fall=cut&&cut.ok?Math.min(1,(g.t-cut.t)/700):0;
+  c.strokeStyle='#f4ead2';c.lineWidth=1.6;c.beginPath();c.moveTo(ax,TOP);
+  if(cut&&cut.ok){c.lineTo(ax+(xc-ax)*.92,CUTY-4);c.stroke();c.beginPath();c.moveTo(xc,CUTY+4+fall*fall*260);c.lineTo(tipX,TOP+L+fall*fall*260);c.stroke();}
+  else{c.lineTo(tipX,TOP+L);c.stroke();if(cut&&cut.near){c.fillStyle='#ffb52b';c.beginPath();c.arc(xc,CUTY,3.5,0,7);c.fill();}}
+  c.font='64px serif';c.textAlign='center';c.textBaseline='top';c.fillText(PZ[i].em,tipX,TOP+L-6+fall*fall*260);
+  c.fillStyle='#e9d9b8';c.font='800 12px sans-serif';c.fillText(PZ[i].name,ax,TOP+8);
+  if(g.still){c.fillStyle='#3f9a62';rr(c,ax-9,TOP+28,18,22,5);c.fill();c.fillStyle='#fff';c.font='800 9px sans-serif';c.fillText('직원',ax,TOP+33);}
+ }
+ // 가위(레일 위 수레 + 아래로 내린 팔 + 칼날). 칼날 가운데 = 자르는 곳, 노란 괄호 = ±3mm
+ if(g.blade!=null){const bx=IX+g.blade*PX,cl=g.closed??0;
+  c.fillStyle='#c7ced6';rr(c,bx-16,288,32,22,6);c.fill();c.fillStyle='#8892a0';c.fillRect(bx-3,308,6,14);
+  c.save();c.translate(bx,CUTY);c.strokeStyle='#e8edf2';c.lineWidth=4;c.lineCap='round';
+  const op=(1-cl)*.55;c.beginPath();c.moveTo(-26*Math.cos(op),-26*Math.sin(op)*-1);c.lineTo(0,0);c.lineTo(-26*Math.cos(op),-26*Math.sin(op));c.stroke();
+  c.beginPath();c.moveTo(26*Math.cos(op),26*Math.sin(op));c.lineTo(0,0);c.lineTo(26*Math.cos(op),-26*Math.sin(op));c.stroke();
+  c.fillStyle='#ff5a4a';c.beginPath();c.arc(0,0,2.4,0,7);c.fill();c.restore();
+  if(g.guide){c.strokeStyle='rgba(255,211,107,.9)';c.lineWidth=1;c.beginPath();const w=SC.w*PX;c.moveTo(bx-w,CUTY-9);c.lineTo(bx-w,CUTY+9);c.moveTo(bx+w,CUTY-9);c.lineTo(bx+w,CUTY+9);c.stroke();
+   c.setLineDash([3,4]);c.strokeStyle='rgba(255,211,107,.35)';c.beginPath();c.moveTo(bx,CUTY+12);c.lineTo(bx,560);c.stroke();c.setLineDash([]);}
+ }
+ // 경품구
+ rr(c,120,590,150,44,12);c.fillStyle='#0d0709';c.fill();c.fillStyle='#b88';c.font='700 11px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(g.out?'':'경품 나오는 곳',195,612);
+ if(g.out){c.font='34px serif';c.fillText(g.out,195,612);}
+ if(g.still&&g.labels){c.fillStyle='#8ff0b0';c.font='900 13px sans-serif';c.fillText('직원 도움 · 줄을 잡아 줌',195,142);}
+ c.restore();
+}
+function act(extra){spect.send({m:18,n:S.n,...extra});}
+function start(){
+ if(G.coins<1){hud.toast('코인이 없어요 · 내일 0시에 30개');return;}
+ G.coins--;G.plays++;const pity=G.fails>=SC.pityAfter;
+ S={mode:'k1',t0:now(),blade:SC.start,holdAt:0,pity,n:S.n+1,zoom:0,closed:0,cut:null};
+ hud.walk(false);hud.quit(true);spect.reset();act({ph:'play',cx:Math.round(SC.start*1000),cz:0,k:0,v:0});
+ if(pity)hud.toast('직원 도움! 직원이 줄을 잡아 줬어요',3);
+}
+function release(t){if(S.mode!=='k1'||!S.holdAt)return;S.blade=Math.min(SC.end,S.blade0+SC.speed*(t-S.holdAt)/1000);S.holdAt=0;S.mode='gap';S.gapEnd=t+SC.gapSec*1000;act({ph:'play',cx:Math.round(S.blade*1000)});}
+function snip(t){
+ if(S.mode!=='k2')return;S.mode='snip';S.snipT=now();
+ let best=0,bd=1e9;for(let i=0;i<2;i++){const d=strX(t,i,S.pity)-S.blade;if(Math.abs(d)<Math.abs(bd)){bd=d;best=i;}}
+ const ok=Math.abs(bd)<=SC.w,near=!ok&&Math.abs(bd)<=SC.w*SC.near;
+ S.cut={i:best,x:S.blade+bd,t:now(),ok,near,dx:bd};S.res=ok?'win':near?'near':'miss';
+ act({ph:'drop',cx:Math.round(S.blade*1000),cz:best+1,v:Math.round(bd*1000)+100,k:ok?1:near?2:3,r:ok?PZ[best].id:''});
+ S.endAt=now()+(ok?1500:900);
+}
+async function result(){
+ S.mode='result';hud.bar(null);hud.hint(null);hud.chip(null);hud.quit(false);
+ const c=S.cut,P=PZ[c.i],mm=Math.abs(c.dx*1000),side=c.dx>0?'오른쪽':'왼쪽',dist=mm>=10?`${(mm/10).toFixed(1)}cm`:`${mm.toFixed(0)}mm`;let html;
+ if(S.res==='win'){G.fails=0;G.dex[P.id]=(G.dex[P.id]??0)+1;html=resultCard({kind:'win',title:`싹둑! ${P.name}`,big:P.em,band:P.band,lines:['줄이 칼날 가운데에 있었어요'],carry:'🎒 등에 업고 다니기'});}
+ else{G.fails++;const left=SC.pityAfter-G.fails;
+  html=resultCard({kind:S.res,title:S.res==='near'?'아까워요! 줄이 반쯤 잘렸어요':'허공을 잘랐어요',lines:[`줄이 칼날 가운데보다 <b>${dist} ${side}</b>에 있었어요`,S.res==='near'?'반쯤 잘린 줄은 다음 판에 새 줄로 바뀌어요':'줄이 칼날 앞을 지나는 순간을 노려 보세요'],
+   pity:left<=0?'다음 판은 직원 도움 — 직원이 줄을 잡아 줘요!':`직원 도움까지 ${left}번`});}
+ if(demo)setTimeout(()=>document.querySelector('.h-card [data-c=again]')?.click(),1600);
+ const r=await hud.card(html);
+ if(r==='again')start();else{S={mode:'front',n:S.n};front();if(r==='carry')hud.toast(`${P.name}를 업었어요`,2.4);}
+}
+function front(){hud.bar(null);hud.hint(null);hud.chip(null);hud.quit(false);hud.walk(true,[{id:'play',label:'✂️ 가위로 툭 한 판 · 🪙1',main:true},{id:'rules',label:'ⓘ 규칙'}]);}
+hud.on({
+ down(t){if(S.mode==='k1'&&!S.holdAt){S.holdAt=t;S.blade0=S.blade;}else if(S.mode==='k2')snip(t);},
+ up(t){if(S.mode==='k1')release(t);},
+ todo(id){if(id==='rules'){hud.card(rulesCard({...RULES,first:false}));return;}
+  if(!G.seen){G.seen=true;hud.card(rulesCard({...RULES,first:true})).then(c=>{if(c==='go')start();});return;}start();},
+ async quit(){const c=await hud.card('<h3>그만둘까요?</h3><p>넣은 코인은 돌려받지 못해요</p><div class="row"><button class="btn" data-c="q">그만두기</button><button class="btn red" data-c="k">계속하기</button></div>');
+  if(c==='q'){G.fails++;S={mode:'front',n:S.n};act({ph:''});front();}},
+});
+front();
+// ── 구경 화면: 가위 자리(cx)·자른 줄(cz)·줄 차이(v−100 mm)만 받음. 줄 흔들림은 받는 쪽이 혼자, 자른 순간만 받은 차이대로 줄을 맞춰 그림
+const spect=makeSpect($('#spect'),(c,w,h,a,hist,t)=>{
+ c.clearRect(0,0,w,h);c.fillStyle='#1b1428';c.fillRect(0,0,w,h);
+ const res=a.ph==='drop'&&a.k,blade=a.cx!=null?a.cx/1000:null;
+ if(res&&!spect.cutAt)spect.cutAt=t;if(!res)spect.cutAt=0;
+ const cut=res?{i:a.cz-1,x:blade+(a.v-100)/1000,t:spect.cutAt,ok:a.k===1,near:a.k===2}:null;
+ drawCut(c,{t,blade:a.ph?blade:null,closed:res?1:0,cut,s:.42,ox:68,oy:-50,labels:false});
+ c.fillStyle='#e9b44c';c.beginPath();c.ellipse(52,h-8,30,36,0,Math.PI,0);c.fill();c.fillStyle='#6b4b2a';c.beginPath();c.ellipse(52,h-33,27,9,0,0,7);c.fill();
+ c.fillStyle='#fff';c.font='700 11px sans-serif';c.textAlign='center';c.fillText('뽑기손님12',262,90);
+ const say=a.ph==='drop'?(a.k===1?'싹둑! 🎉':a.k===2?'반쯤…!':'허공'):'';
+ if(say){c.font='800 12px sans-serif';const tw=c.measureText(say).width+16;rr(c,262-tw/2,52,tw,20,9);c.fillStyle=a.k===3?'#ddd':'#ffd36b';c.fill();c.fillStyle='#3a2b22';c.fillText(say,262,66);}
+ $('#spect-act').textContent=a.m?JSON.stringify({m:a.m,ph:a.ph,cx:a.cx,cz:a.cz,v:a.v,k:a.k,r:a.r,n:a.n}):'(아직 없음 — 왼쪽에서 한 판 해 보세요)';
+});
+let last=now();
+function frame(t){
+ const dt=(t-last)/1000;last=t;hud.tick(dt);const s=S;
+ if(s.mode==='k1'){
+  if(s.holdAt){s.blade=Math.min(SC.end,s.blade0+SC.speed*(t-s.holdAt)/1000);if(t-s.holdAt>SC.holdLimitSec*1000||s.blade>=SC.end){hud.toast(s.blade>=SC.end?'끝까지 왔어요':'10초가 지나 저절로 멈췄어요');release(t);}}
+  else if(t-s.t0>SC.readySec*1000){hud.toast('20초가 지나 이 자리에서 시작해요');s.holdAt=t;s.blade0=s.blade;release(t);}
+  if(demo&&s.mode==='k1'){const tgt=SC.strings[0]+(rnd()<.5?0:.2);if(!s.holdAt&&t-s.t0>500){s.holdAt=t;s.blade0=s.blade;s.demoUp=t+(tgt-s.blade0)/SC.speed*1000+gauss()*60;}if(s.holdAt&&s.demoUp&&t>=s.demoUp){s.demoUp=0;release(t);}}
+ }
+ if(s.mode==='gap'&&t>=s.gapEnd){s.mode='k2';s.k2t=t;}
+ if(s.mode==='k2'){if(t-s.k2t>SC.cutLimitSec*1000){hud.toast('10초가 지나 저절로 잘랐어요');snip(t);}
+  if(demo&&s.mode==='k2'){if(!s.demoCut){// 가운데를 지나는 다음 순간 + 사람 오차
+   const i=Math.abs(SC.strings[0]-s.blade)<Math.abs(SC.strings[1]-s.blade)?0:1;let tt=t+400;for(let q=0;q<3000;q+=5){if(Math.sign(strX(t+400+q,i,s.pity)-s.blade)!==Math.sign(strX(t+405+q,i,s.pity)-s.blade)){tt=t+400+q;break;}}s.demoCut=tt+gauss()*60;}
+   if(t>=s.demoCut)snip(s.demoCut);}}
+ if(s.mode==='snip'&&t>=s.endAt){s.endAt=1e15;result();}
+ const k2=['k2','snip'].includes(s.mode);s.zoom+=((k2?1:0)-s.zoom)*Math.min(1,dt*6);
+ if(['k1','gap','k2','snip'].includes(s.mode)){
+  hud.pill(`✂️ 가위로 툭 · 🪙 <b>${G.coins}</b>`);
+  hud.chip(s.mode==='k1'||s.mode==='gap'?'① 가위 옮기기':'② 줄이 칼날 가운데일 때 싹둑!');
+  hud.bar(s.mode==='k1'?{ic:'→',label:'오른쪽',sub:'누르고 있는 동안 움직이고, 떼면 멈춰요'}:s.mode==='gap'?{ic:'⏳',label:'잠깐',sub:'잠깐만요…',dim:true}:s.mode==='k2'?{ic:'✂️',label:'싹둑',sub:'누른 순간 가위가 닫혀요',tone:'cut'}:{ic:'✂️',label:'싹둑!',sub:'결과를 보는 중',tone:'cut',dim:true});
+  hud.hint(s.mode==='k1'?'누르고 있으면 가위가 오른쪽으로 가요. 줄 앞에서 떼세요':s.mode==='k2'?'줄이 노란 괄호 사이를 지날 때 누르세요':null);
+ }else if(s.mode==='front')hud.pill(`👤 인형가게 1서버 · 🪙 <b>${G.coins}</b>`);
+ if(s.mode==='snip')s.closed=Math.min(1,(t-s.snipT)/120);
+ cx.clearRect(0,0,390,844);
+ const bx=IX+(s.blade??SC.start)*PX;
+ drawCut(cx,{t,blade:s.mode==='front'||s.mode==='result'&&!s.cut?null:s.blade??null,closed:s.closed,still:s.pity,cut:s.cut,guide:['k1','gap','k2'].includes(s.mode),labels:true,
+  zoom:s.zoom>.01?{x:bx,y:CUTY,k:1+1.2*s.zoom}:null,out:s.mode==='result'&&s.res==='win'||s.mode==='snip'&&s.res==='win'&&t-s.snipT>800?PZ[s.cut.i].em:''});
+ spect.frame(t);requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+$('#demo').onclick=e=>{demo=!demo;e.target.setAttribute('aria-pressed',demo);if(demo&&S.mode==='front'){G.seen=true;start();}};
+$('#pity').onclick=()=>{G.fails=SC.pityAfter;hud.toast('연속 실패 8번으로 맞춤 · 다음 판이 도움 판');};
+$('#coins').onclick=()=>{G.coins=30;};
+</script></body></html>

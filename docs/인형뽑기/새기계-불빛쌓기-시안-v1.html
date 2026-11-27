@@ -1,0 +1,367 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>새 기계 ① 불빛 쌓기 「별빛 탑」 시안 v1 — 월드디자인</title><style>/* 새 기계 3종 시안 공용(월드디자인 11-27). 휴대폰 HUD는 src/claw/claw-hud.css 모양을 흉내만 냄 — 실제 값·이름은 규칙서 표를 따름 */
+:root{--red:#c8382d;--grn:#2f9a55;--ink:#3a2b22;--cream:rgba(255,250,238,.92);--line:#e2d4b8;--font:"Apple SD Gothic Neo","Pretendard",-apple-system,"Malgun Gothic",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#241c33;font:15px/1.55 var(--font);color:#fffaf0}
+.top{max-width:1480px;margin:auto;padding:22px 24px 4px}
+.top h1{margin:0;font-size:24px}
+.top p{margin:4px 0 0;opacity:.85}
+.tag{display:inline-block;padding:2px 10px;border-radius:999px;background:#ffd36b;color:#3a2b22;font-weight:800;font-size:12.5px;margin-left:6px;vertical-align:middle}
+.page{display:flex;gap:28px;padding:16px 24px 40px;align-items:flex-start;max-width:1480px;margin:auto;flex-wrap:wrap}
+.left{flex:none;display:flex;flex-direction:column;align-items:center;gap:10px}
+.phone{width:390px;height:844px;border-radius:46px;position:relative;overflow:hidden;background:radial-gradient(120% 80% at 50% 10%,#4a3a6e,#1b1428);box-shadow:0 0 0 10px #0d0b12,0 22px 50px #000a;flex:none;user-select:none;-webkit-user-select:none;touch-action:none}
+.phone canvas.view{position:absolute;left:0;top:0;width:390px;height:844px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:410px}
+.ctl button{font:700 13px var(--font);padding:7px 12px;border-radius:12px;border:0;background:#fffaf0;color:var(--ink);cursor:pointer}
+.ctl button[aria-pressed=true]{background:#ffd36b}
+.side{flex:1;min-width:380px;max-width:1000px;display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px;align-content:start}
+.panel{background:#fffaf0;color:var(--ink);border-radius:16px;padding:12px 16px 14px}
+.panel h2{margin:0 0 6px;font-size:16px}
+.panel h2 small{font-weight:600;color:#8a7560;font-size:12px;margin-left:6px}
+.panel ol,.panel ul{margin:4px 0;padding-left:20px}
+.panel li{margin:2px 0}
+.panel table{border-collapse:collapse;width:100%;font-size:13px}
+.panel td,.panel th{border-top:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+.panel th{background:#f6ecd6}
+.panel .note{font-size:12.5px;color:#7a6550;margin:6px 0 0}
+.panel.wide{grid-column:1/-1}
+.diff{background:#eef7ff}
+.spect{display:flex;gap:12px;align-items:flex-start}
+.spect canvas{border-radius:12px;background:#1b1428;flex:none}
+.est{color:#8a5a00;font-weight:700}
+
+/* ── 휴대폰 HUD(안전 영역: 위 47 · 아래 34) ── */
+.h{position:absolute;z-index:20;font-family:var(--font)}
+.h-pill{left:16px;top:55px;height:44px;padding:0 14px;border-radius:22px;background:var(--cream);color:var(--ink);display:flex;align-items:center;gap:8px;font:800 14px var(--font);box-shadow:0 2px 8px rgba(40,25,10,.16)}
+.h-pill b{color:#b8860b}
+.h-x{right:16px;top:55px;width:44px;height:44px;border-radius:50%;background:var(--cream);color:var(--ink);border:0;font:900 18px var(--font);box-shadow:0 2px 8px rgba(40,25,10,.16)}
+.h-chip{left:50%;transform:translateX(-50%);top:109px;padding:6px 14px;border-radius:16px;background:rgba(30,22,45,.82);color:#fff6c8;font:800 15px var(--font);white-space:nowrap;border:2px solid rgba(255,211,107,.6)}
+.h-toast{left:50%;transform:translateX(-50%);top:150px;max-width:366px;width:max-content;padding:9px 16px;border-radius:18px;background:rgba(58,43,34,.94);color:#fffaf0;font:700 14px/1.35 var(--font);text-align:center;z-index:50;transition:opacity .25s;pointer-events:none}
+.h-hint{left:50%;transform:translateX(-50%);bottom:158px;max-width:320px;width:max-content;min-height:32px;padding:7px 12px;border-radius:14px;background:rgba(255,250,238,.9);color:var(--ink);font:700 12.5px/1.35 var(--font);text-align:center}
+.h-bar{left:16px;right:16px;bottom:52px;height:80px;border:0;border-radius:22px;background:var(--red);color:#fff;font:900 26px/1 var(--font);display:flex;align-items:center;justify-content:center;gap:12px;
+ box-shadow:0 7px 0 rgba(0,0,0,.32),0 0 0 4px #fff,0 0 0 7px #2a213c,0 14px 24px rgba(0,0,0,.35);cursor:pointer;touch-action:none}
+.h-bar.green{background:var(--grn)}
+.h-bar.cut{background:#d9822b}
+.h-bar.on{transform:translateY(5px);box-shadow:0 2px 0 rgba(0,0,0,.32),0 0 0 4px #fff,0 0 0 7px #2a213c}
+.h-bar[data-dim]{filter:grayscale(.7) brightness(.8)}
+.h-bar .lt{display:flex;flex-direction:column;align-items:flex-start}
+.h-bar small{font:700 12px/1.2 var(--font);opacity:.92;margin-top:4px}
+.h-bar.half{left:224px;right:14px;bottom:78px;height:112px;flex-direction:column;gap:2px;font-size:22px}
+.h-bar.half .lt{align-items:center}
+.h-bar.half small{display:none}
+.h-bar .tm{position:absolute;left:18px;right:18px;bottom:-17px;height:7px;border-radius:4px;background:rgba(255,250,238,.85);overflow:hidden}
+.h-bar .tm i{position:absolute;left:0;top:0;bottom:0;background:#ffb52b}
+.h-pad{left:16px;bottom:54px;display:grid;grid-template-columns:repeat(3,60px);grid-template-rows:repeat(3,60px);gap:6px}
+.h-pad button{border:0;border-radius:16px;background:var(--cream);color:var(--ink);font:900 20px var(--font);box-shadow:0 3px 0 rgba(0,0,0,.25);touch-action:none}
+.h-pad button.on{background:#ffd36b;transform:translateY(2px)}
+.h-pad button small{display:block;font-size:10px}
+.h-pad [data-d=up]{grid-column:2;grid-row:1}.h-pad [data-d=left]{grid-column:1;grid-row:2}.h-pad [data-d=right]{grid-column:3;grid-row:2}.h-pad [data-d=down]{grid-column:2;grid-row:3}
+.h-todo{right:16px;bottom:140px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.h-todo button{height:44px;padding:0 16px;border-radius:22px;border:0;background:var(--cream);color:var(--ink);font:800 14px var(--font);box-shadow:0 2px 8px rgba(40,25,10,.2);cursor:pointer}
+.h-todo button.main{background:#fff;outline:3px solid var(--red)}
+.h-run{right:16px;bottom:62px;width:76px;height:76px;border-radius:50%;background:var(--red);color:#fff;border:0;font:900 14px var(--font);box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.h-joy{left:40px;bottom:80px;width:110px;height:110px;border-radius:50%;border:3px dashed rgba(255,250,238,.35);color:rgba(255,250,238,.5);display:grid;place-items:center;font:700 12px var(--font)}
+.h-dim{position:absolute;inset:0;z-index:54;background:rgba(20,12,30,.45)}
+.h-card{left:50%;top:50%;transform:translate(-50%,-50%);width:358px;max-height:740px;overflow:auto;z-index:55;padding:16px 16px 14px;border-radius:22px;background:rgba(255,250,238,.98);color:var(--ink);text-align:center;box-shadow:0 10px 34px rgba(40,25,10,.45)}
+.h-card h3{margin:6px 0 4px;font-size:20px}
+.h-card p{margin:4px 0;font-size:14px}
+.h-card .big{font-size:70px;line-height:1.1}
+.h-card .band{margin:-16px -16px 10px;padding:8px;border-radius:22px 22px 0 0;background:var(--rc,#e5a832);color:#fff;font-weight:900}
+.h-card .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.h-card .btn{min-height:48px;padding:0 14px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--ink);font:800 15px var(--font);cursor:pointer;flex:1 1 40%}
+.h-card .btn.red{background:var(--red);border-color:var(--red);color:#fff}
+.h-card .sub{font-size:12.5px;color:#7a6550}
+.h-card .pity{margin-top:8px;padding:6px 10px;border-radius:12px;background:#eef7ee;color:#24613a;font-weight:800;font-size:13px}
+.h-card ol{text-align:left;padding-left:20px;font-size:13.5px;margin:6px 0}
+.h-card .num{font:900 30px ui-monospace,Menlo,monospace;margin:4px 0}
+.h-card .head{display:flex;justify-content:space-between;align-items:center;font-weight:900}
+.h-card .lv{color:#c8382d;font-weight:900;text-align:left;margin:2px 0 6px}
+.h-card .prz{display:flex;gap:10px;justify-content:center;font-size:13px}
+.h-card .prz span{display:flex;flex-direction:column;align-items:center}
+.h-card .prz em{font-style:normal;font-size:30px}
+[hidden]{display:none!important}
+</style></head><body>
+<header class="top"><h1>새 기계 ① 불빛 쌓기 「별빛 탑」 <span class="tag">추천안 · 대표 미확인</span></h1>
+<p>버튼 하나로 좌우로 오가는 빛 막대를 멈춰 위로 쌓습니다. 7줄 = 작은 인형, 11줄 = 큰 인형. 7줄에서 「계속하기」를 골라도 받은 인형은 잃지 않습니다. 왼쪽 휴대폰 화면을 직접 눌러(또는 Space) 한 판 해 볼 수 있습니다. 규칙서: <code>docs/인형뽑기/새기계3종-규칙서-v1.md</code> §1</p></header>
+<div class="page">
+<div class="left"><div class="phone"><canvas class="view"></canvas></div>
+<div class="ctl"><button id="demo" aria-pressed="false">자동 시연(사람 손 오차 σ60ms)</button><button id="pity">연속 실패 5번으로 맞춤</button><button id="coins">코인 30개로</button></div></div>
+<div class="side">
+<section class="panel"><h2>한 판 흐름</h2><ol>
+<li>기계 앞 할 일 칩 「✨ 별빛 탑 한 판 · 🪙1」(처음이면 규칙 카드 → 「시작하기」를 눌러야 코인 씀)</li>
+<li>준비 0.8초 → 1줄 빛 막대(3칸)가 좌우로 오감. <b>첫 줄은 아무 데서나</b></li>
+<li>「✋ 멈춤」 = 누른 순간 멈춤. 아래 줄과 어긋난 칸은 빨갛게 떨어짐 → 다음 줄(남은 칸 수로)</li>
+<li><b>7줄</b>: 작은 인형이 바로 나옴(도감 등록) → 카드 「▲ 계속하기 / 여기서 끝」(20초 지나면 끝)</li>
+<li>계속 → <b>11줄</b>이면 큰 인형도. 중간에 칸이 다 떨어져도 작은 인형은 그대로</li>
+<li>결과 카드: 「들고 다니기 / 도감 / 한 판 더 · 1 / 그만」(기존 카드 그대로)</li></ol>
+<p class="note">입력 없음 10초 = 그 자리에서 저절로 멈춤(열쇠 「10초면 뗀 것으로」와 같음). ✕ = 그만두기 확인 「넣은 코인은 돌려받지 못해요」.</p></section>
+
+<section class="panel"><h2>휴대폰 세로 엄지 배치 <small>390×844 기준</small></h2><table>
+<tr><th>자리</th><th>무엇</th><th>기존과</th></tr>
+<tr><td>아래 가운데 판(높이 80, 양옆 16)</td><td>「✋ 멈춤」 하나만. 누름 = pointerdown 시각</td><td>같음(타이머·열쇠 판)</td></tr>
+<tr><td>판 바로 위 한 줄 안내</td><td>「아래 줄과 겹치게 멈추세요」 / 8줄부터 「빨라요!」</td><td>같음</td></tr>
+<tr><td>위 가운데 칩</td><td>「⭐ 4 / 11줄 · 7줄 🐿️ · 11줄 ⛄」</td><td>타이머 숫자 칩 자리 재사용</td></tr>
+<tr><td>위 왼쪽 알약 · 위 오른쪽 ✕</td><td>「별빛 탑 · 🪙 29」 · 그만두기</td><td>같음</td></tr>
+<tr><td>👁 옆에서 보기 · ⏱</td><td><b>없음</b></td><td>다름 — 아래 「다르게 한 곳」</td></tr></table>
+<p class="note">가로·PC: 판은 기존 규칙 그대로(PC 520px + 「스페이스」 키캡, 가로는 판 높이만큼 그림을 위로). 기계 판은 세로로 길어서 휴대폰 세로에서 화면 높이 약 55%를 씀.</p></section>
+
+<section class="panel"><h2>성공·아까움·실패 표시</h2><table>
+<tr><th></th><th>기계 위</th><th>결과 카드</th></tr>
+<tr><td>11줄(큰)</td><td>탑 전체가 무지개로 물듦 → 경품구에 큰 인형</td><td>「꼭대기까지! 큰 눈송이」 + 「다람쥐도 받았어요」 · 🎒 업고 다니기</td></tr>
+<tr><td>7줄에서 끝</td><td>7줄 표시가 ✅ → 경품구에 작은 인형</td><td>「다람쥐를 받았어요」 · ✋ 들고 다니기</td></tr>
+<tr><td>계속하다 끝</td><td>떨어지는 칸 빨강</td><td>「다람쥐는 받았어요 · 9줄까지」(10줄이면 「아까워요! 1줄」)</td></tr>
+<tr><td>아까움(6줄)</td><td>떨어지는 칸 빨강</td><td>「아까워요! 다람쥐까지 1줄」</td></tr>
+<tr><td>실패</td><td>떨어지는 칸 빨강</td><td>「아쉬워요 · 4줄까지」 + 「5줄에서 2칸 늦었어요」</td></tr></table>
+<p class="note">줄마다 어긋나면 짧은 알림 「6줄 1칸 빨랐어요」(1.2초). 왜 실패했는지 숫자로 보임 = 타이머 「+0.03초 늦었어요」와 같은 생각.</p></section>
+
+<section class="panel"><h2>연속 실패 도움</h2>
+<p><b>경품 없이 5판 연달아 끝나면</b> 다음 판부터(받을 때까지) <b>직원이 시작 칸을 3 → 4칸으로</b> 넓혀 줍니다. 판 위에 「직원 도움 · 4칸 시작」 글, 시작 알림, 결과 카드에 「직원 도움까지 n번」.</p>
+<p class="note">이유: 열쇠(넓은 구멍)처럼 <b>눈에 보이는 도움</b>. 「첫 세 줄 느리게」(조사 초안)는 화면에서 차이가 안 보여 몰래 바꾸는 것처럼 느껴질 수 있어 뺌. 7줄 인형을 받으면 세기가 0으로.</p></section>
+
+<section class="panel wide"><h2>구경하는 손님 화면 <small>왼쪽에서 한 판 하면 0.15초 늦게 따라 그림</small></h2>
+<div class="spect"><canvas id="spect" width="300" height="230"></canvas><div>
+<ul><li>다른 손님은 <b>기계 판 불빛 그대로</b>를 봄(내 화면 HUD·카드는 안 보임 — 기존 구경과 같음)</li>
+<li>멈출 때마다 act 한 번: <code>v</code> 쌓은 줄 · <code>cx</code> 그 줄 왼쪽 칸 · <code>cz</code> 칸 수 · 7줄 고르는 동안 <code>ph:'drop'</code> → 머리 위 「고르는 중…」</li>
+<li>움직이는 줄은 받는 화면이 같은 빠르기로 혼자 움직임(초당 여러 번 보내지 않음)</li>
+<li>중간에 들어온 손님은 그 순간 줄까지 그림. 11줄이면 탑 무지개(가게 알림은 기존처럼 희귀 이상만, 10초에 1번)</li></ul>
+<p class="note">받은 act: <code id="spect-act"></code></p></div></div></section>
+
+<section class="panel diff"><h2>기존 4종과 다르게 한 곳 · 이유</h2><ul>
+<li><b>👁 옆에서 보기 없음</b> — 판이 평평한 불빛 판이라 깊이가 없음.</li>
+<li><b>⏱ 남은 시간 없음</b> — 줄마다 시간을 쓰는 기계라 판 전체 제한이 없고, 10초 무입력만 저절로 멈춤.</li>
+<li><b>한 판에 경품 둘</b> — 7줄에서 이미 줌. 「계속」은 코인·경품을 걸지 않음(도박처럼 보이는 「올인」 방지, 기획서 원칙).</li>
+<li><b>결과 카드가 두 번</b>(7줄 고르기 카드 + 끝 카드) — 7줄 카드는 「받았다」를 먼저 확인시키려는 것.</li>
+<li>타이머와 「타이밍」은 겹치지만 타이머 = 한 번 정확히, 이쪽 = 빨라지는 여러 번.</li></ul></section>
+
+<section class="panel"><h2>난이도 어림 <small class="est">추정 · 사람 손 모델 σ60ms(열쇠 시험과 같음)</small></h2><table>
+<tr><th>기계</th><th>판당</th><th>첫 인형까지 평균</th></tr>
+<tr><td>별빛 탑 7줄(작은)</td><td>45.6%</td><td>2.2판(도움 포함)</td></tr>
+<tr><td>별빛 탑 11줄(큰)</td><td>6.7%</td><td>약 15판</td></tr>
+<tr><td>열쇠 1·2(측정)</td><td>39%</td><td>2.5판</td></tr>
+<tr><td>타이머 10.00(같은 모델)</td><td>6.6%</td><td>약 15판</td></tr></table>
+<p class="note">줄별 머무는 시간(ms): 140·125·110·100·90·80·75·75·75·75·75. 목표 = 작은 인형은 열쇠 정도, 큰 인형은 타이머 1 정도(추천안). 실제 값은 구현 뒤 난이도 시험으로 다시 맞춤. 계산 <code>artifacts/claw-design/new3/rate.mjs</code></p></section>
+</div></div>
+<script>// 새 기계 3종 시안 공용(월드디자인 11-27). 시안 전용 흉내 — 실제 구현은 src/claw/claw-hud.js·claw-play.js에 기계 종류를 더하는 방식(규칙서 §0).
+// HUD: 알약·✕·가운데 칩·한 줄 안내·아래 판 단추(누름 시각 = pointerdown timeStamp)·십자 판·알림·카드. 구경 화면은 act만 받아 그림(0.15초 늦게)
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let seed=20261127;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+const gauss=()=>Math.sqrt(-2*Math.log(rnd()+1e-12))*Math.cos(2*Math.PI*rnd());
+const now=()=>performance.now();
+const G={coins:30,fails:0,plays:0,seen:false,dex:{}};
+const hud=(()=>{
+ const ph=$('.phone');const mk=(tag,cls,html='')=>{const e=document.createElement(tag);e.className='h '+cls;e.innerHTML=html;ph.append(e);return e;};
+ const pill=mk('div','h-pill'),x=mk('button','h-x','✕'),chip=mk('div','h-chip'),toastEl=mk('div','h-toast'),hint=mk('div','h-hint'),
+  bar=mk('button','h-bar'),pad=mk('div','h-pad',['up:▲<small>안</small>','left:◀','right:▶','down:▼<small>밖</small>'].map(s=>{const [d,t]=s.split(':');return `<button data-d="${d}">${t}</button>`;}).join('')),
+  todo=mk('div','h-todo'),run=mk('button','h-run','🏃<br>달리기'),joy=mk('div','h-joy','걷기'),dim=document.createElement('div'),card=mk('section','h-card');
+ dim.className='h-dim';ph.append(dim);
+ x.setAttribute('aria-label','그만두기');
+ for(const e of [chip,toastEl,hint,bar,pad,todo,run,joy,dim,card,x])e.hidden=true;
+ let H={};let toastT=0;
+ // 판 단추: 누름·뗌 시각을 그대로 넘김(손가락이 미끄러져 나가도 뗄 때까지 유지)
+ let held=null;
+ bar.addEventListener('pointerdown',e=>{if(bar.dataset.dim!==undefined)return;e.preventDefault();held=e.pointerId;try{bar.setPointerCapture(e.pointerId);}catch{}bar.classList.add('on');H.down?.(e.timeStamp);});
+ const up=e=>{if(e.pointerId!==held)return;held=null;bar.classList.remove('on');H.up?.(e.timeStamp);};
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])bar.addEventListener(ev,up);
+ bar.addEventListener('contextmenu',e=>e.preventDefault());
+ addEventListener('keydown',e=>{if(e.code!=='Space'||e.repeat||!card.hidden||bar.hidden)return;e.preventDefault();if(bar.dataset.dim===undefined){bar.classList.add('on');H.down?.(e.timeStamp);}});
+ addEventListener('keyup',e=>{if(e.code!=='Space'||bar.hidden)return;bar.classList.remove('on');H.up?.(e.timeStamp);});
+ // 십자 판(공 구멍 넣기만)
+ const fingers=new Map();const dirAt=(cx,cy)=>document.elementFromPoint(cx,cy)?.closest?.('.h-pad [data-d]')?.dataset.d??null;
+ const paint=()=>{const on=new Set(fingers.values());for(const b of pad.querySelectorAll('[data-d]'))b.classList.toggle('on',on.has(b.dataset.d));};
+ pad.addEventListener('pointerdown',e=>{const d=dirAt(e.clientX,e.clientY);if(!d)return;e.preventDefault();try{pad.setPointerCapture(e.pointerId);}catch{}fingers.set(e.pointerId,d);paint();});
+ pad.addEventListener('pointermove',e=>{if(fingers.has(e.pointerId)){fingers.set(e.pointerId,dirAt(e.clientX,e.clientY));paint();}});
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(ev,e=>{fingers.delete(e.pointerId);paint();});
+ const keys=new Set();const KM={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};
+ addEventListener('keydown',e=>{if(KM[e.code]&&!pad.hidden){keys.add(KM[e.code]);e.preventDefault();}});addEventListener('keyup',e=>{keys.delete(KM[e.code]);});
+ const D={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+ let pend=null;
+ card.addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b||!pend)return;const f=pend;pend=null;card.hidden=true;dim.hidden=true;f(b.dataset.c);});
+ todo.addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b)H.todo?.(b.dataset.t);});
+ x.addEventListener('click',()=>H.quit?.());
+ return {
+  on(h){H=h;},
+  pill(t){pill.innerHTML=t;},
+  chip(t){chip.hidden=!t;if(t)chip.innerHTML=t;},
+  hint(t){hint.hidden=!t;if(t)hint.textContent=t;},
+  quit(on){x.hidden=!on;},
+  /** b = {ic,label,sub,tone:'green'|'cut',dim,half,ring} 또는 null */
+  bar(b){bar.hidden=!b;if(!b)return;bar.className='h h-bar'+(b.tone?' '+b.tone:'')+(b.half?' half':'')+(bar.classList.contains('on')?' on':'');
+   if(b.dim)bar.dataset.dim='';else delete bar.dataset.dim;
+   const html=`<span style="font-size:32px">${b.ic}</span><span class="lt"><b>${esc(b.label)}</b>${b.sub?`<small>${esc(b.sub)}</small>`:''}</span>${b.ring!=null?`<i class="tm"><i style="width:${(b.ring*100).toFixed(1)}%"></i></i>`:''}`;if(bar.innerHTML!==html)bar.innerHTML=html;},
+  pad(on){pad.hidden=!on;if(!on)fingers.clear(),paint();},
+  padDir(){let dx=0,dz=0;for(const d of [...fingers.values(),...keys]){if(!d)continue;dx+=D[d][0];dz+=D[d][1];}return [Math.sign(dx),Math.sign(dz)];},
+  walk(on,todos=[]){joy.hidden=run.hidden=!on;todo.hidden=!on;todo.innerHTML=todos.map(t=>`<button data-t="${t.id}" class="${t.main?'main':''}">${esc(t.label)}</button>`).join('');},
+  toast(t,sec=2.4){toastEl.textContent=t;toastEl.hidden=false;toastEl.style.opacity=1;toastT=sec;},
+  tick(dt){if(toastT>0){toastT-=dt;if(toastT<.25)toastEl.style.opacity=Math.max(0,toastT/.25);if(toastT<=0)toastEl.hidden=true;}},
+  card(html){card.innerHTML=html;card.hidden=false;dim.hidden=false;return new Promise(r=>{pend=r;});},
+  get cardOpen(){return !card.hidden;},
+ };
+})();
+/** 결과 카드 공용 모양(claw-hud.js showResult 흉내): kind win|near|miss */
+function resultCard({kind,title,big,band,lines=[],pity='',carry=''}){
+ const again=G.coins>=1?`<button class="btn${kind==='win'&&carry?'':' red'}" data-c="again">🪙 한 판 더 · 1</button>`:'';
+ return `${kind==='win'?`<div class="band" style="--rc:${band?.color??'#e5a832'}">${esc(band?.label??'')}</div>`:''}${big?`<div class="big">${big}</div>`:''}<h3>${esc(title)}</h3>${lines.map(l=>`<p>${l}</p>`).join('')}
+${pity?`<div class="pity">${esc(pity)}</div>`:''}
+<div class="row">${kind==='win'&&carry?`<button class="btn red" data-c="carry">${esc(carry)}</button>`:''}${kind==='win'?'<button class="btn" data-c="dex">🧸 도감 보기</button>':''}${again}<button class="btn" data-c="stop">그만</button></div>${G.coins<1?'<p class="sub">코인을 다 썼어요. 내일 0시에 또 받아요</p>':''}`;
+}
+function rulesCard({icon,name,sub,level,lines,pity,prizes,first}){
+ return `<div class="head"><span>${icon} ${esc(name)} · ${esc(sub)}</span>${first?'':'<button class="btn" data-c="close" style="flex:none;min-height:36px">✕</button>'}</div>
+<p class="lv">어려움 ${'●'.repeat(level)}${'○'.repeat(Math.max(3,level)-level)}</p><ol>${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ol>
+${pity?`<div class="pity">${esc(pity)}</div>`:''}<div class="prz">${prizes.map(p=>`<span><em>${p.em}</em>${esc(p.name)}</span>`).join('')}</div>
+<p class="sub">코인은 매일 0시(서울)에 무료로 30개가 돼요. 사는 곳·바꾸는 곳은 없어요.</p>
+${first?'<div class="row"><button class="btn red" data-c="go">🪙 시작하기 · 1</button></div>':''}`;
+}
+/** 구경 화면: 내 판이 보낸 act를 0.15초 늦게 받음(네트워크 흉내). draw(ctx,w,h,act,history,t) */
+function makeSpect(canvas,draw){
+ const ctx=canvas.getContext('2d'),q=[],hist=[];let act={};
+ return {send(a){q.push({at:now()+150,a:{...a}});},
+  frame(t){while(q.length&&q[0].at<=t){act=q.shift().a;hist.push(act);if(hist.length>60)hist.shift();}draw(ctx,canvas.width,canvas.height,act,hist,t);},
+  reset(){hist.length=0;act={};}};
+}
+const rr=(c,x,y,w,h,r)=>{c.beginPath();c.roundRect(x,y,w,h,r);};
+</script><script>// ① 불빛 쌓기 「별빛 탑」 시안. 판정 = 손가락이 닿은 순간(pointerdown timeStamp)의 빛 막대 자리 — 화면 그리기 틈과 상관없음(타이머와 같은 방식)
+const ST={cols:7,rows:11,mid:7,width:3,pityWidth:4,pityAfter:5,steps:[140,125,110,100,90,80,75,75,75,75,75],idleSec:10,readySec:.8,choiceSec:20,fallSec:.3};
+const PZ={small:{id:'squirrel',name:'다람쥐',em:'🐿️',band:{label:'★★ 보통',color:'#4f9bd9'}},big:{id:'big-nunsong',name:'큰 눈송이',em:'⛄',band:{label:'큰 인형 · ★★★ 희귀',color:'#8a5cd6'}}};
+const cv=$('canvas.view'),cx=cv.getContext('2d');cv.width=390*2;cv.height=844*2;cx.scale(2,2);
+let S={mode:'front',n:0},demo=false,choiceTimer=0;
+const RULES={icon:'✨',name:'별빛 탑',sub:'불빛 쌓기',level:2,
+ lines:['빛 막대가 좌우로 오가요. 「✋ 멈춤」을 누른 순간 그 자리에 멈춰요','아래 줄과 어긋난 칸은 떨어져 사라져요. 칸이 다 없어지면 끝','위로 갈수록 빨라져요. 7줄 = 다람쥐, 11줄(꼭대기) = 큰 눈송이','7줄에서 「계속하기」를 골라도 이미 받은 다람쥐는 그대로예요. 코인도 더 안 들어요'],
+ pity:`경품 없이 ${ST.pityAfter}번 연달아 끝나면 직원이 시작 칸을 4칸으로 넓혀 줘요(받을 때까지 판마다)`,prizes:[PZ.small,PZ.big]};
+
+// ── 그림(내 화면·구경 화면 공용). g = {x0,y0,s(칸 크기), rows, cur, falling, t, pity, glow, labels}
+function drawStack(c,g){
+ const {x0,y0,s}=g,W=ST.cols*s,H=ST.rows*s,yOf=r=>y0+H-r*s; // r = 1..11(줄 번호), 줄의 윗변
+ rr(c,x0-s*.55,y0-s*1.25,W+s*2.9,H+s*3.1,s*.5);c.fillStyle='#2b2357';c.fill();c.lineWidth=s*.12;c.strokeStyle='#7c6ad8';c.stroke();
+ // 간판
+ rr(c,x0,y0-s*1.05,W,s*.8,s*.3);c.fillStyle='#ffd36b';c.fill();c.fillStyle='#3a2b22';c.font=`900 ${s*.5}px ${getComputedStyle(document.body).fontFamily}`;c.textAlign='center';c.textBaseline='middle';c.fillText('✨ 별빛 탑 ✨',x0+W/2,y0-s*.65);
+ // 판
+ c.fillStyle='#120d22';c.fillRect(x0,y0,W,H);
+ for(let r=1;r<=ST.rows;r++)for(let i=0;i<ST.cols;i++){rr(c,x0+i*s+s*.08,yOf(r)+s*.08,s*.84,s*.84,s*.16);c.fillStyle=r===ST.mid?'#2a2050':r===ST.rows?'#33204a':'#1e1838';c.fill();}
+ // 경품 줄 표시
+ const mark=(r,label,em,col,got)=>{c.strokeStyle=col;c.lineWidth=s*.08;c.setLineDash([s*.2,s*.14]);c.strokeRect(x0-s*.1,yOf(r)-s*.02,W+s*.2,s*1.04);c.setLineDash([]);
+  if(!g.labels)return;c.font=`${s*.7}px serif`;c.textAlign='center';c.fillText(got?'✅':em,x0+W+s*1.1,yOf(r)+s*.45);c.font=`800 ${s*.3}px sans-serif`;c.fillStyle=col;c.fillText(label,x0+W+s*1.1,yOf(r)+s*1.02);};
+ mark(ST.mid,'7줄',PZ.small.em,'#7cc4ff',g.gotSmall);mark(ST.rows,'11줄',PZ.big.em,'#c9a2ff',false);
+ // 놓인 줄
+ const cell=(i,r,col,a=1)=>{c.globalAlpha=a;rr(c,x0+i*s+s*.08,yOf(r)+s*.08,s*.84,s*.84,s*.16);c.fillStyle=col;c.shadowColor=col;c.shadowBlur=s*.5;c.fill();c.shadowBlur=0;c.globalAlpha=1;};
+ g.rows.forEach((o,k)=>{for(let i=o.x;i<o.x+o.w;i++)cell(i,k+1,g.glow?`hsl(${(k*33+g.t*.3)%360} 90% 65%)`:'#5fe1ff');});
+ if(g.cur)for(let i=g.cur.x;i<g.cur.x+g.cur.w;i++)cell(i,g.cur.r,'#ffe14d');
+ for(const f of g.falling??[]){const a=(g.t-f.t)/600;if(a>1)continue;c.globalAlpha=1-a;rr(c,x0+f.c*s+s*.08,yOf(f.r)+s*.08+a*a*s*3,s*.84,s*.84,s*.16);c.fillStyle='#ff5a4a';c.fill();c.globalAlpha=1;}
+ // 경품 나오는 곳
+ rr(c,x0+W*.2,y0+H+s*.5,W*.6,s*1.1,s*.3);c.fillStyle='#0c0818';c.fill();c.fillStyle='#8a7cd0';c.font=`700 ${s*.3}px sans-serif`;c.textAlign='center';c.fillText(g.out?'':'경품 나오는 곳',x0+W/2,y0+H+s*1.05);
+ if(g.out){c.font=`${s*.9}px serif`;c.fillText(g.out,x0+W/2,y0+H+s*1.05);}
+ if(g.pity&&g.labels){c.fillStyle='#8ff0b0';c.font=`900 ${s*.32}px sans-serif`;c.fillText('직원 도움 · 4칸 시작',x0+W/2,y0-s*1.45);}
+}
+const MAIN={x0:58,y0:215,s:34};
+
+// ── 한 판
+function posAt(t){const w=S.w,range=ST.cols-w;if(range<=0)return {x:0,dir:0};const k=Math.max(0,Math.floor((t-S.rt0)/ST.steps[S.r-1])),p=k%(2*range);let x=p<range?p:2*range-p,dir=p<range?1:-1;if(S.dir0<0){x=range-x;dir=-dir;}return {x,dir};}
+function act(extra){spect.send({m:17,n:S.n,cz:S.w,...extra});}
+function start(){
+ if(G.coins<1){hud.toast('코인이 없어요 · 내일 0시에 30개');return;}
+ G.coins--;G.plays++;const pity=G.fails>=ST.pityAfter;
+ S={mode:'ready',t0:now(),rows:[],r:1,w:pity?ST.pityWidth:ST.width,pity,gotSmall:false,falling:[],n:S.n+1,last:null,top:0};
+ hud.walk(false);hud.quit(true);spect.reset();act({ph:'play',v:0,cx:0,k:0,r:PZ.small.id});
+ if(pity)hud.toast('직원 도움! 이번 판은 4칸으로 시작해요',3);
+}
+function rowStart(t){S.mode='run';S.rt0=t;S.dir0=S.r%2?1:-1;S.autoAt=null;}
+function stop(t){
+ if(S.mode!=='run')return;const {x,dir}=posAt(t),w=S.w,b=S.rows[S.r-2];
+ const lo=b?Math.max(x,b.x):x,hi=b?Math.min(x+w,b.x+b.w):x+w,lost=[];
+ for(let i=x;i<x+w;i++)if(i<lo||i>=hi)lost.push(i);
+ S.falling.push(...lost.map(i=>({c:i,r:S.r,t:now()})));
+ const shift=b?x-b.x:0;S.last={r:S.r,lost:lost.length,late:shift*dir>0};
+ const nw=Math.max(0,hi-lo);
+ if(!nw){S.mode='fall';S.ft=now();S.endAt=now()+500;return;}
+ S.rows.push({x:lo,w:nw});S.w=nw;S.top=S.r;
+ if(lost.length)hud.toast(`${S.r}줄 ${lost.length}칸 ${S.last.late?'늦었어요':'빨랐어요'}`,1.2);
+ if(S.r===ST.mid){S.gotSmall=true;G.fails=0;G.dex[PZ.small.id]=(G.dex[PZ.small.id]??0)+1;act({ph:'drop',v:S.r,cx:lo,k:0,r:PZ.small.id});S.mode='fall';S.choiceAt=now()+450;return;}
+ if(S.r===ST.rows){act({ph:'win',v:S.r,cx:lo,k:1,r:PZ.big.id});S.mode='out';S.outAt=now()+1300;S.win='big';G.dex[PZ.big.id]=(G.dex[PZ.big.id]??0)+1;return;}
+ act({ph:'play',v:S.r,cx:lo});S.r++;S.mode='fall';S.ft=now();S.nextAt=now()+ST.fallSec*1000;
+}
+async function choice(){
+ S.mode='choice';hud.bar({ic:'⏸',label:'고르는 중',sub:'카드에서 골라요',dim:true});
+ let left=ST.choiceSec;clearInterval(choiceTimer);
+ choiceTimer=setInterval(()=>{left--;const e=document.querySelector('[data-left]');if(e)e.textContent=left;if(left<=0)document.querySelector('.h-card [data-c=end]')?.click();},1000);
+ if(demo)setTimeout(()=>document.querySelector('.h-card [data-c=go]')?.click(),900);
+ const c=await hud.card(`<div class="band" style="--rc:${PZ.small.band.color}">${PZ.small.band.label} · 7줄 통과!</div><div class="big">${PZ.small.em}</div><h3>${PZ.small.name}를 받았어요</h3><p>도감에 넣었어요</p>
+<p>계속하면 <b>11줄</b>에 <b>${PZ.big.name}</b>. 실패해도 <b>${PZ.small.name}는 그대로</b>예요 · 코인은 더 안 들어요</p>
+<div class="row"><button class="btn red" data-c="go">▲ 계속하기</button><button class="btn" data-c="end">여기서 끝</button></div><p class="sub"><span data-left>${left}</span>초 안 고르면 여기서 끝나요</p>`);
+ clearInterval(choiceTimer);
+ if(c==='go'){S.r++;act({ph:'play',v:ST.mid,cx:S.rows[ST.mid-1].x});S.mode='fall';S.nextAt=now()+300;}
+ else{act({ph:'win',v:ST.mid,cx:S.rows[ST.mid-1].x,k:1,r:PZ.small.id});S.win='small';S.mode='out';S.outAt=now()+1100;}
+}
+async function result(){
+ S.mode='result';hud.bar(null);hud.hint(null);hud.chip(null);hud.quit(false);
+ const top=S.top,L=S.last,miss=L&&L.lost?`${L.r}줄에서 ${L.lost}칸 ${L.late?'늦었어요':'빨랐어요'}`:'';
+ let html;
+ if(S.win==='big')html=resultCard({kind:'win',title:`꼭대기까지! ${PZ.big.name}`,big:PZ.big.em,band:PZ.big.band,lines:[`${PZ.small.name}도 받았어요(7줄) · 새 인형!`],carry:'🎒 등에 업고 다니기'});
+ else if(S.win==='small')html=resultCard({kind:'win',title:`${PZ.small.name}를 받았어요`,big:PZ.small.em,band:PZ.small.band,lines:['7줄에서 끝냈어요'],carry:'✋ 손에 들고 다니기'});
+ else if(S.gotSmall)html=resultCard({kind:'win',title:`${PZ.small.name}는 받았어요 · ${top}줄까지`,big:PZ.small.em,band:PZ.small.band,lines:[top===ST.rows-1?`<b>아까워요! ${PZ.big.name}까지 1줄</b>`:`${PZ.big.name}까지 ${ST.rows-top}줄 남았어요`,miss],carry:'✋ 손에 들고 다니기'});
+ else{G.fails++;const near=top===ST.mid-1,left=ST.pityAfter-G.fails;
+  html=resultCard({kind:near?'near':'miss',title:near?`아까워요! ${PZ.small.name}까지 1줄`:`아쉬워요 · ${top}줄까지 쌓았어요`,lines:[miss],pity:left<=0?'다음 판은 직원 도움 — 4칸으로 시작해요!':`직원 도움까지 ${left}번`});}
+ if(demo)setTimeout(()=>document.querySelector('.h-card [data-c=again]')?.click(),1600);
+ const c=await hud.card(html);
+ if(c==='again')start();else{S.mode='front';front();if(c==='carry')hud.toast(S.win==='big'?`${PZ.big.name}를 업었어요`:`${PZ.small.name}를 손에 들었어요`,2.4);if(c==='dex')hud.toast('🧸 도감이 열려요(시안에서는 생략)');}
+}
+function front(){
+ hud.bar(null);hud.hint(null);hud.chip(null);hud.quit(false);
+ hud.walk(true,[{id:'play',label:'✨ 별빛 탑 한 판 · 🪙1',main:true},{id:'rules',label:'ⓘ 규칙'}]);
+}
+hud.on({
+ down(t){if(S.mode==='run')stop(t);},
+ todo(id){if(id==='rules'){hud.card(rulesCard({...RULES,first:false}));return;}
+  if(!G.seen){G.seen=true;hud.card(rulesCard({...RULES,first:true})).then(c=>{if(c==='go')start();});return;}start();},
+ async quit(){const c=await hud.card('<h3>그만둘까요?</h3><p>넣은 코인은 돌려받지 못해요'+(S.gotSmall?` · ${PZ.small.name}는 이미 받았어요`:'')+'</p><div class="row"><button class="btn" data-c="q">그만두기</button><button class="btn red" data-c="k">계속하기</button></div>');
+  if(c==='q'){if(!S.gotSmall)G.fails++;S.mode='front';act({ph:''});front();}},
+});
+front();
+
+// ── 구경 화면(다른 손님 화면): act만 받아 다시 그림. 움직이는 줄은 받는 쪽이 같은 빠르기로 혼자 움직임(맞춰 보내지 않음)
+const spect=makeSpect($('#spect'),(c,w,h,a,hist,t)=>{
+ c.clearRect(0,0,w,h);c.fillStyle='#1b1428';c.fillRect(0,0,w,h);
+ const rows=[];let pn=a.n;for(const e of hist)if(e.n===pn&&e.v>0&&e.cz>0)rows[e.v-1]={x:e.cx,w:e.cz};
+ const playing=a.ph==='play',top=rows.length,cw=a.cz||3;
+ let cur=null;if(playing&&top<ST.rows){const range=ST.cols-cw,k=Math.floor(t/ST.steps[top]),p=range>0?k%(2*range):0;cur={r:top+1,w:cw,x:range>0?(p<range?p:2*range-p):0};}
+ drawStack(c,{x0:99,y0:68,s:12,rows,cur,t,glow:a.ph==='win'&&a.v===ST.rows,labels:false,gotSmall:top>=ST.mid});
+ // 내 동동이 뒤통수(구경 자리)
+ c.fillStyle='#e9b44c';c.beginPath();c.ellipse(60,h-8,34,40,0,Math.PI,0);c.fill();c.fillStyle='#6b4b2a';c.beginPath();c.ellipse(60,h-36,30,10,0,0,Math.PI*2);c.fill();
+ // 뽑는 손님 이름표·말풍선(결과 순간만, 기존 구경 연출 그대로 = 기계 불빛)
+ c.fillStyle='#fff';c.font='700 11px sans-serif';c.textAlign='center';c.fillText('뽑기손님12',141,46);
+ const say=a.ph==='drop'&&!a.k?'7줄! 고르는 중…':a.ph==='win'?(a.v===ST.rows?'꼭대기! 🎉':'다람쥐 받음'):a.ph==='lose'?'아쉬움':'';
+ if(say){c.font='800 12px sans-serif';const tw=c.measureText(say).width+16;rr(c,141-tw/2,8,tw,24,10);c.fillStyle=a.ph==='lose'?'#ddd':'#ffd36b';c.fill();c.fillStyle='#3a2b22';c.fillText(say,141,24);}
+ $('#spect-act').textContent=a.m?JSON.stringify({m:a.m,ph:a.ph,v:a.v,cx:a.cx,cz:a.cz,k:a.k,r:a.r,n:a.n}):'(아직 없음 — 왼쪽에서 한 판 해 보세요)';
+});
+
+// ── 매 프레임
+let last=now();
+function frame(t){
+ const dt=(t-last)/1000;last=t;hud.tick(dt);
+ const s=S;
+ if(s.mode==='ready'&&t-s.t0>ST.readySec*1000)rowStart(t);
+ if(s.mode==='fall'){if(s.choiceAt&&t>=s.choiceAt){s.choiceAt=0;choice();}else if(s.endAt&&t>=s.endAt){s.endAt=0;const top=s.top;act({ph:s.gotSmall?'win':'lose',v:top,cx:0,k:s.gotSmall?1:top===ST.mid-1?2:3,r:s.gotSmall?PZ.small.id:''});result();}else if(s.nextAt&&t>=s.nextAt){s.nextAt=0;rowStart(t);}}
+ if(s.mode==='out'&&t>=s.outAt){s.outAt=1e15;result();}
+ if(s.mode==='run'){
+  if(t-s.rt0>ST.idleSec*1000){hud.toast('10초가 지나 저절로 멈췄어요');stop(t);}
+  if(demo&&s.mode==='run'){if(s.autoAt==null){const b=s.rows[s.r-2],st=ST.steps[s.r-1];let tc=t+250;if(b){for(let k=Math.ceil((t+250-s.rt0)/st);k<400;k++){const tt=s.rt0+(k+.5)*st;if(posAt(tt).x===b.x){tc=tt;break;}}}s.autoAt=tc+gauss()*60;}if(t>=s.autoAt)stop(s.autoAt);}
+ }
+ // 화면 글
+ if(['ready','run','fall','choice'].includes(s.mode)){
+  hud.pill(`✨ 별빛 탑 · 🪙 <b>${G.coins}</b>`);
+  hud.chip(`⭐ ${s.top} / ${ST.rows}줄 · 7줄 ${s.gotSmall?'✅':PZ.small.em} · 11줄 ${PZ.big.em}`);
+  if(s.mode!=='choice')hud.bar(s.mode==='ready'?{ic:'⏳',label:'준비…',sub:'곧 빛이 움직여요',dim:true}:{ic:'✋',label:'멈춤',sub:s.r===1?'첫 줄은 아무 데서나 멈춰요':'빛이 아래 줄과 겹칠 때 눌러요'});
+  hud.hint(s.mode==='run'?(s.r===1?'첫 줄 — 아무 데서나 멈춰요':s.r>=8?'빨라요! 아래 줄 위에서 멈추세요':'아래 줄과 겹치게 멈추세요'):null);
+ }else if(s.mode==='front'){hud.pill(`👤 인형가게 1서버 · 🪙 <b>${G.coins}</b>`);}
+ // 그림
+ cx.clearRect(0,0,390,844);
+ const cur=s.mode==='run'?{r:s.r,...posAt(t),w:s.w}:null;
+ drawStack(cx,{...MAIN,rows:s.rows??[],cur,falling:s.falling,t,pity:s.pity,glow:s.mode==='out'&&s.win==='big'||s.mode==='result'&&s.win==='big',labels:true,gotSmall:s.gotSmall,out:s.mode==='out'?(s.win==='big'?PZ.big.em:PZ.small.em):''});
+ if(s.mode==='front'){const k=Math.floor(t/120)%ST.rows;cx.globalAlpha=.6;for(let i=0;i<ST.cols;i++){rr(cx,MAIN.x0+i*MAIN.s+3,MAIN.y0+(ST.rows-1-k)*MAIN.s+3,MAIN.s-6,MAIN.s-6,5);cx.fillStyle='#5fe1ff';cx.fill();}cx.globalAlpha=1;}
+ spect.frame(t);
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+$('#demo').onclick=e=>{demo=!demo;e.target.setAttribute('aria-pressed',demo);if(demo&&S.mode==='front'){G.seen=true;start();}};
+$('#pity').onclick=()=>{G.fails=ST.pityAfter;hud.toast('연속 실패 5번으로 맞춤 · 다음 판이 도움 판');};
+$('#coins').onclick=()=>{G.coins=30;};
+</script></body></html>

@@ -1,0 +1,351 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>새 기계 ③ 공 구멍 넣기 「공 떨어뜨리기」 시안 v1 — 월드디자인</title><style>/* 새 기계 3종 시안 공용(월드디자인 11-27). 휴대폰 HUD는 src/claw/claw-hud.css 모양을 흉내만 냄 — 실제 값·이름은 규칙서 표를 따름 */
+:root{--red:#c8382d;--grn:#2f9a55;--ink:#3a2b22;--cream:rgba(255,250,238,.92);--line:#e2d4b8;--font:"Apple SD Gothic Neo","Pretendard",-apple-system,"Malgun Gothic",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#241c33;font:15px/1.55 var(--font);color:#fffaf0}
+.top{max-width:1480px;margin:auto;padding:22px 24px 4px}
+.top h1{margin:0;font-size:24px}
+.top p{margin:4px 0 0;opacity:.85}
+.tag{display:inline-block;padding:2px 10px;border-radius:999px;background:#ffd36b;color:#3a2b22;font-weight:800;font-size:12.5px;margin-left:6px;vertical-align:middle}
+.page{display:flex;gap:28px;padding:16px 24px 40px;align-items:flex-start;max-width:1480px;margin:auto;flex-wrap:wrap}
+.left{flex:none;display:flex;flex-direction:column;align-items:center;gap:10px}
+.phone{width:390px;height:844px;border-radius:46px;position:relative;overflow:hidden;background:radial-gradient(120% 80% at 50% 10%,#4a3a6e,#1b1428);box-shadow:0 0 0 10px #0d0b12,0 22px 50px #000a;flex:none;user-select:none;-webkit-user-select:none;touch-action:none}
+.phone canvas.view{position:absolute;left:0;top:0;width:390px;height:844px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:410px}
+.ctl button{font:700 13px var(--font);padding:7px 12px;border-radius:12px;border:0;background:#fffaf0;color:var(--ink);cursor:pointer}
+.ctl button[aria-pressed=true]{background:#ffd36b}
+.side{flex:1;min-width:380px;max-width:1000px;display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px;align-content:start}
+.panel{background:#fffaf0;color:var(--ink);border-radius:16px;padding:12px 16px 14px}
+.panel h2{margin:0 0 6px;font-size:16px}
+.panel h2 small{font-weight:600;color:#8a7560;font-size:12px;margin-left:6px}
+.panel ol,.panel ul{margin:4px 0;padding-left:20px}
+.panel li{margin:2px 0}
+.panel table{border-collapse:collapse;width:100%;font-size:13px}
+.panel td,.panel th{border-top:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+.panel th{background:#f6ecd6}
+.panel .note{font-size:12.5px;color:#7a6550;margin:6px 0 0}
+.panel.wide{grid-column:1/-1}
+.diff{background:#eef7ff}
+.spect{display:flex;gap:12px;align-items:flex-start}
+.spect canvas{border-radius:12px;background:#1b1428;flex:none}
+.est{color:#8a5a00;font-weight:700}
+
+/* ── 휴대폰 HUD(안전 영역: 위 47 · 아래 34) ── */
+.h{position:absolute;z-index:20;font-family:var(--font)}
+.h-pill{left:16px;top:55px;height:44px;padding:0 14px;border-radius:22px;background:var(--cream);color:var(--ink);display:flex;align-items:center;gap:8px;font:800 14px var(--font);box-shadow:0 2px 8px rgba(40,25,10,.16)}
+.h-pill b{color:#b8860b}
+.h-x{right:16px;top:55px;width:44px;height:44px;border-radius:50%;background:var(--cream);color:var(--ink);border:0;font:900 18px var(--font);box-shadow:0 2px 8px rgba(40,25,10,.16)}
+.h-chip{left:50%;transform:translateX(-50%);top:109px;padding:6px 14px;border-radius:16px;background:rgba(30,22,45,.82);color:#fff6c8;font:800 15px var(--font);white-space:nowrap;border:2px solid rgba(255,211,107,.6)}
+.h-toast{left:50%;transform:translateX(-50%);top:150px;max-width:366px;width:max-content;padding:9px 16px;border-radius:18px;background:rgba(58,43,34,.94);color:#fffaf0;font:700 14px/1.35 var(--font);text-align:center;z-index:50;transition:opacity .25s;pointer-events:none}
+.h-hint{left:50%;transform:translateX(-50%);bottom:158px;max-width:320px;width:max-content;min-height:32px;padding:7px 12px;border-radius:14px;background:rgba(255,250,238,.9);color:var(--ink);font:700 12.5px/1.35 var(--font);text-align:center}
+.h-bar{left:16px;right:16px;bottom:52px;height:80px;border:0;border-radius:22px;background:var(--red);color:#fff;font:900 26px/1 var(--font);display:flex;align-items:center;justify-content:center;gap:12px;
+ box-shadow:0 7px 0 rgba(0,0,0,.32),0 0 0 4px #fff,0 0 0 7px #2a213c,0 14px 24px rgba(0,0,0,.35);cursor:pointer;touch-action:none}
+.h-bar.green{background:var(--grn)}
+.h-bar.cut{background:#d9822b}
+.h-bar.on{transform:translateY(5px);box-shadow:0 2px 0 rgba(0,0,0,.32),0 0 0 4px #fff,0 0 0 7px #2a213c}
+.h-bar[data-dim]{filter:grayscale(.7) brightness(.8)}
+.h-bar .lt{display:flex;flex-direction:column;align-items:flex-start}
+.h-bar small{font:700 12px/1.2 var(--font);opacity:.92;margin-top:4px}
+.h-bar.half{left:224px;right:14px;bottom:78px;height:112px;flex-direction:column;gap:2px;font-size:22px}
+.h-bar.half .lt{align-items:center}
+.h-bar.half small{display:none}
+.h-bar .tm{position:absolute;left:18px;right:18px;bottom:-17px;height:7px;border-radius:4px;background:rgba(255,250,238,.85);overflow:hidden}
+.h-bar .tm i{position:absolute;left:0;top:0;bottom:0;background:#ffb52b}
+.h-pad{left:16px;bottom:54px;display:grid;grid-template-columns:repeat(3,60px);grid-template-rows:repeat(3,60px);gap:6px}
+.h-pad button{border:0;border-radius:16px;background:var(--cream);color:var(--ink);font:900 20px var(--font);box-shadow:0 3px 0 rgba(0,0,0,.25);touch-action:none}
+.h-pad button.on{background:#ffd36b;transform:translateY(2px)}
+.h-pad button small{display:block;font-size:10px}
+.h-pad [data-d=up]{grid-column:2;grid-row:1}.h-pad [data-d=left]{grid-column:1;grid-row:2}.h-pad [data-d=right]{grid-column:3;grid-row:2}.h-pad [data-d=down]{grid-column:2;grid-row:3}
+.h-todo{right:16px;bottom:140px;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.h-todo button{height:44px;padding:0 16px;border-radius:22px;border:0;background:var(--cream);color:var(--ink);font:800 14px var(--font);box-shadow:0 2px 8px rgba(40,25,10,.2);cursor:pointer}
+.h-todo button.main{background:#fff;outline:3px solid var(--red)}
+.h-run{right:16px;bottom:62px;width:76px;height:76px;border-radius:50%;background:var(--red);color:#fff;border:0;font:900 14px var(--font);box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.h-joy{left:40px;bottom:80px;width:110px;height:110px;border-radius:50%;border:3px dashed rgba(255,250,238,.35);color:rgba(255,250,238,.5);display:grid;place-items:center;font:700 12px var(--font)}
+.h-dim{position:absolute;inset:0;z-index:54;background:rgba(20,12,30,.45)}
+.h-card{left:50%;top:50%;transform:translate(-50%,-50%);width:358px;max-height:740px;overflow:auto;z-index:55;padding:16px 16px 14px;border-radius:22px;background:rgba(255,250,238,.98);color:var(--ink);text-align:center;box-shadow:0 10px 34px rgba(40,25,10,.45)}
+.h-card h3{margin:6px 0 4px;font-size:20px}
+.h-card p{margin:4px 0;font-size:14px}
+.h-card .big{font-size:70px;line-height:1.1}
+.h-card .band{margin:-16px -16px 10px;padding:8px;border-radius:22px 22px 0 0;background:var(--rc,#e5a832);color:#fff;font-weight:900}
+.h-card .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.h-card .btn{min-height:48px;padding:0 14px;border-radius:14px;border:2px solid var(--line);background:#fff;color:var(--ink);font:800 15px var(--font);cursor:pointer;flex:1 1 40%}
+.h-card .btn.red{background:var(--red);border-color:var(--red);color:#fff}
+.h-card .sub{font-size:12.5px;color:#7a6550}
+.h-card .pity{margin-top:8px;padding:6px 10px;border-radius:12px;background:#eef7ee;color:#24613a;font-weight:800;font-size:13px}
+.h-card ol{text-align:left;padding-left:20px;font-size:13.5px;margin:6px 0}
+.h-card .num{font:900 30px ui-monospace,Menlo,monospace;margin:4px 0}
+.h-card .head{display:flex;justify-content:space-between;align-items:center;font-weight:900}
+.h-card .lv{color:#c8382d;font-weight:900;text-align:left;margin:2px 0 6px}
+.h-card .prz{display:flex;gap:10px;justify-content:center;font-size:13px}
+.h-card .prz span{display:flex;flex-direction:column;align-items:center}
+.h-card .prz em{font-style:normal;font-size:30px}
+[hidden]{display:none!important}
+</style></head><body>
+<header class="top"><h1>새 기계 ③ 공 구멍 넣기 「공 떨어뜨리기」 <span class="tag">추천안 · 대표 미확인</span></h1>
+<p>집게가 든 탁구공을 구멍 판 위에서 놓습니다. 공이 몇 번 튀고 굴러 노란·보라 구멍에 들어가면 그 인형을 받습니다. 조작은 집게 기계와 같습니다. 왼쪽 휴대폰 화면의 십자 단추(또는 방향키)와 「떨어뜨리기」(또는 Space)로 해 볼 수 있습니다. 규칙서: <code>docs/인형뽑기/새기계3종-규칙서-v1.md</code> §3</p></header>
+<div class="page">
+<div class="left"><div class="phone"><canvas class="view"></canvas></div>
+<div class="ctl"><button id="demo" aria-pressed="false">자동 시연(노란 구멍 노리기)</button><button id="pity">연속 실패 5번으로 맞춤</button><button id="coins">코인 30개로</button></div></div>
+<div class="side">
+<section class="panel"><h2>한 판 흐름</h2><ol>
+<li>기계 앞 할 일 칩 「🏓 공 떨어뜨리기 한 판 · 🪙1」(처음이면 규칙 카드)</li>
+<li>준비 0.8초 「공을 집었어요」 — <b>공은 처음부터 집게에</b>(공 집기 단계 없음)</li>
+<li>십자 단추를 누르고 있으면 집게가 움직임(15초, ⏱). 판 위 <b>그림자 점</b> = 떨어질 자리</li>
+<li>「🏓 떨어뜨리기」(15초가 지나면 저절로) → 공이 튀고 굴러 구멍 하나에 들어감(2~3초, 입력 잠금)</li>
+<li>들어간 구멍에 동그라미(초록 성공·주황 아까움·빨강 실패) → 결과 카드</li></ol>
+<p class="note">판 4×4 = 16구멍(간격 6cm). 노랑 2 = 보통 인형, 보라 1 = 희귀(가장자리·작은 구멍). 구멍 옆 그림 = 그 구멍 인형(보이는 경품 = 받는 경품).</p></section>
+
+<section class="panel"><h2>휴대폰 세로 엄지 배치 <small>390×844 기준</small></h2><table>
+<tr><th>자리</th><th>무엇</th><th>기존과</th></tr>
+<tr><td>왼쪽 아래 십자 판(60, 사이 6)</td><td>누르고 있기 · 옆 단추로 밀면 방향 바뀜 · 두 손가락 대각선</td><td>집게와 같음</td></tr>
+<tr><td>오른쪽 세로 큰 판(112 높이)</td><td>「🏓 떨어뜨리기」 + 아래 남은 시간 막대</td><td>집게 「뽑기」 판(.kh-half)과 같음</td></tr>
+<tr><td>위 가운데 칩</td><td>「⏱ 12초 · 그림자 점을 노란 구멍 위로」</td><td>집게는 ⏱가 위 오른쪽 · 한 줄 안내는 판 위 — <b>여기선 칩 하나로 합침</b></td></tr>
+<tr><td>👁 옆에서 보기</td><td><b>없음</b></td><td>다름 — 아래</td></tr></table>
+<p class="note">게임 카메라는 판을 위에서 약 55° 내려다봄(앞뒤가 보이게). 그림자 점은 봉 기계 「집게 그림자 점」과 같은 그림.</p></section>
+
+<section class="panel"><h2>성공·아까움·실패 표시</h2><table>
+<tr><th></th><th>기계 위</th><th>결과 카드</th></tr>
+<tr><td>성공</td><td>공이 색 구멍에 쏙 → 구멍 초록 동그라미 → 경품구에 인형</td><td>「쏙! 까치」 · ✋ 들고 다니기</td></tr>
+<tr><td>아까움</td><td>색 구멍 바로 옆 칸 주황 동그라미 · 보라 구멍 위를 굴러 지나감</td><td>「아까워요! 색 구멍 바로 옆이에요」 / 「작은 구멍 위를 굴러 지나갔어요」</td></tr>
+<tr><td>실패</td><td>빈 구멍 빨강 동그라미</td><td>「아쉬워요, 빈 구멍이에요」</td></tr></table>
+<p class="note">공이 떨어진 뒤 2~3초가 이 기계의 볼거리라 결과 카드는 공이 멈추고 0.5초(성공 1.1초) 뒤에.</p></section>
+
+<section class="panel"><h2>연속 실패 도움</h2>
+<p><b>5판 연달아 못 넣으면</b> 다음 판부터(넣을 때까지) <b>직원이 초록 「도움 구멍」을 하나 더 열어</b> 줍니다(가운데 쪽, 보통 인형). 판 위 글·시작 알림·결과 카드 「직원 도움까지 n번」.</p>
+<p class="note">이유: 조사 초안 「6판 뒤 색 구멍 추가」를 집게(5판 직원 도움)와 같은 횟수로. 판 그림이 바뀌어 눈에 보이는 도움. 어림 판당 21% → 도움 판 약 30%(추정).</p></section>
+
+<section class="panel wide"><h2>구경하는 손님 화면 <small>왼쪽에서 한 판 하면 0.15초 늦게 따라 그림</small></h2>
+<div class="spect"><canvas id="spect" width="300" height="230"></canvas><div>
+<ul><li>다른 손님은 집게가 움직이는 것 → 공이 튀는 2~3초 → 들어간 구멍 동그라미를 봄(가장 볼 만한 장면)</li>
+<li>act: 조작 중 <code>cx·cz</code> 집게 자리(집게 기계와 같은 cm+50, 움직일 때만 초당 8번) · 공이 멈추면 <code>v</code> 들어간 구멍(0~15) + <code>k</code> 결과</li>
+<li>튐 길은 받는 쪽이 <b>받은 구멍에서 끝나게</b> 새로 만들어 그림(기존 「결과만 받아 다시 그림」 방식, 물리 상태를 보내지 않음)</li>
+<li>공 위치를 실시간으로 보내지 않으므로 구경 화면의 튐 모양은 뽑는 사람과 조금 다를 수 있음(결과 구멍은 같음)</li></ul>
+<p class="note">받은 act: <code id="spect-act"></code></p></div></div></section>
+
+<section class="panel diff"><h2>기존 4종·조사 초안과 다르게 한 곳 · 이유</h2><ul>
+<li><b>공 집기 단계 없음</b> — 초안은 공 통에서 집게로 공을 집음. 실패해도 재미없는 단계라 빼고 「놓는 자리」에 집중.</li>
+<li><b>👁 옆에서 보기 없음</b> — 판을 위에서 내려다보는 카메라 + 그림자 점으로 앞뒤가 보임.</li>
+<li><b>한 줄 안내를 위 칩에 합침</b> — 휴대폰 세로에서 십자 판(위 끝 약 598px)과 안내 자리가 겹침.</li>
+<li><b>경품 = 작은 인형만(큰 인형 없음)</b> — 초안 「가장자리 작은 구멍 = 큰 인형」 대신 희귀 작은 인형. 큰 인형은 타이머·줄 자르기 몫으로 나눔(기계마다 경품 성격이 겹치지 않게).</li>
+<li><b>판이 기울거나 도는 어려움 → 이번엔 없음</b> — 같은 종류 기계를 더 둘 때 단계별 어려움으로 남김.</li></ul></section>
+
+<section class="panel"><h2>난이도 어림 <small class="est">추정 · 거친 모델(실제 공 물리 아님)</small></h2><table>
+<tr><th>기계</th><th>판당</th><th>성공까지 평균</th></tr>
+<tr><td>공 떨어뜨리기(노랑 노림)</td><td>약 21%</td><td>약 4.2판(5판 도움 포함)</td></tr>
+<tr><td>공 떨어뜨리기(보라 노림)</td><td>약 15%</td><td>—</td></tr>
+<tr><td>집게(측정)</td><td>21.6%</td><td>—</td></tr>
+<tr><td>열쇠 1·2(측정)</td><td>39%</td><td>2.5판</td></tr></table>
+<p class="note">목표(추천안) = 조사 「집게와 봉 사이」 중 집게 쪽. 모델: 놓은 자리 오차 0.8cm + 튐 흩어짐 구멍 간격 1배, 보라 구멍은 칸 안쪽 60%에 떨어져야 들어감. 실제 공 물리를 만든 뒤 반드시 다시 잼(가장 불확실). 계산 <code>artifacts/claw-design/new3/sweep4.mjs</code></p></section>
+</div></div>
+<script>// 새 기계 3종 시안 공용(월드디자인 11-27). 시안 전용 흉내 — 실제 구현은 src/claw/claw-hud.js·claw-play.js에 기계 종류를 더하는 방식(규칙서 §0).
+// HUD: 알약·✕·가운데 칩·한 줄 안내·아래 판 단추(누름 시각 = pointerdown timeStamp)·십자 판·알림·카드. 구경 화면은 act만 받아 그림(0.15초 늦게)
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let seed=20261127;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
+const gauss=()=>Math.sqrt(-2*Math.log(rnd()+1e-12))*Math.cos(2*Math.PI*rnd());
+const now=()=>performance.now();
+const G={coins:30,fails:0,plays:0,seen:false,dex:{}};
+const hud=(()=>{
+ const ph=$('.phone');const mk=(tag,cls,html='')=>{const e=document.createElement(tag);e.className='h '+cls;e.innerHTML=html;ph.append(e);return e;};
+ const pill=mk('div','h-pill'),x=mk('button','h-x','✕'),chip=mk('div','h-chip'),toastEl=mk('div','h-toast'),hint=mk('div','h-hint'),
+  bar=mk('button','h-bar'),pad=mk('div','h-pad',['up:▲<small>안</small>','left:◀','right:▶','down:▼<small>밖</small>'].map(s=>{const [d,t]=s.split(':');return `<button data-d="${d}">${t}</button>`;}).join('')),
+  todo=mk('div','h-todo'),run=mk('button','h-run','🏃<br>달리기'),joy=mk('div','h-joy','걷기'),dim=document.createElement('div'),card=mk('section','h-card');
+ dim.className='h-dim';ph.append(dim);
+ x.setAttribute('aria-label','그만두기');
+ for(const e of [chip,toastEl,hint,bar,pad,todo,run,joy,dim,card,x])e.hidden=true;
+ let H={};let toastT=0;
+ // 판 단추: 누름·뗌 시각을 그대로 넘김(손가락이 미끄러져 나가도 뗄 때까지 유지)
+ let held=null;
+ bar.addEventListener('pointerdown',e=>{if(bar.dataset.dim!==undefined)return;e.preventDefault();held=e.pointerId;try{bar.setPointerCapture(e.pointerId);}catch{}bar.classList.add('on');H.down?.(e.timeStamp);});
+ const up=e=>{if(e.pointerId!==held)return;held=null;bar.classList.remove('on');H.up?.(e.timeStamp);};
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])bar.addEventListener(ev,up);
+ bar.addEventListener('contextmenu',e=>e.preventDefault());
+ addEventListener('keydown',e=>{if(e.code!=='Space'||e.repeat||!card.hidden||bar.hidden)return;e.preventDefault();if(bar.dataset.dim===undefined){bar.classList.add('on');H.down?.(e.timeStamp);}});
+ addEventListener('keyup',e=>{if(e.code!=='Space'||bar.hidden)return;bar.classList.remove('on');H.up?.(e.timeStamp);});
+ // 십자 판(공 구멍 넣기만)
+ const fingers=new Map();const dirAt=(cx,cy)=>document.elementFromPoint(cx,cy)?.closest?.('.h-pad [data-d]')?.dataset.d??null;
+ const paint=()=>{const on=new Set(fingers.values());for(const b of pad.querySelectorAll('[data-d]'))b.classList.toggle('on',on.has(b.dataset.d));};
+ pad.addEventListener('pointerdown',e=>{const d=dirAt(e.clientX,e.clientY);if(!d)return;e.preventDefault();try{pad.setPointerCapture(e.pointerId);}catch{}fingers.set(e.pointerId,d);paint();});
+ pad.addEventListener('pointermove',e=>{if(fingers.has(e.pointerId)){fingers.set(e.pointerId,dirAt(e.clientX,e.clientY));paint();}});
+ for(const ev of ['pointerup','pointercancel','lostpointercapture'])pad.addEventListener(ev,e=>{fingers.delete(e.pointerId);paint();});
+ const keys=new Set();const KM={ArrowUp:'up',KeyW:'up',ArrowDown:'down',KeyS:'down',ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right'};
+ addEventListener('keydown',e=>{if(KM[e.code]&&!pad.hidden){keys.add(KM[e.code]);e.preventDefault();}});addEventListener('keyup',e=>{keys.delete(KM[e.code]);});
+ const D={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+ let pend=null;
+ card.addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b||!pend)return;const f=pend;pend=null;card.hidden=true;dim.hidden=true;f(b.dataset.c);});
+ todo.addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b)H.todo?.(b.dataset.t);});
+ x.addEventListener('click',()=>H.quit?.());
+ return {
+  on(h){H=h;},
+  pill(t){pill.innerHTML=t;},
+  chip(t){chip.hidden=!t;if(t)chip.innerHTML=t;},
+  hint(t){hint.hidden=!t;if(t)hint.textContent=t;},
+  quit(on){x.hidden=!on;},
+  /** b = {ic,label,sub,tone:'green'|'cut',dim,half,ring} 또는 null */
+  bar(b){bar.hidden=!b;if(!b)return;bar.className='h h-bar'+(b.tone?' '+b.tone:'')+(b.half?' half':'')+(bar.classList.contains('on')?' on':'');
+   if(b.dim)bar.dataset.dim='';else delete bar.dataset.dim;
+   const html=`<span style="font-size:32px">${b.ic}</span><span class="lt"><b>${esc(b.label)}</b>${b.sub?`<small>${esc(b.sub)}</small>`:''}</span>${b.ring!=null?`<i class="tm"><i style="width:${(b.ring*100).toFixed(1)}%"></i></i>`:''}`;if(bar.innerHTML!==html)bar.innerHTML=html;},
+  pad(on){pad.hidden=!on;if(!on)fingers.clear(),paint();},
+  padDir(){let dx=0,dz=0;for(const d of [...fingers.values(),...keys]){if(!d)continue;dx+=D[d][0];dz+=D[d][1];}return [Math.sign(dx),Math.sign(dz)];},
+  walk(on,todos=[]){joy.hidden=run.hidden=!on;todo.hidden=!on;todo.innerHTML=todos.map(t=>`<button data-t="${t.id}" class="${t.main?'main':''}">${esc(t.label)}</button>`).join('');},
+  toast(t,sec=2.4){toastEl.textContent=t;toastEl.hidden=false;toastEl.style.opacity=1;toastT=sec;},
+  tick(dt){if(toastT>0){toastT-=dt;if(toastT<.25)toastEl.style.opacity=Math.max(0,toastT/.25);if(toastT<=0)toastEl.hidden=true;}},
+  card(html){card.innerHTML=html;card.hidden=false;dim.hidden=false;return new Promise(r=>{pend=r;});},
+  get cardOpen(){return !card.hidden;},
+ };
+})();
+/** 결과 카드 공용 모양(claw-hud.js showResult 흉내): kind win|near|miss */
+function resultCard({kind,title,big,band,lines=[],pity='',carry=''}){
+ const again=G.coins>=1?`<button class="btn${kind==='win'&&carry?'':' red'}" data-c="again">🪙 한 판 더 · 1</button>`:'';
+ return `${kind==='win'?`<div class="band" style="--rc:${band?.color??'#e5a832'}">${esc(band?.label??'')}</div>`:''}${big?`<div class="big">${big}</div>`:''}<h3>${esc(title)}</h3>${lines.map(l=>`<p>${l}</p>`).join('')}
+${pity?`<div class="pity">${esc(pity)}</div>`:''}
+<div class="row">${kind==='win'&&carry?`<button class="btn red" data-c="carry">${esc(carry)}</button>`:''}${kind==='win'?'<button class="btn" data-c="dex">🧸 도감 보기</button>':''}${again}<button class="btn" data-c="stop">그만</button></div>${G.coins<1?'<p class="sub">코인을 다 썼어요. 내일 0시에 또 받아요</p>':''}`;
+}
+function rulesCard({icon,name,sub,level,lines,pity,prizes,first}){
+ return `<div class="head"><span>${icon} ${esc(name)} · ${esc(sub)}</span>${first?'':'<button class="btn" data-c="close" style="flex:none;min-height:36px">✕</button>'}</div>
+<p class="lv">어려움 ${'●'.repeat(level)}${'○'.repeat(Math.max(3,level)-level)}</p><ol>${lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ol>
+${pity?`<div class="pity">${esc(pity)}</div>`:''}<div class="prz">${prizes.map(p=>`<span><em>${p.em}</em>${esc(p.name)}</span>`).join('')}</div>
+<p class="sub">코인은 매일 0시(서울)에 무료로 30개가 돼요. 사는 곳·바꾸는 곳은 없어요.</p>
+${first?'<div class="row"><button class="btn red" data-c="go">🪙 시작하기 · 1</button></div>':''}`;
+}
+/** 구경 화면: 내 판이 보낸 act를 0.15초 늦게 받음(네트워크 흉내). draw(ctx,w,h,act,history,t) */
+function makeSpect(canvas,draw){
+ const ctx=canvas.getContext('2d'),q=[],hist=[];let act={};
+ return {send(a){q.push({at:now()+150,a:{...a}});},
+  frame(t){while(q.length&&q[0].at<=t){act=q.shift().a;hist.push(act);if(hist.length>60)hist.shift();}draw(ctx,canvas.width,canvas.height,act,hist,t);},
+  reset(){hist.length=0;act={};}};
+}
+const rr=(c,x,y,w,h,r)=>{c.beginPath();c.roundRect(x,y,w,h,r);};
+</script><script>// ③ 공 구멍 넣기 「동동이 공 떨어뜨리기」 시안. 조작 = 집게 기계와 같음(십자 누르고 있기 15초 + 「떨어뜨리기」). 공은 시작할 때 이미 집게에 있음
+// 판 4×4 구멍(간격 6cm). 노랑 2 = 작은 인형, 보라 1(가장자리·작은 구멍) = 희귀. 튐은 시안용 흉내(실제는 공 물리) — 흩어짐 약 구멍 간격 1배
+const BC={n:4,pitch:.06,speed:.09,timeSec:15,readySec:.8,hops:[.65,.55,.45],ball:.013,hole:.021,rareHole:.016,rareIn:.6,pityAfter:5,
+ holes:{'1,1':'magpie','2,2':'hare','3,0':'haechi'},rare:'3,0',pity:'1,2'};
+const PZ={magpie:{id:'magpie',name:'까치',em:'🐦',band:{label:'★★ 보통',color:'#4f9bd9'}},hare:{id:'hare',name:'산토끼',em:'🐰',band:{label:'★★ 보통',color:'#4f9bd9'}},haechi:{id:'haechi',name:'해치',em:'🦁',band:{label:'★★★ 희귀',color:'#8a5cd6'}}};
+const cv=$('canvas.view'),cx=cv.getContext('2d');cv.width=390*2;cv.height=844*2;cx.scale(2,2);
+let S={mode:'front',n:0},demo=false;
+const RULES={icon:'🏓',name:'공 떨어뜨리기',sub:'공 구멍 넣기',level:2,
+ lines:['집게가 공을 들고 있어요. 십자 단추를 누르고 있으면 움직여요(15초)','「떨어뜨리기」를 누르면 공을 놓아요. 공은 판에서 몇 번 튀고 굴러 구멍 하나에 들어가요','노란 구멍 = 그 옆 그림 인형, 보라 구멍 = 희귀 해치(구멍이 작아 굴러 지나가기 쉬워요)','판 위 그림자 점이 공이 떨어질 자리예요'],
+ pity:`${BC.pityAfter}번 연달아 못 넣으면 직원이 초록 「도움 구멍」을 하나 더 열어 줘요(넣을 때까지 판마다)`,prizes:[PZ.magpie,PZ.hare,PZ.haechi]};
+const PX=70/BC.pitch,C0={x:195,y:390}; // 판 가운데 화면 자리, 1m = 1250px
+const half=BC.n*BC.pitch/2,toS=(x,z)=>[C0.x+x*PX,C0.y+z*PX];
+const cellOf=(x,z)=>[Math.min(BC.n-1,Math.max(0,Math.floor((x+half)/BC.pitch))),Math.min(BC.n-1,Math.max(0,Math.floor((z+half)/BC.pitch)))];
+const cellC=(i,j)=>[(i+.5)*BC.pitch-half,(j+.5)*BC.pitch-half];
+const fold=v=>{let x=v;const lim=half-BC.ball;for(let q=0;q<4;q++){if(x<-lim)x=-2*lim-x;if(x>lim)x=2*lim-x;}return x;};
+// ── 그림(내 화면·구경 공용). g = {claw:{x,z}|null, ball:{x,z,h,a}|null, pity, mark:{key,kind}, t, out, labels}
+function drawBall(c,g){
+ c.save();c.translate(g.ox??0,g.oy??0);c.scale(g.s??1,g.s??1);
+ rr(c,18,152,354,442,24);c.fillStyle='#24486a';c.fill();c.lineWidth=5;c.strokeStyle='#58b0e8';c.stroke();
+ rr(c,40,162,310,34,14);c.fillStyle='#ffd36b';c.fill();c.fillStyle='#3a2b22';c.font='900 20px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('🏓 공 떨어뜨리기',195,180);
+ // 판(약간 기울어진 느낌: 아래쪽이 밝음)
+ const g0=c.createLinearGradient(0,C0.y-150,0,C0.y+150);g0.addColorStop(0,'#c99b5f');g0.addColorStop(1,'#e8c48a');
+ rr(c,C0.x-146,C0.y-146,292,292,16);c.fillStyle=g0;c.fill();c.lineWidth=6;c.strokeStyle='#8a5a2b';c.stroke();
+ for(let j=0;j<BC.n;j++)for(let i=0;i<BC.n;i++){const k=`${i},${j}`,[hx,hz]=cellC(i,j),[sx,sy]=toS(hx,hz),pz=BC.holes[k],pit=g.pity&&k===BC.pity;
+  const r=(k===BC.rare?BC.rareHole:BC.hole)*PX;c.beginPath();c.arc(sx,sy,r,0,7);c.fillStyle='#3a2414';c.fill();
+  if(pz||pit){c.lineWidth=6;c.strokeStyle=pit?'#3fdc7a':k===BC.rare?'#b07cff':'#ffd23a';c.stroke();if(g.labels!==false){c.font='22px serif';c.fillText(pz?PZ[pz].em:'🐦',sx+r+2,sy-r);}}
+  if(g.mark&&g.mark.key===k){c.lineWidth=5;c.strokeStyle=g.mark.kind==='win'?'#5fe17a':g.mark.kind==='near'?'#ffb52b':'#ff5a4a';c.beginPath();c.arc(sx,sy,r+7,0,7);c.stroke();}
+ }
+ // 그림자 점·집게
+ if(g.claw){const [sx,sy]=toS(g.claw.x,g.claw.z);c.fillStyle='rgba(20,10,0,.35)';c.beginPath();c.ellipse(sx,sy,BC.ball*PX,BC.ball*PX*.7,0,0,7);c.fill();
+  c.strokeStyle='#cfd6de';c.lineWidth=3;c.beginPath();c.moveTo(sx,200);c.lineTo(sx,sy-78);c.stroke();
+  c.fillStyle='#cfd6de';rr(c,sx-16,sy-86,32,12,4);c.fill();c.lineWidth=4;c.beginPath();c.moveTo(sx-12,sy-74);c.lineTo(sx-17,sy-56);c.moveTo(sx+12,sy-74);c.lineTo(sx+17,sy-56);c.stroke();
+  if(g.claw.has){c.fillStyle='#fff';c.beginPath();c.arc(sx,sy-58,BC.ball*PX,0,7);c.fill();c.strokeStyle='#ffb52b';c.lineWidth=2;c.stroke();}}
+ // 떨어진 공(높이 h는 위로 올려 그림 + 그림자)
+ if(g.ball){const [sx,sy]=toS(g.ball.x,g.ball.z),h=g.ball.h*PX;c.globalAlpha=g.ball.a??1;
+  c.fillStyle='rgba(20,10,0,.3)';c.beginPath();c.ellipse(sx,sy,BC.ball*PX*(1-Math.min(.5,h/200)),BC.ball*PX*.7,0,0,7);c.fill();
+  c.fillStyle='#fff';c.beginPath();c.arc(sx,sy-h,BC.ball*PX*(1+h/600),0,7);c.fill();c.strokeStyle='#ffb52b';c.lineWidth=2;c.stroke();c.globalAlpha=1;}
+ rr(c,120,550,150,38,12);c.fillStyle='#0d1620';c.fill();c.fillStyle='#8ab';c.font='700 11px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText(g.out?'':'경품 나오는 곳',195,569);
+ if(g.out){c.font='34px serif';c.fillText(g.out,195,569);}
+ if(g.pity&&g.labels!==false){c.fillStyle='#8ff0b0';c.font='900 13px sans-serif';c.fillText('직원 도움 · 초록 구멍 열림',195,226);}
+ c.restore();
+}
+// ── 튐 길(시안 흉내): 놓은 자리 → 튐 3번 → 구멍 칸으로 굴러감. seeded면 구경용(받은 구멍으로 끝나게)
+function planPath(x,z,pity,endCell){
+ const pts=[{x,z}];let px=x,pz=z;for(const s of BC.hops){px=fold(px+gauss()*s*BC.pitch);pz=fold(pz+gauss()*s*BC.pitch);pts.push({x:px,z:pz});}
+ let [i,j]=endCell??cellOf(px,pz),key=`${i},${j}`,over=false;
+ if(!endCell&&key===BC.rare){const [hx,hz]=cellC(i,j);if(Math.max(Math.abs(px-hx),Math.abs(pz-hz))>BC.rareIn*BC.pitch/2){over=true;const dx=Math.sign(px-pts[2].x)||1;i=Math.max(0,Math.min(BC.n-1,i-dx));key=`${i},${j}`;pts.push({x:cellC(3,0)[0],z:cellC(3,0)[1],roll:1});}}
+ if(endCell){const [hx,hz]=cellC(i,j);pts[pts.length-1]={x:fold(hx+(px-hx)*.3),z:fold(hz+(pz-hz)*.3)};}
+ const [hx,hz]=cellC(i,j);pts.push({x:hx,z:hz,roll:1});
+ const pz2=BC.holes[key]??(pity&&key===BC.pity?'magpie':null);
+ const near=!pz2&&(over||[[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>BC.holes[`${i+a},${j+b}`]||pity&&`${i+a},${j+b}`===BC.pity));
+ return {pts,key,cell:[i,j],kind:pz2?'win':near?'near':'miss',prize:pz2,over};
+}
+// 길 위 자리(시간 u초): 첫 낙하 0.45초, 튐마다 0.38·0.3·0.24초, 구르기 0.35초씩
+function pathAt(p,u){const D=[.45,.38,.3,.24,.35,.35];let t=u;
+ if(t<D[0])return {x:p.pts[0].x,z:p.pts[0].z,h:.09*(1-(t/D[0])**2)};t-=D[0];
+ for(let k=1;k<p.pts.length;k++){const d=D[k]??.35,a=p.pts[k-1],b=p.pts[k];if(t<d){const f=t/d,hh=b.roll?0:(.05/k)*4*f*(1-f);return {x:a.x+(b.x-a.x)*f,z:a.z+(b.z-a.z)*f,h:hh};}t-=d;}
+ const e=p.pts.at(-1);return {x:e.x,z:e.z,h:0,done:true,a:Math.max(0,1-t/.3)};}
+function act(extra){spect.send({m:19,n:S.n,...extra});}
+const enc=v=>Math.round(v*100)+50;
+function start(){
+ if(G.coins<1){hud.toast('코인이 없어요 · 내일 0시에 30개');return;}
+ G.coins--;G.plays++;const pity=G.fails>=BC.pityAfter;
+ S={mode:'ready',t0:now(),x:-.11+.025,z:-.11+.025,pity,n:S.n+1};
+ hud.walk(false);hud.quit(true);hud.pad(true);spect.reset();act({ph:'play',cx:enc(S.x),cz:enc(S.z),k:0});
+ hud.toast(pity?'직원 도움! 초록 구멍이 하나 더 열렸어요':'공을 집었어요',2.4);
+}
+function drop(t){if(S.mode!=='play')return;S.mode='drop';S.dropT=now();S.path=planPath(S.x,S.z,S.pity);hud.pad(false);act({ph:'drop',cx:enc(S.x),cz:enc(S.z)});}
+async function result(){
+ S.mode='result';hud.bar(null);hud.hint(null);hud.chip(null);hud.quit(false);
+ const p=S.path,P=p.prize?PZ[p.prize]:null;let html;
+ if(p.kind==='win'){G.fails=0;G.dex[P.id]=(G.dex[P.id]??0)+1;html=resultCard({kind:'win',title:`쏙! ${P.name}`,big:P.em,band:P.band,lines:[p.key===BC.pity?'초록 도움 구멍에 들어갔어요':'색 구멍에 들어갔어요'],carry:'✋ 손에 들고 다니기'});}
+ else{G.fails++;const left=BC.pityAfter-G.fails;html=resultCard({kind:p.kind,title:p.over?'아까워요! 작은 구멍 위를 굴러 지나갔어요':p.kind==='near'?'아까워요! 색 구멍 바로 옆이에요':'아쉬워요, 빈 구멍이에요',
+  lines:['공이 들어간 구멍을 판에 동그라미로 표시했어요'],pity:left<=0?'다음 판은 직원 도움 — 초록 구멍을 열어 줘요!':`직원 도움까지 ${left}번`});}
+ if(demo)setTimeout(()=>document.querySelector('.h-card [data-c=again]')?.click(),1600);
+ const r=await hud.card(html);
+ if(r==='again')start();else{S={mode:'front',n:S.n};front();if(r==='carry')hud.toast(`${P.name}를 손에 들었어요`,2.4);}
+}
+function front(){hud.bar(null);hud.hint(null);hud.chip(null);hud.quit(false);hud.pad(false);hud.walk(true,[{id:'play',label:'🏓 공 떨어뜨리기 한 판 · 🪙1',main:true},{id:'rules',label:'ⓘ 규칙'}]);}
+hud.on({
+ down(t){if(S.mode==='play')drop(t);},
+ todo(id){if(id==='rules'){hud.card(rulesCard({...RULES,first:false}));return;}
+  if(!G.seen){G.seen=true;hud.card(rulesCard({...RULES,first:true})).then(c=>{if(c==='go')start();});return;}start();},
+ async quit(){const c=await hud.card('<h3>그만둘까요?</h3><p>넣은 코인은 돌려받지 못해요</p><div class="row"><button class="btn" data-c="q">그만두기</button><button class="btn red" data-c="k">계속하기</button></div>');
+  if(c==='q'){G.fails++;S={mode:'front',n:S.n};act({ph:''});front();}},
+});
+front();
+// ── 구경 화면: 집게 자리(cx,cz)·놓은 자리·들어간 구멍(v = j×4+i)·결과(k)만 받음 → 받은 구멍에서 끝나는 튐 길을 받는 쪽이 만들어 그림
+const spect=makeSpect($('#spect'),(c,w,h,a,hist,t)=>{
+ c.clearRect(0,0,w,h);c.fillStyle='#1b1428';c.fillRect(0,0,w,h);
+ const dec=v=>(v-50)/100;let ball=null,mark=null;
+ if(a.k&&a.v!=null){if(!spect.p||spect.pn!==a.n){spect.p=planPath(dec(a.cx),dec(a.cz),false,[a.v%4,Math.floor(a.v/4)]);spect.pn=a.n;spect.pt=t;}
+  const q=pathAt(spect.p,(t-spect.pt)/1000);ball=q;if(q.done)mark={key:`${a.v%4},${Math.floor(a.v/4)}`,kind:a.k===1?'win':a.k===2?'near':'miss'};}
+ else spect.p=null;
+ drawBall(c,{claw:a.ph==='play'?{x:dec(a.cx),z:dec(a.cz),has:1}:null,ball,mark,t,s:.42,ox:68,oy:-50,labels:false});
+ c.fillStyle='#e9b44c';c.beginPath();c.ellipse(52,h-8,30,36,0,Math.PI,0);c.fill();c.fillStyle='#6b4b2a';c.beginPath();c.ellipse(52,h-33,27,9,0,0,7);c.fill();
+ c.fillStyle='#fff';c.font='700 11px sans-serif';c.textAlign='center';c.fillText('뽑기손님12',262,90);
+ const say=a.k?(a.k===1?'쏙! 🎉':a.k===2?'아까워!':'아쉬움'):'';
+ if(say&&mark){c.font='800 12px sans-serif';const tw=c.measureText(say).width+16;rr(c,262-tw/2,52,tw,20,9);c.fillStyle=a.k===3?'#ddd':'#ffd36b';c.fill();c.fillStyle='#3a2b22';c.fillText(say,262,66);}
+ $('#spect-act').textContent=a.m?JSON.stringify({m:a.m,ph:a.ph,cx:a.cx,cz:a.cz,v:a.v,k:a.k,r:a.r,n:a.n}):'(아직 없음 — 왼쪽에서 한 판 해 보세요)';
+});
+let last=now(),sendT=0;
+function frame(t){
+ const dt=Math.min(.05,(t-last)/1000);last=t;hud.tick(dt);const s=S;
+ if(s.mode==='ready'&&t-s.t0>BC.readySec*1000){s.mode='play';s.pt0=t;}
+ if(s.mode==='play'){
+  let [dx,dz]=hud.padDir();
+  if(demo){const [tx,tz]=cellC(1,1);if(!s.aim)s.aim={x:tx+gauss()*.008,z:tz+gauss()*.008};dx=Math.abs(s.aim.x-s.x)>.002?Math.sign(s.aim.x-s.x):0;dz=Math.abs(s.aim.z-s.z)>.002?Math.sign(s.aim.z-s.z):0;if(!dx&&!dz&&t-s.pt0>1500)drop(t);}
+  const lim=half-BC.ball;s.x=Math.max(-lim,Math.min(lim,s.x+dx*BC.speed*dt));s.z=Math.max(-lim,Math.min(lim,s.z+dz*BC.speed*dt));
+  if((dx||dz)&&t-sendT>125){sendT=t;act({ph:'play',cx:enc(s.x),cz:enc(s.z)});} // 움직이는 동안만 초당 8번(기존 act 한도)
+  if(t-s.pt0>BC.timeSec*1000){hud.toast('시간이 다 돼서 공을 놓았어요');drop(t);}
+ }
+ if(s.mode==='drop'){const q=pathAt(s.path,(t-s.dropT)/1000);s.ball=q;
+  if(q.done&&!s.sent){s.sent=1;const [i,j]=s.path.cell;act({ph:'drop',cx:enc(s.x),cz:enc(s.z),v:j*4+i,k:s.path.kind==='win'?1:s.path.kind==='near'?2:3,r:s.path.prize?PZ[s.path.prize].id:''});s.endAt=t+(s.path.kind==='win'?1100:500);}
+  if(s.endAt&&t>=s.endAt){s.endAt=0;result();}}
+ if(['ready','play','drop'].includes(s.mode)){
+  hud.pill(`🏓 공 떨어뜨리기 · 🪙 <b>${G.coins}</b>`);
+  const left=s.mode==='play'?Math.max(0,BC.timeSec-(t-s.pt0)/1000):BC.timeSec;
+  hud.chip(s.mode==='play'?`⏱ ${Math.ceil(left)}초 · 그림자 점을 노란 구멍 위로`:`⏱ ${Math.ceil(left)}초`);
+  hud.bar({ic:'🏓',label:s.mode==='drop'?'굴러가요…':'떨어뜨리기',half:true,dim:s.mode!=='play',ring:left/BC.timeSec});
+  hud.hint(null); // 한 줄 안내는 십자 판과 겹쳐 위 칩에 합침(집게 기계는 판 위 256px에 둠)
+ }else if(s.mode==='front')hud.pill(`👤 인형가게 1서버 · 🪙 <b>${G.coins}</b>`);
+ cx.clearRect(0,0,390,844);
+ const done=s.mode==='result'||s.ball?.done;
+ drawBall(cx,{claw:['ready','play'].includes(s.mode)?{x:s.x,z:s.z,has:1}:s.mode==='drop'?{x:s.x,z:s.z}:null,ball:s.mode==='drop'||s.mode==='result'?s.ball:null,pity:s.pity,t,
+  mark:done&&s.path?{key:s.path.key,kind:s.path.kind}:null,out:done&&s.path?.kind==='win'?PZ[s.path.prize].em:''});
+ spect.frame(t);requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+$('#demo').onclick=e=>{demo=!demo;e.target.setAttribute('aria-pressed',demo);if(demo&&S.mode==='front'){G.seen=true;start();}};
+$('#pity').onclick=()=>{G.fails=BC.pityAfter;hud.toast('연속 실패 5번으로 맞춤 · 다음 판이 도움 판');};
+$('#coins').onclick=()=>{G.coins=30;};
+</script></body></html>
