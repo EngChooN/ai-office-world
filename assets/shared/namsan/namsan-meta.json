@@ -1,0 +1,31 @@
+{
+ "version": 1,
+ "made": "2026-11-19",
+ "by": "월드아트 scripts/namsan/build-namsan-data.mjs",
+ "frame": "관악산과 같은 게임 좌표(assets/realistic/geo.js ORIGIN, 1m, +X 동, -Z 북)",
+ "landcover": {
+  "file": "landcover.u8",
+  "format": "uint8 (1 숲·공원, 0 시가지)",
+  "note": "terrain과 같은 칸"
+ },
+ "terrain": {
+  "file": "terrain.f32",
+  "format": "float32-little-endian",
+  "x0": 2384,
+  "z0": -10488,
+  "width": 367,
+  "height": 321,
+  "spacing": 8,
+  "note": "Copernicus DSM 30m 쌍선형 보간. 나무·건물 높이가 섞인 값(조사 §1)"
+ },
+ "summitCell": {
+  "x": 3636.9,
+  "z": -9267.4,
+  "dem": 272.2,
+  "label": 265
+ },
+ "sources": [
+  "Copernicus DEM GLO-30 (© DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved)",
+  "© OpenStreetMap contributors (ODbL)"
+ ]
+}
