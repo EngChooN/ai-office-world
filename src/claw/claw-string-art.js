@@ -28,6 +28,7 @@ export const STRING=Object.freeze({
  cutY:1.17,                                      // 자르는 높이(가위 칼날 면). 흔들림 진폭은 이 높이에서 잰 값. 인형 머리 바로 위라 인형 흔들림이 1.3~1.4배로 크지 않음
  depth:Object.freeze([-.15,.11]),                // 줄 깊이 z(A 뒤·B 앞) — 큰 인형 둘이 겹치지 않게
  tie:Object.freeze([1.10,1.07]),                 // 인형 머리(줄 끝) 높이. A(뒤)가 조금 높아 B 너머로 보임
+ rope:Object.freeze({r:.003,halo:.0052,color:'#2a3358'}),// 줄 심 반지름·밝은 테 반지름(m)·심 색. 심 굵기 6mm = 노란 괄호 사이(±3mm)와 같음. 판정은 줄 가운데 x 하나
  rail:Object.freeze({y:1.125,z:.3,u0:.02,u1:.58}),// 가위 레일(앞·칼날 아래 — 위에서 비스듬히 보는 카메라에서 칼날을 안 가림, 규칙 좌표 start .04 ~ end .56보다 조금 넓게)
  blade:Object.freeze({pivotZ:.26,len:.5,open:.2}),// 칼날 축 z·길이·벌린 각(rad)
  button:Object.freeze([0,.5,.56]),               // 큰 단추(열쇠·불빛 쌓기와 같은 자리)
@@ -67,7 +68,7 @@ import {drawStringGlyph} from './claw-string-glyph.js';
  */
 export function buildStringMachine(theme=STRING_THEME,{toonify=null}={}){
  const M=theme,C=CLAW,W=C.width,D=C.depth,hw=W/2,hd=D/2,S=STRING,root=new THREE.Group();root.name=`인형뽑기 기계:${M.id}`;
- const mats={...bodyKit.machineMats(M),cushion:std('#ffe6d6'),rope:std('#f4ead2',{roughness:.9}),blade:std('#e4e9ee',{roughness:.25,metalness:.55}),
+ const mats={...bodyKit.machineMats(M),cushion:std('#ffe6d6'),rope:std(S.rope.color,{roughness:.8}),blade:std('#e4e9ee',{roughness:.25,metalness:.55}),
   handle:std(M.body,{roughness:.45}),ruler:std('#2b2f36')},b=builder(),late=[];
  bodyKit.lowerBody(b,M);
  // 유리 안: 폭신한 바닥(인형이 떨어지는 곳, 가운데가 낮은 쿠션 두 장)·뒷벽(빛남)·천장판
@@ -115,15 +116,18 @@ export function buildStringMachine(theme=STRING_THEME,{toonify=null}={}){
  const cMat=new THREE.MeshBasicMaterial({color:'#ff5a4a',toneMapped:false,depthWrite:false});
  for(let k=0;k<10;k++){const m=new THREE.Mesh(new THREE.BoxGeometry(.0012,.0012,.018),cMat);m.position.set(0,S.cutY+.008,S.blade.pivotZ-.06-k*.045);m.renderOrder=4;guide.add(m);}
  // ── 줄 둘(위 토막 = 걸이→자르는 곳, 아래 토막 = 자르는 곳→인형) + 인형. 흔들림 = 걸이를 축으로 도는 진자
- const ropeGeo=new THREE.CylinderGeometry(.0018,.0018,1,6).translate(0,-.5,0);
+ //  줄 = 짙은 남색 심(6mm) + 밝은 테(10.4mm, 뒷면만 그림). ② 카메라가 다가가도 밝은 뒷벽·짙은 인형 어느 쪽 앞에서나 또렷하게(11-27 보정, 예전 3.6mm 크림색은 뒷벽에 묻힘)
+ const ropeGeo=new THREE.CylinderGeometry(S.rope.r,S.rope.r,1,8).translate(0,-.5,0),haloGeo=new THREE.CylinderGeometry(S.rope.halo,S.rope.halo,1,8).translate(0,-.5,0);
+ const haloMat=new THREE.MeshBasicMaterial({color:'#fff4d8',side:THREE.BackSide,toneMapped:false});
+ const ropeMesh=(geo,mat,len,name)=>{const m=new THREE.Mesh(geo,mat);m.scale.y=len;m.name=name;return m;};
  const strings=S.strings.map((u,i)=>{const x=S.toX(u),z=S.depth[i],pend=new THREE.Group();pend.name=`줄 ${i+1}`;pend.position.set(x,S.hangY,z);root.add(pend);
   const lc=S.hangY-S.cutY,lt=S.hangY-S.tie[i];
-  const up=new THREE.Mesh(ropeGeo,mats.rope);up.scale.y=lc;pend.add(up);
+  const up=ropeMesh(ropeGeo,mats.rope,lc,'줄 심');pend.add(up);const upH=ropeMesh(haloGeo,haloMat,lc,'줄 테');pend.add(upH);
   const low=new THREE.Group();low.position.y=-lc;pend.add(low);
-  const dn=new THREE.Mesh(ropeGeo,mats.rope);dn.scale.y=lt-lc;low.add(dn);
-  const knot=new THREE.Mesh(new THREE.SphereGeometry(.007,8,6),mats.rope);knot.position.y=-(lt-lc);low.add(knot);
-  const nick=new THREE.Mesh(new THREE.TorusGeometry(.0045,.0018,6,12).rotateX(Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffb52b',toneMapped:false}));nick.position.y=-lc;nick.visible=false;nick.name='반쯤 잘린 자국';pend.add(nick);
-  return {i,x,z,pend,up,low,dn,knot,nick,lc,lt,prize:null,id:null,dx:0,cut:null,rest:new THREE.Vector3()};});
+  const dn=ropeMesh(ropeGeo,mats.rope,lt-lc,'줄 심');low.add(dn);dn.add(ropeMesh(haloGeo,haloMat,1,'줄 테'));
+  const knot=new THREE.Mesh(new THREE.SphereGeometry(.008,10,8),mats.rope);knot.position.y=-(lt-lc);low.add(knot);
+  const nick=new THREE.Mesh(new THREE.TorusGeometry(.0076,.0022,6,14).rotateX(Math.PI/2),new THREE.MeshBasicMaterial({color:'#ffb52b',toneMapped:false}));nick.position.y=-lc;nick.visible=false;nick.name='반쯤 잘린 자국';pend.add(nick);
+  return {i,x,z,pend,up,upH,low,dn,knot,nick,lc,lt,prize:null,id:null,dx:0,cut:null,rest:new THREE.Vector3()};});
  // 직원 팔: 천장에서 내려오는 초록 막대 + 벙어리장갑 손 + 「직원」 표. 줄 바로 오른쪽 뒤에서 자르는 곳 3cm 아래를 잡는다
  const staffTex=canvasTex(128,64,(g,w,h)=>{g.fillStyle='#3f9a62';g.beginPath();g.roundRect(2,2,w-4,h-4,14);g.fill();g.fillStyle='#fff';g.font=`900 34px ${FONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText('직원',w/2,h/2+2);});
  const staffMat=std('#3f9a62',{roughness:.55}),mittMat=std('#8ff0b0',{roughness:.7});
@@ -152,6 +156,7 @@ export function buildStringMachine(theme=STRING_THEME,{toonify=null}={}){
   cb.cyl('gold',.014,.014,.03,0,0,0,{seg:12,rx:Math.PI/2});
   cb.build(mats,cr,{outline:new Set(['handle','blade'])});cr.position.set(0,C.height+.075,-.05);root.add(cr);}
  bodyKit.finish(root,mats,toonify,late);
+ root.traverse(o=>{if(o.name==='줄 테'){o.material=haloMat;o.castShadow=false;}}); // 밝은 테는 빛 계산 없이(카툰 재질로 바뀌면 그늘에서 테가 흐려짐)
  {const m=signMesh(M,W*.86,W*.86*3/8)??ownSign(M,W*.86,W*.86*3/8);if(m){m.position.set(0,C.glassTop+(C.height-C.glassTop)/2,hd+.004);root.add(m);}}
  // ── 상태·움직임
  const st={u:S.rail.u0+.02,open:1,snipT:-1};
@@ -165,12 +170,12 @@ export function buildStringMachine(theme=STRING_THEME,{toonify=null}={}){
   // 아래 토막을 기계 좌표로 떼어 내 떨어뜨림(위 토막은 걸이에 남아 천천히 멈춤)
   s.pend.updateMatrix();const w=new THREE.Vector3(),q=new THREE.Quaternion();s.low.getWorldPosition(w);root.worldToLocal(w);
   s.pend.remove(s.low);root.add(s.low);s.low.position.copy(w);s.low.quaternion.copy(q.setFromEuler(new THREE.Euler(0,0,s.pend.rotation.z)));
-  s.cut={t:0,v:0,y0:w.y,spin:(Math.random()-.5)*.6,landed:false,swing:s.pend.rotation.z};s.up.scale.y=s.lc-.004;};
+  s.cut={t:0,v:0,y0:w.y,spin:(Math.random()-.5)*.6,landed:false,swing:s.pend.rotation.z};s.up.scale.y=s.upH.scale.y=s.lc-.004;};
  const nickString=(i,{dx=strings[i].dx}={})=>{const s=strings[i];if(!s)return;s.dx=dx;poseString(s);s.nick.visible=true;};
  const setPrizes=ids=>{ids.forEach((id,i)=>{const s=strings[i];if(!s)return;if(s.prize){s.low.remove(s.prize);s.prize=null;}s.id=id??null;if(!id)return;
   const o=makePlush(id,{toonify}),h=plushSize(id);o.position.y=-(s.lt-s.lc)-h+.012;o.rotation.y=i===0?.18:-.22;o.name=`매달린 인형:${id}`;s.low.add(o);s.prize=o;});};
  const resetStrings=()=>{strings.forEach(s=>{if(s.cut){root.remove(s.low);s.pend.add(s.low);s.low.position.set(0,-s.lc,0);s.low.quaternion.identity();s.cut=null;}
-  s.up.scale.y=s.lc;s.nick.visible=false;s.dx=0;poseString(s);});setStaff(false,true);};
+  s.up.scale.y=s.upH.scale.y=s.lc;s.nick.visible=false;s.dx=0;poseString(s);});setStaff(false,true);};
  const setStaff=(on,instant=false)=>{for(const f of staff){f.on=on;if(instant){f.k=on?1:0;placeStaff(f);}}};
  const BTN={move:'#e8443a',cut:'#ff9a2b',off:'#9a948a'};
  const setButton=m=>{const c=BTN[m]??BTN.off;btn.material.color.set(c);btn.material.emissive.set(c);btn.material.emissiveIntensity=m==='off'?.05:.35;};

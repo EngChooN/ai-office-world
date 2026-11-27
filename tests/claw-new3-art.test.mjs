@@ -98,3 +98,19 @@ test('단계 그림(LOD): 새 기계도 attachLod로 중간·먼 그림이 만�
  for(const g of [buildStringMachine(),buildBallMachine(),dressStackMachine(buildStackMachine(MACHINES.find(m=>m.kind==='stack')))]){
   attachLod(g,{});for(const l of [1,2,0,2])g.userData.setLod(l);g.userData.update(1/30);}
 });
+test('줄 자르기 줄(11-27 보정): ② 다가간 카메라에서 짙은 심이 휴대폰 세로·가로·PC 모두 3px(테 포함 5.5px) 넘게, 밝은 테로 둘러 뒷벽·인형 앞 모두 또렷',()=>{
+ const g=buildStringMachine(),U=g.userData,lum=c=>{const k=new THREE.Color(c);return .2126*k.r+.7152*k.g+.0722*k.b;};
+ const core=U.mats.rope.color,pend=g.getObjectByName('줄 1');
+ assert.ok(lum(core)<.06,`심 밝기 ${lum(core).toFixed(3)}`);
+ const halos=[];g.traverse(o=>{if(o.name==='줄 테')halos.push(o);});assert.equal(halos.length,4,'줄 2개 × 위·아래 토막');
+ for(const h of halos){assert.ok(h.material.isMeshBasicMaterial&&h.material.side===THREE.BackSide&&lum(h.material.color)>.85,'테 = 밝은 뒷면');}
+ assert.ok(STRING.rope.halo>STRING.rope.r+.001,'테가 심보다 1mm 넘게 굵음');
+ assert.ok(pend.getObjectByName('반쯤 잘린 자국').geometry.parameters.radius-.0022>STRING.rope.halo,'아까움 자국이 테 바깥');
+ // 화면 높이 H px, 세로 fov에서 줄 굵기(px) = 2r ÷ (2·거리·tan(fov/2)) × H
+ for(const [W,H,portrait] of [[390,844,true],[844,390,false],[1280,720,false]])for(const i of [0,1]){const u=STRING.strings[i],c=cutCamera(u,{portrait});
+  const p=new THREE.Vector3(STRING.toX(u),STRING.cutY,STRING.depth[i]),d=p.distanceTo(new THREE.Vector3(...c.pos));
+  const k=H/(2*d*Math.tan(c.fov*Math.PI/360)),px=2*STRING.rope.r*k,ph=2*STRING.rope.halo*k;
+  assert.ok(px>=3&&ph>=5.5,`${W}×${H} 줄 ${i+1} 심 ${px.toFixed(1)}px·테 ${ph.toFixed(1)}px`);}
+ near(STRING.rope.r*2,.006,1e-9,'심 굵기 = 괄호 사이 6mm');
+ U.cutString(0);U.resetStrings();near(halos[0].scale.y,STRING.hangY-STRING.cutY,1e-9,'다음 판 위 토막 테 길이');
+});
