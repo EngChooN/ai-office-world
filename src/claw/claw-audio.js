@@ -5,7 +5,7 @@
 //  → 흡연장·크리스마스처럼 touchend까지 듣고, 켜질 때까지 입력마다 다시 깨운다. 가게 배경 음악(claw-bgm.js)·올라오기·타이머 틱·열쇠·봉 상자 소리 추가.
 import {createClawBgm,BGM_LEVEL} from './claw-bgm.js';
 export const CLAW_SOUNDS=Object.freeze(['coin','bump','down','up','grab','unlock','rattle','slip','chute','win','fanfare','lose','grant',
- 'tick','perfect','near','key-in','cell','push','drop','door','step','snap','fall','ding','scissor','nick']);
+ 'tick','perfect','near','key-in','cell','push','drop','door','step','snap','fall','ding','scissor','nick','tock','pop']);
 export const SFX_MASTER=.7; // 마스터(공용 소리 크기 배수 1일 때). 배경 음악 버스는 BGM_LEVEL, 기계 조작 중엔 BGM_DUCK배로 줄인다
 export const BGM_DUCK=.55;
 export function createClawAudio({muted=false,volume=1,music=true,mood='arcade',win=globalThis.window,doc=globalThis.document}={}){
@@ -68,6 +68,9 @@ export function createClawAudio({muted=false,volume=1,music=true,mood='arcade',w
   // 11-27 줄 자르기(규칙서 §2): 싹둑 「찰칵」·아까움 「사각」(줄 끊김·인형 떨어짐은 drop 「쿵」, 수레는 motor, 멈춤은 snap)
   scissor:()=>{noise({dur:.05,gain:.16,freq:5200,q:3});tone({f:2400,f2:1500,type:'square',dur:.04,gain:.08,at:.01});},
   nick:()=>noise({dur:.14,gain:.1,freq:2600,q:1.4}),
+  // 11-27 공 구멍(규칙서 §3): 튐 「통」(튈수록 작게 — 부르는 쪽이 gain)·구멍 「쏙」(놓음 딸깍은 snap, 이동 위잉은 motor)
+  tock:()=>{tone({f:1250,f2:900,type:'sine',dur:.05,gain:.16});noise({dur:.025,gain:.05,freq:3000,q:2});},
+  pop:()=>{tone({f:500,f2:1400,type:'sine',dur:.12,gain:.18});tone({f:1800,type:'triangle',dur:.12,gain:.1,at:.08});},
  };
  return {
   // gain: 다른 손님 기계 구경 소리는 거리만큼 작게(main.js hearOf). 0이면 안 냄

@@ -93,10 +93,11 @@ const B1=['#e8689e','#b8406f'],B2=['#ef7aa9','#c24d7b'];
 const T1=['#f08a3c','#c0612a'],T2=['#f29a4f','#c76d33'];
 const K1=['#5b5fc4','#3a3d8f'],K2=['#6a6ed0','#44479c'];
 const S1=['#3b2f7a','#241c52'];
-const R1=['#d8434f','#a12c3a']; // 11-27 새 기계 ② 줄 자르기(월드아트 STRING_THEME) // 11-27 새 기계 ① 불빛 쌓기(월드디자인 시안 v1 「별빛 탑」 틀 색 #2b2357 계열)
+const R1=['#d8434f','#a12c3a'];
+const P1=['#2f9fc0','#1f6f8a']; // 11-27 새 기계 ③ 공 구멍(월드아트 BALL_THEME) // 11-27 새 기계 ② 줄 자르기(월드아트 STRING_THEME) // 11-27 새 기계 ① 불빛 쌓기(월드디자인 시안 v1 「별빛 탑」 틀 색 #2b2357 계열)
 const mk=(id,kind,name,sub,[body,bodyDark],o={})=>Object.freeze({id,kind,name,sub,body,bodyDark,
- trim:{claw:'#f6e7c4',bridge:'#fff0f6',timer:'#fff4e2',key:'#f3eaff',stack:'#ece6ff',string:'#fff1ea'}[kind],accent:{claw:'#ffcf4a',bridge:'#7fd8f0',timer:'#56aef0',key:'#f5c33b',stack:'#5fe1ff',string:'#ffc43d'}[kind],
- light:{claw:'#fff0b0',bridge:'#ffd6ea',timer:'#ffe2b8',key:'#e6d8ff',stack:'#ffe14d',string:'#ffe3c2'}[kind],...o,pool:Object.freeze(o.pool),...(o.cells?{cells:Object.freeze(o.cells)}:{})});
+ trim:{claw:'#f6e7c4',bridge:'#fff0f6',timer:'#fff4e2',key:'#f3eaff',stack:'#ece6ff',string:'#fff1ea',ball:'#eaf8ff'}[kind],accent:{claw:'#ffcf4a',bridge:'#7fd8f0',timer:'#56aef0',key:'#f5c33b',stack:'#5fe1ff',string:'#ffc43d',ball:'#ffd23a'}[kind],
+ light:{claw:'#fff0b0',bridge:'#ffd6ea',timer:'#ffe2b8',key:'#e6d8ff',stack:'#ffe14d',string:'#ffe3c2',ball:'#c9f1ff'}[kind],...o,pool:Object.freeze(o.pool),...(o.cells?{cells:Object.freeze(o.cells)}:{})});
 export const MACHINES=Object.freeze([
  mk('claw-1','claw','집게 1','숲 친구들',C1,{level:1,pool:['squirrel','hare','magpie','kkulbam']}),
  mk('claw-2','claw','집게 2','산토끼네',C2,{level:1,pool:['hare','squirrel','cat','nunsong']}),
@@ -120,6 +121,8 @@ export const MACHINES=Object.freeze([
  mk('stack-1','stack','별빛 탑','불빛 쌓기',S1,{level:2,pool:['squirrel','big-nunsong'],prizes:Object.freeze({small:'squirrel',big:'big-nunsong'})}),
  //  줄 자르기 「가위로 툭」: 줄 1(왼쪽)·줄 2(오른쪽)에 큰 인형 하나씩 = prizes[i](11-27 월드기획 결정 = 월드아트 추천안, 대표 미확인)
  mk('string-1','string','가위로 툭','줄 자르기',R1,{level:3,pool:['big-rudolph','big-squirrel'],prizes:Object.freeze(['big-rudolph','big-squirrel'])}),
+ //  공 구멍 넣기 「공 떨어뜨리기」: 구멍 'i,j' → 인형(노랑 꿀밤이·몽글이, 보라 희귀 돔돌이), 도움 구멍 1,2 = 눈송이(11-27 월드기획 결정 = 월드아트 추천안, 대표 미확인)
+ mk('ball-1','ball','공 떨어뜨리기','공 구멍 넣기',P1,{level:2,pool:['kkulbam','mongle','domdol','nunsong'],holes:Object.freeze({'1,1':'kkulbam','2,2':'mongle','3,0':'domdol'}),rare:'3,0',pityHole:'1,2',pityPrize:'nunsong'}),
 ]);
 export const machineIndex=id=>MACHINES.findIndex(m=>m.id===id);
 

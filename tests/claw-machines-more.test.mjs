@@ -10,7 +10,7 @@ import {buildClawShop} from '../src/claw/claw-shop-art.js';
 import {resolvePool} from '../src/claw/claw-guest.js';
 
 test('기계 종류(11-23 16대, 설계 v4.1): 집게 6·봉 4·타이머 3·열쇠 3, 열쇠 칸 8개',()=>{
- assert.deepEqual([...new Set(MACHINES.map(m=>m.kind))],['claw','bridge','timer','key','stack','string']);for(const M of MACHINES.filter(m=>m.kind==='key'))assert.equal(M.cells.length,KEY.cols*KEY.rows);
+ assert.deepEqual([...new Set(MACHINES.map(m=>m.kind))],['claw','bridge','timer','key','stack','string','ball']);for(const M of MACHINES.filter(m=>m.kind==='key'))assert.equal(M.cells.length,KEY.cols*KEY.rows);
  const star=MACHINES.find(m=>m.kind==='key');assert.equal(star.cells.length,KEY.cols*KEY.rows);
  for(const k of ['claw','timer','key'])assert.equal(buildMachine(MACHINES.find(m=>m.kind===k).id).userData.kind,k);
 });

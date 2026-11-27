@@ -14,7 +14,8 @@ import {buildMachine,TIMER} from './claw-machines-more.js';
 import {buildBridgeMachine} from './claw-bridge.js';
 import {buildStackMachine} from './claw-stack.js';
 import {dressStackMachine} from './claw-stack-art.js';
-import {buildStringMachine} from './claw-string-art.js'; // 월드아트 정식 꾸밈(별·줄 불·밤하늘)
+import {buildStringMachine} from './claw-string-art.js';
+import {buildBallMachine} from './claw-ball-art.js'; // 월드아트 정식 꾸밈(별·줄 불·밤하늘)
 import {makePlush,plushGeometry,plushSize,plushMaterial,plushLineMaterial,plushLineWidth} from './claw-plush.js';
 import {resolvePool} from './claw-guest.js';
 import {buildArcadeDecor,ARCADE_LOOKS,DEFAULT_LOOK,arcadeLook} from './claw-arcade-art.js';
@@ -30,6 +31,7 @@ export const MACHINE_SPOTS=Object.freeze([
  // 11-27 새 기계(앞벽 빈 자리 A·B에서, 가게 안쪽을 봄): 불빛 쌓기 = 빈 자리 A(문 왼쪽)
  spot(-2.4,4.95,Math.PI),
  spot(2.4,4.95,Math.PI),                                               // 줄 자르기 = 빈 자리 B(문 오른쪽)
+ spot(-6.45,2.8,Math.PI/2),                                            // 공 구멍 = 왼벽 봉 4 다음(봉 간격 1.3m 그대로, 의자와 1m — 월드아트 추천·월드기획 결정)
 ]);
 export const SHOP=Object.freeze({
  w:14,d:11,wallH:2.6,wallT:.18,tile:.5,
@@ -194,7 +196,7 @@ export function buildClawShop({toonify=null,mobile=false,guests=[],guestObject=n
  // 기계 세 대 + 인형 더미
  // kinds=true면 기계 종류대로(도시 = 타이머, 별빛 = 열쇠, claw-machines-more.js). 기본은 세 대 모두 집게(월드개발이 타이머·열쇠 규칙을 붙일 때 켠다).
  const machines=MACHINES.map((M,i)=>{const kind=kinds?M.kind??'claw':'claw';
-  const g=kind==='claw'?buildClawMachine(M.id,{toonify}):kind==='bridge'?buildBridgeMachine(M.id,{toonify,...(T?{T}:{})}):kind==='stack'?dressStackMachine(buildStackMachine(M,{toonify}),{toonify}):kind==='string'?buildStringMachine(M,{toonify}):buildMachine(M.id,{toonify,guestObject,...(kind==='timer'?{prize:resolvePool(M.pool,guests)[0]}:{cells:resolvePool(M.cells??M.pool,guests)})});
+  const g=kind==='claw'?buildClawMachine(M.id,{toonify}):kind==='bridge'?buildBridgeMachine(M.id,{toonify,...(T?{T}:{})}):kind==='stack'?dressStackMachine(buildStackMachine(M,{toonify}),{toonify}):kind==='string'?buildStringMachine(M,{toonify}):kind==='ball'?buildBallMachine(M,{toonify}):buildMachine(M.id,{toonify,guestObject,...(kind==='timer'?{prize:resolvePool(M.pool,guests)[0]}:{cells:resolvePool(M.cells??M.pool,guests)})});
   const m=MACHINE_SPOTS[i],{x,z,heading}=m;g.position.set(x,0,z);g.rotation.y=heading;root.add(g);
   if(kind==='claw'&&!kinds)fillPile(g,resolvePool(M.pool,guests).map(baseOfPlush),{count:mobile?9:14,seed:pileSeed+i*101,toonify,guestObject}); // 게임(kinds)은 물리 더미를 claw-play.js가 그림
   const [sx,sz]=machineToShop(m,0,CLAW.stand.z);

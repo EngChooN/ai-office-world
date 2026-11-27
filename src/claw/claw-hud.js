@@ -28,7 +28,7 @@ const DIGIT_JONG=[21,8,0,16,0,0,1,8,8,0]; // 영·일·이·삼·사·오·육·
 const josa=(w,a,b)=>{const t=String(w),c=t.charCodeAt(t.length-1),j=c>=48&&c<=57?DIGIT_JONG[c-48]:c>=0xac00&&c<=0xd7a3?(c-0xac00)%28:0;return j&&!(a==='으로'&&j===8)?a:b;};
 const DIRS=Object.freeze({left:{x:-1,z:0},right:{x:1,z:0},up:{x:0,z:-1},down:{x:0,z:1}});
 // 아이콘 이름(그림이 아직 없으면 글자, 아이콘-규칙 대체 방식)
-const IC={cut:['k-cut','✂️'],dex:['k-dex','🧸'],coin:['k-coin','🪙'],timer:['k-timer','⏱'],claw:['k-claw','🕹'],odds:['k-odds','ⓘ'],run:['x-run','🏃'],machine:['k-machine','🕹'],start:['k-start','▶'],stop:['k-stop','✋'],key:['k-key','🔑'],right:['k-right','→'],up:['k-up','↑'],side:['k-side','👁'],wait:['c-wait','⏳']};
+const IC={ball:['k-claw','🏓'],cut:['k-cut','✂️'],dex:['k-dex','🧸'],coin:['k-coin','🪙'],timer:['k-timer','⏱'],claw:['k-claw','🕹'],odds:['k-odds','ⓘ'],run:['x-run','🏃'],machine:['k-machine','🕹'],start:['k-start','▶'],stop:['k-stop','✋'],key:['k-key','🔑'],right:['k-right','→'],up:['k-up','↑'],side:['k-side','👁'],wait:['c-wait','⏳']};
 const ic=(k,size='s')=>icon(IC[k][0],{size,fallback:IC[k][1]});
 const ict=(k,text,o={})=>iconText(IC[k][0],text,{size:'s',fallback:IC[k][1],...o});
 
@@ -163,6 +163,7 @@ export function createClawHud({doc=document,win=window,mobile=false,catalog,pool
  function showResult({res,machine,kind,isNew,count,fails,coins,alsoNew=false}){
   if(kind==='stack')return showStackResult({res,machine,isNew,count,fails,coins,alsoNew});
   if(kind==='string')return showStringResult({res,machine,isNew,count,fails,coins});
+  if(kind==='ball')return showBallResult({res,machine,isNew,count,fails,coins});
   const M=MACHINES[machine],again=`<button type="button" class="kh-btn kh-red" data-c="again" data-main>${ict('coin',`한 판 더 · ${T.coin.cost}`)}</button>`;
   const noMore=coins<T.coin.cost,left=pityLeft({pity:{[M.id]:fails}},M.id);
   const pityLine=left===null?'':left<=0?`다음 판은 ${PITY_NAME[kind]}!`:`${PITY_NAME[kind]}까지 ${left}번`;
@@ -204,6 +205,18 @@ export function createClawHud({doc=document,win=window,mobile=false,catalog,pool
   const near=res.kind==='near',left=pityLeft({pity:{[M.id]:fails}},M.id),pityLine=left===null?'':left<=0?'다음 판은 직원 도움 — 직원이 줄을 잡아 줘요!':`직원 도움까지 ${left}번`;
   const lines=[`줄이 칼날 가운데보다 ${stringMissText(d)}에 있었어요`,near?'반쯤 잘린 줄은 다음 판에 새 줄로 바뀌어요':'줄이 칼날 앞을 지나는 순간을 노려 보세요'];
   openCard('result',`<div class="kh-lose"><h2>${near?'아까워요! 줄이 반쯤 잘렸어요':'허공을 잘랐어요'}</h2>${lines.map(l=>`<p>${esc(l)}</p>`).join('')}${pityLine?`<p class="kh-pity">${esc(pityLine)} · ${esc(M?.name??'')}</p>`:''}</div>
+<div class="kh-row">${noMore?'':again}<button type="button" class="kh-btn" data-c="stop"${noMore?' data-main':''}>그만</button></div>${noMore?'<p class="kh-sub">코인을 다 썼어요. 내일 0시에 또 받아요</p>':''}`,near?'아까움':'실패');
+ }
+ // 공 구멍 결과(규칙서 §3): 「쏙! <인형>」 / 「아까워요! 색 구멍 바로 옆이에요」·「작은 구멍 위를 굴러 지나갔어요」 / 「아쉬워요, 빈 구멍이에요」
+ function showBallResult({res,machine,isNew,count,fails,coins}){
+  const M=MACHINES[machine],noMore=coins<T.coin.cost;
+  const again=`<button type="button" class="kh-btn kh-red" data-c="again" data-main>${ict('coin',`한 판 더 · ${T.coin.cost}`)}</button>`;
+  if(res.kind==='win'){const p=infoOf(res.id),R=RARITY[p?.rarity]??RARITY.common,cb=carryButton(res.id,'card'),again2=cb?again.replace(' kh-red','').replace(' data-main',''):again;
+   openCard('result',`<div class="kh-band" style="--rc:${R.color}"><b>${stars(p?.rarity)} ${esc(R.label)}</b></div>
+<div class="kh-win">${plushImg(res.id,120)}<h2>쏙! ${esc(nm(res.id))}</h2><p class="kh-new">${isNew?'새 인형! 도감에 넣었어요':`${count}개째예요`}</p></div>
+<div class="kh-row">${cb}<button type="button" class="kh-btn" data-c="dex">${ict('dex','도감 보기')}</button>${noMore?'':again2}<button type="button" class="kh-btn" data-c="stop"${noMore&&!cb?' data-main':''}>그만</button></div>`,'뽑기 성공');return;}
+  const near=res.kind==='near',why=res.ball?.why,left=pityLeft({pity:{[M.id]:fails}},M.id),pityLine=left===null?'':left<=0?'다음 판은 직원 도움 — 초록 도움 구멍이 열려요!':`직원 도움까지 ${left}번`;
+  openCard('result',`<div class="kh-lose"><h2>${near?(why==='rare'?'아까워요! 작은 구멍 위를 굴러 지나갔어요':'아까워요! 색 구멍 바로 옆이에요'):'아쉬워요, 빈 구멍이에요'}</h2><p>그림자 점이 공이 떨어질 자리예요 · 공은 튀면서 조금씩 옮겨 가요</p>${pityLine?`<p class="kh-pity">${esc(pityLine)} · ${esc(M?.name??'')}</p>`:''}</div>
 <div class="kh-row">${noMore?'':again}<button type="button" class="kh-btn" data-c="stop"${noMore?' data-main':''}>그만</button></div>${noMore?'<p class="kh-sub">코인을 다 썼어요. 내일 0시에 또 받아요</p>':''}`,near?'아까움':'실패');
  }
  // 7줄 고르기 카드(규칙서 §1): 작은 인형은 이미 받음. 「▲ 계속하기」(코인 0·받은 인형 안 잃음) / 「여기서 끝」, 20초 안 고르면 끝
@@ -344,7 +357,7 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
   const mode=v.mode,kind=v.kind,playing=mode==='play'||mode==='drop';
   const ms=`${mode}|${kind}`;
   if(ms!==modeSig){modeSig=ms;const r=doc.documentElement;r.dataset.clawMode=mode;r.dataset.clawKind=playing?kind??'':'';
-   pad.hidden=!(playing&&kind==='claw');timer.hidden=!(playing&&kind==='claw');quitBtn.hidden=mode!=='play';
+   pad.hidden=!(playing&&(kind==='claw'||kind==='ball'));timer.hidden=!(playing&&(kind==='claw'||kind==='ball'));quitBtn.hidden=mode!=='play';
    if(!playing)clearPad();if(playing&&frame.isOpen)frame.close();}
   quitBtn.hidden=mode!=='play';
   pad.toggleAttribute('data-lock',mode==='drop');if(mode==='drop'&&fingers.size)clearPad();
@@ -353,9 +366,10 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
   const sig=`${sv.ic}|${txt}|${v.coins}`;
   if(sig!==pillSig){pillSig=sig;pill.dataset.tone=sv.tone;pill.querySelector('em').innerHTML=icon(sv.ic,{size:'s'});pill.querySelector('.kh-pill-t').innerHTML=esc(txt).replace('👥 ',icon('c-people',{size:'xs'})+' ');pill.querySelector('[data-coins]').textContent=v.coins;
    pill.setAttribute('aria-label',`${sv.text} · 코인 ${v.coins}개`);}
-  if(playing&&kind==='claw'){const t=Math.ceil(v.timeLeft??0);const tb=timer.querySelector('[data-t]');if(tb.textContent!==String(t))tb.textContent=String(t);timer.classList.toggle('hurry',mode==='play'&&t<=5);}
-  {const sv=v.stackView,gv=v.stringView,on=(!!sv||!!gv)&&playing,M=MACHINES[v.machine];if(schip.hidden===on)schip.hidden=!on;
-   if(on&&gv){const h=`<b style="font:900 16px/1 'Apple SD Gothic Neo',Pretendard,sans-serif">${['k2','snip','done'].includes(gv.phase)?'② 줄이 칼날 가운데일 때 싹둑!':'① 가위 옮기기'}</b>`;if(schip.dataset.h!==h){schip.dataset.h=h;schip.innerHTML=h;}}
+  if(playing&&(kind==='claw'||kind==='ball')){const t=Math.ceil(v.timeLeft??0);const tb=timer.querySelector('[data-t]');if(tb.textContent!==String(t))tb.textContent=String(t);timer.classList.toggle('hurry',mode==='play'&&t<=5);}
+  {const sv=v.stackView,gv=v.stringView,bv=v.ballView,on=(!!sv||!!gv||!!bv)&&playing,M=MACHINES[v.machine];if(schip.hidden===on)schip.hidden=!on;
+   if(on&&bv){const h=`<b style="font:900 16px/1 'Apple SD Gothic Neo',Pretendard,sans-serif">${bv.phase==='move'||bv.phase==='ready'?'그림자 점을 노란 구멍 위로':'공이 굴러가요…'}</b>`;if(schip.dataset.h!==h){schip.dataset.h=h;schip.innerHTML=h;}}
+   else if(on&&gv){const h=`<b style="font:900 16px/1 'Apple SD Gothic Neo',Pretendard,sans-serif">${['k2','snip','done'].includes(gv.phase)?'② 줄이 칼날 가운데일 때 싹둑!':'① 가위 옮기기'}</b>`;if(schip.dataset.h!==h){schip.dataset.h=h;schip.innerHTML=h;}}
    else if(on){const P=M?.prizes??{},img=id=>{const u=thumb(id);return u?`<img src="${esc(u)}" width="22" height="22" alt="" style="margin:0 -2px">`:'';},c=T.stack;
     const h=`<b>⭐ ${sv.top} / ${c.rows}줄</b><small style="font:800 13px/1 'Apple SD Gothic Neo',Pretendard,sans-serif;color:#fff6e0">· ${c.mid}줄</small>${sv.gotSmall?'✅':img(P.small)}<small style="font:800 13px/1 'Apple SD Gothic Neo',Pretendard,sans-serif;color:#fff6e0">· ${c.rows}줄</small>${img(P.big)}`;
     if(schip.dataset.h!==h){schip.dataset.h=h;schip.innerHTML=h;schip.setAttribute('aria-label',`${sv.top}줄 쌓음 · ${c.mid}줄 ${nm(P.small)} · ${c.rows}줄 ${nm(P.big)}`);}}
@@ -363,7 +377,7 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
   {const tv=v.timerView,on=!!tv&&playing;if(tnum.hidden===on)tnum.hidden=!on;
    if(on){const b=tnum.querySelector('[data-tn]');if(b.textContent!==tv.text)b.textContent=tv.text;const st=tv.dim?'dim':tv.state;if(tnum.dataset.state!==st)tnum.dataset.state=st;}}
   // 한 줄 안내(집게를 옆에서 보는 중이면 「옆에서 보면…」 안내는 끔: 칩 두 개와 겹치고 이미 한 일)
-  const stv=v.stackView,h=playing&&!v.side?(mode==='drop'?'':kind==='claw'?HINT.claw:kind==='string'?({k1:'누르고 있으면 가위가 오른쪽으로 가요. 줄 앞에서 떼세요',gap:'잠깐만요…',k2:'줄이 노란 괄호 사이를 지날 때 누르세요'})[v.stringView?.phase]??'':kind==='stack'?(stv?.phase==='run'?(stv.row===1?'첫 줄 — 아무 데서나 멈춰요':stv.row>=8?'빨라요! 아래 줄 위에서 멈추세요':'아래 줄과 겹치게 멈추세요'):''):(kind==='bridge'?HINT_BRIDGE:HINT)[(v.sub??'').replace('-hold','')]??''):'';
+  const stv=v.stackView,h=playing&&!v.side?(mode==='drop'||kind==='ball'?'':kind==='claw'?HINT.claw:kind==='string'?({k1:'누르고 있으면 가위가 오른쪽으로 가요. 줄 앞에서 떼세요',gap:'잠깐만요…',k2:'줄이 노란 괄호 사이를 지날 때 누르세요'})[v.stringView?.phase]??'':kind==='stack'?(stv?.phase==='run'?(stv.row===1?'첫 줄 — 아무 데서나 멈춰요':stv.row>=8?'빨라요! 아래 줄 위에서 멈추세요':'아래 줄과 겹치게 멈추세요'):''):(kind==='bridge'?HINT_BRIDGE:HINT)[(v.sub??'').replace('-hold','')]??''):'';
   if(hint.textContent!==h)hint.textContent=h;hint.hidden=!h||!!cardKind;
   // 행동 단추
   const sub=v.sub??'';
@@ -376,6 +390,8 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
    else if(kind==='stack'){const ph=stv?.phase??sub,run=ph==='run',pick=ph==='choice',wait=ph==='ready'; // 👁 옆에서 보기 없음(평평한 판, 규칙서 §1)
     setActions({id:'press',ic:(wait||pick?IC.wait:IC.stop)[0],fb:(wait||pick?IC.wait:IC.stop)[1],label:wait?'준비…':pick?'고르는 중':'멈춤',short:'멈춤',key:'Space',dim:drop||!run,hold:true,bar:true,
      sub:drop?'결과를 보는 중':wait?'곧 빛이 움직여요':pick?'카드에서 골라요':stv?.row===1?'첫 줄은 아무 데서나 멈춰요':'빛이 아래 줄과 겹칠 때 눌러요'},[]);}
+   else if(kind==='ball'){const bv=v.ballView,wait=bv?.phase==='ready'; // 한 줄 안내는 위 칩에 합침(세로에서 십자 판과 겹침, 규칙서 §3)
+    setActions({id:'press',ic:IC.ball[0],fb:IC.ball[1],label:drop?'공이 굴러가요':'떨어뜨리기',short:'떨어뜨리기',key:'Space',dim:drop,ring:true,hold:true,bar:true,half:!F,tone:'cut',sub:drop?'결과를 보는 중':F?'방향키·WASD로 옮기고, 이 단추로 공을 놓아요':'십자로 옮기고, 이 단추로 공을 놓아요'},[]);void wait;}
    else if(kind==='string'){const gv=v.stringView,ph=gv?.phase??'',cutting=ph==='k2',gap=ph==='gap'; // 👁 없음(판정이 좌우 하나, 규칙서 §2)
     setActions({id:'press',ic:(cutting||drop?IC.cut:gap?IC.wait:IC.right)[0],fb:(cutting||drop?IC.cut:gap?IC.wait:IC.right)[1],label:drop?'싹둑!':cutting?'싹둑':gap?'잠깐':'오른쪽',short:cutting?'싹둑':'누르고 있기',key:'Space',dim:drop||gap,hold:true,bar:true,tone:cutting||drop?'cut':'',
      sub:drop?'결과를 보는 중':cutting?'누른 순간 가위가 닫혀요':gap?'잠깐만요…':'누르고 있는 동안 움직이고, 떼면 멈춰요'},[]);}
@@ -392,8 +408,8 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
     :[{id:'play',ic:IC.claw[0],fb:IC.claw[1],label:`${M.name} 한 판 · 🪙${T.coin.cost}`,key:'E'},{id:'rules',ic:IC.odds[0],fb:IC.odds[1],label:'규칙'}],
     busy?[]:[{id:'play',ic:IC.claw[0],fb:IC.claw[1],label:'한 판'}]);}
   else setActions(runBig(v),[]);
-  const tm=acts.querySelector('.kh-tm>i');if(tm){const k=Math.max(0,Math.min(1,(v.timeLeft??0)/T.claw.timeSec)),w=`${(k*100).toFixed(1)}%`;if(tm.style.width!==w)tm.style.width=w;tm.parentNode.classList.toggle('hurry',(v.timeLeft??0)<=5&&mode==='play');}
-  const ring=acts.querySelector('.kh-ringsvg circle');if(ring){const k=Math.max(0,Math.min(1,(v.timeLeft??0)/T.claw.timeSec));ring.style.strokeDashoffset=String(295.3*(1-k));ring.parentNode.classList.toggle('hurry',(v.timeLeft??0)<=5&&mode==='play');}
+  const tSec=kind==='ball'?T.ball.timeSec:T.claw.timeSec;const tm=acts.querySelector('.kh-tm>i');if(tm){const k=Math.max(0,Math.min(1,(v.timeLeft??0)/tSec)),w=`${(k*100).toFixed(1)}%`;if(tm.style.width!==w)tm.style.width=w;tm.parentNode.classList.toggle('hurry',(v.timeLeft??0)<=5&&mode==='play');}
+  const ring=acts.querySelector('.kh-ringsvg circle');if(ring){const k=Math.max(0,Math.min(1,(v.timeLeft??0)/tSec));ring.style.strokeDashoffset=String(295.3*(1-k));ring.parentNode.classList.toggle('hurry',(v.timeLeft??0)<=5&&mode==='play');}
   if(frame.isOpen&&frame.tab==='machines'&&v.busySig!==update.busySig){update.busySig=v.busySig;renderMachines(frame.panel('machines'));}
  }
 

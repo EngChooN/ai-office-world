@@ -167,9 +167,11 @@ const play=createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf,toonify:toon.
   if(type==='bump')vibrate(10);
   else if(type==='mach'){saveMachState(state,MACHINES[d.machine].id,d.st);saveState(state);}
   else if(type==='reset')hud?.toast(`${MACHINES[d.machine].name} 상자를 다시 놓았어요`,{sec:2.6});
-  else if(type==='drop'&&d.res?.kind==='pending'){hud?.toast(d.auto?'시간 끝! 집게 내려가는 중…':'집게 내려가는 중…',{sec:2,urgent:true});}
+  else if(type==='drop'&&d.res?.kind==='pending'){if(MACHINES[d.machine]?.kind!=='ball')hud?.toast(d.auto?'시간 끝! 집게 내려가는 중…':'집게 내려가는 중…',{sec:2,urgent:true});}
   else if(type==='start'&&d.kind==='stack'){stackPre=null;if(d.staff)hud?.toast(`직원 도움! 이번 판은 ${T.stack.pityWidth}칸으로 시작해요`,{sec:3,urgent:true});}
   else if(type==='start'&&d.kind==='string'){if(d.staff)hud?.toast('직원 도움! 직원이 줄을 잡아 줬어요',{sec:3,urgent:true});}
+  else if(type==='start'&&d.kind==='ball'){if(d.staff)hud?.toast('직원 도움! 초록 도움 구멍이 열렸어요',{sec:3,urgent:true});}
+  else if(type==='ball-auto')hud?.toast('시간 끝! 공을 놓았어요',{sec:2,urgent:true});
   else if(type==='string-auto')hud?.toast(d.end?'끝까지 왔어요':d.ready?'20초가 지나 이 자리에서 시작해요':d.cut?'10초가 지나 저절로 잘랐어요':'10초가 지나 저절로 멈췄어요',{sec:2,urgent:true});
   else if(type==='stack-row'&&!d.gone)hud?.toast(`${d.r}줄 ${d.lost}칸 ${d.late?'늦었어요':'빨랐어요'}`,{sec:1.2,urgent:true});
   else if(type==='stack-auto')hud?.toast('10초가 지나 저절로 멈췄어요',{sec:2,urgent:true});
@@ -292,7 +294,9 @@ function barReserve(i){
  const free=H-bar.getBoundingClientRect().top+7+12; // 판 윗변(바깥 테두리 7px)에서 12px 위까지
  const key=`${i}|${side}|${innerWidth}x${H}|${Math.round(free)}`;if(key===resKey)return resVal;resKey=key;
  const g=U.machines[i].group,b=g.userData.spots?.button;g.updateMatrixWorld();
- const pts=[[0,CLAW.floorY,CLAW.depth/2],[-.3,CLAW.floorY,CLAW.depth/2],[.3,CLAW.floorY,CLAW.depth/2]];if(b)pts.push([b.x,b.y-.03,b.z+.07]);
+ const ballK=g.userData.kind==='ball',bd=g.userData.board;
+ // 공 구멍(위에서 내려다보는 카메라): 조작대·바닥 앞은 원래 화면 밖 → 구멍 판 앞 가장자리만 판 위에 보이면 됨
+ const pts=ballK&&bd?[[bd.x-.14,bd.y,bd.z+.14],[bd.x+.14,bd.y,bd.z+.14]]:[[0,CLAW.floorY,CLAW.depth/2],[-.3,CLAW.floorY,CLAW.depth/2],[.3,CLAW.floorY,CLAW.depth/2]];if(b&&!ballK)pts.push([b.x,b.y-.03,b.z+.07]);
  if(g.userData.kind==='timer')pts.push([TIMER.out[0],TIMER.out[1],TIMER.out[2]+.1]);
  const W=pts.map(q=>g.localToWorld(new THREE.Vector3(...q)));
  resVal=0;
@@ -460,7 +464,7 @@ renderer.setAnimationLoop(()=>{
  updatePlayer(dt);
  // 집게: 십자 단추 + 키(←→/AD 좌우, ↑↓/WS 안·밖). 화면 오른쪽 = 기계 +X, ▲ = 안쪽(−Z)
  let dir={x:0,z:0};
- if(play.mode==='play'&&play.kind==='claw'&&!hud.card){const p=hud.padDir(),mv=input.move(),sx=Math.sign(p.x+Math.sign(mv.side)),sz=Math.sign(p.z-Math.sign(mv.forward));
+ if(play.mode==='play'&&(play.kind==='claw'||play.kind==='ball')&&!hud.card){const p=hud.padDir(),mv=input.move(),sx=Math.sign(p.x+Math.sign(mv.side)),sz=Math.sign(p.z-Math.sign(mv.forward));
   dir=side?{x:side*sz,z:-side*sx}:{x:sx,z:sz};} // 단추 방향은 화면 기준(오른쪽 옆에서 볼 때 ▶ = 기계 안쪽, 왼쪽 옆에서는 ▶ = 기계 앞쪽, ▲ = 화면 안쪽)
  play.update(dt,dir);
  multi.update(dt);
@@ -471,7 +475,7 @@ renderer.setAnimationLoop(()=>{
  key.target.position.set(0,0,0);
  const near=play.mode==='idle'?nearMachine():-1,busy=U.machines.map((_,i)=>{const id=play.busy(i);return id?multi.nameOf(id):null;});
  const freeKind=Object.fromEntries(Object.keys(KIND_INFO).map(k=>[k,nearestFree(k,near)]));
- hud.update(dt,{mode:play.mode,machine:play.machine,kind:play.kind,sub:play.sub,side,near,coins:state.coins,timeLeft:play.timeLeft,armed:play.armed,timerView:side&&play.kind==='timer'?play.timerView:null,stackView:play.stackView,stringView:play.stringView,running:runOn,busy,busySig:busy.join('|'),freeKind});
+ hud.update(dt,{mode:play.mode,machine:play.machine,kind:play.kind,sub:play.sub,side,near,coins:state.coins,timeLeft:play.timeLeft,armed:play.armed,timerView:side&&play.kind==='timer'?play.timerView:null,stackView:play.stackView,stringView:play.stringView,ballView:play.ballView,running:runOn,busy,busySig:busy.join('|'),freeKind});
  updateTags();
  renderer.info.reset();toon.pipeline.render(dt);
  renderMini();

@@ -13,7 +13,7 @@ import {plushGeometry,plushFarGeometry,plushIdOfGeometry} from './claw-plush.js'
 
 const FAR_LAYER=1;
 // 먼 그림에서도 따로 그리는 판(글자·숫자가 텍스처라 굽지 않음)
-const KEEP=new Set(['기계 간판','타이머 숫자판','불빛 판','밤하늘 판']); // 11-27 불빛 쌓기 판도 글자판처럼 살아 있게(멀리서도 빛이 움직임)
+const KEEP=new Set(['기계 간판','타이머 숫자판','불빛 판','밤하늘 판','구멍 판']); // 11-27 불빛 쌓기 판도 글자판처럼 살아 있게(멀리서도 빛이 움직임)
 let farMat=null;
 function farMaterial(toonify){
  if(farMat)return farMat;

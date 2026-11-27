@@ -5,6 +5,7 @@
 // 좌표: 기계 앞 +Z(손님이 서는 쪽), 바닥 y=0, 가운데 x=0. 손님 화면에서 +X가 오른쪽이다.
 import * as THREE from 'three';
 import {drawStringGlyph} from './claw-string-glyph.js';
+import {drawBallGlyph} from './claw-ball-glyph.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {MACHINES,SHOP_COLORS} from './claw-palette.js';
@@ -57,7 +58,7 @@ function canvasTex(w,h,draw){if(typeof document==='undefined')return null;
 // 간판 = 왼쪽 큰 번호(글자 높이 ≥ 0.12m, 4m에서 읽힘) · 가운데 종류 그림·「종류」·별명 · 오른쪽 대표 인형 그림(인형 작은 그림이 오면 setSignThumbs로 채움).
 // 재질 하나(카툰으로 바꾸지 않는 빛나는 판)를 16대가 같이 쓴다.
 export const SIGN_ATLAS=Object.freeze({w:2048,h:1280,cw:512,ch:192,cols:4,badge:128,badgeY:960,badgeCols:16});
-const SIGN_KIND=Object.freeze({claw:'집게',bridge:'봉',timer:'타이머',key:'열쇠',stack:'불빛 쌓기',string:'줄 자르기'});
+const SIGN_KIND=Object.freeze({claw:'집게',bridge:'봉',timer:'타이머',key:'열쇠',stack:'불빛 쌓기',string:'줄 자르기',ball:'공 구멍'});
 // 대표 인형(간판 그림): 설계 v4 §3-2 표. 열쇠는 표에 없어 기계마다 다른 희귀·특별 인형(추천안·대표 미확인)
 const SIGN_REP=Object.freeze({'key-1':'haechi','key-2':'dongdong-santa','key-3':'dongdong-office'});
 export const signRep=M=>SIGN_REP[M.id]??(M.pool?.[0]??'').replace(/^box-/,'');
@@ -71,6 +72,7 @@ function kindGlyph(g,kind,x,y,s,color){g.save();g.strokeStyle=color;g.fillStyle=
   else{g.fillRect(x-s*.3,y-s*.24,s*.6,s*.16); // 2발: 가로 머리 + 곧은 팔 둘 + 안으로 꺾인 발끝
    for(const k of [-1,1]){g.beginPath();g.moveTo(x+k*s*.26,y-s*.1);g.lineTo(x+k*s*.3,y+s*.3);g.lineTo(x+k*s*.14,y+s*.42);g.stroke();}
    g.lineWidth=s*.09;for(const k of [-1,1]){g.beginPath();g.arc(x+k*s*.36,y+s*.62,s*.07,0,Math.PI*2);g.stroke();}}}
+ else if(kind==='ball')drawBallGlyph(g,x,y,s,color); // 구멍 판과 공(월드아트 claw-ball-art.js)
  else if(kind==='string')drawStringGlyph(g,x,y,s,color); // 가위(월드아트 claw-string-art.js)
  else if(kind==='stack'){const c=s*.22;for(let r=0;r<3;r++)for(let i=0;i<3-r;i++)g.fillRect(x-c*1.5+i*c+r*c*.5+c*.08,y+s*.4-(r+1)*c+c*.08,c*.84,c*.84);} // 쌓인 빛 칸
  else if(kind==='timer'){g.beginPath();g.arc(x,y,s*.42,0,Math.PI*2);g.stroke();g.beginPath();g.moveTo(x,y);g.lineTo(x,y-s*.28);g.moveTo(x,y);g.lineTo(x+s*.2,y+s*.1);g.stroke();g.fillRect(x-s*.08,y-s*.62,s*.16,s*.1);}

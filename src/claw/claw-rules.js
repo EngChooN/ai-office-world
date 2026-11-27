@@ -41,11 +41,14 @@ export const CLAW_TUNING=Object.freeze({
  //  흔들리는 줄(진폭 ampM ± ampVar, 주기 periodSec)이 칼날 가운데 ±cutHalfM 안이면 성공, ×nearMul 안이면 아까움. pityAfter판 연달아 실패 → 직원이 줄을 잡아 흔들림 0(눈에 보임)
  //  어림(σ60ms, artifacts/claw-design/new3/sweep3.mjs): 판당 14.7%·도움 판 26%
  string:Object.freeze({inner:.60,strings:Object.freeze([.22,.42]),start:.04,end:.56,speed:.15,ampM:.05,ampVar:.15,periodSec:1.4,ampPeriodSec:7.3,cutHalfM:.003,nearMul:2,holdLimitSec:10,readySec:20,cutLimitSec:10,gapSec:.3,pityAfter:8,zoom:2.2,winSec:1.5,loseSec:.9}),
+ // 공 구멍 넣기 「공 떨어뜨리기」(11-27 새 기계 ③, 규칙서 §3·§7 추천안): 집게(공을 든 채 시작) 십자 판으로 초당 speed m·timeSec초, 「떨어뜨리기」 → 공이 튀고 굴러 구멍 하나(공 움직임 claw-ball-physics.js).
+ //  색 구멍(노랑·보라 희귀) = 성공, 색 구멍 가로·세로 옆·희귀 구멍 위 굴러 지나감 = 아까움. 연달아 pity.after판 실패 → 초록 도움 구멍(pityHole)이 열림. 구멍·경품은 MACHINES ball-1 holes
+ ball:Object.freeze({n:4,pitchM:.06,speed:.09,timeSec:15,readySec:.8,ballR:.013,holeR:.021,rareHoleR:.016,rareIn:.6,carryH:.09,rare:'3,0',pityHole:'1,2',winSec:1.1,loseSec:.5}),
  notice:Object.freeze({minRarity:'rare',gapSec:10}),   // 다른 손님 소식은 희귀 이상만, 10초에 1번(설계 v1 §4)
  log:5,
 });
 export const SAVE_KEY='claw-world:v1';
-export const KINDS=Object.freeze(['claw','bridge','timer','key','stack','string']);
+export const KINDS=Object.freeze(['claw','bridge','timer','key','stack','string','ball']);
 export const kindOf=machineId=>MACHINES.find(m=>m.id===machineId)?.kind??'claw';
 
 // ── 서울 날짜(무료 코인은 서울 0시에 바뀐다) ──
@@ -103,11 +106,11 @@ export function spendCoin(s,machineId,now=Date.now(),T=CLAW_TUNING){
 
 // ── 보장(같은 기계 연달아 실패 뒤 도움) ──
 /** 이 기계 종류에 보장이 켜져 있나(타이머는 기본 끔 — 완료 기준 「10.00에서만 성공」) */
-export function pityOn(kind,T=CLAW_TUNING){if(kind==='bridge')return T.bridge.pityAfter>0;if(!T.pity.after)return false;if(kind==='timer')return T.timer.pityWinSec>0;if(kind==='key')return T.key.pityFitBonus>0;if(kind==='stack')return T.stack.pityWidth>T.stack.width;if(kind==='string')return T.string.pityAfter>0;return true;}
+export function pityOn(kind,T=CLAW_TUNING){if(kind==='bridge')return T.bridge.pityAfter>0;if(!T.pity.after)return false;if(kind==='timer')return T.timer.pityWinSec>0;if(kind==='key')return T.key.pityFitBonus>0;if(kind==='stack')return T.stack.pityWidth>T.stack.width;if(kind==='string')return T.string.pityAfter>0;if(kind==='ball')return !!T.ball.pityHole;return true;}
 export const pityAfter=(kind,T=CLAW_TUNING)=>kind==='bridge'?T.bridge.pityAfter:kind==='string'?T.string.pityAfter:T.pity.after; // 봉은 8판(v4.1 §7-5), 나머지는 pity.after
 export const pityLeft=(s,machineId,T=CLAW_TUNING)=>{const k=kindOf(machineId);return pityOn(k,T)?Math.max(0,pityAfter(k,T)-(s.pity[machineId]??0)):null;};
 export const pityNow=(s,machineId,T=CLAW_TUNING)=>pityLeft(s,machineId,T)===0;
-export const PITY_NAME=Object.freeze({claw:'직원 도움',bridge:'직원 도움',timer:'넓은 성공 칸',key:'넓은 구멍',stack:'직원 도움',string:'직원 도움'});
+export const PITY_NAME=Object.freeze({claw:'직원 도움',bridge:'직원 도움',timer:'넓은 성공 칸',key:'넓은 구멍',stack:'직원 도움',string:'직원 도움',ball:'직원 도움'});
 
 // ── 타이머 판정(설계 v3 §3-2, 시안 함수 그대로): 화면 숫자 = 0.01초 아래 버림, 판정은 그 숫자로만 ──
 export const hund=ms=>Math.floor(ms/10+1e-9);
@@ -175,6 +178,7 @@ export const KIND_INFO=Object.freeze({
  key:Object.freeze({icon:'🔑',short:'열쇠로 칸 고르기',level:2,label:'열쇠'}),
  stack:Object.freeze({icon:'✨',short:'빛 막대 쌓아 올리기',level:2,label:'불빛 쌓기'}),
  string:Object.freeze({icon:'✂️',short:'흔들리는 줄 자르기',level:3,label:'줄 자르기'}),
+ ball:Object.freeze({icon:'🏓',short:'공 떨어뜨려 색 구멍에',level:2,label:'공 구멍'}),
 });
 /** 기계 하나의 어려움 점(같은 종류 안 보이는 차이만, 설계 v4 §3-1) */
 export const levelOf=machineId=>MACHINES.find(m=>m.id===machineId)?.level??KIND_INFO[kindOf(machineId)]?.level??1;
@@ -212,6 +216,10 @@ export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.
    `② 「✂️ 싹둑」을 누른 순간 가위가 닫혀요. 그때 줄이 칼날 가운데(±${Math.round(c.cutHalfM*1000)}mm)에 있으면 줄이 끊겨 큰 인형이 떨어져요`,
    '줄은 좌우로 흔들려요. 흔들림 크기는 조금씩 달라져요',`칼날 가장자리(±${Math.round(c.cutHalfM*c.nearMul*1000)}mm)면 줄이 반쯤만 잘리는 아까움 · 다음 판은 새 줄이에요`,'노릴 줄이 곧 인형 고르기예요(줄마다 큰 인형 하나)');
   if(pityOn('string',T))pity=`${P}번 연달아 못 자르면 직원이 줄을 잡아 흔들리지 않게 해 줘요(자를 때까지 판마다, 가위 자리는 맞춰야 해요)`;}
+ else if(kind==='ball'){const c=T.ball,M=MACHINES.find(m=>m.id===machineId),H=M?.holes??{},rare=H[c.rare];
+  lines.push(`십자 단추를 누르고 있으면 공을 든 집게가 움직여요(${c.timeSec}초). 「떨어뜨리기」를 누르면 공을 놓아요`,'판 위 그림자 점 = 공이 떨어질 자리. 공은 튀고 굴러서 꼭 구멍 하나에 들어가요',
+   `노란 구멍에 들어가면 그 구멍 옆 인형${rare?`, 보라 작은 구멍은 ${nameOf(rare)}(희귀) — 칸 가운데쯤에 떨어져야 들어가요`:''}`,'색 구멍 바로 옆 칸이나 작은 구멍 위를 굴러 지나가면 아까움, 그 밖은 빈 구멍');
+  if(pityOn('ball',T))pity=`${P}번 연달아 못 넣으면 직원이 초록 도움 구멍을 하나 더 열어 줘요(넣을 때까지 판마다)`;}
  else{const c=T.key;
   lines.push(`큰 단추를 누르고 있으면 열쇠가 오른쪽으로 가요. 떼면 그 자리에 멈춰요`,`다시 누르고 있으면 위로 가요. 떼면 열쇠를 꽂아요`,
    `구멍 가운데에서 ${c.fit.toFixed(2)}칸 안이면 그 칸 인형이 나와요. 희귀·특별 칸은 구멍이 작아요(${c.fitRare.toFixed(2)}칸)`,`${c.nearMul}배 안이면 아까움(구멍 가장자리), 그 밖이면 실패`);

@@ -8,7 +8,7 @@ import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {spawn} from 'node:child_process';
 const OUT=process.env.OUT??'artifacts/claw-verify';mkdirSync(OUT,{recursive:true});
-const PARTS=(process.env.PART??'size,keys,multi,server,hub,sound,stack,string').split(',');
+const PARTS=(process.env.PART??'size,keys,multi,server,hub,sound,stack,string,ball').split(',');
 const {createServer}=await import('vite');const port=Number(process.env.PORT??5395);
 const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true},logLevel:'warn'});await vite.listen();
 const base=`http://127.0.0.1:${port}`;
@@ -76,7 +76,7 @@ async function sizeRun(size){
  // ☰ → 기계 탭 → 「가기」(숲속 = 집게)
  await click(p,'.uf-menu-btn');await click(p,'[data-uf-tab=machines]');await sl(300);
  await p.screenshot({path:`${OUT}/${size}-2machines.png`});
- ok(`${tag} 기계 탭: 종류별 6묶음(집게 6·봉 4·타이머 3·열쇠 3·불빛 쌓기 1·줄 자르기 1)·빈 기계 수`,await p.evaluate(()=>{const g=[...document.querySelectorAll('.kh-mgroup')];return g.length===6&&g.map(x=>x.querySelectorAll('.kh-mlist li').length).join()==='6,4,3,3,1,1'&&/빈 기계 6\/6/.test(g[0].textContent);}));
+ ok(`${tag} 기계 탭: 종류별 7묶음(집게 6·봉 4·타이머 3·열쇠 3·불빛 쌓기·줄 자르기·공 구멍 1)·빈 기계 수`,await p.evaluate(()=>{const g=[...document.querySelectorAll('.kh-mgroup')];return g.length===7&&g.map(x=>x.querySelectorAll('.kh-mlist li').length).join()==='6,4,3,3,1,1,1'&&/빈 기계 6\/6/.test(g[0].textContent);}));
  await checkButtons(p,`${tag} 기계 탭(보이는 줄)`,['.uf-tab','.uf-x']);
  await p.evaluate(()=>document.querySelector('.uf-sheet [data-go="0"]').scrollIntoView({block:'nearest'}));
  await click(p,'.uf-sheet [data-go="0"]');await sl(900);
@@ -314,6 +314,14 @@ async function multiRun(){
  await B.evaluate(()=>claw.teleport(2.4,3.2,0));await sl(400);await B.screenshot({path:`${OUT}/multi-watch-string.png`});
  await A.waitForFunction(()=>window.claw.hud.card==='result',null,{timeout:8000});await click(A,'.kh-card [data-c=stop]');await sl(1200);
  ok('[두 창] 줄 자르기: A가 그만두면 B 기계 비움',await B.evaluate(()=>!claw.play.status().rigs[17].owner));
+ // 공 구멍(11-27): A가 놓은 공이 B 화면에서도 같은 구멍에 멈춤
+ await A.evaluate(()=>claw.goMachine(18));await sl(700);await click(A,'.kh-small[data-act=play]');await A.waitForFunction(()=>claw.play.status().ball?.phase==='move',null,{timeout:5000});
+ await A.evaluate(()=>claw.play.ballTo(.05,-.04));await sl(700);
+ ok('[두 창] 공 구멍 구경: B 화면 집게가 A 자리로',await B.evaluate(()=>{const s=claw.shop.userData.machines[18].group.userData.claw.state;return Math.abs(s.x-.05)<.01&&Math.abs(s.z+.04)<.01;}));
+ await A.evaluate(()=>claw.play.bigDown());await A.waitForFunction(()=>window.claw.hud.card==='result',null,{timeout:9000});const ah=await A.evaluate(()=>claw.play.status().result.ball.hole);await sl(3000);
+ await B.evaluate(()=>claw.teleport(-5.2,2.8,Math.PI/2));await sl(300);await B.screenshot({path:`${OUT}/multi-watch-ball.png`});
+ {const bh=await B.evaluate(()=>{const m=claw.play.rig(18).bfx;return m?.sim?.hole??null;});ok('[두 창] 공 구멍 구경: B 화면 공도 같은 구멍',bh===ah,`A ${ah} · B ${bh}`);}
+ await click(A,'.kh-card [data-c=stop]');await sl(1200);
  ok('[두 창] 페이지 오류 0',!A.errs.length&&!B.errs.length,[...A.errs,...B.errs].join(' / '));
  await ctx.close();
 }
@@ -422,6 +430,47 @@ async function stringRun(size){
  ok(`${tag} 직원 도움(8번 실패 뒤): 알림·줄 안 흔들림`,s.play.pity&&Math.abs(sw)<1e-6&&await p.evaluate(()=>/직원이 줄을 잡아/.test(document.querySelector('.kh-toast')?.textContent??'')),`rot ${sw}`);
  await sl(700);await p.screenshot({path:`${OUT}/string-${size}-7staff.png`});
  await click(p,'.kh-quit');await sl(200);await click(p,'.kh-card [data-c=quit]');await sl(300);ok(`${tag} 그만두기 → 걷기`,(await st(p)).mode==='idle');
+ ok(`${tag} 페이지 오류 0`,!p.errs.length,p.errs.slice(0,3).join(' / '));report.errors.push(...p.errs.map(e=>`${tag} ${e}`));
+ await ctx.close();
+}
+
+// ── 11-27 새 기계 ③ 공 구멍 넣기 「공 떨어뜨리기」(규칙서 §3): 십자 판(진짜 누르고 있기)·⏱·떨어뜨리기 → 공이 튀고 구멍 하나 → 결과,
+//   노랑 구멍 위에서 놓기(여러 판 중 성공 하나 이상)·아까움/실패 카드 글, 직원 도움 구멍, 15초 저절로 놓기, 화면 빠르기. PART=ball SIZES=portrait,pc …
+async function ballRun(size){
+ const {ctx,p}=await open(size);const tag=`[공 구멍 ${size}]`,[W,H,touch]=SIZES[size],I=18;
+ const waitPh=async(w,ms=8000)=>p.waitForFunction(w=>claw.play.status().ball?.phase===w,w,{timeout:ms});
+ await p.evaluate(i=>claw.goMachine(i),I);await sl(900);
+ ok(`${tag} 기계 앞: 할 일 칩 「공 떨어뜨리기 한 판」`,/공 떨어뜨리기 한 판/.test(await p.evaluate(()=>[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|'))));
+ await p.screenshot({path:`${OUT}/ball-${size}-1near.png`});
+ await firstPlay(p,tag,'공 떨어뜨리기');await waitPh('move');
+ ok(`${tag} 조작: 십자 판·⏱·「떨어뜨리기」 판·위 칩 「그림자 점을 노란 구멍 위로」·옆에서 보기 없음`,await p.evaluate(()=>!document.querySelector('.kh-pad').hidden&&!document.querySelector('.kh-timer').hidden&&/떨어뜨리기/.test(document.querySelector('.kh-bar').textContent)&&/그림자 점/.test(document.querySelector('.kh-schip').textContent)&&!document.querySelector('.kh-todo[data-act=side]')));
+ await checkButtons(p,`${tag} 조작`,['.kh-pill','.kh-timer','.kh-quit','.kh-dir','.kh-big.kh-bar']);
+ {const c=(await rect(p,'.kh-schip'))[0],o=[...await rect(p,'.kh-dir'),...await rect(p,'.kh-big.kh-bar'),...await rect(p,'.kh-pill'),...await rect(p,'.uf-tr > *')];ok(`${tag} 위 칩이 단추와 안 겹침`,c&&!o.some(r=>hit(c,r)),JSON.stringify(c));}
+ const box=async d=>(await p.$(`.kh-dir[data-dir=${d}]`)).boundingBox();
+ const b0=(await st(p)).play.ball;const R=await box('right');await p.mouse.move(R.x+R.width/2,R.y+R.height/2);await p.mouse.down();await sl(500);await p.mouse.up();
+ const Up=await box('up');await p.mouse.move(Up.x+Up.width/2,Up.y+Up.height/2);await p.mouse.down();await sl(500);await p.mouse.up();await sl(60);const b1=(await st(p)).play.ball;
+ ok(`${tag} 십자 판 누르고 있으면 집게(공)가 오른쪽·안쪽으로`,b1.x>b0.x+.02&&b1.z<b0.z-.02,`${JSON.stringify(b0)}→${JSON.stringify(b1)}`);
+ await p.screenshot({path:`${OUT}/ball-${size}-2move.png`});
+ const fps0=await p.evaluate(()=>claw.fps);
+ {const b=await bigBox(p);if(touch)await p.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);else await p.mouse.click(b.x+b.width/2,b.y+b.height/2);}
+ await sl(450);await p.screenshot({path:`${OUT}/ball-${size}-3bounce.png`});
+ ok(`${tag} 떨어뜨리기 → 공이 판 위에 보이고 입력 잠금`,(await st(p)).mode==='drop'&&await p.evaluate(()=>claw.shop.userData.machines[18].group.getObjectByName('공').visible));
+ await waitResult(p,9000);let s=await st(p);const fps1=await p.evaluate(()=>claw.fps);
+ ok(`${tag} 공이 구멍 하나에 멈추고 결과 카드(${s.play.result?.kind}, ${s.play.result?.ball?.hole})`,['win','near','miss'].includes(s.play.result?.kind)&&/^\d,\d$/.test(s.play.result?.ball?.hole??'')&&await p.evaluate(()=>/쏙!|아까워요|빈 구멍/.test(document.querySelector('.kh-card').textContent)),JSON.stringify(s.play.result));
+ ok(`${tag} 공이 굴러가는 동안 화면 빠르기(참고)`,fps1>=Math.min(20,fps0*.7),`${fps0} → ${fps1}`);
+ await resultChecks(p,tag,'첫 판');await p.screenshot({path:`${OUT}/ball-${size}-4result.png`});
+ // 노랑 구멍(1,1) 바로 위에서 여러 판 → 성공이 나오면 카드·도감
+ let won=null,kinds=[];for(let k=0;k<12&&!won;k++){await click(p,'.kh-card [data-c=again]');await waitPh('move');await p.evaluate(()=>claw.play.ballTo(-.03,-.03));await p.evaluate(()=>claw.play.bigDown());await waitResult(p,9000);
+  s=await st(p);kinds.push(s.play.result.kind);if(s.play.result.kind==='win')won=s.play.result;}
+ ok(`${tag} 노랑 구멍 위에서 놓아 성공(12판 안): 「쏙! …」·도감`,won&&s.dex[won.id]>=1&&await p.evaluate(()=>/쏙! /.test(document.querySelector('.kh-card').textContent)),`${kinds.join(',')} ${JSON.stringify(won)}`);
+ if(won){await resultChecks(p,tag,'성공');await p.screenshot({path:`${OUT}/ball-${size}-5win.png`});}
+ // 직원 도움 구멍
+ await click(p,'.kh-card [data-c=stop]');await sl(300);await p.evaluate(()=>{claw.state.pity['ball-1']=5;});await click(p,'.kh-small[data-act=play]');await sl(1000);
+ ok(`${tag} 직원 도움(5번 실패 뒤): 알림·초록 도움 구멍`,(await st(p)).play.pity&&await p.evaluate(()=>/도움 구멍/.test(document.querySelector('.kh-toast')?.textContent??'')&&claw.shop.userData.machines[18].group.userData.holes.pity===true));
+ await p.screenshot({path:`${OUT}/ball-${size}-6pity.png`});
+ // 15초 지나면 저절로 놓음
+ await p.waitForFunction(()=>claw.play.mode==='drop',null,{timeout:30000});ok(`${tag} 15초 지나면 저절로 놓음`,true);
+ await waitResult(p,9000);await click(p,'.kh-card [data-c=stop]');await sl(300);
  ok(`${tag} 페이지 오류 0`,!p.errs.length,p.errs.slice(0,3).join(' / '));report.errors.push(...p.errs.map(e=>`${tag} ${e}`));
  await ctx.close();
 }
@@ -598,6 +647,7 @@ try{
  if(PARTS.includes('hub'))await hubRun();
  if(PARTS.includes('stack'))for(const s of ONLY)await stackRun(s);
  if(PARTS.includes('string'))for(const s of ONLY)await stringRun(s);
+ if(PARTS.includes('ball'))for(const s of ONLY)await ballRun(s);
 }catch(e){fails++;report.errors.push(String(e.stack??e));console.error(e);}
 finally{
  report.pass=report.checks.filter(c=>c.pass).length;report.fail=fails;writeFileSync(`${OUT}/report.json`,JSON.stringify(report,null,1));
