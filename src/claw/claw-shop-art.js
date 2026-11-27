@@ -13,7 +13,8 @@ import {attachLod} from './claw-machine-lod.js';
 import {buildMachine,TIMER} from './claw-machines-more.js';
 import {buildBridgeMachine} from './claw-bridge.js';
 import {buildStackMachine} from './claw-stack.js';
-import {dressStackMachine} from './claw-stack-art.js'; // 월드아트 정식 꾸밈(별·줄 불·밤하늘)
+import {dressStackMachine} from './claw-stack-art.js';
+import {buildStringMachine} from './claw-string-art.js'; // 월드아트 정식 꾸밈(별·줄 불·밤하늘)
 import {makePlush,plushGeometry,plushSize,plushMaterial,plushLineMaterial,plushLineWidth} from './claw-plush.js';
 import {resolvePool} from './claw-guest.js';
 import {buildArcadeDecor,ARCADE_LOOKS,DEFAULT_LOOK,arcadeLook} from './claw-arcade-art.js';
@@ -28,6 +29,7 @@ export const MACHINE_SPOTS=Object.freeze([
  ...[-1.15,0,1.15].map(x=>spot(x,-.45,Math.PI)),                     // 열쇠 1~3: 가운데 섬 뒤쪽(뒷벽을 봄)
  // 11-27 새 기계(앞벽 빈 자리 A·B에서, 가게 안쪽을 봄): 불빛 쌓기 = 빈 자리 A(문 왼쪽)
  spot(-2.4,4.95,Math.PI),
+ spot(2.4,4.95,Math.PI),                                               // 줄 자르기 = 빈 자리 B(문 오른쪽)
 ]);
 export const SHOP=Object.freeze({
  w:14,d:11,wallH:2.6,wallT:.18,tile:.5,
@@ -38,7 +40,7 @@ export const SHOP=Object.freeze({
  kiosk:Object.freeze({x:7-.4,z:1.2}),              // 오늘의 코인 받는 곳(오른쪽 벽)
  bench:Object.freeze({x:7-.35,z:-4.2,len:1.4}),
  statue:Object.freeze({x:5.4,z:3.6,r:.75}),         // 진열탑 큰 동동이 인형 받침(오른쪽 앞)
- empty:Object.freeze([spot(2.4,4.95,Math.PI)]), // 빈 자리(앞벽, 「준비 중」 덮개). 11-27 A(−2.4)에 불빛 쌓기가 들어감
+ empty:Object.freeze([]), // 빈 자리(「준비 중」 덮개). 11-27 앞벽 A(−2.4) = 불빛 쌓기, B(2.4) = 줄 자르기가 들어가 지금은 없음
  stools:Object.freeze([[-5.6,4.4,0],[-4.9,4.6,1],[-5.25,3.8,2],[-4.4,4.0,0]]), // 왼쪽 앞 구석 낮은 의자 넷(구경·채팅 자리)
  balls:Object.freeze([[-3.2,-2.2],[3.2,-2.2],[0,2.6]]),
  decorCabinets:false,                                // 장식 기계(못 노는 기계) 없음(v4 §1-2)
@@ -192,7 +194,7 @@ export function buildClawShop({toonify=null,mobile=false,guests=[],guestObject=n
  // 기계 세 대 + 인형 더미
  // kinds=true면 기계 종류대로(도시 = 타이머, 별빛 = 열쇠, claw-machines-more.js). 기본은 세 대 모두 집게(월드개발이 타이머·열쇠 규칙을 붙일 때 켠다).
  const machines=MACHINES.map((M,i)=>{const kind=kinds?M.kind??'claw':'claw';
-  const g=kind==='claw'?buildClawMachine(M.id,{toonify}):kind==='bridge'?buildBridgeMachine(M.id,{toonify,...(T?{T}:{})}):kind==='stack'?dressStackMachine(buildStackMachine(M,{toonify}),{toonify}):buildMachine(M.id,{toonify,guestObject,...(kind==='timer'?{prize:resolvePool(M.pool,guests)[0]}:{cells:resolvePool(M.cells??M.pool,guests)})});
+  const g=kind==='claw'?buildClawMachine(M.id,{toonify}):kind==='bridge'?buildBridgeMachine(M.id,{toonify,...(T?{T}:{})}):kind==='stack'?dressStackMachine(buildStackMachine(M,{toonify}),{toonify}):kind==='string'?buildStringMachine(M,{toonify}):buildMachine(M.id,{toonify,guestObject,...(kind==='timer'?{prize:resolvePool(M.pool,guests)[0]}:{cells:resolvePool(M.cells??M.pool,guests)})});
   const m=MACHINE_SPOTS[i],{x,z,heading}=m;g.position.set(x,0,z);g.rotation.y=heading;root.add(g);
   if(kind==='claw'&&!kinds)fillPile(g,resolvePool(M.pool,guests).map(baseOfPlush),{count:mobile?9:14,seed:pileSeed+i*101,toonify,guestObject}); // 게임(kinds)은 물리 더미를 claw-play.js가 그림
   const [sx,sz]=machineToShop(m,0,CLAW.stand.z);

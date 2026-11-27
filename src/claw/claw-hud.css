@@ -191,6 +191,7 @@
 .kh .kh-big.kh-bar{position:fixed;z-index:30;left:calc(var(--uf-sl) + 16px);right:calc(var(--uf-sr) + 16px);top:auto;bottom:calc(var(--uf-sb) + 18px);width:auto;height:80px;margin:0;box-sizing:border-box;
  display:flex;align-items:center;justify-content:center;gap:12px;padding:0 18px;border:0;border-radius:22px;background:var(--uf-red);color:#fff;font:900 26px/1 var(--uf-font);letter-spacing:0;white-space:nowrap;
  box-shadow:0 7px 0 rgba(0,0,0,.32),0 0 0 4px #fff,0 0 0 7px #2a213c,0 14px 24px rgba(0,0,0,.35);--ic-point:#ffd36b;cursor:pointer;transition:transform .05s,filter .05s}
+:root.uf .kh-big.kh-cut{background:#d9822b!important} /* 11-27 줄 자르기 ② 「✂️ 싹둑」: 누르는 뜻이 바뀐 걸 주황으로(규칙서 §2) */
 :root.uf .kh-big.kh-bar.kh-green{box-shadow:0 7px 0 rgba(0,0,0,.32),0 0 0 4px #fff,0 0 0 7px #2a213c,0 14px 24px rgba(0,0,0,.35)!important}
 .kh-bar .kh-lb{display:flex;align-items:center;gap:10px;min-width:0;pointer-events:none}
 .kh-bar .kh-lb em{font-style:normal;display:grid;place-items:center;line-height:1}

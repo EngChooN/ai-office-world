@@ -13,7 +13,7 @@ import {TIMER} from './claw-machines-more.js';
 const TIMER_RATTLE=TIMER.door.rattle;
 import {plushGeometry,plushMaterial,plushLineMaterial} from './claw-plush.js';
 import {geomFrom,createClawSim,toMachine,U,staffHelp} from './claw-physics.js';
-import {CLAW_TUNING,judgeTimer,judgeKey,keyHole,fmtTimer,hund,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,hideAfterOf,stackPos,stackStop} from './claw-rules.js';
+import {CLAW_TUNING,judgeTimer,judgeKey,keyHole,fmtTimer,hund,encodeClawPos,decodeClawPos,encodeKeyPos,decodeKeyPos,KIND_CODE,KIND_OF,hideAfterOf,stackPos,stackStop,stringSway,judgeString} from './claw-rules.js';
 import {createBridgeSim,startPose,nearState,bridgeOutcome,bridgeSnap,noProgress,offRails} from './claw-bridge-physics.js';
 import {MACHINES} from './claw-palette.js';
 
@@ -45,7 +45,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   const rest=kind==='timer'?[U2.stage.x,U2.stage.z]:[clamp(CLAW.home[0],range.x[0],range.x[1]),clamp(CLAW.home[1],range.z[0],range.z[1])];
   return {i,M,U:U2,kind,rest,range,x:rest[0],z:rest[1],tx:rest[0],tz:rest[1],drop:0,open:OPEN.play,seq:null,owner:null,ownerAct:null,lightT:0,lightMode:'idle',
    sim:null,views:null,timer:null,key:null,keyFx:null,door:null,dseq:null,taken:null,shut:null,wakeT:0,
-   bsim:null,bk:null,box:null,before:null,refillT:0,mv:0,still:0,lay:0,stack:null,spec:null};});
+   bsim:null,bk:null,box:null,before:null,refillT:0,mv:0,still:0,lay:0,stack:null,spec:null,cut:null,cfx:null};});
  let mode='idle',cur=null,elapsed=0,clock=0,armedOnce=false,result=null,playN=0,phase='',hold={x:0,z:0},bumpX=0,bumpZ=0,pityNow=false,clawWon=[],doneAt=0,lastV=0,refills=0;
  const W=CLAW.width;
 
@@ -98,6 +98,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   if(r.kind==='timer'){r.U.setBand?.(T.timer);r.U.setTimer?.({text:'00.00',state:'ready'});r.U.setButton?.('off');}
   if(r.kind==='key'){r.U.setHoles?.({fit:T.key.fit,fitRare:T.key.fitRare,pity:false,pityBonus:T.key.pityFitBonus});r.U.key?.set({x:T.key.startX,y:T.key.startY,push:0});}
   if(r.kind==='stack'){r.U.clearBoard?.();r.U.setButton?.('off');}
+  if(r.kind==='string'){r.U.setButton?.('off');r.U.setBlade?.({u:T.string.start,open:1});}
  }
 
  function setLights(r,m,sec=0){r.lightMode=m;r.lightT=sec;r.U.setLights?.(m);}
@@ -198,6 +199,9 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   // 불빛 쌓기: 준비 0.8초 → 1줄. 직원 도움(보장 판)이면 시작 칸이 넓음(판에 「직원 도움」 글)
   else if(r.kind==='stack'){const c=T.stack;r.spec=null;r.stack={phase:'ready',at:performance.now()+c.readySec*1000,rows:[],r:1,w:pityNow?c.pityWidth:c.width,gotSmall:false,top:0,last:null,rt0:0,x:-1,win:null,cont:false,choiceAt:0};
    r.U.setBoard?.({rows:[],pity:pityNow});r.U.setButton?.('off');staff=pityNow;}
+  // 줄 자르기: 가위 처음 자리에서 ①. 직원 도움이면 직원 팔이 줄을 잡음(흔들림 0)
+  else if(r.kind==='string'){const c=T.string;r.cfx=null;r.U.resetStrings?.();r.U.setStaff?.(pityNow);r.U.setGuide?.({on:true,half:c.cutHalfM});r.U.setButton?.('move');r.U.setBlade?.({u:c.start,open:1});
+   r.cut={phase:'k1',u:c.start,u0:c.start,holdAt:0,t0:performance.now(),gapEnd:0,k2t:0,endAt:0,res:null};staff=pityNow;}
   else{r.key={phase:'k1',x:T.key.startX,y:T.key.startY,holding:false,holdT:0,gapT:0};r.keyFx=null;r.U.resetCells?.();r.U.setHoles?.({fit:T.key.fit,fitRare:T.key.fitRare,pity:pityNow,pityBonus:T.key.pityFitBonus});r.U.key?.set({x:r.key.x,y:r.key.y,push:0});}
   onEvent('start',{machine:i,kind:r.kind,pity:pityNow,staff});return true;
  }
@@ -207,6 +211,8 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
  function bigDown(ts=performance.now()){
   if(mode!=='play'||!cur)return false;
   if(cur.kind==='claw')return press();
+  if(cur.kind==='string'){const k=cur.cut;if(k.phase==='k1'&&!k.holdAt){k.holdAt=ts;k.u0=k.u;audio?.loop('motor');cur.U.press?.(1);onEvent('phase',{phase:'k1',holding:true});return true;}
+   if(k.phase==='k2'){cur.U.press?.(1);const r=cur;setTimeout(()=>r.U.press?.(0),150);snipString(cur,ts);return true;}return false;}
   if(cur.kind==='stack'){if(cur.stack.phase!=='run')return false;cur.U.press?.(1);const r=cur;setTimeout(()=>r.U.press?.(0),120);stopStack(cur,ts);return true;}
   if(cur.kind==='timer'){const t=cur.timer;
    if(t.phase==='ready'){t.phase='run';t.t0=ts;t.sec=null;cur.U.setButton?.('stop');cur.U.press?.(1);const r=cur;setTimeout(()=>r.U.press?.(0),150);audio?.play('coin');onEvent('phase',{phase:'run'});return true;}
@@ -216,7 +222,8 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   return false;
  }
  // 큰 단추 뗌(열쇠만 씀)
- function bigUp(){
+ function bigUp(ts=performance.now()){
+  if(mode==='play'&&cur?.kind==='string'){if(cur.cut.phase!=='k1'||!cur.cut.holdAt)return false;releaseString(cur,ts);return true;}
   if(mode!=='play'||!cur||(cur.kind!=='key'&&cur.kind!=='bridge'))return false;const k=holdState(cur);if(!k.holding)return false;
   k.holding=false;audio?.stop('motor');
   if(k.phase==='k1'){k.phase='gap';k.gapT=0;onEvent('phase',{phase:'gap'});}
@@ -282,6 +289,24 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   else if(s.phase==='choice'&&now-s.choiceAt>=c.choiceSec*1000)stackChoose(false); // 20초 안 고르면 여기서 끝
   else if(s.phase==='out'&&now>=s.at){s.phase='done';stackResult(r);}
  }
+ // ── 줄 자르기(시안 string.js release·snip 그대로). 줄 흔들림은 performance.now() 시각의 함수 → 누른 순간(event.timeStamp)의 줄 자리로 판정
+ const stringStill=r=>r===cur&&pityNow&&r.cut?.phase!=='done';
+ function releaseString(r,ts){const k=r.cut,c=T.string;k.u=Math.min(c.end,k.u0+c.speed*Math.max(0,ts-k.holdAt)/1000);k.holdAt=0;k.phase='gap';k.gapEnd=performance.now()+c.gapSec*1000;
+  audio?.stop('motor');r.U.press?.(0);r.U.setBlade?.({u:k.u});say(r,'snap');r.U.setButton?.('off');onEvent('phase',{phase:'gap'});}
+ function snipString(r,ts){const k=r.cut,c=T.string,j=judgeString(k.u,ts,pityNow,c),M=MACHINES[r.i];
+  k.phase='snip';k.res=j;mode='drop';phase='drop';r.U.setButton?.('off');r.U.snip?.();say(r,'scissor');
+  const dx=k.u+j.d-c.strings[j.i];
+  if(j.r==='win'){r.U.cutString?.(j.i,{dx});setTimeout(()=>say(r,'drop'),450);}else if(j.r==='near'){r.U.nickString?.(j.i,{dx});say(r,'nick');}
+  result={kind:j.r,id:j.r==='win'?(M?.prizes?.[j.i]??pools[r.i][j.i]??null):null,cut:{i:j.i,d:j.d,u:k.u}};k.endAt=performance.now()+(j.r==='win'?c.winSec:c.loseSec)*1000;
+  onEvent('drop',{machine:r.i,res:result});}
+ function stepString(r){const k=r.cut,c=T.string,now=performance.now();
+  if(k.phase==='k1'){
+   if(k.holdAt){k.u=Math.min(c.end,k.u0+c.speed*(now-k.holdAt)/1000);r.U.setBlade?.({u:k.u});if(now-k.holdAt>c.holdLimitSec*1000||k.u>=c.end){onEvent('string-auto',{machine:r.i,end:k.u>=c.end});releaseString(r,now);}}
+   else if(now-k.t0>c.readySec*1000){onEvent('string-auto',{machine:r.i,ready:true});k.holdAt=now;k.u0=k.u;releaseString(r,now);}}
+  else if(k.phase==='gap'&&now>=k.gapEnd){k.phase='k2';k.k2t=now;r.U.setButton?.('cut');onEvent('phase',{phase:'k2'});}
+  else if(k.phase==='k2'&&now-k.k2t>c.cutLimitSec*1000){onEvent('string-auto',{machine:r.i,cut:true});snipString(r,now);}
+  else if(k.phase==='snip'&&now>=k.endAt){k.phase='done';finishLocal(r,result);}
+ }
  function quit(){
   if(mode!=='play'||!cur)return false;
   const r=cur,got=!!r.stack?.gotSmall;mode='idle';phase='';audio?.stop('motor');resetRig(r);setLights(r,'idle');onEvent('quit',{machine:r.i,kind:r.kind,gotSmall:got});cur=null;return true;
@@ -294,6 +319,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   if(r.kind==='timer'){r.U.setTimer?.({text:'00.00',state:'ready'});r.U.setButton?.('off');r.timer=null;clearTaken(r,{now:true});r.U.setDoor?.({open:0,lock:'locked'});}
   if(r.kind==='key'){r.U.resetCells?.();r.U.key?.set({x:T.key.startX,y:T.key.startY,push:0});r.key=null;}
   if(r.kind==='stack'){r.U.clearBoard?.();r.U.setButton?.('off');r.stack=null;}
+  if(r.kind==='string'){r.U.resetStrings?.();r.U.setGuide?.({on:false});r.U.setButton?.('off');r.U.setBlade?.({u:T.string.start,open:1});r.cut=null;}
  }
  // 결과 카드를 닫으면(「한 판 더」·「그만」)
  function done(){if(mode!=='result')return;const r=cur;mode='idle';phase='';cur=null;clearTaken(r);
@@ -302,7 +328,8 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   if(r.kind==='bridge'&&bridgeStuck(r)){buildBridge(r,{fresh:true,keep:r.box});r.U.showGhost?.(null);onEvent('reset',{machine:r.i});onEvent('mach',{machine:r.i,st:bridgeSave(r)});}
   if(r.kind==='key'){r.U.resetCells?.();r.U.key?.set({x:T.key.startX,y:T.key.startY,push:0});r.key=null;}
   if(r.kind==='timer'){r.U.setTimer?.({text:'00.00',state:'ready'});r.U.setButton?.('off');r.timer=null;}
-  if(r.kind==='stack'){r.U.clearBoard?.();r.U.setButton?.('off');r.stack=null;}}
+  if(r.kind==='stack'){r.U.clearBoard?.();r.U.setButton?.('off');r.stack=null;}
+  if(r.kind==='string'){r.U.resetStrings?.();r.U.setGuide?.({on:false});r.U.setBlade?.({u:T.string.start,open:1});r.cut=null;}}
 
  // ── 매 프레임. dir = {x:-1~1(기계 오른쪽 +), z:-1~1(안쪽 −)} — 집게 십자·키
  function update(dt,dir={x:0,z:0}){
@@ -327,6 +354,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
      else{const hide=hideAfterOf(MACHINES[r.i]?.id,T),dim=hide>0&&ms>=hide*1000;r.U.setTimer?.({text:fmtTimer(ms),state:'run',dim});
       const sec=Math.floor(ms/1000);if(sec!==t.sec){if(t.sec!=null&&!dim)audio?.play('tick');t.sec=sec;}}}
    }else if(r.kind==='stack'){stepStack(r,dt);
+   }else if(r.kind==='string'){stepString(r);
    }else if(r.kind==='bridge'){const k=r.bk,sp=B.moveSpeed*W;
     if(k.holding){k.holdT+=dt;if(k.phase==='k1')r.x=Math.min(r.range.x[1],r.x+sp*dt);else r.z=Math.max(r.range.z[0],r.z-sp*dt);r.tx=r.x;r.tz=r.z;r.bsim.setPos(r.x/U,r.z/U);if(k.holdT>=B.holdLimitSec)bigUp();}
     if(k.phase==='gap'){k.gapT+=dt;if(k.gapT>=B.gapSec){k.phase='k2';onEvent('phase',{phase:'k2'});}}
@@ -337,6 +365,7 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
    }
   }
   if(mode==='drop'&&cur?.kind==='stack'&&cur.stack)stepStack(cur,dt);
+  if(mode==='drop'&&cur?.kind==='string'&&cur.cut)stepString(cur);
   // 열쇠 밀어 넣기 연출(판정은 bigUp에서 이미 끝남)
   if(mode==='drop'&&cur?.kind==='key'){const r=cur,k=r.key;k.gapT+=dt;const p=Math.min(1,k.gapT/.35),kw=result.key;
    // 성공이면 밀어 넣는 동안 구멍 가운데로 미끄러져 들어감(구멍 가장자리에서 성공해도 열쇠가 판에 박혀 보이지 않게)
@@ -386,6 +415,9 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
    if(r.lightT>0){r.lightT-=dt;if(r.lightT<=0)setLights(r,(r===cur&&mode==='play')||r.owner&&r.ownerAct?.ph==='play'?'play':'idle');}
    if(r.door){r.door.t+=dt;const d=r.door;d.obj.position.y=CLAW.door[1]-.08+Math.abs(Math.sin(Math.min(1,d.t/.5)*Math.PI))*.05;if(d.t>2.2){r.M.group.remove(d.obj);r.door=null;}}
    if(r.keyFx?.until&&clock>r.keyFx.until&&r!==cur){r.U.resetCells?.();r.U.key?.set({x:T.key.startX,y:T.key.startY,push:0});r.keyFx=null;}
+   // 줄 자르기: 줄은 늘 흔들림(같은 시계 식, 잘린 줄은 그림이 무시). 직원 도움 판(내 판)은 0
+   if(r.kind==='string'){const now=performance.now(),still=stringStill(r);for(let i=0;i<T.string.strings.length;i++)r.U.setString?.(i,{dx:stringSway(now,i,still)});
+    if(r.cfx&&r!==cur){const f=r.cfx;if(f.tu!=null){f.u+=(f.tu-f.u)*(1-Math.exp(-dt*10));r.U.setBlade?.({u:f.u});}if(f.until&&clock>f.until){r.cfx=null;r.U.resetStrings?.();r.U.setGuide?.({on:false});r.U.setBlade?.({u:T.string.start,open:1});}}}
    // 불빛 쌓기 구경: 움직이는 줄은 받은 칸 수로 이 화면이 같은 빠르기로 혼자 움직임(초당 여러 번 받지 않음, 시안 그대로)
    if(r.kind==='stack'&&r.spec&&r!==cur){const sp=r.spec;
     if(sp.moving&&sp.rows.length<T.stack.rows){const row=sp.rows.length+1,{x}=stackPos((clock-sp.rt0)*1000,row,sp.w,T.stack);if(x!==sp.x){sp.x=x;r.U.setBoard?.({rows:sp.rows,cur:{r:row,x,w:sp.w}});}}
@@ -406,6 +438,8 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
    if(r.kind==='timer'&&newPlay){if(act.r&&act.r!==idOfObj(r.U.prize))r.U.setPrize?.(act.r);r.U.setTimer?.({text:'00.00',state:'ready'});r.U.setButton?.('start');}
    if(r.kind==='key'){const [x,y]=decodeKeyPos(act.cx,act.cz);if(!r.keyFx||newPlay||r.keyFx.until){r.U.resetCells?.();r.keyFx={x,y,tx:x,ty:y};}else{r.keyFx.tx=x;r.keyFx.ty=y;}}
   }
+  // 줄 자르기: cx = 가위 자리(mm). 결과(k)가 오면 받은 차이(v−100 mm)대로 줄을 칼날 옆에 맞춰 자르거나 자국
+  if(r.kind==='string'&&act.ph==='play'){if(!r.cfx||newPlay||r.cfx.until){r.cfx={u:T.string.start,tu:null};r.U.resetStrings?.();r.U.setGuide?.({on:true,half:T.string.cutHalfM});}r.cfx.tu=Math.max(0,(act.cx??40)/1000);}
   // 불빛 쌓기: v = 쌓은 줄 수, cx·cz = 맨 위 줄 왼쪽 칸·칸 수(시작 때는 v 0·cz 시작 칸 수). 중간에 들어온 손님은 그 순간 줄까지만 그림
   if(r.kind==='stack'&&act.ph){let sp=r.spec;if(!sp||newPlay||sp.n!==act.n){sp=r.spec={n:act.n,rows:[],w:act.cz||T.stack.width,rt0:clock,x:-1,moving:false,until:0};r.U.clearBoard?.();}
    const v=Math.max(0,Math.min(T.stack.rows,act.v|0));
@@ -421,6 +455,9 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
    else if(r.kind==='timer'){r.U.setTimer?.({text:fmtTimer((act.v??0)*10),state:kind});r.U.setButton?.('off');
     startDoorSeq(r,{res,local:false});}
    else if(r.kind==='stack'){if(r.spec){r.spec.moving=false;r.spec.until=clock+3;}outcomeFx(r,res);}
+   else if(r.kind==='string'){const c=T.string,u=Math.max(0,(act.cx??40)/1000),i=Math.max(0,Math.min(c.strings.length-1,(act.cz||1)-1)),d=((act.v??100)-100)/1000,dx=u+d-c.strings[i];
+    r.cfx={u,tu:null,until:clock+3};r.U.setBlade?.({u});r.U.snip?.();say(r,'scissor');if(kind==='win')r.U.cutString?.(i,{dx});else if(kind==='near')r.U.nickString?.(i,{dx});
+    setTimeout(()=>outcomeFx(r,res),kind==='win'?900:300);}
    else{const [x,y]=decodeKeyPos(act.cx,act.cz),kr=judgeKey(x,y,T.key,(i,j)=>!!r.U.cellAt?.(i,j)?.rare,false);
     const [px,py]=kind==='win'&&kr.r==='win'?keyHole(kr.i,kr.j,T.key):[x,y];r.U.key?.set({x:px,y:py,push:1});if(kr.i>=0&&kr.j>=0&&kr.i<T.key.cols&&kr.j<T.key.rows){r.U.markCell?.(kr.i,kr.j,kind==='win'?'ok':kind);if(kind==='win')r.U.openCell?.(kr.i,kr.j);}
     outcomeFx(r,res);r.keyFx={x:px,y:py,tx:px,ty:py,until:clock+3};}
@@ -448,10 +485,16 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
   /** 타이머 기계 숫자판 지금 글·상태(옆에서 볼 때 화면 위 작은 숫자, 11-23) — 기계 그림과 같은 값 */
   get timerView(){const t=cur?.kind==='timer'?cur.U.timer:null;return t?{text:t.text,state:t.state,dim:!!t.dim}:null;},
   get timeLeft(){return cur?.kind==='claw'?Math.max(0,T.claw.timeSec-elapsed):0;},
+  /** 줄 자르기 화면·카메라용: 단계·가위 자리(m)·직원 도움 */
+  get stringView(){const k=cur?.kind==='string'?cur.cut:null;return k?{phase:k.phase,holding:!!k.holdAt,u:k.u,pity:pityNow}:null;},
+  /** 점검용(줄 자르기): ① 가위를 u(m)로(누르고 있는 중처럼) · ② 줄 i가 칼날 가운데에서 off(m) 떨어진 다음 순간 시각 */
+  stringTo(u){const k=cur?.kind==='string'?cur.cut:null;if(!k||k.phase!=='k1')return false;const now=performance.now();k.holdAt=now-(u-k.u)/T.string.speed*1000;k.u0=k.u;releaseString(cur,now);return true;},
+  stringAimTs(off=0,i=null){const k=cur?.kind==='string'?cur.cut:null;if(!k||k.phase!=='k2')return null;const c=T.string,ii=i??(Math.abs(c.strings[0]-k.u)<Math.abs(c.strings[1]-k.u)?0:1),t0=performance.now()+80;
+   const f=t=>c.strings[ii]+stringSway(t,ii,pityNow)-k.u-off;for(let q=0;q<4000;q+=1){if(Math.sign(f(t0+q))!==Math.sign(f(t0+q+1)))return t0+q+.5;}return null;},
   /** 불빛 쌓기 화면 칩·안내용: 지금 줄·쌓은 줄·작은 인형 받음·고르기 남은 초 */
   get stackView(){const s=cur?.kind==='stack'?cur.stack:null;if(!s)return null;return {row:s.r,top:s.top,gotSmall:s.gotSmall,phase:s.phase,pity:pityNow,left:s.phase==='choice'?Math.max(0,Math.ceil(T.stack.choiceSec-(performance.now()-s.choiceAt)/1000)):0};},
   /** 큰 단추 상태: 'claw' · timer 'ready'|'run' · key 'k1'|'k1-hold'|'gap'|'k2'|'k2-hold' · 'drop' */
-  get sub(){if(!cur)return '';if(mode==='drop')return 'drop';if(cur.kind==='stack')return cur.stack?.phase??'';if(cur.kind==='timer')return cur.timer?.phase??'';if(cur.kind==='key'||cur.kind==='bridge'){const k=holdState(cur);return k?.holding?`${k.phase}-hold`:k?.phase??'';}return 'claw';},
+  get sub(){if(!cur)return '';if(mode==='drop')return 'drop';if(cur.kind==='stack')return cur.stack?.phase??'';if(cur.kind==='string'){const k=cur.cut;return k?(k.phase==='k1'&&k.holdAt?'k1-hold':k.phase):'';}if(cur.kind==='timer')return cur.timer?.phase??'';if(cur.kind==='key'||cur.kind==='bridge'){const k=holdState(cur);return k?.holding?`${k.phase}-hold`:k?.phase??'';}return 'claw';},
   /** 봉 기계 상자 상태(이름표 「아슬아슬」·점검): near = 기계 상태가 성공에 가까움(v4.1 §5-1) */
   bridge:i=>{const r=rigs[i];if(!r?.bsim)return null;const b=r.bsim;return {box:r.box,won:b.won,refill:r.refillT>0,near:nearState(b,B),support:+b.support().toFixed(4),tilt:+b.tilt().toFixed(1),mv:r.mv,still:r.still,lay:r.lay,off:offRails(b,r.U.geom),stuck:bridgeStuck(r),st:b.boxState()};},
   busy:i=>rigs[i]?.owner??null,
@@ -464,16 +507,18 @@ export function createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf=()=>'com
    let cx=50,cz=50,r='';
    if(cur.kind==='claw'||cur.kind==='bridge'){cx=encodeClawPos(cur.x);cz=encodeClawPos(cur.z);}
    else if(cur.kind==='key'){[cx,cz]=encodeKeyPos(cur.key.x,cur.key.y);}
+   else if(cur.kind==='string'){const k=cur.cut;if(k){cx=Math.round(k.u*1000);cz=0;if(k.res){cz=k.res.i+1;}}}
    else if(cur.kind==='stack'){const s=cur.stack;if(s){const t=s.rows[s.top-1];cx=t?t.x:0;cz=t?t.w:s.w;if(s.gotSmall)r=SMALL(cur);}}
    else if(cur.kind==='bridge')r='';
    else r=okId(idOfObj(cur.U.prize));
    // 집게는 물리가 끝나야 결과를 알아서 drop 동안 k=0(집게 자리만), 결과가 나오면 win/lose 단계에 r·k가 실림
    if((cur.kind==='claw'||cur.kind==='bridge')&&cur.dropAt&&(mode==='drop'||mode==='result')){cx=encodeClawPos(cur.dropAt[0]);cz=encodeClawPos(cur.dropAt[1]);}
-   return {m:cur.i+1,ph:phase,cx,cz,r:okId(res?.id)||r,k:res?KIND_CODE[res.kind]??0:0,n:playN,v:cur.kind==='timer'?lastV:cur.kind==='stack'?cur.stack?.top??0:0};
+   return {m:cur.i+1,ph:phase,cx,cz,r:okId(res?.id)||r,k:res?KIND_CODE[res.kind]??0:0,n:playN,v:cur.kind==='timer'?lastV:cur.kind==='stack'?cur.stack?.top??0:cur.kind==='string'&&cur.cut?.res?Math.max(0,Math.min(200,Math.round(cur.cut.res.d*1000)+100)):0};
   },
   status:()=>({mode,machine:cur?.i??-1,kind:cur?.kind??null,timeLeft:+(cur?.kind==='claw'?Math.max(0,T.claw.timeSec-elapsed):0).toFixed(2),armed:armed(),pity:pityNow,
    claw:cur?.kind==='claw'?{x:+cur.x.toFixed(3),z:+cur.z.toFixed(3),drop:+cur.drop.toFixed(3),state:cur.sim.claw.state}:cur?.kind==='bridge'?{x:+cur.x.toFixed(3),z:+cur.z.toFixed(3),drop:+cur.drop.toFixed(3),state:cur.bsim.claw.state,phase:cur.bk?.phase}:null,
    timer:cur?.kind==='timer'?{phase:cur.timer?.phase,text:cur.U.timer?.text}:null,key:cur?.kind==='key'?{phase:cur.key?.phase,x:+cur.key.x.toFixed(3),y:+cur.key.y.toFixed(3)}:null,result,
+   string:cur?.kind==='string'&&cur.cut?{phase:cur.cut.phase,u:+cur.cut.u.toFixed(4),holding:!!cur.cut.holdAt,res:cur.cut.res}:null,
    stack:cur?.kind==='stack'&&cur.stack?{phase:cur.stack.phase,row:cur.stack.r,top:cur.stack.top,w:cur.stack.w,gotSmall:cur.stack.gotSmall,rows:cur.stack.rows.map(o=>[o.x,o.w])}:null,
    rigs:rigs.map(r=>({kind:r.kind,owner:r.owner,seq:r.seq?SEQ[r.seq.k]:r.dseq?r.dseq.steps[r.dseq.k]:null,door:r.U.door?{open:+r.U.door.open.toFixed(2),lock:r.U.door.lock}:undefined,taken:!!r.taken,lights:r.lightMode,x:+r.x.toFixed(3),z:+r.z.toFixed(3),dolls:r.sim?r.sim.left():null}))}),
  };

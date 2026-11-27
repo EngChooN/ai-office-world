@@ -1935,6 +1935,15 @@
   "color": false
  },
  {
+  "name": "k-cut",
+  "group": "claw",
+  "file": "icons/claw/k-cut.svg",
+  "symbol": "ic-k-cut",
+  "off": false,
+  "spin": false,
+  "color": false
+ },
+ {
   "name": "k-up",
   "group": "claw",
   "file": "icons/claw/k-up.svg",

@@ -8,7 +8,7 @@ import {chromium} from '@playwright/test';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {spawn} from 'node:child_process';
 const OUT=process.env.OUT??'artifacts/claw-verify';mkdirSync(OUT,{recursive:true});
-const PARTS=(process.env.PART??'size,keys,multi,server,hub,sound,stack').split(',');
+const PARTS=(process.env.PART??'size,keys,multi,server,hub,sound,stack,string').split(',');
 const {createServer}=await import('vite');const port=Number(process.env.PORT??5395);
 const vite=await createServer({server:{port,host:'127.0.0.1',strictPort:true},logLevel:'warn'});await vite.listen();
 const base=`http://127.0.0.1:${port}`;
@@ -76,7 +76,7 @@ async function sizeRun(size){
  // ☰ → 기계 탭 → 「가기」(숲속 = 집게)
  await click(p,'.uf-menu-btn');await click(p,'[data-uf-tab=machines]');await sl(300);
  await p.screenshot({path:`${OUT}/${size}-2machines.png`});
- ok(`${tag} 기계 탭: 종류별 5묶음(집게 6·봉 4·타이머 3·열쇠 3·불빛 쌓기 1)·빈 기계 수`,await p.evaluate(()=>{const g=[...document.querySelectorAll('.kh-mgroup')];return g.length===5&&g.map(x=>x.querySelectorAll('.kh-mlist li').length).join()==='6,4,3,3,1'&&/빈 기계 6\/6/.test(g[0].textContent);}));
+ ok(`${tag} 기계 탭: 종류별 6묶음(집게 6·봉 4·타이머 3·열쇠 3·불빛 쌓기 1·줄 자르기 1)·빈 기계 수`,await p.evaluate(()=>{const g=[...document.querySelectorAll('.kh-mgroup')];return g.length===6&&g.map(x=>x.querySelectorAll('.kh-mlist li').length).join()==='6,4,3,3,1,1'&&/빈 기계 6\/6/.test(g[0].textContent);}));
  await checkButtons(p,`${tag} 기계 탭(보이는 줄)`,['.uf-tab','.uf-x']);
  await p.evaluate(()=>document.querySelector('.uf-sheet [data-go="0"]').scrollIntoView({block:'nearest'}));
  await click(p,'.uf-sheet [data-go="0"]');await sl(900);
@@ -303,6 +303,17 @@ async function multiRun(){
   ok('[두 창] 불빛 쌓기 구경: B 판에 A와 같은 쌓인 줄',a.length===3&&JSON.stringify(a)===JSON.stringify(b),`${JSON.stringify(a)} / ${JSON.stringify(b)}`);}
  await B.evaluate(()=>claw.teleport(-2.4,3.2,0));await sl(500);await B.screenshot({path:`${OUT}/multi-watch-stack.png`});
  await A.evaluate(()=>claw.play.quit());await sl(1200);ok('[두 창] 불빛 쌓기: A가 그만두면 B 기계 비움',await B.evaluate(()=>!claw.play.status().rigs[16].owner));
+ // 줄 자르기(11-27): A가 가위를 옮기면 B 화면 가위도, 자르면 B 화면 줄도 끊김(받은 차이대로)
+ await A.evaluate(()=>claw.goMachine(17));await sl(700);await click(A,'.kh-small[data-act=play]');await sl(700);
+ await A.evaluate(()=>claw.play.stringTo(.22));await sl(900);
+ ok('[두 창] 줄 자르기 구경: B 화면 가위가 A 자리로',Math.abs(await B.evaluate(()=>claw.shop.userData.machines[17].group.userData.blade.u)-.22)<.01,String(await B.evaluate(()=>claw.shop.userData.machines[17].group.userData.blade.u)));
+ const prizeY=()=>B.evaluate(()=>{const o=claw.shop.userData.machines[17].group.userData.prizes[0];const v=new o.position.constructor();o.getWorldPosition(v);return v.y;});
+ const y0=await prizeY();
+ await A.waitForFunction(()=>claw.play.status().string?.phase==='k2',null,{timeout:5000});await A.evaluate(()=>claw.play.bigDown(claw.play.stringAimTs(0,0)));await sl(1500);
+ {const y1=await prizeY();ok('[두 창] 줄 자르기 구경: B 화면에서도 줄 1이 끊겨 큰 루돌프가 쿠션에 떨어짐',y1<y0-.03&&y1<.63,`${y0.toFixed(2)} → ${y1.toFixed(2)}`);}
+ await B.evaluate(()=>claw.teleport(2.4,3.2,0));await sl(400);await B.screenshot({path:`${OUT}/multi-watch-string.png`});
+ await A.waitForFunction(()=>window.claw.hud.card==='result',null,{timeout:8000});await click(A,'.kh-card [data-c=stop]');await sl(1200);
+ ok('[두 창] 줄 자르기: A가 그만두면 B 기계 비움',await B.evaluate(()=>!claw.play.status().rigs[17].owner));
  ok('[두 창] 페이지 오류 0',!A.errs.length&&!B.errs.length,[...A.errs,...B.errs].join(' / '));
  await ctx.close();
 }
@@ -367,6 +378,50 @@ async function stackRun(size){
  await p.evaluate(()=>{claw.state.pity['stack-1']=0;});await click(p,'.kh-small[data-act=play]');await waitPh('run');await sl(10600);
  s=await st(p);ok(`${tag} 10초 안 누르면 저절로 멈춤`,s.play.stack?.top>=1||s.play.result,JSON.stringify(s.play.stack));
  await click(p,'.kh-quit').catch(()=>{});await sl(200);await p.$('.kh-card [data-c=quit]').then(b=>b?.click());await sl(300);
+ ok(`${tag} 페이지 오류 0`,!p.errs.length,p.errs.slice(0,3).join(' / '));report.errors.push(...p.errs.map(e=>`${tag} ${e}`));
+ await ctx.close();
+}
+
+// ── 11-27 새 기계 ② 줄 자르기 「가위로 툭」(규칙서 §2): ① 누르고 있기(진짜 누름) → 0.3초 → ② 주황 「싹둑」·카메라 다가감 → 결과,
+//   성공(점검용 정확한 시각)·아까움·실패 카드 글, 직원 도움(8판 뒤 줄 잡음), 그만두기. PART=string SIZES=portrait,pc …
+async function stringRun(size){
+ const {ctx,p}=await open(size);const tag=`[가위로 툭 ${size}]`,[W,H,touch]=SIZES[size],I=17;
+ const ph=()=>p.evaluate(()=>claw.play.status().string?.phase??null);
+ const waitPh=async(w,ms=8000)=>p.waitForFunction(w=>claw.play.status().string?.phase===w,w,{timeout:ms});
+ await p.evaluate(i=>claw.goMachine(i),I);await sl(900);
+ ok(`${tag} 기계 앞: 할 일 칩 「가위로 툭 한 판」`,/가위로 툭 한 판/.test(await p.evaluate(()=>[...document.querySelectorAll('.kh-todo')].map(e=>e.textContent).join('|'))));
+ await p.screenshot({path:`${OUT}/string-${size}-1near.png`});
+ await firstPlay(p,tag,'가위로 툭');
+ ok(`${tag} ①: 판 「오른쪽」·위 칩 「① 가위 옮기기」·옆에서 보기 없음`,await p.evaluate(()=>/오른쪽/.test(document.querySelector('.kh-bar').textContent)&&/① 가위 옮기기/.test(document.querySelector('.kh-schip').textContent)&&!document.querySelector('.kh-todo[data-act=side]')));
+ await checkButtons(p,`${tag} ①`,['.kh-pill','.kh-quit','.kh-big.kh-bar']);
+ await p.screenshot({path:`${OUT}/string-${size}-2move.png`});
+ const camD=()=>p.evaluate(()=>{const g=claw.shop.userData.machines[17].group,v=g.position.clone();v.y=1.17;return claw.camera.position.distanceTo(v);});const d1=await camD();
+ const u0=(await st(p)).play.string.u;await holdBig(p,700);await sl(80);const s1=(await st(p)).play.string;
+ ok(`${tag} ①: 누르고 있으면 가위가 오른쪽(약 10cm), 떼면 멈춤`,s1.u>u0+.07&&s1.u<u0+.14&&s1.phase==='gap',`${u0}→${JSON.stringify(s1)}`);
+ await waitPh('k2');await sl(500);
+ ok(`${tag} ②: 판 주황 「싹둑」·위 칩 「② …싹둑!」·카메라 다가감`,await p.evaluate(()=>{const b=document.querySelector('.kh-bar');return /싹둑/.test(b.textContent)&&b.classList.contains('kh-cut')&&/②/.test(document.querySelector('.kh-schip').textContent);})&&await camD()<d1*.8,`카메라 거리 ${d1.toFixed(2)} → ${(await camD()).toFixed(2)}m`);
+ await p.screenshot({path:`${OUT}/string-${size}-3cut.png`});
+ {const b=await bigBox(p);if(touch)await p.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);else await p.mouse.click(b.x+b.width/2,b.y+b.height/2);}
+ await waitResult(p,8000);let s=await st(p);
+ ok(`${tag} ② 진짜 누름 → 판정·결과 카드(${s.play.result?.kind})`,['win','near','miss'].includes(s.play.result?.kind)&&await p.evaluate(()=>/싹둑!|반쯤 잘렸어요|허공을 잘랐어요/.test(document.querySelector('.kh-card').textContent)),JSON.stringify(s.play.result));
+ await click(p,'.kh-card [data-c=again]');await sl(300);
+ // 성공: 줄 1 앞으로 옮기고 줄이 칼날 가운데를 지나는 순간
+ await p.evaluate(()=>claw.play.stringTo(.22));await waitPh('k2');await p.evaluate(()=>claw.play.bigDown(claw.play.stringAimTs(0,0)));
+ await sl(700);await p.screenshot({path:`${OUT}/string-${size}-4drop.png`});
+ await waitResult(p,8000);s=await st(p);
+ ok(`${tag} 성공: 「싹둑! 큰 루돌프」·도감·업고 다니기`,s.play.result?.kind==='win'&&s.play.result.id==='big-rudolph'&&s.dex['big-rudolph']>=1&&await p.evaluate(()=>/싹둑! 큰 루돌프/.test(document.querySelector('.kh-card').textContent)&&!!document.querySelector('.kh-card [data-c=carry]')),JSON.stringify(s.play.result));
+ await resultChecks(p,tag,'성공');await p.screenshot({path:`${OUT}/string-${size}-5win.png`});
+ // 아까움: 칼날 가운데에서 4.5mm
+ await click(p,'.kh-card [data-c=again]');await sl(300);await p.evaluate(()=>claw.play.stringTo(.42));await waitPh('k2');await p.evaluate(()=>claw.play.bigDown(claw.play.stringAimTs(.0045,1)));
+ await waitResult(p,8000);s=await st(p);
+ ok(`${tag} 아까움: 「반쯤 잘렸어요」·「5mm …」·직원 도움까지`,s.play.result?.kind==='near'&&await p.evaluate(()=>{const t=document.querySelector('.kh-card').textContent;return /반쯤 잘렸어요/.test(t)&&/\dmm (왼|오른)쪽/.test(t)&&/직원 도움까지 \d번/.test(t);}),await p.evaluate(()=>document.querySelector('.kh-card').textContent));
+ await resultChecks(p,tag,'아까움');await p.screenshot({path:`${OUT}/string-${size}-6near.png`});
+ // 직원 도움: 8번 실패로 맞추면 줄이 멈춤(흔들림 0)·알림
+ await click(p,'.kh-card [data-c=stop]');await sl(300);await p.evaluate(()=>{claw.state.pity['string-1']=8;});await click(p,'.kh-small[data-act=play]');await sl(900);
+ s=await st(p);const sw=await p.evaluate(()=>{const g=claw.shop.userData.machines[17].group;let r=null;g.traverse(o=>{if(o.name==='줄 1')r=o.rotation.z;});return r;});
+ ok(`${tag} 직원 도움(8번 실패 뒤): 알림·줄 안 흔들림`,s.play.pity&&Math.abs(sw)<1e-6&&await p.evaluate(()=>/직원이 줄을 잡아/.test(document.querySelector('.kh-toast')?.textContent??'')),`rot ${sw}`);
+ await sl(700);await p.screenshot({path:`${OUT}/string-${size}-7staff.png`});
+ await click(p,'.kh-quit');await sl(200);await click(p,'.kh-card [data-c=quit]');await sl(300);ok(`${tag} 그만두기 → 걷기`,(await st(p)).mode==='idle');
  ok(`${tag} 페이지 오류 0`,!p.errs.length,p.errs.slice(0,3).join(' / '));report.errors.push(...p.errs.map(e=>`${tag} ${e}`));
  await ctx.close();
 }
@@ -542,6 +597,7 @@ try{
  if(PARTS.includes('server'))await serverRun();
  if(PARTS.includes('hub'))await hubRun();
  if(PARTS.includes('stack'))for(const s of ONLY)await stackRun(s);
+ if(PARTS.includes('string'))for(const s of ONLY)await stringRun(s);
 }catch(e){fails++;report.errors.push(String(e.stack??e));console.error(e);}
 finally{
  report.pass=report.checks.filter(c=>c.pass).length;report.fail=fails;writeFileSync(`${OUT}/report.json`,JSON.stringify(report,null,1));

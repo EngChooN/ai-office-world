@@ -169,6 +169,8 @@ const play=createClawPlay({shop,pools,makePlushObj,sizeOf,rarityOf,toonify:toon.
   else if(type==='reset')hud?.toast(`${MACHINES[d.machine].name} 상자를 다시 놓았어요`,{sec:2.6});
   else if(type==='drop'&&d.res?.kind==='pending'){hud?.toast(d.auto?'시간 끝! 집게 내려가는 중…':'집게 내려가는 중…',{sec:2,urgent:true});}
   else if(type==='start'&&d.kind==='stack'){stackPre=null;if(d.staff)hud?.toast(`직원 도움! 이번 판은 ${T.stack.pityWidth}칸으로 시작해요`,{sec:3,urgent:true});}
+  else if(type==='start'&&d.kind==='string'){if(d.staff)hud?.toast('직원 도움! 직원이 줄을 잡아 줬어요',{sec:3,urgent:true});}
+  else if(type==='string-auto')hud?.toast(d.end?'끝까지 왔어요':d.ready?'20초가 지나 이 자리에서 시작해요':d.cut?'10초가 지나 저절로 잘랐어요':'10초가 지나 저절로 멈췄어요',{sec:2,urgent:true});
   else if(type==='stack-row'&&!d.gone)hud?.toast(`${d.r}줄 ${d.lost}칸 ${d.late?'늦었어요':'빨랐어요'}`,{sec:1.2,urgent:true});
   else if(type==='stack-auto')hud?.toast('10초가 지나 저절로 멈췄어요',{sec:2,urgent:true});
   else if(type==='stack-prize'){const M=MACHINES[d.machine],rec=recordResult(state,M.id,{kind:'win',id:d.id});saveState(state);stackPre={id:d.id,...rec};syncShowcase();player.cheer();vibrate(40);} // 7줄 = 작은 인형 바로 받음(계속해도 안 잃음)
@@ -303,8 +305,10 @@ function updateCamera(dt){
  if(play.mode!=='idle'&&i>=0){ // 조작 카메라: 기계 정면 고정(월드아트 CLAW.camera, 세로 휴대폰은 portrait). 봉은 집게 기계 몸이라 같은 카메라
   const M=U.machines[i],C=M.kind==='claw'||M.kind==='bridge'?PLAY_CAM:M.group.userData.camera??PLAY_CAM,P=innerWidth<innerHeight?C.portrait:C;
   const at=(v,x,y,z)=>{const [wx,wz]=toShop(M,x,z);return v.set(wx,y,wz);};
-  const SC=SIDE_CAMS[M.kind];
-  if(SC&&side){const Q=innerWidth<innerHeight?SC.portrait??SC:SC;at(wantPos,side*Q.pos[0],Q.pos[1],Q.pos[2]);at(wantLook,side*Q.look[0],Q.look[1],Q.look[2]);camFov=Q.fov;}else{
+  const SC=SIDE_CAMS[M.kind],gv=M.kind==='string'?play.stringView:null;
+  // 줄 자르기 ②(싹둑)·결과 동안: 가위 쪽으로 2.2배 다가감(월드아트 cutCamera, 6mm 칼날이 보이게 — 규칙서 §2)
+  if(gv&&['k2','snip','done'].includes(gv.phase)&&M.group.userData.cutCamera){const Q=M.group.userData.cutCamera(gv.u,{portrait:innerWidth<innerHeight});at(wantPos,...Q.pos);at(wantLook,...Q.look);camFov=Q.fov;}
+  else if(SC&&side){const Q=innerWidth<innerHeight?SC.portrait??SC:SC;at(wantPos,side*Q.pos[0],Q.pos[1],Q.pos[2]);at(wantLook,side*Q.look[0],Q.look[1],Q.look[2]);camFov=Q.fov;}else{
   at(wantPos,P.pos[0],P.pos[1],P.pos[2]);const lk=P.look??C.look;at(wantLook,lk[0],lk[1],lk[2]);camFov=P.fov;}
  }else{
   if(player.moving&&!input.looking()){let d=player.heading-cam.yaw;d=Math.atan2(Math.sin(d),Math.cos(d));cam.yaw+=d*(1-Math.exp(-dt*1.2));}
@@ -467,7 +471,7 @@ renderer.setAnimationLoop(()=>{
  key.target.position.set(0,0,0);
  const near=play.mode==='idle'?nearMachine():-1,busy=U.machines.map((_,i)=>{const id=play.busy(i);return id?multi.nameOf(id):null;});
  const freeKind=Object.fromEntries(Object.keys(KIND_INFO).map(k=>[k,nearestFree(k,near)]));
- hud.update(dt,{mode:play.mode,machine:play.machine,kind:play.kind,sub:play.sub,side,near,coins:state.coins,timeLeft:play.timeLeft,armed:play.armed,timerView:side&&play.kind==='timer'?play.timerView:null,stackView:play.stackView,running:runOn,busy,busySig:busy.join('|'),freeKind});
+ hud.update(dt,{mode:play.mode,machine:play.machine,kind:play.kind,sub:play.sub,side,near,coins:state.coins,timeLeft:play.timeLeft,armed:play.armed,timerView:side&&play.kind==='timer'?play.timerView:null,stackView:play.stackView,stringView:play.stringView,running:runOn,busy,busySig:busy.join('|'),freeKind});
  updateTags();
  renderer.info.reset();toon.pipeline.render(dt);
  renderMini();

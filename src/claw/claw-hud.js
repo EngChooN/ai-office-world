@@ -17,7 +17,7 @@ import {createUiFrame,ufPlace,openWin,closeWin,onWin} from '../ui-frame.js';
 import {clawStatusView} from './claw-multi.js';
 import {RARITY,RARITY_ORDER,MACHINES} from './claw-palette.js';
 import {currentCarry,setCarry,onCarry,toggleCarry,slotOf,isCarryId,carryLabel} from '../carry/carry-store.js';
-import {CLAW_TUNING,rulesFor,KIND_INFO,KINDS,PITY_NAME,timerDiffText,keyMissText,grantedToday,msToNextGrant,leftText,pityLeft,dexCount,levelOf,isRefillLog,stackMissText} from './claw-rules.js';
+import {CLAW_TUNING,rulesFor,KIND_INFO,KINDS,PITY_NAME,timerDiffText,keyMissText,grantedToday,msToNextGrant,leftText,pityLeft,dexCount,levelOf,isRefillLog,stackMissText,stringMissText} from './claw-rules.js';
 document.documentElement.dataset.icExp='claw';
 
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -28,7 +28,7 @@ const DIGIT_JONG=[21,8,0,16,0,0,1,8,8,0]; // 영·일·이·삼·사·오·육·
 const josa=(w,a,b)=>{const t=String(w),c=t.charCodeAt(t.length-1),j=c>=48&&c<=57?DIGIT_JONG[c-48]:c>=0xac00&&c<=0xd7a3?(c-0xac00)%28:0;return j&&!(a==='으로'&&j===8)?a:b;};
 const DIRS=Object.freeze({left:{x:-1,z:0},right:{x:1,z:0},up:{x:0,z:-1},down:{x:0,z:1}});
 // 아이콘 이름(그림이 아직 없으면 글자, 아이콘-규칙 대체 방식)
-const IC={dex:['k-dex','🧸'],coin:['k-coin','🪙'],timer:['k-timer','⏱'],claw:['k-claw','🕹'],odds:['k-odds','ⓘ'],run:['x-run','🏃'],machine:['k-machine','🕹'],start:['k-start','▶'],stop:['k-stop','✋'],key:['k-key','🔑'],right:['k-right','→'],up:['k-up','↑'],side:['k-side','👁'],wait:['c-wait','⏳']};
+const IC={cut:['k-cut','✂️'],dex:['k-dex','🧸'],coin:['k-coin','🪙'],timer:['k-timer','⏱'],claw:['k-claw','🕹'],odds:['k-odds','ⓘ'],run:['x-run','🏃'],machine:['k-machine','🕹'],start:['k-start','▶'],stop:['k-stop','✋'],key:['k-key','🔑'],right:['k-right','→'],up:['k-up','↑'],side:['k-side','👁'],wait:['c-wait','⏳']};
 const ic=(k,size='s')=>icon(IC[k][0],{size,fallback:IC[k][1]});
 const ict=(k,text,o={})=>iconText(IC[k][0],text,{size:'s',fallback:IC[k][1],...o});
 
@@ -162,6 +162,7 @@ export function createClawHud({doc=document,win=window,mobile=false,catalog,pool
  const machinesOf=id=>MACHINES.map((m,i)=>(pools[i]??m.pool).includes(id)?i:-1).filter(i=>i>=0);
  function showResult({res,machine,kind,isNew,count,fails,coins,alsoNew=false}){
   if(kind==='stack')return showStackResult({res,machine,isNew,count,fails,coins,alsoNew});
+  if(kind==='string')return showStringResult({res,machine,isNew,count,fails,coins});
   const M=MACHINES[machine],again=`<button type="button" class="kh-btn kh-red" data-c="again" data-main>${ict('coin',`한 판 더 · ${T.coin.cost}`)}</button>`;
   const noMore=coins<T.coin.cost,left=pityLeft({pity:{[M.id]:fails}},M.id);
   const pityLine=left===null?'':left<=0?`다음 판은 ${PITY_NAME[kind]}!`:`${PITY_NAME[kind]}까지 ${left}번`;
@@ -190,6 +191,19 @@ export function createClawHud({doc=document,win=window,mobile=false,catalog,pool
 <div class="kh-row">${cb}<button type="button" class="kh-btn" data-c="dex">${ict('dex','도감 보기')}</button>${noMore?'':again2}<button type="button" class="kh-btn" data-c="stop"${noMore&&!cb?' data-main':''}>그만</button></div>`,'뽑기 성공');return;}
   const near=res.kind==='near',left=pityLeft({pity:{[M.id]:fails}},M.id),pityLine=left===null?'':left<=0?`다음 판은 직원 도움 — ${c.pityWidth}칸으로 시작해요!`:`직원 도움까지 ${left}번`;
   openCard('result',`<div class="kh-lose"><h2>${esc(near?`아까워요! ${nm(small)}까지 1줄`:`아쉬워요 · ${res.top}줄까지 쌓았어요`)}</h2>${miss?`<p>${esc(miss)}</p>`:''}${pityLine?`<p class="kh-pity">${esc(pityLine)} · ${esc(M?.name??'')}</p>`:''}</div>
+<div class="kh-row">${noMore?'':again}<button type="button" class="kh-btn" data-c="stop"${noMore?' data-main':''}>그만</button></div>${noMore?'<p class="kh-sub">코인을 다 썼어요. 내일 0시에 또 받아요</p>':''}`,near?'아까움':'실패');
+ }
+ // 줄 자르기 결과(규칙서 §2): 성공 「싹둑! <큰 인형>」 / 아까움 「줄이 반쯤 잘렸어요」 + 「4mm 왼쪽」 / 실패 「허공을 잘랐어요」 + 「1.8cm 오른쪽」
+ function showStringResult({res,machine,isNew,count,fails,coins}){
+  const M=MACHINES[machine],noMore=coins<T.coin.cost,d=res.cut?.d??0;
+  const again=`<button type="button" class="kh-btn kh-red" data-c="again" data-main>${ict('coin',`한 판 더 · ${T.coin.cost}`)}</button>`;
+  if(res.kind==='win'){const p=infoOf(res.id),R=RARITY[p?.rarity]??RARITY.common,cb=carryButton(res.id,'card'),again2=cb?again.replace(' kh-red','').replace(' data-main',''):again;
+   openCard('result',`<div class="kh-band" style="--rc:${R.color}"><b>${stars(p?.rarity)} ${esc(R.label)}</b></div>
+<div class="kh-win">${plushImg(res.id,120)}<h2>싹둑! ${esc(nm(res.id))}</h2><p class="kh-new">${isNew?'새 인형! 도감에 넣었어요':`${count}개째예요`}</p><p>줄이 칼날 가운데에 있었어요</p></div>
+<div class="kh-row">${cb}<button type="button" class="kh-btn" data-c="dex">${ict('dex','도감 보기')}</button>${noMore?'':again2}<button type="button" class="kh-btn" data-c="stop"${noMore&&!cb?' data-main':''}>그만</button></div>`,'뽑기 성공');return;}
+  const near=res.kind==='near',left=pityLeft({pity:{[M.id]:fails}},M.id),pityLine=left===null?'':left<=0?'다음 판은 직원 도움 — 직원이 줄을 잡아 줘요!':`직원 도움까지 ${left}번`;
+  const lines=[`줄이 칼날 가운데보다 ${stringMissText(d)}에 있었어요`,near?'반쯤 잘린 줄은 다음 판에 새 줄로 바뀌어요':'줄이 칼날 앞을 지나는 순간을 노려 보세요'];
+  openCard('result',`<div class="kh-lose"><h2>${near?'아까워요! 줄이 반쯤 잘렸어요':'허공을 잘랐어요'}</h2>${lines.map(l=>`<p>${esc(l)}</p>`).join('')}${pityLine?`<p class="kh-pity">${esc(pityLine)} · ${esc(M?.name??'')}</p>`:''}</div>
 <div class="kh-row">${noMore?'':again}<button type="button" class="kh-btn" data-c="stop"${noMore?' data-main':''}>그만</button></div>${noMore?'<p class="kh-sub">코인을 다 썼어요. 내일 0시에 또 받아요</p>':''}`,near?'아까움':'실패');
  }
  // 7줄 고르기 카드(규칙서 §1): 작은 인형은 이미 받음. 「▲ 계속하기」(코인 0·받은 인형 안 잃음) / 「여기서 끝」, 20초 안 고르면 끝
@@ -340,15 +354,16 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
   if(sig!==pillSig){pillSig=sig;pill.dataset.tone=sv.tone;pill.querySelector('em').innerHTML=icon(sv.ic,{size:'s'});pill.querySelector('.kh-pill-t').innerHTML=esc(txt).replace('👥 ',icon('c-people',{size:'xs'})+' ');pill.querySelector('[data-coins]').textContent=v.coins;
    pill.setAttribute('aria-label',`${sv.text} · 코인 ${v.coins}개`);}
   if(playing&&kind==='claw'){const t=Math.ceil(v.timeLeft??0);const tb=timer.querySelector('[data-t]');if(tb.textContent!==String(t))tb.textContent=String(t);timer.classList.toggle('hurry',mode==='play'&&t<=5);}
-  {const sv=v.stackView,on=!!sv&&playing,M=MACHINES[v.machine];if(schip.hidden===on)schip.hidden=!on;
-   if(on){const P=M?.prizes??{},img=id=>{const u=thumb(id);return u?`<img src="${esc(u)}" width="22" height="22" alt="" style="margin:0 -2px">`:'';},c=T.stack;
+  {const sv=v.stackView,gv=v.stringView,on=(!!sv||!!gv)&&playing,M=MACHINES[v.machine];if(schip.hidden===on)schip.hidden=!on;
+   if(on&&gv){const h=`<b style="font:900 16px/1 'Apple SD Gothic Neo',Pretendard,sans-serif">${['k2','snip','done'].includes(gv.phase)?'② 줄이 칼날 가운데일 때 싹둑!':'① 가위 옮기기'}</b>`;if(schip.dataset.h!==h){schip.dataset.h=h;schip.innerHTML=h;}}
+   else if(on){const P=M?.prizes??{},img=id=>{const u=thumb(id);return u?`<img src="${esc(u)}" width="22" height="22" alt="" style="margin:0 -2px">`:'';},c=T.stack;
     const h=`<b>⭐ ${sv.top} / ${c.rows}줄</b><small style="font:800 13px/1 'Apple SD Gothic Neo',Pretendard,sans-serif;color:#fff6e0">· ${c.mid}줄</small>${sv.gotSmall?'✅':img(P.small)}<small style="font:800 13px/1 'Apple SD Gothic Neo',Pretendard,sans-serif;color:#fff6e0">· ${c.rows}줄</small>${img(P.big)}`;
     if(schip.dataset.h!==h){schip.dataset.h=h;schip.innerHTML=h;schip.setAttribute('aria-label',`${sv.top}줄 쌓음 · ${c.mid}줄 ${nm(P.small)} · ${c.rows}줄 ${nm(P.big)}`);}}
    if(cardKind==='choice'){const e=card.querySelector('[data-left]');if(e&&e.textContent!==String(sv?.left??0))e.textContent=String(sv?.left??0);}}
   {const tv=v.timerView,on=!!tv&&playing;if(tnum.hidden===on)tnum.hidden=!on;
    if(on){const b=tnum.querySelector('[data-tn]');if(b.textContent!==tv.text)b.textContent=tv.text;const st=tv.dim?'dim':tv.state;if(tnum.dataset.state!==st)tnum.dataset.state=st;}}
   // 한 줄 안내(집게를 옆에서 보는 중이면 「옆에서 보면…」 안내는 끔: 칩 두 개와 겹치고 이미 한 일)
-  const stv=v.stackView,h=playing&&!v.side?(mode==='drop'?'':kind==='claw'?HINT.claw:kind==='stack'?(stv?.phase==='run'?(stv.row===1?'첫 줄 — 아무 데서나 멈춰요':stv.row>=8?'빨라요! 아래 줄 위에서 멈추세요':'아래 줄과 겹치게 멈추세요'):''):(kind==='bridge'?HINT_BRIDGE:HINT)[(v.sub??'').replace('-hold','')]??''):'';
+  const stv=v.stackView,h=playing&&!v.side?(mode==='drop'?'':kind==='claw'?HINT.claw:kind==='string'?({k1:'누르고 있으면 가위가 오른쪽으로 가요. 줄 앞에서 떼세요',gap:'잠깐만요…',k2:'줄이 노란 괄호 사이를 지날 때 누르세요'})[v.stringView?.phase]??'':kind==='stack'?(stv?.phase==='run'?(stv.row===1?'첫 줄 — 아무 데서나 멈춰요':stv.row>=8?'빨라요! 아래 줄 위에서 멈추세요':'아래 줄과 겹치게 멈추세요'):''):(kind==='bridge'?HINT_BRIDGE:HINT)[(v.sub??'').replace('-hold','')]??''):'';
   if(hint.textContent!==h)hint.textContent=h;hint.hidden=!h||!!cardKind;
   // 행동 단추
   const sub=v.sub??'';
@@ -361,6 +376,9 @@ ${people.length?`<h3 class="kh-h3">가게 손님 ${people.length}명</h3><ul cla
    else if(kind==='stack'){const ph=stv?.phase??sub,run=ph==='run',pick=ph==='choice',wait=ph==='ready'; // 👁 옆에서 보기 없음(평평한 판, 규칙서 §1)
     setActions({id:'press',ic:(wait||pick?IC.wait:IC.stop)[0],fb:(wait||pick?IC.wait:IC.stop)[1],label:wait?'준비…':pick?'고르는 중':'멈춤',short:'멈춤',key:'Space',dim:drop||!run,hold:true,bar:true,
      sub:drop?'결과를 보는 중':wait?'곧 빛이 움직여요':pick?'카드에서 골라요':stv?.row===1?'첫 줄은 아무 데서나 멈춰요':'빛이 아래 줄과 겹칠 때 눌러요'},[]);}
+   else if(kind==='string'){const gv=v.stringView,ph=gv?.phase??'',cutting=ph==='k2',gap=ph==='gap'; // 👁 없음(판정이 좌우 하나, 규칙서 §2)
+    setActions({id:'press',ic:(cutting||drop?IC.cut:gap?IC.wait:IC.right)[0],fb:(cutting||drop?IC.cut:gap?IC.wait:IC.right)[1],label:drop?'싹둑!':cutting?'싹둑':gap?'잠깐':'오른쪽',short:cutting?'싹둑':'누르고 있기',key:'Space',dim:drop||gap,hold:true,bar:true,tone:cutting||drop?'cut':'',
+     sub:drop?'결과를 보는 중':cutting?'누른 순간 가위가 닫혀요':gap?'잠깐만요…':'누르고 있는 동안 움직이고, 떼면 멈춰요'},[]);}
    else if(kind==='timer'){const run=sub==='run';setActions({id:'press',ic:(run?IC.stop:IC.start)[0],fb:(run?IC.stop:IC.start)[1],label:run?'멈춤':'시작',short:run?'멈춤':'시작',key:'Space',dim:drop,hold:true,tone:run?'':'green',bar:true,sub:drop?'결과를 보는 중':run?'숫자가 10.00일 때 누르세요':'누르면 숫자가 올라가요'},sideChips);}
    else{const up=sub.startsWith('k2'),gap=sub==='gap';setActions({id:'press',ic:(up?IC.up:IC.right)[0],fb:(up?IC.up:IC.right)[1],label:gap?'잠깐':up?(kind==='bridge'?'안쪽':'위로'):'오른쪽',short:gap?'잠깐':'누르고 있기',key:'Space',dim:drop||gap,hold:true,bar:true,sub:drop?(kind==='bridge'?'집게가 내려가요':'결과를 보는 중'):gap?'잠깐만요…':'누르고 있는 동안 움직이고, 떼면 멈춰요'},sideChips);}
   }

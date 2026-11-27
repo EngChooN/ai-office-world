@@ -37,11 +37,15 @@ export const CLAW_TUNING=Object.freeze({
  //  steps[r-1] = r줄에서 한 칸에 머무는 ms(위로 갈수록 빨라짐). 경품 없이 pity.after판 연달아 끝나면 다음 판부터 시작 칸 width → pityWidth(직원 도움, 눈에 보임)
  //  어림(사람 손 σ60ms, artifacts/claw-design/new3/sweep2.mjs): 7줄 판당 45.6% · 11줄 6.7%
  stack:Object.freeze({cols:7,rows:11,mid:7,width:3,pityWidth:4,steps:Object.freeze([140,125,110,100,90,80,75,75,75,75,75]),idleSec:10,readySec:.8,choiceSec:20,fallSec:.3,endSec:.5,choiceDelaySec:.45,outSec:1.1,bigOutSec:1.3}),
+ // 줄 자르기 「가위로 툭」(11-27 새 기계 ②, 규칙서 §2 제안값·추천안): 단위 m, 규칙 좌표 u = 기계 안 왼쪽 0 ~ inner. ① 누르고 있기 = 가위 오른쪽(떼면 고정) → 0.3초 → ② 한 번 누르기 = 그 순간 싹둑.
+ //  흔들리는 줄(진폭 ampM ± ampVar, 주기 periodSec)이 칼날 가운데 ±cutHalfM 안이면 성공, ×nearMul 안이면 아까움. pityAfter판 연달아 실패 → 직원이 줄을 잡아 흔들림 0(눈에 보임)
+ //  어림(σ60ms, artifacts/claw-design/new3/sweep3.mjs): 판당 14.7%·도움 판 26%
+ string:Object.freeze({inner:.60,strings:Object.freeze([.22,.42]),start:.04,end:.56,speed:.15,ampM:.05,ampVar:.15,periodSec:1.4,ampPeriodSec:7.3,cutHalfM:.003,nearMul:2,holdLimitSec:10,readySec:20,cutLimitSec:10,gapSec:.3,pityAfter:8,zoom:2.2,winSec:1.5,loseSec:.9}),
  notice:Object.freeze({minRarity:'rare',gapSec:10}),   // 다른 손님 소식은 희귀 이상만, 10초에 1번(설계 v1 §4)
  log:5,
 });
 export const SAVE_KEY='claw-world:v1';
-export const KINDS=Object.freeze(['claw','bridge','timer','key','stack']);
+export const KINDS=Object.freeze(['claw','bridge','timer','key','stack','string']);
 export const kindOf=machineId=>MACHINES.find(m=>m.id===machineId)?.kind??'claw';
 
 // ── 서울 날짜(무료 코인은 서울 0시에 바뀐다) ──
@@ -99,11 +103,11 @@ export function spendCoin(s,machineId,now=Date.now(),T=CLAW_TUNING){
 
 // ── 보장(같은 기계 연달아 실패 뒤 도움) ──
 /** 이 기계 종류에 보장이 켜져 있나(타이머는 기본 끔 — 완료 기준 「10.00에서만 성공」) */
-export function pityOn(kind,T=CLAW_TUNING){if(kind==='bridge')return T.bridge.pityAfter>0;if(!T.pity.after)return false;if(kind==='timer')return T.timer.pityWinSec>0;if(kind==='key')return T.key.pityFitBonus>0;if(kind==='stack')return T.stack.pityWidth>T.stack.width;return true;}
-export const pityAfter=(kind,T=CLAW_TUNING)=>kind==='bridge'?T.bridge.pityAfter:T.pity.after; // 봉은 8판(v4.1 §7-5), 나머지는 pity.after
+export function pityOn(kind,T=CLAW_TUNING){if(kind==='bridge')return T.bridge.pityAfter>0;if(!T.pity.after)return false;if(kind==='timer')return T.timer.pityWinSec>0;if(kind==='key')return T.key.pityFitBonus>0;if(kind==='stack')return T.stack.pityWidth>T.stack.width;if(kind==='string')return T.string.pityAfter>0;return true;}
+export const pityAfter=(kind,T=CLAW_TUNING)=>kind==='bridge'?T.bridge.pityAfter:kind==='string'?T.string.pityAfter:T.pity.after; // 봉은 8판(v4.1 §7-5), 나머지는 pity.after
 export const pityLeft=(s,machineId,T=CLAW_TUNING)=>{const k=kindOf(machineId);return pityOn(k,T)?Math.max(0,pityAfter(k,T)-(s.pity[machineId]??0)):null;};
 export const pityNow=(s,machineId,T=CLAW_TUNING)=>pityLeft(s,machineId,T)===0;
-export const PITY_NAME=Object.freeze({claw:'직원 도움',bridge:'직원 도움',timer:'넓은 성공 칸',key:'넓은 구멍',stack:'직원 도움'});
+export const PITY_NAME=Object.freeze({claw:'직원 도움',bridge:'직원 도움',timer:'넓은 성공 칸',key:'넓은 구멍',stack:'직원 도움',string:'직원 도움'});
 
 // ── 타이머 판정(설계 v3 §3-2, 시안 함수 그대로): 화면 숫자 = 0.01초 아래 버림, 판정은 그 숫자로만 ──
 export const hund=ms=>Math.floor(ms/10+1e-9);
@@ -147,6 +151,20 @@ export function stackStop(x,w,dir,below){
  for(let i=x;i<x+w;i++)if(i<lo||i>=hi)lost.push(i);
  return {x:lo,w:Math.max(0,hi-lo),lost,late:below?(x-below.x)*dir>0:false};
 }
+// ── 줄 자르기 판정(11-27, 시안 string.js strX·snip 그대로). ms = 같은 시계(performance.now) — 흔들림은 시각의 함수라 누른 순간 값이 곧 판정 ──
+/** 줄 i의 자르는 높이 흔들림(m, +오른쪽). still = 직원이 줄을 잡음(0) */
+export function stringSway(ms,i,still=false,c=CLAW_TUNING.string){
+ if(still)return 0;const amp=c.ampM*(1-c.ampVar+2*c.ampVar*(.5+.5*Math.sin(ms/(c.ampPeriodSec*1000)*2*Math.PI+i*2.1)));
+ return amp*Math.sin(2*Math.PI*ms/(c.periodSec*1000)+i*1.9);
+}
+export const stringX=(ms,i,still=false,c=CLAW_TUNING.string)=>c.strings[i]+stringSway(ms,i,still,c);
+/** 가위 자리 blade(m)에서 ms에 싹둑: 가장 가까운 줄과 칼날 가운데 차이 d(+ = 줄이 오른쪽)로 판정 */
+export function judgeString(blade,ms,still=false,c=CLAW_TUNING.string){
+ let i=0,d=Infinity;for(let k=0;k<c.strings.length;k++){const dk=stringX(ms,k,still,c)-blade;if(Math.abs(dk)<Math.abs(d)){d=dk;i=k;}}
+ const a=Math.abs(d);return {r:a<=c.cutHalfM?'win':a<=c.cutHalfM*c.nearMul?'near':'miss',i,d};
+}
+/** 빗나간 거리 글: 10mm 이상 = 「1.8cm 오른쪽」, 아니면 「4mm 왼쪽」 */
+export const stringMissText=d=>{const mm=Math.abs(d)*1000,side=d>0?'오른쪽':'왼쪽';return mm>=10?`${(mm/10).toFixed(1)}cm ${side}`:`${Math.round(mm)}mm ${side}`;};
 export const stackMissText=last=>last&&last.lost?`${last.r}줄에서 ${last.lost}칸 ${last.late?'늦었어요':'빨랐어요'}`:'';
 
 // ── 규칙 안내(ⓘ·처음 규칙 카드): 조절값에서 만든다 ──
@@ -156,6 +174,7 @@ export const KIND_INFO=Object.freeze({
  timer:Object.freeze({icon:'⏱',short:'딱 10.00에 멈추기',level:3,label:'타이머'}),
  key:Object.freeze({icon:'🔑',short:'열쇠로 칸 고르기',level:2,label:'열쇠'}),
  stack:Object.freeze({icon:'✨',short:'빛 막대 쌓아 올리기',level:2,label:'불빛 쌓기'}),
+ string:Object.freeze({icon:'✂️',short:'흔들리는 줄 자르기',level:3,label:'줄 자르기'}),
 });
 /** 기계 하나의 어려움 점(같은 종류 안 보이는 차이만, 설계 v4 §3-1) */
 export const levelOf=machineId=>MACHINES.find(m=>m.id===machineId)?.level??KIND_INFO[kindOf(machineId)]?.level??1;
@@ -188,6 +207,11 @@ export function rulesFor(machineId,pool,T=CLAW_TUNING,nameOf=id=>plushInfo(id)?.
   lines.push('빛 막대가 좌우로 오가요. 「✋ 멈춤」을 누른 순간 그 자리에 멈춰요','아래 줄과 어긋난 칸은 떨어져 사라져요. 칸이 다 없어지면 끝',
    `위로 갈수록 빨라져요. ${c.mid}줄 = ${sm}, ${c.rows}줄(꼭대기) = ${bg}`,`${c.mid}줄에서 「계속하기」를 골라도 이미 받은 ${sm}${/[가-힣]$/.test(sm)&&(sm.charCodeAt(sm.length-1)-0xac00)%28?'은':'는'} 그대로예요. 코인도 더 안 들어요`);
   if(pityOn('stack',T))pity=`경품 없이 ${P}번 연달아 끝나면 직원이 시작 칸을 ${c.pityWidth}칸으로 넓혀 줘요(받을 때까지 판마다)`;}
+ else if(kind==='string'){const c=T.string;
+  lines.push('① 「→」를 누르고 있으면 가위가 오른쪽으로 가요. 떼면 그 자리에 멈춰요(되돌릴 수 없어요)',
+   `② 「✂️ 싹둑」을 누른 순간 가위가 닫혀요. 그때 줄이 칼날 가운데(±${Math.round(c.cutHalfM*1000)}mm)에 있으면 줄이 끊겨 큰 인형이 떨어져요`,
+   '줄은 좌우로 흔들려요. 흔들림 크기는 조금씩 달라져요',`칼날 가장자리(±${Math.round(c.cutHalfM*c.nearMul*1000)}mm)면 줄이 반쯤만 잘리는 아까움 · 다음 판은 새 줄이에요`,'노릴 줄이 곧 인형 고르기예요(줄마다 큰 인형 하나)');
+  if(pityOn('string',T))pity=`${P}번 연달아 못 자르면 직원이 줄을 잡아 흔들리지 않게 해 줘요(자를 때까지 판마다, 가위 자리는 맞춰야 해요)`;}
  else{const c=T.key;
   lines.push(`큰 단추를 누르고 있으면 열쇠가 오른쪽으로 가요. 떼면 그 자리에 멈춰요`,`다시 누르고 있으면 위로 가요. 떼면 열쇠를 꽂아요`,
    `구멍 가운데에서 ${c.fit.toFixed(2)}칸 안이면 그 칸 인형이 나와요. 희귀·특별 칸은 구멍이 작아요(${c.fitRare.toFixed(2)}칸)`,`${c.nearMul}배 안이면 아까움(구멍 가장자리), 그 밖이면 실패`);
