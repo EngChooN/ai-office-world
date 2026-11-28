@@ -26,3 +26,6 @@ artifacts/server-pick/data-s/
 
 # 인형뽑기 손님 인형(다른 회사 캐릭터, 사용 허락 전) — 개발용 비공개 자료. 커밋·배포 금지(src/claw/claw-guest.js)
 private/
+
+# 인스타 릴스 올리기 설정·진행 상태(토큰·앱 비밀값이 들어 있음, 커밋 금지 — scripts/insta/insta-store.mjs)
+.instagram/

@@ -22,7 +22,8 @@
     "multi:server": "node server/multi-server.mjs",
     "multi:up": "node scripts/multi-up.mjs",
     "multi:publish": "node scripts/multi-publish.mjs",
-    "reels": "node scripts/reels.mjs"
+    "reels": "node scripts/reels.mjs",
+    "insta:reels": "node scripts/insta/reels-post.mjs"
   },
   "dependencies": {
     "three": "^0.180.0"
